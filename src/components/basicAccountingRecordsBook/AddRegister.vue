@@ -30,37 +30,35 @@
 
     <!-- Step Content -->
     <div class="p-6 border rounded-lg shadow-md bg-white">
-      <h2 class="text-xl font-semibold mb-4">Paso {{ currentStep }}</h2>
       <div v-if="currentStep === 1">
-        <button
-          @click="selectType('Ingreso')"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-2"
-        >
-          Ingreso
-        </button>
-        <button
-          @click="selectType('Egreso')"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Egreso
-        </button>
+        <IncomeOrExpense
+          :selectedType="selectedType"
+          @update:selectedType="selectType"
+        ></IncomeOrExpense>
       </div>
       <div v-else-if="currentStep === 2">
-        <button
-          @click="selectAccount('Caja/Efectivo')"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg mr-2"
-        >
-          Caja/Efectivo
-        </button>
-        <button
-          @click="selectAccount('Bancos')"
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg"
-        >
-          Bancos
-        </button>
+        <CashOrBank
+          :selectedAccount="selectedAccount"
+          @update:selectedAccount="selectAccount"
+        ></CashOrBank>
       </div>
       <div v-else-if="currentStep === 3">
-        <component :is="selectedComponent"></component>
+        <AddIncome
+          v-if="selectedType === 'Ingreso'"
+          :initialItemsList="itemsList"
+          @update:itemsList="handleItemsList"
+        />
+        <AddExpense
+          v-else-if="selectedType === 'Egreso'"
+          @update:expenseItem="handleExpenseItem"
+        />
+      </div>
+      <div v-else-if="currentStep === 4">
+        <SummaryOfRegister
+          :selectedType="selectedType"
+          :selectedAccount="selectedAccount"
+          :itemsList="itemsList"
+        />
       </div>
     </div>
 
@@ -73,65 +71,64 @@
       >
         Anterior
       </button>
-      <button
-        @click="nextStep"
-        :disabled="currentStep === steps.length || !selectedType"
-        class="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
-      >
-        Siguiente
-      </button>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, computed } from "vue";
 import AddIncome from "./AddIncome.vue";
-import AddExpenses from "./AddExpense.vue";
+import AddExpense from "./AddExpense.vue";
+import IncomeOrExpense from "./IncomeOrExpense.vue";
+import SummaryOfRegister from "./SummaryOfRegister.vue";
+import CashOrBank from "./CashOrBank.vue";
 
-export default {
-  data() {
-    return {
-      currentStep: 1,
-      steps: [
-        { content: "Seleccione el tipo de registro (Ingreso o Egreso)." },
-        { content: "Seleccione la cuenta afectada (Caja/Efectivo o Bancos)." },
-        { content: "Complete los detalles del registro." },
-      ],
-      selectedType: null,
-      selectedAccount: null,
-    };
-  },
-  computed: {
-    selectedComponent() {
-      if (this.selectedType === "Ingreso") {
-        return AddIncome;
-      } else if (this.selectedType === "Egreso") {
-        return AddExpenses;
-      }
-      return null;
-    },
-  },
-  methods: {
-    nextStep() {
-      if (this.currentStep < this.steps.length) {
-        this.currentStep++;
-      }
-    },
-    prevStep() {
-      if (this.currentStep > 1) {
-        this.currentStep--;
-      }
-    },
-    selectType(type) {
-      this.selectedType = type;
-      this.nextStep();
-    },
-    selectAccount(account) {
-      this.selectedAccount = account;
-      this.nextStep();
-    },
-  },
-};
+const currentStep = ref(1);
+const steps = [
+  "IncomeOrExpense",
+  "CashOrBank",
+  "AddIncomeOrExpense",
+  "Summary",
+  "Finish",
+];
+const selectedType = ref(null);
+const selectedAccount = ref(null);
+const itemsList = ref([]);
+const expenseItem = ref([]);
+
+function nextStep() {
+  if (currentStep.value < steps.length) {
+    currentStep.value++;
+  }
+}
+
+function prevStep() {
+  if (currentStep.value > 1) {
+    currentStep.value--;
+  }
+}
+
+function selectType(type) {
+  selectedType.value = type;
+  if (currentStep.value === 1) {
+    nextStep();
+  }
+}
+
+function selectAccount(account) {
+  selectedAccount.value = account;
+  nextStep();
+}
+
+function handleItemsList(newItemsList) {
+  itemsList.value = newItemsList;
+  nextStep();
+}
+
+function handleExpenseItem(newExpenseItem) {
+  expenseItem.value = newExpenseItem;
+  nextStep();
+}
 </script>
 
 <style scoped>
