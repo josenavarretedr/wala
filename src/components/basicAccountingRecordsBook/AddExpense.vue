@@ -3,10 +3,6 @@
     <h1 class="text-3xl font-bold mb-6 text-center">
       ¿Qué necesitó el negocio?
     </h1>
-
-    <pre>
-      {{ expenseItem }}
-    </pre>
     <div class="flex flex-col space-y-6">
       <input
         v-model="description"

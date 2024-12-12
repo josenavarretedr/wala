@@ -13,7 +13,7 @@
           'bg-white text-blue-500 border border-blue-500':
             selectedType !== 'income',
         }"
-        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
+        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
       >
         <GraphUp class="w-12 h-12" />
 
@@ -26,7 +26,7 @@
           'bg-white text-red-500 border border-red-500':
             selectedType !== 'expense',
         }"
-        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
+        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
       >
         <DatabaseExport class="w-12 h-12" />
 

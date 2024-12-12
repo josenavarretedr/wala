@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="title">Se registro!</h1>
+    <h1 class="title">Resumen de registro</h1>
     <div class="summary-container">
       <div
         class="text-white items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-4xl text-center w-full"

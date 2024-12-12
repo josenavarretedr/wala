@@ -5,6 +5,5 @@
 
 <script setup>
 import "@flaticon/flaticon-uicons/css/all/all.css";
-import { ref } from "vue";
 import AddRegister from "@/components/basicAccountingRecordsBook/AddRegister.vue";
 </script>
