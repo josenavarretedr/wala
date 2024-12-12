@@ -3,7 +3,7 @@
     <h1 class="text-3xl font-bold mb-6 text-center">Agregar Productos</h1>
     <div class="flex flex-col space-y-6">
       <input
-        v-model="product"
+        v-model="description"
         type="text"
         placeholder="Nombre del producto"
         class="px-4 py-2 border rounded-lg shadow-lg text-lg"
@@ -17,13 +17,14 @@
       <input
         v-model="price"
         type="number"
+        @keyup.enter="addItem"
         placeholder="Precio"
         class="px-4 py-2 border rounded-lg shadow-lg text-lg"
       />
       <div class="flex justify-around">
         <button
           @click="addItem"
-          :disabled="!product || !quantity || !price"
+          :disabled="!description || !quantity || !price"
           class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg disabled:opacity-50"
         >
           <KeyframePlus class="w-12 h-12"></KeyframePlus>
@@ -59,7 +60,7 @@
                 class="cursor-pointer text-red-500 shadow-lg"
               ></BinMinusIn>
             </td>
-            <td class="py-2 text-left">{{ item.product }}</td>
+            <td class="py-2 text-left">{{ item.description }}</td>
             <td class="py-2 text-left">{{ item.quantity }}</td>
             <td class="py-2 text-left">S/{{ item.price }}</td>
           </tr>
@@ -75,7 +76,7 @@ import { BinMinusIn, FastArrowRight, KeyframePlus } from "@iconoir/vue"; // Impo
 
 import { v4 as uuidv4 } from "uuid";
 
-const product = ref("");
+const description = ref("");
 const quantity = ref(null);
 const price = ref(null);
 const itemsList = ref([]);
@@ -83,11 +84,11 @@ const itemsList = ref([]);
 const addItem = () => {
   itemsList.value.push({
     uuid: uuidv4(),
-    product: product.value,
+    description: description.value,
     quantity: quantity.value,
     price: price.value,
   });
-  product.value = "";
+  description.value = "";
   quantity.value = null;
   price.value = null;
 };

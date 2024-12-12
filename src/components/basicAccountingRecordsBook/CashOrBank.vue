@@ -7,11 +7,11 @@
       class="flex flex-col space-y-6 md:flex-row md:space-x-6 md:space-y-0 justify-center"
     >
       <button
-        @click="emitSelectAccount('Cash')"
+        @click="emitSelectAccount('cash')"
         :class="{
-          'bg-green-500 text-white': selectedAccount === 'Cash',
+          'bg-green-500 text-white': selectedAccount === 'cash',
           'bg-white text-green-500 border border-green-500':
-            selectedAccount !== 'Cash',
+            selectedAccount !== 'cash',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >
@@ -20,11 +20,11 @@
         <span class="text-2xl mt-4">Efectivo</span>
       </button>
       <button
-        @click="emitSelectAccount('Bank')"
+        @click="emitSelectAccount('bank')"
         :class="{
-          'bg-purple-500 text-white': selectedAccount === 'Bank',
+          'bg-purple-500 text-white': selectedAccount === 'bank',
           'bg-white text-purple-500 border border-purple-500':
-            selectedAccount !== 'Bank',
+            selectedAccount !== 'bank',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >

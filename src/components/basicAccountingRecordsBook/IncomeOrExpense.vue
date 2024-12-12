@@ -7,11 +7,11 @@
       class="flex flex-col space-y-6 md:flex-row md:space-x-6 md:space-y-0 justify-center"
     >
       <button
-        @click="emitSelectType('Ingreso')"
+        @click="emitSelectType('income')"
         :class="{
-          'bg-blue-500 text-white': selectedType === 'Ingreso',
+          'bg-blue-500 text-white': selectedType === 'income',
           'bg-white text-blue-500 border border-blue-500':
-            selectedType !== 'Ingreso',
+            selectedType !== 'income',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >
@@ -20,11 +20,11 @@
         <span class="text-2xl mt-4">Ingresó</span>
       </button>
       <button
-        @click="emitSelectType('Egreso')"
+        @click="emitSelectType('expense')"
         :class="{
-          'bg-red-500 text-white': selectedType === 'Egreso',
+          'bg-red-500 text-white': selectedType === 'expense',
           'bg-white text-red-500 border border-red-500':
-            selectedType !== 'Egreso',
+            selectedType !== 'expense',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >

@@ -1,6 +1,8 @@
 <template>
-  <div class="w-full max-w-lg mx-auto">
-    <h1 class="text-2xl font-semibold mb-4">Agregar Registro</h1>
+  <div class="w-full max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div class="flex items-end">
+      <BinMinusIn class="cursor-pointer text-red-500 shadow-lg"></BinMinusIn>
+    </div>
     <!-- Stepper -->
     <div class="flex items-center justify-between mb-8">
       <div
@@ -44,13 +46,14 @@
       </div>
       <div v-else-if="currentStep === 3">
         <AddIncome
-          v-if="selectedType === 'Ingreso'"
+          v-if="selectedType === 'income'"
           :initialItemsList="itemsList"
           @update:itemsList="handleItemsList"
         />
         <AddExpense
-          v-else-if="selectedType === 'Egreso'"
-          @update:expenseItem="handleExpenseItem"
+          v-else-if="selectedType === 'expense'"
+          :initialExpense="itemsList"
+          @update:itemsList="handleItemsList"
         />
       </div>
       <div v-else-if="currentStep === 4">
@@ -67,21 +70,32 @@
       <button
         @click="prevStep"
         :disabled="currentStep === 1"
-        class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50"
+        class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50 flex items-center"
       >
-        Anterior
+        <NavArrowLeft />
+        <span class="ml-2">Atrás</span>
+      </button>
+
+      <button
+        @click="saveRegister"
+        v-if="currentStep === steps.length - 1"
+        class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center"
+      >
+        <CloudUpload />
+        <span class="ml-2">Guardar</span>
       </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, watch } from "vue";
 import AddIncome from "./AddIncome.vue";
 import AddExpense from "./AddExpense.vue";
 import IncomeOrExpense from "./IncomeOrExpense.vue";
 import SummaryOfRegister from "./SummaryOfRegister.vue";
 import CashOrBank from "./CashOrBank.vue";
+import { NavArrowLeft, CloudUpload, BinMinusIn } from "@iconoir/vue";
 
 const currentStep = ref(1);
 const steps = [
@@ -125,10 +139,23 @@ function handleItemsList(newItemsList) {
   nextStep();
 }
 
-function handleExpenseItem(newExpenseItem) {
-  expenseItem.value = newExpenseItem;
-  nextStep();
+function saveRegister() {
+  const register = {
+    timestamp: new Date(),
+    type: selectedType.value,
+    account: selectedAccount.value,
+    items: itemsList.value,
+    expense: expenseItem.value,
+  };
+
+  console.log("Register saved!");
 }
+
+watch(selectedType, (newVal, oldVal) => {
+  if (itemsList.value.length > 0) {
+    itemsList.value = [];
+  }
+});
 </script>
 
 <style scoped>
