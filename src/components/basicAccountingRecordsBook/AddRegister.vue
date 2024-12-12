@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-lg mx-auto p-6 bg-white rounded-lg shadow-lg">
+  <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
     <div class="flex items-end mt-3 mb-4">
       <router-link to="/" class="ml-auto text-x">
         <Xmark class="cursor-pointer text-red-500 w-10 h-10"></Xmark>
@@ -111,6 +111,7 @@ import PreRegister from "./PreRegister.vue";
 import SummaryOfRegister from "./SummaryOfRegister.vue";
 import CashOrBank from "./CashOrBank.vue";
 import { NavArrowLeft, CloudUpload, BinMinusIn, Xmark } from "@iconoir/vue";
+import { v4 as uuidv4 } from "uuid";
 
 import appFirebase from "@/firebaseInit";
 
@@ -166,11 +167,7 @@ async function saveRegister() {
     items: itemsList.value,
   };
 
-  const registerRef = doc(
-    db,
-    "libroContable",
-    register.timestamp.toISOString()
-  );
+  const registerRef = doc(db, "libroContable", uuidv4());
   try {
     await setDoc(registerRef, register);
     console.log("Register successfully written!");
