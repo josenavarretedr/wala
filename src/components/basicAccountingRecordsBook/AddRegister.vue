@@ -160,14 +160,16 @@ function handleItemsList(newItemsList) {
 }
 
 async function saveRegister() {
+  const uuid = uuidv4();
   const register = {
+    uuid,
     timestamp: new Date(),
     type: selectedType.value,
     account: selectedAccount.value,
     items: itemsList.value,
   };
 
-  const registerRef = doc(db, "libroContable", uuidv4());
+  const registerRef = doc(db, "libroContable", uuid);
   try {
     await setDoc(registerRef, register);
     console.log("Register successfully written!");

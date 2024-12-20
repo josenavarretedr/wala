@@ -12,7 +12,12 @@ const routes = [
   {
     path: "/basicAccountingRecordsBook",
     name: "BasicAccountingRecordsBook",
-    component: () => import("@/components/basicAccountingRecordsBook/AddRegister.vue")
+    component: () => import("@/components/basicAccountingRecordsBook/AddRegister.vue"),
+  },
+  {
+    path: '/basicAccountingRecordsBook/:registerId',
+    name: 'DetailsRecords',
+    component: () => import('@/components/HistorialRecords/DetailsRecords.vue')
   },
   {
     path: '/login',

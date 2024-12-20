@@ -9,31 +9,13 @@
         showResume ? "Ocultar resumen" : "Mostrar resumen"
       }}</span>
     </div>
-
-    <div v-if="showResume" class="px-4 py-2 mt-4 text-lg">
-      <div class="flex items-center mb-2">
-        <Cash class="mr-2" />
-        <span>Saldo anterior: S/ 0.00</span>
-      </div>
-      <div class="flex items-center mb-2">
-        <GraphUp class="mr-2" />
-        <span>Ingresos totales: S/ 0.00</span>
-      </div>
-      <div class="flex items-center mb-2">
-        <DatabaseExport class="mr-2" />
-        <span>Egresos totales: S/ 0.00</span>
-      </div>
-      <div class="flex items-center">
-        <Cash class="mr-2" />
-        <span>Saldo actual: S/ 0.00</span>
-      </div>
-    </div>
+    <ResumenDay v-if="showResume" :initialDailyData="dailyData" />
 
     <!-- Historial -->
 
     <ListRecordByDay :initialDailyData="dailyData"> </ListRecordByDay>
 
-    <!-- Navigation Buttons -->
+    <!-- ACTIONS Buttons -->
     <div class="flex justify-between mt-6">
       <div
         class="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg flex items-center text-xl"
@@ -64,6 +46,8 @@ import {
   DatabaseExport,
   Cash,
 } from "@iconoir/vue";
+import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
+
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
 
 import appFirebase from "@/firebaseInit";
@@ -81,27 +65,40 @@ const showResume = ref(false);
 
 const dailyData = ref([]);
 
+/**
+ * Obtiene los datos del día actual desde Firestore y los almacena en `dailyData`.
+ * La consulta se realiza en la colección "libroContable" y filtra los documentos
+ * cuyo campo "timestamp" esté dentro del rango del día actual.
+ *
+ * @async
+ * @function getDayData
+ * @returns {Promise<void>} Una promesa que se resuelve cuando los datos se han obtenido y almacenado.
+ */
 async function getDayData() {
-  // Obtén el inicio y el final del día actual
+  // Obtén el inicio del día actual (00:00:00)
   const today = new Date();
   const startOfDay = new Date(
     today.getFullYear(),
     today.getMonth(),
     today.getDate()
   );
+
+  // Obtén el final del día actual (23:59:59)
   const endOfDay = new Date(
     today.getFullYear(),
     today.getMonth(),
     today.getDate() + 1
   );
 
-  // Crea una consulta con las condiciones
+  // Crea una consulta para obtener los documentos de "libroContable"
+  // cuyo campo "timestamp" esté entre el inicio y el final del día actual
   const q = query(
     collection(db, "libroContable"),
     where("timestamp", ">=", startOfDay),
     where("timestamp", "<", endOfDay)
   );
 
+  // Ejecuta la consulta y almacena los resultados en `dailyData`
   const querySnapshot = await getDocs(q);
   querySnapshot.forEach((doc) => {
     dailyData.value.push(doc.data());

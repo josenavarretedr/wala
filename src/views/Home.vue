@@ -1,6 +1,4 @@
 <template>
-  <h1>HOME</h1>
-
   <Suspense>
     <template #default>
       <HistorialRecords />

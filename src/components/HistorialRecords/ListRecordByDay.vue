@@ -1,7 +1,7 @@
 <template>
   <!-- Historial de Ahorros -->
   <div class="w-full max-w-3xl mt-6">
-    <h3 class="text-xl font-bold text-gray-700 mb-4">Registros diasrios</h3>
+    <h3 class="text-xl font-bold text-gray-700 mb-4">Registros diarios</h3>
     <div class="space-y-4">
       <template v-if="initialDailyData && initialDailyData.length">
         <!-- Itera sobre el historial de ahorros -->
@@ -18,7 +18,15 @@
 
           <div class="flex items-center align-middle justify-between">
             <div class="flex items-baseline align-middle">
-              <InfoCircle class="w-5 h-5 mr-2" />
+              <router-link
+                :to="{
+                  name: 'DetailsRecords',
+                  params: { registerId: record.uuid },
+                }"
+                class="ml-auto text-x"
+              >
+                <InfoCircle class="w-5 h-5 mr-2 cursor-pointer" />
+              </router-link>
 
               <div
                 v-if="record.type === 'income'"
@@ -59,7 +67,7 @@
 
             <!-- Sección de Cantidad -->
             <div class="flex flex-col items-end">
-              <p class="text-2xl font-extrabold">
+              <p class="text-xl font-bold">
                 S/.
                 {{
                   new Intl.NumberFormat("es-PE").format(
