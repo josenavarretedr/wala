@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, computed } from "vue";
+import { defineProps } from "vue";
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
 
 const props = defineProps({
@@ -105,12 +105,10 @@ const props = defineProps({
     type: String,
     default: null,
   },
-});
-
-const totalSum = computed(() => {
-  return props.itemsList.reduce((sum, item) => {
-    return sum + item.price * item.quantity;
-  }, 0);
+  totalSum: {
+    type: Number,
+    default: 0,
+  },
 });
 </script>
 

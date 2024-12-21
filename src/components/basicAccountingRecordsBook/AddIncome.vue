@@ -2,25 +2,54 @@
   <div>
     <h1 class="text-3xl font-bold mb-6 text-center">Agregar Productos</h1>
     <div class="flex flex-col space-y-6">
-      <input
-        v-model="description"
-        type="text"
-        placeholder="Nombre del producto"
-        class="px-4 py-2 border rounded-lg shadow-lg text-lg"
-      />
-      <input
-        v-model="quantity"
-        type="number"
-        placeholder="Cantidad"
-        class="px-4 py-2 border rounded-lg shadow-lg text-lg"
-      />
-      <input
-        v-model="price"
-        type="number"
-        @keyup.enter="addItem"
-        placeholder="Precio"
-        class="px-4 py-2 border rounded-lg shadow-lg text-lg"
-      />
+      {{ itemsList }}
+      <!-- Componente de Suspense con estilo de cargando -->
+      <Suspense>
+        <template #default>
+          <SearchProductAsync @update:productToAdd="handleInputProduct" />
+        </template>
+        <template #fallback>
+          <!-- Mensaje de carga centrado con estilo -->
+          <div class="text-center text-lg font-semibold text-gray-600 mt-4">
+            Cargando resultados...
+          </div>
+        </template>
+      </Suspense>
+      <div class="flex items-center justify-between">
+        <input
+          v-model="description"
+          type="text"
+          disabled
+          placeholder="Nombre del producto"
+          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-full"
+          :class="{ 'w-full': description !== '' }"
+        />
+        <Xmark
+          v-if="description"
+          class="cursor-pointer text-red-500 w-5"
+          @click="resetItem()"
+        ></Xmark>
+      </div>
+
+      <div>
+        <span class="px-3 text-lg font-semibold">Q:</span>
+        <input
+          v-model="quantity"
+          type="number"
+          placeholder="Cantidad"
+          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
+        />
+        <span class="pl-3 font-semibold">uni</span>
+      </div>
+      <div>
+        <span class="px-3 text-lg font-semibold">S/</span>
+        <input
+          v-model="price"
+          type="number"
+          placeholder="Precio"
+          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
+        />
+      </div>
       <div class="flex justify-around">
         <button
           @click="addItem"
@@ -72,32 +101,67 @@
 
 <script setup>
 import { ref, watch } from "vue";
-import { BinMinusIn, FastArrowRight, KeyframePlus } from "@iconoir/vue"; // Importar iconos de Iconoir
+import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue"; // Importar iconos de Iconoir
+import SearchProductAsync from "./SearchProductAsync.vue"; // Importar componente asíncrono
 
 import { v4 as uuidv4 } from "uuid";
+
+import appFirebase from "@/firebaseInit";
+
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+const db = getFirestore(appFirebase);
 
 const description = ref("");
 const quantity = ref(null);
 const price = ref(null);
+const oldOrNewProduct = ref(null);
 const itemsList = ref([]);
+const uuidToAdd = ref(null);
 
 const addItem = () => {
+  if (
+    description.value === "" ||
+    quantity.value === null ||
+    price.value === null ||
+    oldOrNewProduct.value === null
+  ) {
+    return;
+  }
+  let productUuid = null;
+  if (oldOrNewProduct.value === "new") {
+    productUuid = uuidv4();
+  }
+
   itemsList.value.push({
-    uuid: uuidv4(),
+    uuid: productUuid ? productUuid : uuidToAdd.value,
     description: description.value,
     quantity: quantity.value,
     price: price.value,
+    oldOrNewProduct: oldOrNewProduct.value,
   });
   description.value = "";
   quantity.value = null;
   price.value = null;
+  oldOrNewProduct.value = null;
 };
 
 const emit = defineEmits(["update:itemsList"]);
 
-const saveItems = () => {
+async function saveItems() {
+  for (const item of itemsList.value) {
+    if (item.oldOrNewProduct === "new") {
+      const itemRef = doc(db, "products", item.uuid);
+      await setDoc(itemRef, {
+        description: item.description,
+        price: item.price,
+        cost: null,
+        stockLog: [],
+      });
+    }
+  }
+
   emit("update:itemsList", itemsList.value);
-};
+}
 
 const props = defineProps({
   initialItemsList: {
@@ -116,6 +180,28 @@ watch(
 
 const removeItem = (uuid) => {
   itemsList.value = itemsList.value.filter((item) => item.uuid !== uuid);
+};
+
+function handleInputProduct(newItemsList) {
+  if (newItemsList.length > 0) {
+    const product = newItemsList[0];
+    if (product.oldOrNewProduct === "old") {
+      uuidToAdd.value = product.selectedProductUuid;
+    } else {
+      uuidToAdd.value = null;
+    }
+    description.value = product.description;
+    quantity.value = product.quantity;
+    price.value = product.price;
+    oldOrNewProduct.value = product.oldOrNewProduct;
+    uuidToAdd.value = product.selectedProductUuid;
+  }
+}
+
+const resetItem = () => {
+  description.value = "";
+  quantity.value = null;
+  price.value = null;
 };
 </script>
 

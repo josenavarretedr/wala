@@ -13,7 +13,14 @@
 
     <!-- Historial -->
 
-    <ListRecordByDay :initialDailyData="dailyData"> </ListRecordByDay>
+    <Suspense>
+      <template #default>
+        <ListRecordByDay :initialDailyData="dailyData"> </ListRecordByDay>
+      </template>
+      <template #fallback>
+        <div>Cargando ...</div>
+      </template>
+    </Suspense>
 
     <!-- ACTIONS Buttons -->
     <div class="flex justify-between mt-6">

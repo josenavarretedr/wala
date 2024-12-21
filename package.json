@@ -10,8 +10,11 @@
     "emulators:start": "firebase emulators:start"
   },
   "dependencies": {
+    "@algolia/autocomplete-js": "^1.17.8",
+    "@algolia/autocomplete-theme-classic": "^1.17.8",
     "@flaticon/flaticon-uicons": "^3.3.1",
     "@iconoir/vue": "^7.10.1",
+    "algoliasearch": "^5.18.0",
     "boxicons": "^2.1.4",
     "dotenv": "^16.4.5",
     "firebase": "^11.0.2",

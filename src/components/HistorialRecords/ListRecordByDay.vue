@@ -69,11 +69,7 @@
             <div class="flex flex-col items-end">
               <p class="text-xl font-bold">
                 S/.
-                {{
-                  new Intl.NumberFormat("es-PE").format(
-                    record.items.reduce((sum, item) => sum + item.price, 0)
-                  )
-                }}.00
+                {{ record.total.toFixed(2) }}
               </p>
             </div>
           </div>
@@ -103,7 +99,11 @@
 </template>
 
 <script setup>
+import appFirebase from "@/firebaseInit";
+
 import { ref, computed } from "vue";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+const db = getFirestore(appFirebase);
 
 import {
   GraphUp,
@@ -136,4 +136,26 @@ const formatedDate = (timestamp) => {
     hour12: true,
   });
 };
+
+async function getTotalOfRecord() {
+  for (const element of props.initialDailyData) {
+    let total = 0;
+
+    for (const record of element.registerStockLog) {
+      const itemRef = doc(db, "products", record.item);
+      const itemSnap = await getDoc(itemRef);
+      const itemData = itemSnap.data();
+
+      const matchingItem = itemData.stockLog.find(
+        (log) => log.uuid === record.stockLog
+      );
+
+      total += itemData.price * matchingItem.quantity;
+    }
+
+    element.total = total;
+  }
+}
+
+await getTotalOfRecord();
 </script>

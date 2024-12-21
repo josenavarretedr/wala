@@ -10,6 +10,7 @@
       :selectedType="register.type"
       :selectedAccount="register.account"
       :itemsList="register.items"
+      :totalSum="register.total"
     ></SummaryOfRegister>
 
     <!-- ACtions Buttons -->

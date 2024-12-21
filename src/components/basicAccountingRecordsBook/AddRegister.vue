@@ -75,6 +75,7 @@
         :selectedType="selectedType"
         :selectedAccount="selectedAccount"
         :itemsList="itemsList"
+        :totalSum="totalFinal"
       ></SummaryOfRegister>
     </div>
 
@@ -115,7 +116,13 @@ import { v4 as uuidv4 } from "uuid";
 
 import appFirebase from "@/firebaseInit";
 
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  updateDoc,
+  arrayUnion,
+} from "firebase/firestore";
 const db = getFirestore(appFirebase);
 
 const currentStep = ref(1);
@@ -128,6 +135,7 @@ const steps = [
 const selectedType = ref(null);
 const selectedAccount = ref(null);
 const itemsList = ref([]);
+const totalFinal = ref(0);
 const finish = ref(false);
 
 function nextStep() {
@@ -160,19 +168,46 @@ function handleItemsList(newItemsList) {
 }
 
 async function saveRegister() {
-  const uuid = uuidv4();
+  const uuidRegister = uuidv4();
+
+  const total = itemsList.value.reduce((acc, item) => {
+    return acc + item.quantity * item.price;
+  }, 0);
+
+  totalFinal.value = total;
+
   const register = {
-    uuid,
+    uuid: uuidRegister,
     timestamp: new Date(),
     type: selectedType.value,
     account: selectedAccount.value,
-    items: itemsList.value,
+    total: total,
+    registerStockLog: [],
   };
 
-  const registerRef = doc(db, "libroContable", uuid);
+  for (let item of itemsList.value) {
+    const itemRef = doc(db, "products", item.uuid);
+    const stockLogUuid = uuidv4();
+    const registerStockLog = {
+      item: item.uuid,
+      stockLog: stockLogUuid,
+    };
+    await updateDoc(itemRef, {
+      stockLog: arrayUnion({
+        uuid: stockLogUuid,
+        date: new Date().toISOString(),
+        quantity: item.quantity,
+        type: "output",
+      }),
+    });
+
+    register.registerStockLog.push(registerStockLog);
+  }
+
+  const registerRef = doc(db, "libroContable", uuidRegister);
   try {
     await setDoc(registerRef, register);
-    console.log("Register successfully written!");
+
     finish.value = true;
   } catch (error) {
     console.error("Error writing register: ", error);
