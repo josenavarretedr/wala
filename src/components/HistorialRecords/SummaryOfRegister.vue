@@ -51,26 +51,15 @@
         class="mt-6 border-t-4 border-dashed border-gray-300 pt-4 summary-item"
       >
         <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
-        <table class="min-w-full text-left bg-white">
-          <thead>
-            <tr>
-              <th class="py-2">Producto</th>
-              <th class="py-2">Q</th>
-              <th class="py-2">Precio uni</th>
-              <th class="py-2 text-right">Precio Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in itemsList" :key="item.uuid" class="border-b">
-              <td class="py-2 text-left">{{ item.description }}</td>
-              <td class="py-2 text-left">{{ item.quantity }}</td>
-              <td class="py-2 text-left">S/{{ item.price }}</td>
-              <td class="py-2 text-right">
-                S/{{ item.price * item.quantity }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <Suspense>
+          <template #default>
+            <TableOfProductInRegister :itemsList="itemsList" />
+          </template>
+          <template #fallback>
+            <div>Cargando ...</div>
+          </template>
+        </Suspense>
+        
       </div>
 
       <div

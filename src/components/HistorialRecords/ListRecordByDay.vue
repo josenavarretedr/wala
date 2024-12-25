@@ -89,7 +89,7 @@
           class="bg-white shadow-md rounded-lg p-4 flex items-center justify-center"
         >
           <p class="text-lg font-semibold text-gray-800">
-            No tienes ahorros todavía.
+            No tienes registros... todavía.
           </p>
         </div>
       </template>

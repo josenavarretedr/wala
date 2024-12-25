@@ -9,7 +9,7 @@
     <SummaryOfRegister
       :selectedType="register.type"
       :selectedAccount="register.account"
-      :itemsList="register.items"
+      :itemsList="register.registerStockLog"
       :totalSum="register.total"
     ></SummaryOfRegister>
 
@@ -37,7 +37,7 @@
 <script setup>
 import { ref, watch } from "vue";
 
-import SummaryOfRegister from "@/components/basicAccountingRecordsBook/SummaryOfRegister.vue";
+import SummaryOfRegister from "@/components/HistorialRecords/SummaryOfRegister.vue";
 
 import { Edit, Trash, Xmark } from "@iconoir/vue";
 
