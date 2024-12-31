@@ -59,7 +59,6 @@
             <div>Cargando ...</div>
           </template>
         </Suspense>
-        
       </div>
 
       <div

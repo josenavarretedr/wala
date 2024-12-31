@@ -1,12 +1,5 @@
 <template>
-  <Suspense>
-    <template #default>
-      <router-view />
-    </template>
-    <template #fallback>
-      <div>Cargando ...</div>
-    </template>
-  </Suspense>
+  <router-view />
 </template>
 
 <script setup>

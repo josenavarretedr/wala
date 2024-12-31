@@ -79,6 +79,9 @@ function saludar() {
 async function deleteRegister() {
   const docRef = doc(db, "libroContable", registerId);
   await deleteDoc(docRef);
+
+  // TODO tengo que hacer que actualice el array de (products/register.registerStockLog.item).stockLog para que se actualice el stock de los productos eliminando el elemento de (products/register.registerStockLog.item).stockLog[i] que coincida con register.registerStockLog.item
+
   router.push("/");
 }
 
