@@ -7,11 +7,12 @@
       class="flex flex-col space-y-6 md:flex-row md:space-x-6 md:space-y-0 justify-center"
     >
       <button
-        @click="emitSelectType('income')"
+        @click="handleSelectedType('income')"
         :class="{
-          'bg-blue-500 text-white': selectedType === 'income',
+          'bg-blue-500 text-white':
+            transactionStore.transactionToAdd.value.type === 'income',
           'bg-white text-blue-500 border border-blue-500':
-            selectedType !== 'income',
+            transactionStore.transactionToAdd.value.type !== 'income',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >
@@ -20,11 +21,12 @@
         <span class="text-2xl mt-4">Ingresó</span>
       </button>
       <button
-        @click="emitSelectType('expense')"
+        @click="handleSelectedType('expense')"
         :class="{
-          'bg-red-500 text-white': selectedType === 'expense',
+          'bg-red-500 text-white':
+            transactionStore.transactionToAdd.value.type === 'expense',
           'bg-white text-red-500 border border-red-500':
-            selectedType !== 'expense',
+            transactionStore.transactionToAdd.value.type !== 'expense',
         }"
         class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
       >
@@ -37,30 +39,14 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import { PiggyBank, GraphUp, DatabaseExport } from "@iconoir/vue"; // Importar iconos de Iconoir
+import { GraphUp, DatabaseExport } from "@iconoir/vue"; // Importar iconos de Iconoir
+import { useTransactionStore } from "@/stores/transactionStore";
 
-const selectedType = ref(null);
-const emit = defineEmits(["update:selectedType"]);
+const transactionStore = useTransactionStore();
 
-const props = defineProps({
-  selectedType: {
-    type: String,
-    default: null,
-  },
-});
-
-watch(
-  () => props.selectedType,
-  (newVal) => {
-    selectedType.value = newVal;
-  },
-  { immediate: true }
-);
-
-const emitSelectType = (type) => {
-  selectedType.value = type;
-  emit("update:selectedType", type);
+const handleSelectedType = (type) => {
+  transactionStore.modifyTransactionToAddType(type);
+  transactionStore.nextStepToAddTransaction();
 };
 </script>
 

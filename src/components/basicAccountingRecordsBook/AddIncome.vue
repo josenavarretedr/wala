@@ -2,11 +2,14 @@
   <div>
     <h1 class="text-3xl font-bold mb-6 text-center">Agregar Productos</h1>
     <div class="flex flex-col space-y-6">
-      {{ itemsList }}
+      *********** DEL COMPONENTE:
+      <pre>
+        {{ itemsList }}
+      </pre>
       <!-- Componente de Suspense con estilo de cargando -->
       <Suspense>
         <template #default>
-          <SearchProductAsync @update:productToAdd="handleInputProduct" />
+          <SearchProductAsync />
         </template>
         <template #fallback>
           <!-- Mensaje de carga centrado con estilo -->
@@ -17,15 +20,18 @@
       </Suspense>
       <div class="flex items-center justify-between">
         <input
-          v-model="description"
+          v-model="transactionStore.itemToAddInTransaction.value.description"
           type="text"
           disabled
           placeholder="Nombre del producto"
           class="px-4 py-2 border rounded-lg shadow-lg text-lg w-full"
-          :class="{ 'w-full': description !== '' }"
+          :class="{
+            'w-full':
+              transactionStore.itemToAddInTransaction.value.description !== '',
+          }"
         />
         <Xmark
-          v-if="description"
+          v-if="transactionStore.itemToAddInTransaction.value.description"
           class="cursor-pointer text-red-500 w-5"
           @click="resetItem()"
         ></Xmark>
@@ -34,26 +40,32 @@
       <div>
         <span class="px-3 text-lg font-semibold">Q:</span>
         <input
-          v-model="quantity"
+          v-model="transactionStore.itemToAddInTransaction.value.quantity"
           type="number"
           placeholder="Cantidad"
           class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
         />
         <span class="pl-3 font-semibold">uni</span>
       </div>
+
       <div>
         <span class="px-3 text-lg font-semibold">S/</span>
         <input
-          v-model="price"
+          v-model="transactionStore.itemToAddInTransaction.value.price"
           type="number"
           placeholder="Precio"
           class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
         />
       </div>
+
       <div class="flex justify-around">
         <button
           @click="addItem"
-          :disabled="!description || !quantity || !price"
+          :disabled="
+            !transactionStore.itemToAddInTransaction.value.description ||
+            !transactionStore.itemToAddInTransaction.value.quantity ||
+            !transactionStore.itemToAddInTransaction.value.price
+          "
           class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg disabled:opacity-50"
         >
           <KeyframePlus class="w-12 h-12"></KeyframePlus>
@@ -104,6 +116,9 @@ import { ref, watch } from "vue";
 import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue"; // Importar iconos de Iconoir
 import SearchProductAsync from "./SearchProductAsync.vue"; // Importar componente asíncrono
 
+import { useTransactionStore } from "@/stores/transactionStore";
+const transactionStore = useTransactionStore();
+
 import { v4 as uuidv4 } from "uuid";
 
 import appFirebase from "@/firebaseInit";
@@ -119,14 +134,6 @@ const itemsList = ref([]);
 const uuidToAdd = ref(null);
 
 const addItem = () => {
-  if (
-    description.value === "" ||
-    quantity.value === null ||
-    price.value === null ||
-    oldOrNewProduct.value === null
-  ) {
-    return;
-  }
   let productUuid = null;
   if (oldOrNewProduct.value === "new") {
     productUuid = uuidv4();
@@ -181,22 +188,6 @@ watch(
 const removeItem = (uuid) => {
   itemsList.value = itemsList.value.filter((item) => item.uuid !== uuid);
 };
-
-function handleInputProduct(newItemsList) {
-  if (newItemsList.length > 0) {
-    const product = newItemsList[0];
-    if (product.oldOrNewProduct === "old") {
-      uuidToAdd.value = product.selectedProductUuid;
-    } else {
-      uuidToAdd.value = null;
-    }
-    description.value = product.description;
-    quantity.value = product.quantity;
-    price.value = product.price;
-    oldOrNewProduct.value = product.oldOrNewProduct;
-    uuidToAdd.value = product.selectedProductUuid;
-  }
-}
 
 const resetItem = () => {
   description.value = "";

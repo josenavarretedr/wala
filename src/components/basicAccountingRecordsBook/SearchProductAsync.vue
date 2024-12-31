@@ -9,54 +9,38 @@
 import { autocomplete } from "@algolia/autocomplete-js";
 import "@algolia/autocomplete-theme-classic";
 
-import appFirebase from "@/firebaseInit";
-import { getFirestore, doc, getDocs, collection } from "firebase/firestore";
-const db = getFirestore(appFirebase);
-
 const emit = defineEmits(["update:productToAdd"]);
 
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
 
-const router = useRouter();
+import { useInventoryStore } from "@/stores/inventoryStore";
+import { useTransactionStore } from "@/stores/transactionStore";
+const inventoryStore = useInventoryStore();
+const transactionStore = useTransactionStore();
 
 const products = ref([]);
 
 // Función para obtener productos desde Firestore
-async function fetchProducts() {
-  const querySnapshot = await getDocs(collection(db, "products"));
-  if (querySnapshot.empty) {
-    products.value = [];
-  } else {
-    querySnapshot.forEach((doc) => {
-      let productData = {
-        uuid: doc.id,
-        ...doc.data(),
-      };
-      products.value.push(productData);
-    });
-  }
-}
+await inventoryStore.getItemsInInventory();
 
 // Función para obtener datos formateados para Algolia
 function getDataForAlgolia() {
-  if (products.value.length === 0) {
+  if (inventoryStore.allItemsInInventory.value.length === 0) {
     return [];
   }
 
-  let dataForAlgolia = products.value.map((product) => {
-    return {
-      productId: product.uuid,
-      productDescription: product.description,
-      productPrice: product.price,
-    };
-  });
+  let dataForAlgolia = inventoryStore.allItemsInInventory.value.map(
+    (product) => {
+      return {
+        productId: product.uuid,
+        productDescription: product.description,
+        productPrice: product.price,
+      };
+    }
+  );
 
   return dataForAlgolia;
 }
-
-// Obtener todos los productos
-await fetchProducts();
 
 onMounted(() => {
   // Inicializar el componente de autocompletado de Algolia
@@ -139,15 +123,15 @@ document.addEventListener("click", (e) => {
       const description = target.textContent
         .trim()
         .replace("Registrar nuevo producto: ", "");
-      emit("update:productToAdd", [
-        {
-          description,
-          quantity: null,
-          price: null,
-          oldOrNewProduct: "new",
-          selectedProductUuid: null,
-        },
-      ]);
+
+      // TODO este emit deberá de ser una funcnion del store para agregar a nuevos productos
+      transactionStore.modifyitemToAddInTransaction({
+        description,
+        quantity: null,
+        price: null,
+        oldOrNewProduct: "new",
+        selectedProductUuid: null,
+      });
 
       document.querySelector("#autocomplete input").value = "";
       document
@@ -155,19 +139,17 @@ document.addEventListener("click", (e) => {
         .dispatchEvent(new Event("input"));
     } else {
       // Manejar producto existente
-      const selectedProduct = products.value.find(
+      const selectedProduct = inventoryStore.allItemsInInventory.value.find(
         (product) => product.uuid === target.id
       );
       if (selectedProduct) {
-        emit("update:productToAdd", [
-          {
-            selectedProductUuid: selectedProduct.uuid,
-            description: selectedProduct.description,
-            quantity: selectedProduct.quantity,
-            price: selectedProduct.price,
-            oldOrNewProduct: "old",
-          },
-        ]);
+        transactionStore.modifyitemToAddInTransaction({
+          description: selectedProduct.description,
+          price: selectedProduct.price,
+          oldOrNewProduct: "old",
+          selectedProductUuid: selectedProduct.uuid,
+        });
+
         document.querySelector("#autocomplete input").value = "";
         document
           .querySelector("#autocomplete input")
