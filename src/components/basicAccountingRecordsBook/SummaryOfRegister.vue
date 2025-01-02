@@ -4,14 +4,20 @@
     <div class="summary-container">
       <div
         class="text-white items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-4xl text-center w-full"
-        :class="selectedType === 'income' ? 'bg-cyan-600' : 'bg-orange-500'"
+        :class="
+          transactionStore.transactionToAdd.value.type === 'income'
+            ? 'bg-cyan-600'
+            : 'bg-orange-500'
+        "
       >
-        <span v-if="selectedType === 'income'"> S/. {{ totalSum }} </span>
+        <span v-if="transactionStore.transactionToAdd.value.type === 'income'">
+          S/. {{ transactionStore.getTransactionToAddTotal() }}
+        </span>
         <span v-else> S/. {{ itemsList[0].price }} </span>
       </div>
       <div class="flex justify-between summary-item">
         <div
-          v-if="selectedType === 'income'"
+          v-if="transactionStore.transactionToAdd.value.type === 'income'"
           class="flex flex-col bg-white text-blue-500 border border-blue-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
         >
           <GraphUp class="w-6 h-6" />
@@ -29,7 +35,7 @@
         </div>
 
         <div
-          v-if="selectedAccount === 'cash'"
+          v-if="transactionStore.transactionToAdd.value.account === 'cash'"
           class="flex flex-col bg-white text-green-500 border border-green-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
         >
           <Coins class="w-6 h-6" />
@@ -46,8 +52,9 @@
           <span class="text-xl mt-4">Yape/Plin</span>
         </div>
       </div>
+
       <div
-        v-if="selectedType === 'income'"
+        v-if="transactionStore.transactionToAdd.value.type === 'income'"
         class="mt-6 border-t-4 border-dashed border-gray-300 pt-4 summary-item"
       >
         <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
@@ -61,7 +68,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in itemsList" :key="item.uuid" class="border-b">
+            <tr
+              v-for="item in transactionStore.transactionToAdd.value.items"
+              :key="item.uuid"
+              class="border-b"
+            >
               <td class="py-2 text-left">{{ item.description }}</td>
               <td class="py-2 text-left">{{ item.quantity }}</td>
               <td class="py-2 text-left">S/{{ item.price }}</td>
@@ -77,7 +88,7 @@
         v-else
         class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
         :class="
-          selectedType === 'income'
+          transactionStore.transactionToAdd.value.type === 'income'
             ? 'text-cyan-600 border-cyan-600'
             : 'text-orange-500 border-orange-500'
         "
@@ -93,24 +104,8 @@ import { defineProps } from "vue";
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
 import TableOfProductInRegister from "@/components/HistorialRecords/TableOfProductInRegister.vue";
 
-const props = defineProps({
-  itemsList: {
-    type: Array,
-    default: () => [],
-  },
-  selectedType: {
-    type: String,
-    default: null,
-  },
-  selectedAccount: {
-    type: String,
-    default: null,
-  },
-  totalSum: {
-    type: Number,
-    default: 0,
-  },
-});
+import { useTransactionStore } from "@/stores/transactionStore";
+const transactionStore = useTransactionStore();
 </script>
 
 <style scoped>

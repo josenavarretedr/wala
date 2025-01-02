@@ -93,7 +93,6 @@
           </p>
         </div>
       </template>
-      <!-- TODO hacer un div para los savings que están pendientes de aprobación -->
     </div>
   </div>
 </template>

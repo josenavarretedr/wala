@@ -7,24 +7,38 @@ const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
 
 export function useInventoryStore() {
-  const { getAllItemsInInventory, addItemToInventoryCmpsb } = useInventory();
+  const { getAllItemsInInventory, createItem } = useInventory();
 
   // Obtener los ítems en inventario
   const getItemsInInventory = async () => {
     try {
+      // TODO Aquí la funcion getAllItemsInInventory deberá de pasar el businessId que vendra desde el store de businessStore.js y no de manera estatica porque ahora tiene el valor de 'ferrercard'
       const items = await getAllItemsInInventory(); // Esperar los datos
       allItemsInInventory.value = items; // Almacenar en la lista reactiva
+      console.log("Items fetched successfully desde useInventoryStore.js");
     } catch (error) {
       console.error("Error fetching items: ", error);
     }
   };
 
-  const addItemToInventory = async (item) => {
+  const addItemToInventoryFromArryOfItemsNewOrOld = async (itemsList) => {
     try {
-      const itemId = await addItemToInventoryCmpsb(item);
+      for (const item of itemsList) {
+        if (item.oldOrNewProduct === "new") {
+          await createItem(item, 'ferrercard');
+        }
+      }
     }
     catch (error) {
       console.error('Error adding item:', error);
+    }
+  }
+
+  const addStockLogInInventory = async (stockLog) => {
+    try {
+      await createStockLog(stockLog);
+    } catch (error) {
+      console.error('Error adding stock log:', error);
     }
   }
 
@@ -32,7 +46,8 @@ export function useInventoryStore() {
     allItemsInInventory,
     itemToAddToInventory,
     getItemsInInventory,
-    addItemToInventory
+    addStockLogInInventory,
+    addItemToInventoryFromArryOfItemsNewOrOld
 
   };
 }

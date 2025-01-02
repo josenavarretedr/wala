@@ -1,16 +1,16 @@
-import { getFirestore, collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
 const db = getFirestore(appFirebase);
 
 export function useTransaccion() {
-  const createTransaction = async (transaction) => {
+  const createTransaction = async (transaction, businessId = 'ferrercard') => {
     try {
-      const docRef = await addDoc(collection(db, 'businesses', transaction.businessId, 'transactions'), {
+      const transactionRef = doc(db, `businesses/${businessId}/transaction`, transaction.uuid)
+      await setDoc(transactionRef, {
         ...transaction,
         createdAt: serverTimestamp(),
       });
-      return docRef.id;
     } catch (error) {
       console.error('Error creating transaction: ', error);
       throw error;

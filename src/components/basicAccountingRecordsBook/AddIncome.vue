@@ -2,10 +2,6 @@
   <div>
     <h1 class="text-3xl font-bold mb-6 text-center">Agregar Productos</h1>
     <div class="flex flex-col space-y-6">
-      *********** DEL COMPONENTE:
-      <pre>
-        {{ itemsList }}
-      </pre>
       <!-- Componente de Suspense con estilo de cargando -->
       <Suspense>
         <template #default>
@@ -33,7 +29,7 @@
         <Xmark
           v-if="transactionStore.itemToAddInTransaction.value.description"
           class="cursor-pointer text-red-500 w-5"
-          @click="resetItem()"
+          @click="transactionStore.resetItemToAddInTransaction()"
         ></Xmark>
       </div>
 
@@ -60,7 +56,7 @@
 
       <div class="flex justify-around">
         <button
-          @click="addItem"
+          @click="transactionStore.addItemToTransaction()"
           :disabled="
             !transactionStore.itemToAddInTransaction.value.description ||
             !transactionStore.itemToAddInTransaction.value.quantity ||
@@ -71,16 +67,17 @@
           <KeyframePlus class="w-12 h-12"></KeyframePlus>
         </button>
         <button
-          @click="saveItems"
-          :disabled="itemsList.length === 0"
+          @click="handleSaveBtn()"
+          :disabled="transactionStore.transactionToAdd.value.items.length === 0"
           class="px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg disabled:opacity-50"
         >
           <FastArrowRight class="w-12 h-12"></FastArrowRight>
         </button>
       </div>
     </div>
+
     <div
-      v-if="itemsList.length > 0"
+      v-if="transactionStore.transactionToAdd.value.items.length > 0"
       class="mt-6 border-t-4 border-dashed border-gray-300 pt-4"
     >
       <h2 class="text-2xl font-semibold mb-4">Items agregados:</h2>
@@ -94,10 +91,14 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in itemsList" :key="item.uuid" class="border-b">
+          <tr
+            v-for="item in transactionStore.transactionToAdd.value.items"
+            :key="item.uuid"
+            class="border-b"
+          >
             <td class="py-2 text-center">
               <BinMinusIn
-                @click="removeItem(item.uuid)"
+                @click="transactionStore.removeItemToTransaction(item.uuid)"
                 class="cursor-pointer text-red-500 shadow-lg"
               ></BinMinusIn>
             </td>
@@ -112,87 +113,19 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
 import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue"; // Importar iconos de Iconoir
 import SearchProductAsync from "./SearchProductAsync.vue"; // Importar componente asíncrono
 
 import { useTransactionStore } from "@/stores/transactionStore";
+import { useInventoryStore } from "@/stores/InventoryStore";
 const transactionStore = useTransactionStore();
+const inventoryStore = useInventoryStore();
 
-import { v4 as uuidv4 } from "uuid";
-
-import appFirebase from "@/firebaseInit";
-
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-const db = getFirestore(appFirebase);
-
-const description = ref("");
-const quantity = ref(null);
-const price = ref(null);
-const oldOrNewProduct = ref(null);
-const itemsList = ref([]);
-const uuidToAdd = ref(null);
-
-const addItem = () => {
-  let productUuid = null;
-  if (oldOrNewProduct.value === "new") {
-    productUuid = uuidv4();
-  }
-
-  itemsList.value.push({
-    uuid: productUuid ? productUuid : uuidToAdd.value,
-    description: description.value,
-    quantity: quantity.value,
-    price: price.value,
-    oldOrNewProduct: oldOrNewProduct.value,
-  });
-  description.value = "";
-  quantity.value = null;
-  price.value = null;
-  oldOrNewProduct.value = null;
-};
-
-const emit = defineEmits(["update:itemsList"]);
-
-async function saveItems() {
-  for (const item of itemsList.value) {
-    if (item.oldOrNewProduct === "new") {
-      const itemRef = doc(db, "products", item.uuid);
-      await setDoc(itemRef, {
-        description: item.description,
-        price: item.price,
-        cost: null,
-        stockLog: [],
-      });
-    }
-  }
-
-  emit("update:itemsList", itemsList.value);
-}
-
-const props = defineProps({
-  initialItemsList: {
-    type: Array,
-    default: () => [],
-  },
-});
-
-watch(
-  () => props.initialItemsList,
-  (newVal) => {
-    itemsList.value = newVal;
-  },
-  { immediate: true }
-);
-
-const removeItem = (uuid) => {
-  itemsList.value = itemsList.value.filter((item) => item.uuid !== uuid);
-};
-
-const resetItem = () => {
-  description.value = "";
-  quantity.value = null;
-  price.value = null;
+const handleSaveBtn = () => {
+  inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(
+    transactionStore.transactionToAdd.value.items
+  );
+  transactionStore.nextStepToAddTransaction();
 };
 </script>
 

@@ -18,8 +18,6 @@ import { useTransactionStore } from "@/stores/transactionStore";
 const inventoryStore = useInventoryStore();
 const transactionStore = useTransactionStore();
 
-const products = ref([]);
-
 // Función para obtener productos desde Firestore
 await inventoryStore.getItemsInInventory();
 
@@ -124,8 +122,7 @@ document.addEventListener("click", (e) => {
         .trim()
         .replace("Registrar nuevo producto: ", "");
 
-      // TODO este emit deberá de ser una funcnion del store para agregar a nuevos productos
-      transactionStore.modifyitemToAddInTransaction({
+      transactionStore.modifyItemToAddInTransaction({
         description,
         quantity: null,
         price: null,
@@ -143,7 +140,7 @@ document.addEventListener("click", (e) => {
         (product) => product.uuid === target.id
       );
       if (selectedProduct) {
-        transactionStore.modifyitemToAddInTransaction({
+        transactionStore.modifyItemToAddInTransaction({
           description: selectedProduct.description,
           price: selectedProduct.price,
           oldOrNewProduct: "old",
