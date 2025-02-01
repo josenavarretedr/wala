@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 
 
 
-const transactions = ref([]);
+const transactionsInStore = ref([]);
 
 const transactionToAdd = ref({
   uuid: null,
@@ -28,7 +28,7 @@ const itemToAddInTransaction = ref({
 const currentStepOfAddTransaction = ref(1);
 
 export function useTransactionStore() {
-  const { createTransaction, updateTransaction } = useTransaccion();
+  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID } = useTransaccion();
   const { createStockLog } = useInventory();
 
   const addTransaction = async () => {
@@ -44,6 +44,19 @@ export function useTransactionStore() {
     } catch (error) {
       console.error('Error adding transaction: ', error);
     }
+  };
+
+  const getTransactions = async () => {
+    try {
+      transactionsInStore.value = await getAllTransactions();
+
+    } catch (error) {
+      console.error('Error fetching transactions: ', error);
+    }
+  };
+
+  const getOneTransactionDataByID = (transactionId) => {
+    return transactionsInStore.value.filter(t => t.uuid === transactionId);
   };
 
   const resetTransactionToAdd = () => {
@@ -141,13 +154,29 @@ export function useTransactionStore() {
     }
   }
 
+  const deleteOneTransactionByID = async (transactionID) => {
+    try {
+      // console.log(transactionID)
+      await deleteTransactionByID(transactionID);
+      console.log('Transaction deleted successfully in FIRESTORE');
+      // await getTransactions();
+
+    } catch (error) {
+      console.error('Error adding transaction: ', error);
+    }
+  };
+
+
 
   return {
-    transactions,
+    transactionsInStore,
     transactionToAdd,
     currentStepOfAddTransaction,
     itemToAddInTransaction,
     addTransaction,
+    getTransactions,
+    getOneTransactionDataByID,
+    deleteOneTransactionByID,
     resetTransactionToAdd,
     modifyTransaction,
     modifyTransactionToAddType,

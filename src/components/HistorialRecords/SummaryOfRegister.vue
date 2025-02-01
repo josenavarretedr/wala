@@ -4,14 +4,18 @@
     <div class="summary-container">
       <div
         class="text-white items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-4xl text-center w-full"
-        :class="selectedType === 'income' ? 'bg-cyan-600' : 'bg-orange-500'"
+        :class="
+          oneTransactionData.type === 'income' ? 'bg-cyan-600' : 'bg-orange-500'
+        "
       >
-        <span v-if="selectedType === 'income'"> S/. {{ totalSum }} </span>
-        <span v-else> S/. {{ itemsList[0].price }} </span>
+        <span v-if="oneTransactionData.type === 'income'">
+          S/. {{ oneTransactionData.total }}
+        </span>
+        <!-- <span v-else> S/. {{ oneTransactionData.items[0].price }} </span> -->
       </div>
       <div class="flex justify-between summary-item">
         <div
-          v-if="selectedType === 'income'"
+          v-if="oneTransactionData.type === 'income'"
           class="flex flex-col bg-white text-blue-500 border border-blue-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
         >
           <GraphUp class="w-6 h-6" />
@@ -29,7 +33,7 @@
         </div>
 
         <div
-          v-if="selectedAccount === 'cash'"
+          v-if="oneTransactionData.account === 'cash'"
           class="flex flex-col bg-white text-green-500 border border-green-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
         >
           <Coins class="w-6 h-6" />
@@ -46,59 +50,63 @@
           <span class="text-xl mt-4">Yape/Plin</span>
         </div>
       </div>
+
       <div
-        v-if="selectedType === 'income'"
+        v-if="oneTransactionData.type === 'income'"
         class="mt-6 border-t-4 border-dashed border-gray-300 pt-4 summary-item"
       >
         <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
-        <Suspense>
-          <template #default>
-            <TableOfProductInRegister :itemsList="itemsList" />
-          </template>
-          <template #fallback>
-            <div>Cargando ...</div>
-          </template>
-        </Suspense>
-      </div>
-
-      <div
-        v-else
-        class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
-        :class="
-          selectedType === 'income'
-            ? 'text-cyan-600 border-cyan-600'
-            : 'text-orange-500 border-orange-500'
-        "
-      >
-        {{ itemsList[0].description }}
+        <table class="min-w-full text-left bg-white">
+          <thead>
+            <tr>
+              <th class="py-2">Producto</th>
+              <th class="py-2">Q</th>
+              <th class="py-2">Precio uni</th>
+              <th class="py-2 text-right">Precio Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in oneTransactionData.items"
+              :key="item.uuid"
+              class="border-b"
+            >
+              <td class="py-2 text-left">{{ item.description }}</td>
+              <td class="py-2 text-left">{{ item.quantity }}</td>
+              <td class="py-2 text-left">S/{{ item.price }}</td>
+              <td class="py-2 text-right">
+                S/{{ item.price * item.quantity }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps } from "vue";
+import { computed, ref } from "vue";
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
 import TableOfProductInRegister from "@/components/HistorialRecords/TableOfProductInRegister.vue";
 
-const props = defineProps({
-  itemsList: {
-    type: Array,
-    default: () => [],
-  },
-  selectedType: {
-    type: String,
-    default: null,
-  },
-  selectedAccount: {
-    type: String,
-    default: null,
-  },
-  totalSum: {
-    type: Number,
-    default: 0,
-  },
-});
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+
+import { useTransactionStore } from "@/stores/transactionStore";
+
+const transactionStore = useTransactionStore();
+
+const oneTransactionData = ref({});
+
+async function getOneTransactionDataByIDCmp() {
+  oneTransactionData.value = transactionStore.getOneTransactionDataByID(
+    route.params.registerId
+  )[0];
+}
+
+await getOneTransactionDataByIDCmp();
 </script>
 
 <style scoped>

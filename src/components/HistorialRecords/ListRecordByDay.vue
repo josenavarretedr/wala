@@ -3,7 +3,7 @@
   <div class="w-full max-w-3xl mt-6">
     <h3 class="text-xl font-bold text-gray-700 mb-4">Registros diarios</h3>
     <div class="space-y-4">
-      <template v-if="initialDailyData && initialDailyData.length">
+      <template v-if="transactionStore.transactionsInStore.value.length">
         <!-- Itera sobre el historial de ahorros -->
         <div
           v-for="(record, index) in dataOrdenada"
@@ -77,7 +77,7 @@
             class="mt-3 text-xs text-gray-500 flex items-center align-middle"
           >
             <p class="text-gray-500 mr-3">
-              {{ formatedDate(record.timestamp) }}
+              {{ formatedDate(record.createdAt) }}
             </p>
           </div>
         </div>
@@ -98,11 +98,10 @@
 </template>
 
 <script setup>
-import appFirebase from "@/firebaseInit";
-
 import { ref, computed } from "vue";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-const db = getFirestore(appFirebase);
+
+import { useTransactionStore } from "@/stores/transactionStore";
+const transactionStore = useTransactionStore();
 
 import {
   GraphUp,
@@ -112,16 +111,9 @@ import {
   InfoCircle,
 } from "@iconoir/vue"; // Importar iconos de Iconoir
 
-const props = defineProps({
-  initialDailyData: {
-    type: Array,
-    default: () => [],
-  },
-});
-
 const dataOrdenada = computed(() => {
-  return props.initialDailyData.sort((a, b) => {
-    return b.timestamp.seconds - a.timestamp.seconds;
+  return transactionStore.transactionsInStore.value.sort((a, b) => {
+    return b.createdAt.seconds - a.createdAt.seconds;
   });
 });
 
@@ -136,25 +128,5 @@ const formatedDate = (timestamp) => {
   });
 };
 
-async function getTotalOfRecord() {
-  for (const element of props.initialDailyData) {
-    let total = 0;
-
-    for (const record of element.registerStockLog) {
-      const itemRef = doc(db, "products", record.item);
-      const itemSnap = await getDoc(itemRef);
-      const itemData = itemSnap.data();
-
-      const matchingItem = itemData.stockLog.find(
-        (log) => log.uuid === record.stockLog
-      );
-
-      total += itemData.price * matchingItem.quantity;
-    }
-
-    element.total = total;
-  }
-}
-
-await getTotalOfRecord();
+await transactionStore.getTransactions();
 </script>

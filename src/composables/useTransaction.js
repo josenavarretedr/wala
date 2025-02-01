@@ -1,4 +1,4 @@
-import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
 const db = getFirestore(appFirebase);
@@ -6,7 +6,7 @@ const db = getFirestore(appFirebase);
 export function useTransaccion() {
   const createTransaction = async (transaction, businessId = 'ferrercard') => {
     try {
-      const transactionRef = doc(db, `businesses/${businessId}/transaction`, transaction.uuid)
+      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transaction.uuid)
       await setDoc(transactionRef, {
         ...transaction,
         createdAt: serverTimestamp(),
@@ -30,8 +30,44 @@ export function useTransaccion() {
     }
   };
 
+  const getAllTransactions = async (businessId = 'ferrercard') => {
+    try {
+      const transactionsSnapshot = await getDocs(collection(db, 'businesses', businessId, 'transactions'));
+
+      const transactions = [];
+
+      transactionsSnapshot.forEach(doc => {
+        transactions.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+
+        console.log(doc.id, " => ", doc.data());
+      });
+
+      return transactions
+    } catch (error) {
+      console.error('Error fetching transactions: ', error);
+      throw error;
+    }
+  };
+
+  const deleteTransactionByID = async (transactionID, businessId = 'ferrercard') => {
+    try {
+      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
+      await deleteDoc(transactionRef);
+    }
+    catch (error) {
+      console.error('Error fetching transactions: ', error);
+      throw error;
+    }
+
+  }
+
   return {
     createTransaction,
     updateTransaction,
+    deleteTransactionByID,
+    getAllTransactions
   };
 }

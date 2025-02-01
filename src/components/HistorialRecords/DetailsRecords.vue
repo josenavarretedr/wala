@@ -6,12 +6,17 @@
       </router-link>
     </div>
 
-    <SummaryOfRegister
-      :selectedType="register.type"
-      :selectedAccount="register.account"
-      :itemsList="register.registerStockLog"
-      :totalSum="register.total"
-    ></SummaryOfRegister>
+    <Suspense>
+      <template #default>
+        <SummaryOfRegister></SummaryOfRegister>
+      </template>
+      <template #fallback>
+        <!-- Mensaje de carga centrado con estilo -->
+        <div class="text-center text-lg font-semibold text-gray-600 mt-4">
+          Cargando detalles...
+        </div>
+      </template>
+    </Suspense>
 
     <!-- ACtions Buttons -->
     <div class="flex justify-between mt-6">
@@ -35,53 +40,24 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-
 import SummaryOfRegister from "@/components/HistorialRecords/SummaryOfRegister.vue";
 
 import { Edit, Trash, Xmark } from "@iconoir/vue";
-
 import { useRoute, useRouter } from "vue-router";
-
-import appFirebase from "@/firebaseInit";
-import { getFirestore, doc, getDoc, deleteDoc } from "firebase/firestore";
-const db = getFirestore(appFirebase);
 
 const route = useRoute();
 const router = useRouter();
-const register = ref(null);
 
-const registerId = route.params.registerId;
-
-async function getRegister() {
-  const docRef = doc(db, "libroContable", registerId);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    console.log("Document data:", docSnap.data());
-    register.value = docSnap.data();
-  } else {
-    // docSnap.data() will be undefined in this case
-    console.log("No such document!");
-  }
-}
-
-watch(
-  () => route.params.registerId,
-  async () => {
-    await getRegister();
-  }
-);
-
-function saludar() {
-  alert("Hola");
-}
+import { useTransactionStore } from "@/stores/transactionStore";
+const transactionStore = useTransactionStore();
 
 async function deleteRegister() {
-  const docRef = doc(db, "libroContable", registerId);
-  await deleteDoc(docRef);
-
-  router.push("/");
+  try {
+    // console.log(route.params.registerId);
+    await transactionStore.deleteOneTransactionByID(route.params.registerId);
+    router.push("/");
+  } catch (error) {
+    console.error("Error adding transaction: ", error);
+  }
 }
-
-await getRegister();
 </script>
