@@ -1,4 +1,4 @@
-import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
 const db = getFirestore(appFirebase);
@@ -29,6 +29,26 @@ export function useTransaccion() {
       throw error;
     }
   };
+
+  const getTransactionByID = async (transactionID, businessId = 'ferrercard') => {
+    try {
+      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
+      const transactionSnapshot = await getDoc(transactionRef);
+
+      if (transactionSnapshot.exists()) {
+        return {
+          id: transactionSnapshot.uuid,
+          ...transactionSnapshot.data(),
+        };
+      } else {
+        console.error('Transaction not found');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching transaction: ', error);
+      throw error;
+    }
+  }
 
   const getAllTransactions = async (businessId = 'ferrercard') => {
     try {
@@ -68,6 +88,6 @@ export function useTransaccion() {
     createTransaction,
     updateTransaction,
     deleteTransactionByID,
-    getAllTransactions
+    getAllTransactions,
   };
 }

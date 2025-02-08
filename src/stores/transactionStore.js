@@ -14,6 +14,7 @@ const transactionToAdd = ref({
   type: null,
   account: null,
   items: [],
+  itemsAndStockLogs: [],
 });
 
 const itemToAddInTransaction = ref({
@@ -29,15 +30,28 @@ const currentStepOfAddTransaction = ref(1);
 
 export function useTransactionStore() {
   const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID } = useTransaccion();
-  const { createStockLog } = useInventory();
+  const { createStockLog, deleteStockLog } = useInventory();
 
   const addTransaction = async () => {
     try {
       transactionToAdd.value.total = getTransactionToAddTotal();
       transactionToAdd.value.uuid = uuidv4();
-      await createTransaction(transactionToAdd.value);
       for (const item of transactionToAdd.value.items) {
-        await createStockLog(item);
+        const stockLogUuid = await createStockLog(item);
+        const itemUuid = item.uuid;
+
+
+        const itemStockLog = {
+          itemUuid,
+          stockLogUuid,
+        }
+
+        console.log('itemStockLog: ', itemStockLog);
+
+        transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
+        await createTransaction(transactionToAdd.value);
+
+        // transactionToAdd.value.itemsAndStockLogs.push({ itemUuid, stockLogUuid });
       }
       console.log('Transaction added successfully');
 
@@ -65,6 +79,8 @@ export function useTransactionStore() {
       type: null,
       account: null,
       items: [],
+      itemsAndStockLogs: [],
+
     };
 
     currentStepOfAddTransaction.value = 1;
@@ -156,10 +172,11 @@ export function useTransactionStore() {
 
   const deleteOneTransactionByID = async (transactionID) => {
     try {
-      // console.log(transactionID)
+      const transactionDataById = getOneTransactionDataByID(transactionID);
+      await deleteStockLog(transactionDataById);
       await deleteTransactionByID(transactionID);
       console.log('Transaction deleted successfully in FIRESTORE');
-      // await getTransactions();
+      await getTransactions();
 
     } catch (error) {
       console.error('Error adding transaction: ', error);

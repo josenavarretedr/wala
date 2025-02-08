@@ -2,6 +2,7 @@ import {
   getFirestore,
   collection,
   getDocs,
+  getDoc,
   doc,
   serverTimestamp,
   setDoc,
@@ -53,23 +54,97 @@ export function useInventory() {
       await updateStock(productRef, stockLog);
 
       console.log('Stock log created successfully');
+      return stockLog.uuid;
+
     } catch (error) {
       console.error('Error creating stock log: ', error);
       throw error;
     }
   };
 
-  const updateStock = async (productRef, stockLog) => {
+  const deleteStockLog = async (transactionDataById, businessId = 'ferrercard') => {
     try {
-      if (stockLog.type === 'sell') {
-        await updateDoc(productRef, {
-          stock: increment(-stockLog.quantity)
+
+
+      console.log('transactionDataById: ', transactionDataById[0]);
+
+      for (const pairOfTransactionAndStockLog of transactionDataById[0].itemsAndStockLogs) {
+
+        const itemUuid = pairOfTransactionAndStockLog.itemUuid;
+        const stockLogUuid = pairOfTransactionAndStockLog.stockLogUuid;
+
+        const itemRef = doc(db, `businesses/${businessId}/products`, itemUuid);
+        const itemDoc = await getDoc(itemRef);
+        if (!itemDoc.exists()) {
+          throw new Error(`Item with UUID ${itemUuid} does not exist`);
+        }
+        const itemData = itemDoc.data();
+
+        const stockLog = itemData.stockLog.filter(log => log.uuid == stockLogUuid)[0];
+
+        stockLog.type = 'return';
+
+        const updatedStockLog = itemData.stockLog.filter(log => log.uuid !== stockLogUuid);
+
+        await updateDoc(itemRef, {
+          stockLog: updatedStockLog
         });
+
+        await updateStock(itemRef, stockLog);
+
+
+      }
+
+    } catch (error) {
+      console.error('Error deleting stock log: ', error);
+      throw error;
+    }
+  }
+
+  const updateStock = async (productRef, stockLog) => {
+
+
+
+    try {
+      const itemDoc = await getDoc(productRef);
+      const itemData = itemDoc.data();
+      console.log(stockLog);
+
+      let newStock = null;
+
+
+      if (stockLog.type === 'sell') {
+        if (stockLog.quantity > itemData.stock) {
+          // throw new Error('Not enough stock to sell');
+          return;
+        } else {
+          console.log(stockLog);
+          newStock = itemData.stock - stockLog.quantity;
+
+          if (newStock < 0) {
+            newStock = 0;
+          }
+          console.log('newStock: ', newStock);
+          await updateDoc(productRef, {
+            stock: newStock
+          });
+        }
       }
 
       if (stockLog.type === 'buy') {
+        newStock = itemData.stock + stockLog.quantity;
+        console.log('newStock: ', newStock);
+
         await updateDoc(productRef, {
-          stock: increment(stockLog.quantity)
+          stock: newStock
+        });
+      }
+
+      if (stockLog.type === 'return') {
+        newStock = itemData.stock + stockLog.quantity;
+        console.log('newStock: ', newStock);
+        await updateDoc(productRef, {
+          stock: newStock
         });
       }
 
@@ -107,6 +182,7 @@ export function useInventory() {
   return {
     createItem,
     createStockLog,
+    deleteStockLog,
     getAllItemsInInventory,
   };
 }
