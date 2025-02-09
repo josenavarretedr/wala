@@ -30,7 +30,7 @@
 
       <button
         @click="deleteRegister()"
-        class="px-4 py-2 bg-red-500 text-white rounded-lg flex items-center"
+        class="px-4 py-2 border border-red-500 text-red-500 rounded-lg flex items-center disabled:opacity-50 hover:bg-red-500 hover:text-white"
       >
         <Trash />
         <span class="ml-2">Eliminar</span>
