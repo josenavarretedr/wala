@@ -15,7 +15,7 @@
 
     <Suspense>
       <template #default>
-        <ListRecordByDay :initialDailyData="dailyData"> </ListRecordByDay>
+        <ListRecordByDay> </ListRecordByDay>
       </template>
       <template #fallback>
         <div>Cargando ...</div>

@@ -3,6 +3,8 @@
     <h1 class="text-3xl font-bold mb-6 text-center">
       ¿Qué necesitó el negocio?
     </h1>
+    {{ expensesStore.expenseToAdd.description }}
+    {{ expensesStore.expenseToAdd.cost }}
     <div class="flex flex-col space-y-6">
       <input
         v-model="description"
@@ -11,14 +13,14 @@
         class="px-4 py-2 border rounded-lg shadow-lg text-lg"
       />
       <input
-        v-model="price"
-        @keyup.enter="addExpense"
+        v-model.number="cost"
+        @keyup.enter="addExpenseHandler"
         type="number"
         placeholder="Cuánto costó"
         class="px-4 py-2 border rounded-lg shadow-lg text-lg"
       />
       <button
-        @click="addExpense"
+        @click="addExpenseHandler"
         class="px-4 py-2 bg-orange-500 text-white rounded-lg shadow-lg disabled:opacity-50 flex justify-center items-center"
       >
         <FastArrowRight class="w-12 h-12"></FastArrowRight>
@@ -28,41 +30,37 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { v4 as uuidv4 } from "uuid";
+import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
+import { useTransactionStore } from "@/stores/transactionStore";
 import { FastArrowRight } from "@iconoir/vue"; // Importar iconos de Iconoir
 
+import { ref } from "vue";
+
 const description = ref("");
-const price = ref(0);
-const expenseItem = ref([]);
+const cost = ref(0);
 
-const addExpense = () => {
-  expenseItem.value.push({
-    uuid: uuidv4(),
-    description: description.value,
-    price: price.value,
-  });
-  description.value = "";
-  price.value = null;
-  emit("update:itemsList", expenseItem.value);
+const expensesStore = useExpensesStore(); // Usa el store
+const transactionStore = useTransactionStore();
+
+const addExpenseHandler = async () => {
+  transactionStore.modifyTransactionExpenseDescriptionAndCost(
+    description.value,
+    cost.value
+  ); // Modifica la descripción y el costo del gasto en el store de transacciones
+
+  expensesStore.modifyExpenseToAddDescription(description.value);
+  expensesStore.modifyExpenseToAddCost(cost.value);
+  expensesStore.modifyExpenseToAddAccount(
+    transactionStore.transactionToAdd.value.account
+  );
+  // Modifica la descripción y el costo del gasto en el store de expenses
+
+  transactionStore.nextStepToAddTransaction();
+  // await expensesStore.addExpense();
+  // Llama a la acción para agregar el gasto desde el store
+  // expensesStore.resetExpenseToAdd();
+  // Limpia el formulario después de agregar
 };
-
-const emit = defineEmits(["update:itemsList"]);
-
-const props = defineProps({
-  initialExpense: {
-    type: Array,
-    default: () => [],
-  },
-});
-
-onMounted(() => {
-  // if (props.initialExpense) {
-  //   description.value = props.initialExpense.description || "";
-  //   price.value = props.initialExpense.price || 0;
-  // }
-  console.log(props.initialExpense[0]);
-});
 </script>
 
 <style scoped>

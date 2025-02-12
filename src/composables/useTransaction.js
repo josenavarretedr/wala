@@ -30,26 +30,6 @@ export function useTransaccion() {
     }
   };
 
-  const getTransactionByID = async (transactionID, businessId = 'ferrercard') => {
-    try {
-      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
-      const transactionSnapshot = await getDoc(transactionRef);
-
-      if (transactionSnapshot.exists()) {
-        return {
-          id: transactionSnapshot.uuid,
-          ...transactionSnapshot.data(),
-        };
-      } else {
-        console.error('Transaction not found');
-        return null;
-      }
-    } catch (error) {
-      console.error('Error fetching transaction: ', error);
-      throw error;
-    }
-  }
-
   const getAllTransactions = async (businessId = 'ferrercard') => {
     try {
       const transactionsSnapshot = await getDocs(collection(db, 'businesses', businessId, 'transactions'));

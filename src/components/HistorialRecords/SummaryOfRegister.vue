@@ -8,10 +8,7 @@
           oneTransactionData.type === 'income' ? 'bg-cyan-600' : 'bg-orange-500'
         "
       >
-        <span v-if="oneTransactionData.type === 'income'">
-          S/. {{ oneTransactionData.total }}
-        </span>
-        <!-- <span v-else> S/. {{ oneTransactionData.items[0].price }} </span> -->
+        <span> S/. {{ oneTransactionData.total }} </span>
       </div>
       <div class="flex justify-between summary-item">
         <div
@@ -80,6 +77,18 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div
+        v-else
+        class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
+        :class="
+          oneTransactionData.type === 'income'
+            ? 'text-cyan-600 border-cyan-600'
+            : 'text-orange-500 border-orange-500'
+        "
+      >
+        {{ oneTransactionData.description }}
       </div>
     </div>
   </div>

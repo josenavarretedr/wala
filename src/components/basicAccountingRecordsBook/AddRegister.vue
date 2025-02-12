@@ -10,7 +10,6 @@
       </router-link>
     </div>
     <div v-if="!finish">
-      {{ transactionStore.transactionToAdd.value }}
       <!-- Stepper -->
       <div class="flex items-center justify-between mb-8">
         <div
@@ -114,6 +113,8 @@ import CashOrBank from "./CashOrBank.vue";
 import { NavArrowLeft, CloudUpload, BinMinusIn, Xmark } from "@iconoir/vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
+import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
+const expensesStore = useExpensesStore(); // Usa el store
 
 const transactionStore = useTransactionStore();
 

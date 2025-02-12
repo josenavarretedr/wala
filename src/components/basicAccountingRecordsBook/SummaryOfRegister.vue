@@ -10,10 +10,7 @@
             : 'bg-orange-500'
         "
       >
-        <span v-if="transactionStore.transactionToAdd.value.type === 'income'">
-          S/. {{ transactionStore.getTransactionToAddTotal() }}
-        </span>
-        <!-- <span v-else> S/. {{ itemsList[0].price }} </span>   -->
+        <span> S/. {{ transactionStore.transactionToAdd.value.total }} </span>
       </div>
       <div class="flex justify-between summary-item">
         <div
@@ -93,18 +90,21 @@
             : 'text-orange-500 border-orange-500'
         "
       >
-        {{ itemsList[0].description }}
+        {{ transactionStore.transactionToAdd.value.description }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps } from "vue";
+import { computed, ref } from "vue";
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
 import TableOfProductInRegister from "@/components/HistorialRecords/TableOfProductInRegister.vue";
 
+import { useRoute } from "vue-router";
+
 import { useTransactionStore } from "@/stores/transactionStore";
+
 const transactionStore = useTransactionStore();
 </script>
 

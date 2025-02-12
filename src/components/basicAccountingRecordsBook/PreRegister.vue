@@ -13,7 +13,9 @@
         <span v-if="transactionStore.transactionToAdd.value.type === 'income'">
           S/. {{ transactionStore.getTransactionToAddTotal() }}
         </span>
-        <span v-else> S/. {{ itemsList[0].price }} </span>
+        <span v-else>
+          S/. {{ transactionStore.transactionToAdd.value.cost }}
+        </span>
       </div>
       <div class="flex justify-between summary-item">
         <div
@@ -92,7 +94,7 @@
             : 'text-orange-500 border-orange-500'
         "
       >
-        {{ itemsList[0].description }}
+        {{ transactionStore.transactionToAdd.value.description }}
       </div>
     </div>
   </div>

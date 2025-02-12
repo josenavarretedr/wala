@@ -101,6 +101,9 @@
 import { ref, computed } from "vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
+import { useInventoryStore } from "@/stores/inventoryStore";
+
+const inventoryStore = useInventoryStore();
 const transactionStore = useTransactionStore();
 
 import {
@@ -129,4 +132,5 @@ const formatedDate = (timestamp) => {
 };
 
 await transactionStore.getTransactions();
+await inventoryStore.getItemsInInventory();
 </script>

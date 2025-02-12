@@ -5,16 +5,24 @@ import { useInventory } from '@/composables/useInventory';
 
 import { v4 as uuidv4 } from "uuid";
 
+import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
+const expensesStore = useExpensesStore(); // Usa el store
+
+
 
 
 const transactionsInStore = ref([]);
 
 const transactionToAdd = ref({
   uuid: null,
-  type: null,
+  type: null,      // 'income' o 'expense'
   account: null,
+  // Campos para transacciones de ingreso:
   items: [],
   itemsAndStockLogs: [],
+  // Campos para transacciones de egreso:
+  description: null,
+  cost: null,
 });
 
 const itemToAddInTransaction = ref({
@@ -34,31 +42,41 @@ export function useTransactionStore() {
 
   const addTransaction = async () => {
     try {
-      transactionToAdd.value.total = getTransactionToAddTotal();
+      // Asignar un UUID para la transacción
       transactionToAdd.value.uuid = uuidv4();
-      for (const item of transactionToAdd.value.items) {
-        const stockLogUuid = await createStockLog(item);
-        const itemUuid = item.uuid;
 
-
-        const itemStockLog = {
-          itemUuid,
-          stockLogUuid,
+      if (transactionToAdd.value.type === 'income') {
+        // Procesar transacción de ingreso:
+        transactionToAdd.value.total = getTransactionToAddTotal();
+        // Procesar cada ítem y registrar los stockLogs
+        for (const item of transactionToAdd.value.items) {
+          const stockLogUuid = await createStockLog(item);
+          const itemUuid = item.uuid;
+          const itemStockLog = { itemUuid, stockLogUuid };
+          transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
         }
+      } else if (transactionToAdd.value.type === 'expense') {
+        transactionToAdd.value.total = transactionToAdd.value.cost;
+        await expensesStore.addExpense(transactionToAdd.value.uuid);
+        // Llama a la acción para agregar el gasto desde el store
+        expensesStore.resetExpenseToAdd();
+        // Limpia el formulario después de agregar
 
-        console.log('itemStockLog: ', itemStockLog);
-
-        transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
-        await createTransaction(transactionToAdd.value);
-
-        // transactionToAdd.value.itemsAndStockLogs.push({ itemUuid, stockLogUuid });
+        // Procesar transacción de egreso:
+        // Para gastos, se toma directamente el costo ingresado como total
+        // No se requieren arrays de items ni stockLogs.
+        // Se debe asegurar que los campos 'description' y 'cost' estén asignados.
       }
+
+      // Crear la transacción en Firestore
+      await createTransaction(transactionToAdd.value);
       console.log('Transaction added successfully');
 
     } catch (error) {
       console.error('Error adding transaction: ', error);
     }
   };
+
 
   const getTransactions = async () => {
     try {
@@ -80,6 +98,8 @@ export function useTransactionStore() {
       account: null,
       items: [],
       itemsAndStockLogs: [],
+      description: null,
+      cost: null,
 
     };
 
@@ -104,6 +124,20 @@ export function useTransactionStore() {
 
   const modifyTransactionToAddType = (type) => {
     transactionToAdd.value.type = type;
+  }
+
+
+  const modifyTransactionExpenseDescriptionAndCost = (description, cost) => {
+    transactionToAdd.value.description = description;
+    transactionToAdd.value.cost = cost
+  }
+
+  const modifyTransactionExpenseDescription = (description) => {
+    transactionToAdd.value.description = description;
+  }
+
+  const modifyTransactionExpenseCost = (cost) => {
+    transactionToAdd.value.cost = cost;
   }
 
   const getTransactionToAddTotal = () => {
@@ -173,7 +207,11 @@ export function useTransactionStore() {
   const deleteOneTransactionByID = async (transactionID) => {
     try {
       const transactionDataById = getOneTransactionDataByID(transactionID);
-      await deleteStockLog(transactionDataById);
+      if (transactionDataById[0].type === 'income') {
+        await deleteStockLog(transactionDataById);
+      } else {
+        await expensesStore.deleteExpenseByTransactionRefStore(transactionID);
+      }
       await deleteTransactionByID(transactionID);
       console.log('Transaction deleted successfully in FIRESTORE');
       await getTransactions();
@@ -197,6 +235,9 @@ export function useTransactionStore() {
     resetTransactionToAdd,
     modifyTransaction,
     modifyTransactionToAddType,
+    modifyTransactionExpenseDescriptionAndCost,
+    modifyTransactionExpenseDescription,
+    modifyTransactionExpenseCost,
     getTransactionToAddTotal,
     modifyTransactionToAddAccount,
     nextStepToAddTransaction,
