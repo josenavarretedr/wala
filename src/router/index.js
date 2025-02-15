@@ -69,6 +69,11 @@ const routes = [
         path: 'basicAccountingRecordsBook/:registerId',
         name: 'DetailsRecords',
         component: () => import('@/components/HistorialRecords/DetailsRecords.vue')
+      },
+      {
+        path: 'cashClosureApp',
+        name: 'CashClosureApp',
+        component: () => import('@/components/cashClosureApp/CashClosureApp2.vue')
       }
     ]
   },

@@ -107,6 +107,14 @@ export function useTransactionStore() {
     return transactionsInStore.value.filter(t => t.type === 'expense');
   }
 
+  const getAllCashTransactionsInStore = () => {
+    return transactionsInStore.value.filter(t => t.account === 'cash');
+  }
+
+  const getAllBankTransactionsInStore = () => {
+    return transactionsInStore.value.filter(t => t.account === 'bank');
+  }
+
   const resetTransactionToAdd = () => {
     transactionToAdd.value = {
       uuid: null,
@@ -140,7 +148,7 @@ export function useTransactionStore() {
 
   const modifyTransactionToAddType = (type) => {
     transactionToAdd.value.type = type;
-  }
+  };
 
 
   const modifyTransactionExpenseDescriptionAndCost = (description, cost) => {
@@ -250,6 +258,8 @@ export function useTransactionStore() {
     getOneTransactionDataByID,
     getAllIncomeTransactionsInStore,
     getAllExpenseTransactionsInStore,
+    getAllCashTransactionsInStore,
+    getAllBankTransactionsInStore,
     deleteOneTransactionByID,
     resetTransactionToAdd,
     modifyTransaction,
