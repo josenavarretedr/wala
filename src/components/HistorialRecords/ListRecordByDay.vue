@@ -131,6 +131,6 @@ const formatedDate = (timestamp) => {
   });
 };
 
-await transactionStore.getTransactions();
+await transactionStore.getTransactionsToday();
 await inventoryStore.getItemsInInventory();
 </script>

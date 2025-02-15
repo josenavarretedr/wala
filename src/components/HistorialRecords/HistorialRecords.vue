@@ -9,7 +9,7 @@
         showResume ? "Ocultar resumen" : "Mostrar resumen"
       }}</span>
     </div>
-    <ResumenDay v-if="showResume" :initialDailyData="dailyData" />
+    <ResumenDay v-if="showResume" />
 
     <!-- Historial -->
 
@@ -57,62 +57,7 @@ import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
 
-import appFirebase from "@/firebaseInit";
-
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-const db = getFirestore(appFirebase);
-
 const showResume = ref(false);
-
-const dailyData = ref([]);
-
-/**
- * Obtiene los datos del día actual desde Firestore y los almacena en `dailyData`.
- * La consulta se realiza en la colección "libroContable" y filtra los documentos
- * cuyo campo "timestamp" esté dentro del rango del día actual.
- *
- * @async
- * @function getDayData
- * @returns {Promise<void>} Una promesa que se resuelve cuando los datos se han obtenido y almacenado.
- */
-async function getDayData() {
-  // Obtén el inicio del día actual (00:00:00)
-  const today = new Date();
-  const startOfDay = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-
-  // Obtén el final del día actual (23:59:59)
-  const endOfDay = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() + 1
-  );
-
-  // Crea una consulta para obtener los documentos de "libroContable"
-  // cuyo campo "timestamp" esté entre el inicio y el final del día actual
-  const q = query(
-    collection(db, "libroContable"),
-    where("timestamp", ">=", startOfDay),
-    where("timestamp", "<", endOfDay)
-  );
-
-  // Ejecuta la consulta y almacena los resultados en `dailyData`
-  const querySnapshot = await getDocs(q);
-  querySnapshot.forEach((doc) => {
-    dailyData.value.push(doc.data());
-  });
-}
-
-getDayData();
 </script>
 
 <style scoped>

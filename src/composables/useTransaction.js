@@ -1,4 +1,4 @@
-import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
 const db = getFirestore(appFirebase);
@@ -52,6 +52,38 @@ export function useTransaccion() {
     }
   };
 
+  const getTransactionsTodayCmps = async (businessId = 'ferrercard') => {
+
+    let transactions = [];
+    // Obtén el inicio del día actual (00:00:00)
+    const today = new Date();
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    // Obtén el final del día actual (23:59:59)
+    const endOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + 1
+    );
+    const q = query(
+      collection(db, `businesses/${businessId}/transactions`),
+      where("createdAt", ">=", startOfDay),
+      where("createdAt", "<", endOfDay)
+    );
+
+    // Ejecuta la consulta y almacena los resultados en `dailyData`
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      transactions.push(doc.data());
+    });
+
+    return transactions;
+  };
+
   const deleteTransactionByID = async (transactionID, businessId = 'ferrercard') => {
     try {
       const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
@@ -68,6 +100,7 @@ export function useTransaccion() {
     createTransaction,
     updateTransaction,
     deleteTransactionByID,
+    getTransactionsTodayCmps,
     getAllTransactions,
   };
 }

@@ -37,7 +37,7 @@ const itemToAddInTransaction = ref({
 const currentStepOfAddTransaction = ref(1);
 
 export function useTransactionStore() {
-  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID } = useTransaccion();
+  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps } = useTransaccion();
   const { createStockLog, deleteStockLog } = useInventory();
 
   const addTransaction = async () => {
@@ -87,9 +87,25 @@ export function useTransactionStore() {
     }
   };
 
+  const getTransactionsToday = async () => {
+    try {
+      transactionsInStore.value = await getTransactionsTodayCmps();
+    } catch (error) {
+      console.error('Error fetching transactions: ', error);
+    }
+  }
+
   const getOneTransactionDataByID = (transactionId) => {
     return transactionsInStore.value.filter(t => t.uuid === transactionId);
   };
+
+  const getAllIncomeTransactionsInStore = () => {
+    return transactionsInStore.value.filter(t => t.type === 'income');
+  }
+
+  const getAllExpenseTransactionsInStore = () => {
+    return transactionsInStore.value.filter(t => t.type === 'expense');
+  }
 
   const resetTransactionToAdd = () => {
     transactionToAdd.value = {
@@ -230,7 +246,10 @@ export function useTransactionStore() {
     itemToAddInTransaction,
     addTransaction,
     getTransactions,
+    getTransactionsToday,
     getOneTransactionDataByID,
+    getAllIncomeTransactionsInStore,
+    getAllExpenseTransactionsInStore,
     deleteOneTransactionByID,
     resetTransactionToAdd,
     modifyTransaction,

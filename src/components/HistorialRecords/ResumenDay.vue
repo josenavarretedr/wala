@@ -34,6 +34,8 @@
 <script setup>
 import { GraphUp, DatabaseExport, Cash } from "@iconoir/vue"; // Importar iconos de Iconoir
 import { computed } from "vue";
+import { useTransactionStore } from "@/stores/transactionStore";
+const transactionStore = useTransactionStore();
 
 const props = defineProps({
   initialDailyData: {
@@ -43,24 +45,16 @@ const props = defineProps({
 });
 
 const totalIngresos = computed(() => {
-  return props.initialDailyData
-    .filter((record) => record.type === "income")
-    .reduce(
-      (sum, record) =>
-        sum + record.items.reduce((sum, item) => sum + item.price, 0),
-      0
-    )
+  return transactionStore
+    .getAllIncomeTransactionsInStore()
+    .reduce((sum, record) => sum + record.total, 0)
     .toFixed(2);
 });
 
 const totalEgresos = computed(() => {
-  return props.initialDailyData
-    .filter((record) => record.type === "expense")
-    .reduce(
-      (sum, record) =>
-        sum + record.items.reduce((sum, item) => sum + item.price, 0),
-      0
-    )
+  return transactionStore
+    .getAllExpenseTransactionsInStore()
+    .reduce((sum, record) => sum + record.total, 0)
     .toFixed(2);
 });
 
