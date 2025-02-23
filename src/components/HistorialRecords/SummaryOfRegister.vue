@@ -52,31 +52,50 @@
         v-if="oneTransactionData.type === 'income'"
         class="mt-6 border-t-4 border-dashed border-gray-300 pt-4 summary-item"
       >
-        <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
-        <table class="min-w-full text-left bg-white">
-          <thead>
-            <tr>
-              <th class="py-2">Producto</th>
-              <th class="py-2">Q</th>
-              <th class="py-2">Precio uni</th>
-              <th class="py-2 text-right">Precio Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="item in oneTransactionData.items"
-              :key="item.uuid"
-              class="border-b"
-            >
-              <td class="py-2 text-left">{{ item.description }}</td>
-              <td class="py-2 text-left">{{ item.quantity }}</td>
-              <td class="py-2 text-left">S/{{ item.price }}</td>
-              <td class="py-2 text-right">
-                S/{{ item.price * item.quantity }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div v-if="oneTransactionData.items">
+          <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
+          <table class="min-w-full text-left bg-white">
+            <thead>
+              <tr>
+                <th class="py-2">Producto</th>
+                <th class="py-2">Q</th>
+                <th class="py-2">Precio uni</th>
+                <th class="py-2 text-right">Precio Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="item in oneTransactionData.items"
+                :key="item.uuid"
+                class="border-b"
+              >
+                <td class="py-2 text-left">{{ item.description }}</td>
+                <td class="py-2 text-left">{{ item.quantity }}</td>
+                <td class="py-2 text-left">S/{{ item.price }}</td>
+                <td class="py-2 text-right">
+                  S/{{ item.price * item.quantity }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          v-else
+          class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
+          :class="
+            oneTransactionData.type === 'income'
+              ? 'text-cyan-600 border-cyan-600'
+              : 'text-orange-500 border-orange-500'
+          "
+        >
+          <p>
+            No hay productos en esta venta
+            <br />
+
+            {{ oneTransactionData.description }}
+          </p>
+        </div>
       </div>
 
       <div

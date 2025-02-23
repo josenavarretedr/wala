@@ -73,7 +73,12 @@ const routes = [
       {
         path: 'cashClosureApp',
         name: 'CashClosureApp',
-        component: () => import('@/components/cashClosureApp/CashClosureApp2.vue')
+        component: () => import('@/components/cashClosureApp/CashClosureApp.vue')
+      },
+      {
+        path: 'cashClosureApp/:cashClosureId',
+        name: 'CashClosureDetails',
+        component: () => import('@/components/cashClosureApp/CashClosureDetails.vue')
       }
     ]
   },

@@ -24,14 +24,14 @@
 
     <!-- ACTIONS Buttons -->
     <div class="flex justify-between mt-6">
-      <router-link
-        :to="{ name: 'CashClosureApp' }"
-        class="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg flex items-center text-xl"
-      >
-        <Safe />
-        <span class="ml-2">CERRAR DIA</span>
-      </router-link>
-
+      <Suspense>
+        <template #default>
+          <ClashClosureBtn></ClashClosureBtn>
+        </template>
+        <template #fallback>
+          <div>Cargando ...</div>
+        </template>
+      </Suspense>
       <router-link
         :to="{ name: 'BasicAccountingRecordsBook' }"
         class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center text-xl"
@@ -57,6 +57,7 @@ import {
 import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
+import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
 
 const showResume = ref(false);
 </script>

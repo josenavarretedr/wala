@@ -232,7 +232,9 @@ export function useTransactionStore() {
     try {
       const transactionDataById = getOneTransactionDataByID(transactionID);
       if (transactionDataById[0].type === 'income') {
-        await deleteStockLog(transactionDataById);
+        if (transactionDataById[0].items) {
+          await deleteStockLog(transactionDataById);
+        }
       } else {
         await expensesStore.deleteExpenseByTransactionRefStore(transactionID);
       }

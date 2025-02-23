@@ -1,81 +1,94 @@
-// src/composables/useCashClosure.js
-import { getFirestore, collection, setDoc, doc, serverTimestamp, getDocs } from "firebase/firestore";
-import appFirebase from "@/firebaseInit";
-import { useTransactionStore } from "@/stores/transactionStore";
-
-
+import { getFirestore, collection, setDoc, doc, getDocs, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
+import appFirebase from '@/firebaseInit';
 
 const db = getFirestore(appFirebase);
 
-const transactionStore = useTransactionStore();
-
-
 export function useCashClosure() {
-  /**
-   * Obtiene los saldos esperados desde transactions
-   */
-  const getExpectedBalances = async (transactions) => {
+  const createCashClosure = async (cashClosureData, businessId = 'ferrercard') => {
     try {
-      let cashBalance = 0;
-      let bankBalance = 0;
-
-      transactionStore.getAllIncomeTransactionsInStore().forEach((transaction) => {
-        if (transaction.account === "cash") {
-          cashBalance += transaction.total;
-        } else if (transaction.account === "bank") {
-          bankBalance += transaction.total;
-        }
+      const cashClosureRef = doc(collection(db, `businesses/${businessId}/cashClosures`)); // Firestore genera el ID automáticamente
+      await setDoc(cashClosureRef, {
+        ...cashClosureData,
+        createdAt: serverTimestamp(),
       });
-
-      return {
-        cash: cashBalance,
-        bank: bankBalance,
-      };
+      console.log('Cash closure record created in Firestore');
     } catch (error) {
-      console.error("Error fetching expected balances: ", error);
+      console.error('Error creating cash closure record: ', error);
       throw error;
     }
   };
 
-  /**
-   * Guarda un cierre de caja en Firestore.
-   */
-  const createCashClosure = async (closureData, businessId = "ferrercard") => {
+  const getCashClosureById = async (cashClosureId, businessId = 'ferrercard') => {
     try {
-      const closureRef = doc(db, `businesses/${businessId}/cashClosures`, closureData.uuid);
-      await setDoc(closureRef, closureData);
-      console.log("Cash closure recorded successfully");
+      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureId);
+      const cashClosureSnap = await getDoc(cashClosureRef);
+      if (cashClosureSnap.exists()) {
+        return {
+          id: cashClosureSnap.id,
+          ...cashClosureSnap.data()
+        };
+      } else {
+        console.log("No such cash closure!");
+        return null;
+      }
     } catch (error) {
-      console.error("Error creating cash closure: ", error);
+      console.error("Error fetching cash closure by ID: ", error);
       throw error;
     }
   };
 
-  /**
-   * Obtiene todos los cierres de caja almacenados.
-   */
-  const getCashClosures = async (businessId = "ferrercard") => {
+  const getCashClosuresForBusiness = async (businessId = 'ferrercard') => {
     try {
       const cashClosuresSnapshot = await getDocs(collection(db, `businesses/${businessId}/cashClosures`));
-      const closures = [];
-
-      cashClosuresSnapshot.forEach((doc) => {
-        closures.push({
+      const cashClosures = [];
+      cashClosuresSnapshot.forEach(doc => {
+        cashClosures.push({
           id: doc.id,
           ...doc.data(),
         });
       });
-
-      return closures;
+      return cashClosures;
     } catch (error) {
-      console.error("Error fetching cash closures: ", error);
+      console.error('Error fetching cash closures for business: ', error);
       throw error;
     }
   };
 
+  const checkCashClosureForToday = async (businessId = 'ferrercard') => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      const q = query(
+        collection(db, `businesses/${businessId}/cashClosures`),
+        where('createdAt', '>=', today),
+        where('createdAt', '<', tomorrow)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const cashClosures = [];
+      querySnapshot.forEach(doc => {
+        cashClosures.push({
+          id: doc.id,
+          ...doc.data(),
+        });
+      });
+      return cashClosures;
+    } catch (error) {
+      console.error('Error checking cash closure for today: ', error);
+      throw error;
+    }
+  };
+
+  // Puedes agregar más funciones aquí si necesitas funcionalidades adicionales para cashClosures en Firestore
+  // como obtener cierres por rango de fechas, usuario, etc.
+
   return {
-    getExpectedBalances,
     createCashClosure,
-    getCashClosures,
+    getCashClosureById,
+    getCashClosuresForBusiness,
+    checkCashClosureForToday
   };
 }
