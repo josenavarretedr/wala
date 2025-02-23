@@ -32,32 +32,27 @@
           <div>Cargando ...</div>
         </template>
       </Suspense>
-      <router-link
-        :to="{ name: 'BasicAccountingRecordsBook' }"
-        class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center text-xl"
-      >
-        <DatabaseScriptPlus />
-        <span class="ml-2">REGISTRAR</span>
-      </router-link>
+
+      <Suspense>
+        <template #default>
+          <NewRecordBtn></NewRecordBtn>
+        </template>
+        <template #fallback>
+          <div>Cargando ...</div>
+        </template>
+      </Suspense>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import {
-  Safe,
-  DatabaseScriptPlus,
-  GraphUp,
-  Eye,
-  EyeClosed,
-  DatabaseExport,
-  Cash,
-} from "@iconoir/vue";
+import { ref, computed } from "vue";
+import { Eye, EyeClosed } from "@iconoir/vue";
 import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
 import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
+import NewRecordBtn from "@/components/basicAccountingRecordsBook/NewRecordBtn.vue";
 
 const showResume = ref(false);
 </script>

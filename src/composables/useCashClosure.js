@@ -6,7 +6,7 @@ const db = getFirestore(appFirebase);
 export function useCashClosure() {
   const createCashClosure = async (cashClosureData, businessId = 'ferrercard') => {
     try {
-      const cashClosureRef = doc(collection(db, `businesses/${businessId}/cashClosures`)); // Firestore genera el ID automáticamente
+      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureData.uuid);
       await setDoc(cashClosureRef, {
         ...cashClosureData,
         createdAt: serverTimestamp(),
