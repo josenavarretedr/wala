@@ -1,19 +1,15 @@
 // Importaciones necesarias
-import { createWebHistory, createRouter, createMemoryHistory } from "vue-router";
+import { createWebHistory, createRouter } from "vue-router";
+import { useAuthStore } from "@/stores/authStore"; // Importa el store de autenticación
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
 import Login from "@/pages/Login.vue";
 
-// Firebase (opcional si necesitas autenticación más adelante)
-import appFirebase from "@/firebaseInit";
-// import { getAuth, onAuthStateChanged } from "firebase/auth";
-
-// Rutas definidas
+// Definir rutas
 const routes = [
-  // Rutas con Layout por defecto
   {
     path: '/',
-    component: DefaultLayout, // Diseño por defecto
+    component: DefaultLayout,
     children: [
       {
         path: '',
@@ -23,18 +19,16 @@ const routes = [
     ],
   },
 
-  // Rutas de administración
   {
     path: '/admin',
     name: 'AdminView',
     component: () => import('@/views/Admin.vue'),
-    meta: { requiresAdmin: true, requiresAuth: true }, // Requiere autenticación y permisos de admin
+    meta: { requiresAuth: true },
   },
 
-  // Rutas con Layout de Autenticación
   {
     path: '/auth',
-    component: AuthLayout, // Diseño para autenticación
+    component: AuthLayout,
     children: [
       {
         path: 'login',
@@ -49,11 +43,10 @@ const routes = [
     ],
   },
 
-  // Rutas con Layout de Dashboard
-
   {
     path: '/dashboard',
     component: () => import('@/layouts/DashboardLayout.vue'),
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
@@ -83,10 +76,8 @@ const routes = [
     ]
   },
 
-
-  // Página no encontrada (404)
   {
-    path: '/:pathMatch(.*)*', // Maneja rutas no definidas
+    path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import("@/pages/NotFound.vue"),
   },
@@ -94,38 +85,29 @@ const routes = [
 
 // Crear instancia de router
 const router = createRouter({
-  // history: createWebHistory(), // Historial con URLs limpias
-  history: createMemoryHistory(), // Historial en memoria (para Netlify)
+  history: createWebHistory(),
   routes,
 });
 
-// AUTENTICACIÓN Y GUARDIAS DE SEGURIDAD (DESCOMENTAR SI SE NECESITA)
-// const auth = getAuth(appFirebase);
+// Protección de rutas
+router.beforeEach(async (to, from, next) => {
+  const authStore = useAuthStore();
 
-// Middleware para proteger rutas
-// router.beforeEach((to, from, next) => {
-//   onAuthStateChanged(auth, (user) => {
-//     if (to.matched.some(record => record.meta.requiresAuth)) {
-//       if (user) {
-//         // Validar roles personalizados (claims) en Firebase
-//         user.getIdTokenResult().then(idTokenResult => {
-//           const isAdmin = idTokenResult.claims.admin;
+  // Verificar si la ruta requiere autenticación
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // Si el usuario no está autenticado, redirigir a la página de login
+    if (!authStore.user) {
+      await authStore.checkUser(); // Verificar el usuario actual
+    }
 
-//           // Chequeo de permisos basado en roles
-//           if (to.matched.some(record => record.meta.requiresAdmin) && !isAdmin) {
-//             next('/dashboard'); // Redirigir si no tiene permisos
-//           } else {
-//             next(); // Acceso permitido
-//           }
-//         });
-//       } else {
-//         next('/auth/login'); // Redirigir a Login si no está autenticado
-//       }
-//     } else {
-//       next(); // Acceso libre
-//     }
-//   });
-// });
+    if (!authStore.user) {
+      next({ name: 'Login' });
+    } else {
+      next();
+    }
+  } else {
+    next();
+  }
+});
 
-// Exportar instancia del router
 export default router;

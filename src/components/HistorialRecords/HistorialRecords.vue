@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { Eye, EyeClosed } from "@iconoir/vue";
 import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 

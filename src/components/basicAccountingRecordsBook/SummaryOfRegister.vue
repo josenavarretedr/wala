@@ -97,12 +97,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
-import TableOfProductInRegister from "@/components/HistorialRecords/TableOfProductInRegister.vue";
-
-import { useRoute } from "vue-router";
-
 import { useTransactionStore } from "@/stores/transactionStore";
 
 const transactionStore = useTransactionStore();

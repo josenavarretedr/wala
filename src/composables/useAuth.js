@@ -1,32 +1,49 @@
-import { ref } from 'vue';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+// useAuth.js
+import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, createUserWithEmailAndPassword, updateProfile, signOut, onAuthStateChanged } from 'firebase/auth';
+import appFirebase from '@/firebaseInit';
+
+const auth = getAuth(appFirebase);
+const provider = new GoogleAuthProvider();
 
 export function useAuth() {
-  const auth = getAuth();
-  const loading = ref(false);
+  async function loginWithEmail(email, password) {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  }
 
-  // Función para iniciar sesión
-  const login = async (email, password) => {
-    loading.value = true;
+  async function loginWithGoogle() {
+    const userCredential = await signInWithPopup(auth, provider);
+    return userCredential.user;
+  }
+
+  async function registerUser(email, password, name) {
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      return userCredential.user; // Retorna el usuario
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
     } catch (error) {
+      console.error('Error registering user: ', error.message);
       throw error;
-    } finally {
-      loading.value = false;
     }
-  };
+  }
 
-  // Función para cerrar sesión
-  const logout = async () => {
+  async function logoutUser() {
     await signOut(auth);
-  };
+  }
 
-  // Observar el estado de autenticación
-  const observeAuthState = (callback) => {
-    return onAuthStateChanged(auth, callback); // Callback con el usuario
-  };
+  function fetchUser() {
+    return new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        resolve(user);
+      });
+    });
+  }
 
-  return { login, logout, observeAuthState, loading };
+  return {
+    loginWithEmail,
+    loginWithGoogle,
+    registerUser,
+    logoutUser,
+    fetchUser,
+  };
 }
