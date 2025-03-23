@@ -12,7 +12,6 @@ export function useInventoryStore() {
   // Obtener los ítems en inventario
   const getItemsInInventory = async () => {
     try {
-      // TODO Aquí la funcion getAllItemsInInventory deberá de pasar el businessId que vendra desde el store de businessStore.js y no de manera estatica porque ahora tiene el valor de 'ferrercard'
       const items = await getAllItemsInInventory(); // Esperar los datos
       allItemsInInventory.value = items; // Almacenar en la lista reactiva
       console.log("Items fetched successfully desde useInventoryStore.js");

@@ -50,6 +50,16 @@ const routes = [
     children: [
       {
         path: '',
+        name: 'DashboardRedirect',
+        component: () => import('@/pages/DashboardRedirect.vue'),
+      },
+      {
+        path: 'createNewBusiness',
+        name: 'CreateNewBusiness',
+        component: () => import('@/components/Business/CreateNewBusiness.vue'),
+      },
+      {
+        path: ':idBusiness',
         name: 'Dashboard',
         component: () => import('@/pages/Dashboard.vue'),
       },
@@ -89,21 +99,27 @@ const router = createRouter({
   routes,
 });
 
-// Protección de rutas
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
 
   // Verificar si la ruta requiere autenticación
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    // Si el usuario no está autenticado, redirigir a la página de login
-    if (!authStore.user) {
-      await authStore.checkUser(); // Verificar el usuario actual
-    }
+    console.log('Se requiere autenticación');
 
-    if (!authStore.user) {
+    try {
+      await authStore.checkUser(); // Verificar el usuario actual
+      const currentUser = authStore.user.value;
+
+      if (!currentUser) {
+        console.log('Usuario no autenticado');
+        next({ name: 'Login' });
+      } else {
+        console.log('Usuario autenticado:', currentUser);
+        next();
+      }
+    } catch (error) {
+      console.error('Error al verificar el usuario:', error);
       next({ name: 'Login' });
-    } else {
-      next();
     }
   } else {
     next();

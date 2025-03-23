@@ -1,12 +1,18 @@
 import { getFirestore, collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
+import { useBusinessStore } from '@/stores/businessStore';
+const businessStore = useBusinessStore();
+const businessId = businessStore.currentBusinessId;
+
+
 const db = getFirestore(appFirebase);
 
 export function useTransaccion() {
   const createTransaction = async (transaction) => {
     try {
-      const docRef = await addDoc(collection(db, 'businesses', transaction.businessId, 'transactions'), {
+      console.log('businessId', businessId);
+      const docRef = await addDoc(collection(db, 'business', businessId, 'transactions'), {
         ...transaction,
         createdAt: serverTimestamp(),
       });
@@ -19,7 +25,7 @@ export function useTransaccion() {
 
   const updateTransaction = async (transactionId, updatedData) => {
     try {
-      const transactionRef = doc(db, 'businesses', updatedData.businessId, 'transactions', transactionId);
+      const transactionRef = doc(db, 'business', businessId, 'transactions', transactionId);
       await updateDoc(transactionRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),

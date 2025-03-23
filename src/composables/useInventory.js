@@ -8,20 +8,24 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
-  increment
 } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
+
+import { useBusinessStore } from '@/stores/businessStore';
+
+const businessStore = useBusinessStore();
+const businessId = businessStore.currentBusinessId;
+
 
 import { v4 as uuidv4 } from 'uuid';
 
 const db = getFirestore(appFirebase);
 
 export function useInventory() {
-  // Crear un nuevo ítem
-  const createItem = async (item, businessId) => {
-    try {
 
-      const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
+  const createItem = async (item) => {
+    try {
+      const productRef = doc(db, `business/${businessId}/products`, item.uuid);
       await setDoc(productRef, {
         description: item.description,
         price: item.price,
@@ -36,7 +40,7 @@ export function useInventory() {
     }
   };
 
-  const createStockLog = async (item, businessId = 'ferrercard') => {
+  const createStockLog = async (item) => {
     try {
 
       const stockLog = {
@@ -45,7 +49,7 @@ export function useInventory() {
         type: 'sell',
       }
 
-      const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
+      const productRef = doc(db, `business/${businessId}/products`, item.uuid);
 
       await updateDoc(productRef, {
         stockLog: arrayUnion({ ...stockLog, createdAt: new Date() }),
@@ -62,10 +66,8 @@ export function useInventory() {
     }
   };
 
-  const deleteStockLog = async (transactionDataById, businessId = 'ferrercard') => {
+  const deleteStockLog = async (transactionDataById) => {
     try {
-
-
       console.log('transactionDataById: ', transactionDataById[0]);
 
       for (const pairOfTransactionAndStockLog of transactionDataById[0].itemsAndStockLogs) {
@@ -73,7 +75,7 @@ export function useInventory() {
         const itemUuid = pairOfTransactionAndStockLog.itemUuid;
         const stockLogUuid = pairOfTransactionAndStockLog.stockLogUuid;
 
-        const itemRef = doc(db, `businesses/${businessId}/products`, itemUuid);
+        const itemRef = doc(db, `business/${businessId}/products`, itemUuid);
         const itemDoc = await getDoc(itemRef);
         if (!itemDoc.exists()) {
           throw new Error(`Item with UUID ${itemUuid} does not exist`);
@@ -156,9 +158,9 @@ export function useInventory() {
   }
 
   // Obtener todos los ítems en inventario
-  const getAllItemsInInventory = async (businessId = "ferrercard") => {
+  const getAllItemsInInventory = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'businesses', businessId, 'products'));
+      const querySnapshot = await getDocs(collection(db, 'business', businessId, 'products'));
       if (querySnapshot.empty) {
         return []; // Retorna un array vacío si no hay datos
       } else {

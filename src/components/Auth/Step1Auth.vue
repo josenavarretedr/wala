@@ -1,74 +1,75 @@
 <template>
-  <div>
-    <h2 class="text-2xl font-bold mb-4">Registro</h2>
-    <!-- Email/Password -->
-    <div class="mb-4">
-      <input
-        v-model="name"
-        type="text"
-        placeholder="Nombre"
-        class="w-full p-2 border border-gray-300 rounded-md"
-      />
-      <input
-        v-model="email"
-        type="email"
-        placeholder="Correo electrónico"
-        class="w-full p-2 mt-2 border border-gray-300 rounded-md"
-      />
-      <input
-        v-model="password"
-        type="password"
-        placeholder="Contraseña"
-        class="w-full p-2 mt-2 border border-gray-300 rounded-md"
-      />
-    </div>
+  <div class="w-full max-w-sm mx-auto py-10">
+    <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">
+      Crear cuenta
+    </h2>
 
-    <!-- Google Auth Button -->
-    <!-- <button
-      @click="loginWithGoogle"
-      class="w-full py-2 bg-blue-500 text-white rounded-md"
+    <form
+      @submit.prevent="register"
+      class="bg-white rounded-2xl shadow-xl px-8 py-10 space-y-6"
     >
-      Iniciar sesión con Google
-    </button> -->
+      <!-- Nombre -->
+      <div class="flex items-center space-x-4 border-b pb-2">
+        <ProfileCircle class="w-8 h-8 text-green-500" />
+        <input
+          v-model="name"
+          type="text"
+          placeholder="Nombre completo"
+          class="w-full text-lg placeholder-gray-400 focus:outline-none"
+        />
+      </div>
 
-    <div class="mt-4">
+      <!-- Correo -->
+      <div class="flex items-center space-x-4 border-b pb-2">
+        <Mail class="w-8 h-8 text-green-500" />
+        <input
+          v-model="email"
+          type="email"
+          placeholder="Correo electrónico"
+          class="w-full text-lg placeholder-gray-400 focus:outline-none"
+        />
+      </div>
+
+      <!-- Contraseña -->
+      <div class="flex items-center space-x-4 border-b pb-2">
+        <Lock class="w-8 h-8 text-green-500" />
+        <input
+          v-model="password"
+          type="password"
+          placeholder="Contraseña"
+          class="w-full text-lg placeholder-gray-400 focus:outline-none"
+        />
+      </div>
+
+      <!-- Botón de registro -->
       <button
-        @click="register"
-        class="w-full py-2 bg-green-500 text-white rounded-md"
+        type="submit"
+        class="w-full flex justify-center items-center bg-green-500 hover:bg-green-600 text-white text-xl font-semibold py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
       >
-        Registrate
+        <UserPlus class="w-6 h-6 mr-2" />
+        Registrarse
       </button>
-    </div>
+    </form>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/authStore";
-
-import { useRoute, useRouter } from "vue-router";
-
-const route = useRoute();
-const router = useRouter();
+import { useRouter } from "vue-router";
+import { Mail, Lock, UserPlus, ProfileCircle } from "@iconoir/vue";
 
 const name = ref("");
 const email = ref("");
 const password = ref("");
 
 const authStore = useAuthStore();
+const router = useRouter();
 
 const register = async () => {
   try {
     await authStore.register(email.value, password.value, name.value);
     router.push("/dashboard");
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const loginWithGoogle = async () => {
-  try {
-    await authStore.loginWithGoogle();
   } catch (error) {
     console.error(error);
   }

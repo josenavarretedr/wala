@@ -1,8 +1,11 @@
 <template>
   <div>
+    <BtnLogout></BtnLogout>
     <h1>HOla desde el Home Page</h1>
-
-    <RouterLink :to="{ name: 'Dashboard' }">SUMMA</RouterLink> <br />
-    <RouterLink :to="{ name: 'RegisterView' }">REGISTRO</RouterLink>
   </div>
 </template>
+
+<script setup>
+import { RouterLink } from "vue-router";
+import BtnLogout from "@/components/Auth/BtnLogout.vue";
+</script>

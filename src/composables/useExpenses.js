@@ -1,12 +1,18 @@
 import { getFirestore, collection, setDoc, query, where, doc, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
+
+import { useBusinessStore } from '@/stores/businessStore';
+const businessStore = useBusinessStore();
+
+const businessId = businessStore.currentBusinessId;
+
 const db = getFirestore(appFirebase);
 
 export function useExpenses() {
-  const createExpense = async (expense, transactionRef, businessId = 'ferrercard') => {
+  const createExpense = async (expense, transactionRef) => {
     try {
-      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expense.uuid); // Usa UUID del expense
+      const expenseRef = doc(db, `business/${businessId}/expenses`, expense.uuid); // Usa UUID del expense
       await setDoc(expenseRef, {
         ...expense,
         transactionRef,
@@ -19,9 +25,9 @@ export function useExpenses() {
     }
   };
 
-  const getAllExpenses = async (businessId = 'ferrercard') => {
+  const getAllExpenses = async (businessId) => {
     try {
-      const expensesSnapshot = await getDocs(collection(db, `businesses/${businessId}/expenses`));
+      const expensesSnapshot = await getDocs(collection(db, `business/${businessId}/expenses`));
       const expenses = [];
       expensesSnapshot.forEach(doc => {
         expenses.push({
@@ -38,9 +44,9 @@ export function useExpenses() {
   };
 
   // Actualiza un gasto existente
-  const updateExpense = async (expenseId, updatedData, businessId = 'ferrercard') => {
+  const updateExpense = async (expenseId, updatedData) => {
     try {
-      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+      const expenseRef = doc(db, `business/${businessId}/expenses`, expenseId);
       await updateDoc(expenseRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),
@@ -52,9 +58,9 @@ export function useExpenses() {
   };
 
 
-  const deleteExpenseByID = async (expenseID, businessId = 'ferrercard') => {
+  const deleteExpenseByID = async (expenseID) => {
     try {
-      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseID);
+      const expenseRef = doc(db, `business/${businessId}/expenses`, expenseID);
       await deleteDoc(expenseRef);
       console.log('Expense deleted in Firestore');
     } catch (error) {
@@ -63,11 +69,11 @@ export function useExpenses() {
     }
   };
 
-  const deleteExpenseByTransactionRef = async (transactionRef, businessId = 'ferrercard') => {
+  const deleteExpenseByTransactionRef = async (transactionRef) => {
     try {
       // Creamos una consulta que solo recupere los documentos donde transactionRef es igual al valor dado.
       const expensesQuery = query(
-        collection(db, `businesses/${businessId}/expenses`),
+        collection(db, `business/${businessId}/expenses`),
         where("transactionRef", "==", transactionRef)
       );
 

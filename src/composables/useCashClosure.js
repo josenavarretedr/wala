@@ -1,12 +1,15 @@
 import { getFirestore, collection, setDoc, doc, getDocs, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
+import { useBusinessStore } from '@/stores/businessStore';
+const businessStore = useBusinessStore();
+const businessId = businessStore.currentBusinessId;
 
 const db = getFirestore(appFirebase);
 
 export function useCashClosure() {
-  const createCashClosure = async (cashClosureData, businessId = 'ferrercard') => {
+  const createCashClosure = async (cashClosureData) => {
     try {
-      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureData.uuid);
+      const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureData.uuid);
       await setDoc(cashClosureRef, {
         ...cashClosureData,
         createdAt: serverTimestamp(),
@@ -18,9 +21,9 @@ export function useCashClosure() {
     }
   };
 
-  const getCashClosureById = async (cashClosureId, businessId = 'ferrercard') => {
+  const getCashClosureById = async (cashClosureId) => {
     try {
-      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureId);
+      const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureId);
       const cashClosureSnap = await getDoc(cashClosureRef);
       if (cashClosureSnap.exists()) {
         return {
@@ -37,9 +40,9 @@ export function useCashClosure() {
     }
   };
 
-  const getCashClosuresForBusiness = async (businessId = 'ferrercard') => {
+  const getCashClosuresForBusiness = async (businessId) => {
     try {
-      const cashClosuresSnapshot = await getDocs(collection(db, `businesses/${businessId}/cashClosures`));
+      const cashClosuresSnapshot = await getDocs(collection(db, `business/${businessId}/cashClosures`));
       const cashClosures = [];
       cashClosuresSnapshot.forEach(doc => {
         cashClosures.push({
@@ -54,7 +57,7 @@ export function useCashClosure() {
     }
   };
 
-  const checkCashClosureForToday = async (businessId = 'ferrercard') => {
+  const checkCashClosureForToday = async (businessId) => {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -62,7 +65,7 @@ export function useCashClosure() {
       tomorrow.setDate(today.getDate() + 1);
 
       const q = query(
-        collection(db, `businesses/${businessId}/cashClosures`),
+        collection(db, `business/${businessId}/cashClosures`),
         where('createdAt', '>=', today),
         where('createdAt', '<', tomorrow)
       );

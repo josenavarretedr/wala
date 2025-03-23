@@ -1,12 +1,16 @@
 import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
+import { useBusinessStore } from '@/stores/businessStore';
+const businessStore = useBusinessStore();
+const businessId = businessStore.currentBusinessId;
+
 const db = getFirestore(appFirebase);
 
 export function useTransaccion() {
-  const createTransaction = async (transaction, businessId = 'ferrercard') => {
+  const createTransaction = async (transaction) => {
     try {
-      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transaction.uuid)
+      const transactionRef = doc(db, `business/${businessId}/transactions`, transaction.uuid)
       await setDoc(transactionRef, {
         ...transaction,
         createdAt: serverTimestamp(),
@@ -19,7 +23,7 @@ export function useTransaccion() {
 
   const updateTransaction = async (transactionId, updatedData) => {
     try {
-      const transactionRef = doc(db, 'businesses', updatedData.businessId, 'transactions', transactionId);
+      const transactionRef = doc(db, 'business', updatedData.businessId, 'transactions', transactionId);
       await updateDoc(transactionRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),
@@ -30,9 +34,9 @@ export function useTransaccion() {
     }
   };
 
-  const getAllTransactions = async (businessId = 'ferrercard') => {
+  const getAllTransactions = async () => {
     try {
-      const transactionsSnapshot = await getDocs(collection(db, 'businesses', businessId, 'transactions'));
+      const transactionsSnapshot = await getDocs(collection(db, 'business', businessId, 'transactions'));
 
       const transactions = [];
 
@@ -52,7 +56,7 @@ export function useTransaccion() {
     }
   };
 
-  const getTransactionsTodayCmps = async (businessId = 'ferrercard') => {
+  const getTransactionsTodayCmps = async () => {
 
     let transactions = [];
     // Obtén el inicio del día actual (00:00:00)
@@ -70,7 +74,7 @@ export function useTransaccion() {
       today.getDate() + 1
     );
     const q = query(
-      collection(db, `businesses/${businessId}/transactions`),
+      collection(db, `business/${businessId}/transactions`),
       where("createdAt", ">=", startOfDay),
       where("createdAt", "<", endOfDay)
     );
@@ -84,9 +88,9 @@ export function useTransaccion() {
     return transactions;
   };
 
-  const deleteTransactionByID = async (transactionID, businessId = 'ferrercard') => {
+  const deleteTransactionByID = async (transactionID) => {
     try {
-      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
+      const transactionRef = doc(db, `business/${businessId}/transactions`, transactionID);
       await deleteDoc(transactionRef);
     }
     catch (error) {

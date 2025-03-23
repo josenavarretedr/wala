@@ -59,7 +59,10 @@ export function useAuthStore() {
   }
 
   async function checkUser() {
-    user.value = await fetchUser();
+    if (user.value === null) {
+      const fetchedUser = await fetchUser();
+      user.value = fetchedUser;
+    }
   }
 
   return {
