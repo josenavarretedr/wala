@@ -1,5 +1,9 @@
 <template>
-  <footer class="bg-gray-800 text-white p-4">
-    <p>&copy; 2025 SUMMAP</p>
+  <footer
+    class="bg-white border-t border-gray-200 text-gray-500 text-sm text-center py-6 mt-10"
+  >
+    <p>© 2025 SUMMATAP</p>
   </footer>
 </template>
+
+<script setup></script>

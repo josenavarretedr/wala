@@ -1,29 +1,42 @@
 <template>
-  <div class="px-4 py-2 mt-4 text-lg font-light">
-    <div class="flex justify-between items-center mb-2">
-      <div class="flex items-center">
-        <Cash class="mr-2" />
-        <span>Saldo anterior:</span>
+  <div
+    class="max-w-xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-6 text-gray-800"
+  >
+    <h2 class="text-2xl font-bold text-center mb-2">Resumen del día</h2>
+
+    <!-- Saldo anterior -->
+    <div class="flex justify-between items-center text-lg">
+      <div class="flex items-center gap-2">
+        <Cash class="w-6 h-6 text-gray-600" />
+        <span class="font-medium">Saldo anterior:</span>
       </div>
-      <span>S/ 0.00</span>
+      <span class="font-semibold">S/ 0.00</span>
     </div>
-    <div class="flex justify-between items-center mb-2 text-blue-500">
-      <div class="flex items-center">
-        <GraphUp class="mr-2" />
-        <span>Ventas hoy:</span>
+
+    <!-- Ingresos -->
+    <div class="flex justify-between items-center text-lg text-blue-600">
+      <div class="flex items-center gap-2">
+        <GraphUp class="w-6 h-6" />
+        <span class="font-medium">Ventas hoy:</span>
       </div>
-      <span>S/ {{ totalIngresos }}</span>
+      <span class="font-semibold">S/ {{ totalIngresos }}</span>
     </div>
-    <div class="flex justify-between items-center mb-2 text-red-500">
-      <div class="flex items-center">
-        <DatabaseExport class="mr-2" />
-        <span>Salidas hoy:</span>
+
+    <!-- Egresos -->
+    <div class="flex justify-between items-center text-lg text-red-500">
+      <div class="flex items-center gap-2">
+        <DatabaseExport class="w-6 h-6" />
+        <span class="font-medium">Salidas hoy:</span>
       </div>
-      <span>S/ {{ totalEgresos }}</span>
+      <span class="font-semibold">S/ {{ totalEgresos }}</span>
     </div>
-    <div class="flex justify-between items-center text-xl font-bold">
-      <div class="flex items-center">
-        <Cash class="mr-2" />
+
+    <!-- Saldo actual -->
+    <div
+      class="flex justify-between items-center text-2xl font-bold border-t pt-4"
+    >
+      <div class="flex items-center gap-2">
+        <Cash class="w-6 h-6 text-green-600" />
         <span>Saldo actual:</span>
       </div>
       <span>S/ {{ saldoActual }}</span>

@@ -2,7 +2,7 @@
   <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
     <div class="flex items-end mt-3 mb-4">
       <router-link
-        to="/"
+        to="/dashboard"
         class="ml-auto text-x"
         @click="transactionStore.resetTransactionToAdd()"
       >

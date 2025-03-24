@@ -1,23 +1,65 @@
 <template>
-  <header class="bg-gray-800 text-white p-4">
-    <RouterLink :to="{ name: 'DashboardRedirect' }">
-      <h1 class="text-2xl font-bold">SUMMATAP</h1>
+  <header
+    class="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex items-center justify-between"
+  >
+    <!-- Logo / Nombre del negocio -->
+    <RouterLink
+      :to="{ name: 'DashboardRedirect' }"
+      class="flex items-center gap-3 group"
+    >
+      <Folder
+        class="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition"
+      />
+      <h1
+        class="text-xl md:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
+      >
+        {{ displayName }}
+      </h1>
     </RouterLink>
+
+    <!-- Botón de cerrar sesión -->
     <BtnLogout v-if="authStore.user.value" />
   </header>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { ref, watch, computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
+import { useBusinessStore } from "@/stores/businessStore";
 import BtnLogout from "@/components/Auth/BtnLogout.vue";
+import { Folder } from "@iconoir/vue";
 
 const authStore = useAuthStore();
+const businessStore = useBusinessStore();
 
-const someOne = computed(() => {
-  if (authStore.user.value) {
-    return authStore.user.value.uid;
-  }
-  return "nadie";
+const displayName = ref("SUMMATAP");
+
+const businessName = computed(() => {
+  const id = businessStore.currentBusinessId;
+  const match = businessStore.businesses.find((b) => b.id === id);
+  return match?.name || null;
 });
+
+// Watch para actualizar el título dinámicamente
+watch(
+  () => authStore.user.value,
+  (newUser) => {
+    if (!newUser) {
+      displayName.value = "SUMMATAP";
+    } else {
+      displayName.value = businessName.value || "SUMMATAP";
+    }
+  },
+  { immediate: true }
+);
+
+// También observar si cambia el negocio seleccionado
+watch(
+  () => businessStore.currentBusinessId,
+  () => {
+    if (authStore.user.value) {
+      displayName.value = businessName.value || "SUMMATAP";
+    }
+  }
+);
 </script>

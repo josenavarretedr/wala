@@ -1,32 +1,29 @@
 <template>
-  <!-- ACTIONS Buttons
-  <div class="flex justify-between p-6">
-    <div
-      class="px-4 py-2 border border-purple-600 text-purple-600 rounded-lg flex items-center text-xl"
-    >
-      <Safe />
-      <span class="ml-2">CERRAR DIA</span>
-    </div>
+  <!-- Botones de acción alineados -->
+  <!-- <div
+    class="flex justify-center items-center gap-4 max-w-5xl mx-auto bg-white border-t border-gray-200 py-6 mt-10"
+  >
+    <Suspense>
+      <template #default>
+        <ClashClosureBtn />
+      </template>
+      <template #fallback>
+        <div class="text-gray-400">Cargando arqueo...</div>
+      </template>
+    </Suspense>
 
-    <router-link
-      :to="{ name: 'BasicAccountingRecordsBook' }"
-      class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center text-xl"
-    >
-      <DatabaseScriptPlus />
-      <span class="ml-2">REGISTRAR</span>
-    </router-link>
+    <Suspense>
+      <template #default>
+        <NewRecordBtn />
+      </template>
+      <template #fallback>
+        <div class="text-gray-400">Cargando registro...</div>
+      </template>
+    </Suspense>
   </div> -->
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
-import {
-  Safe,
-  DatabaseScriptPlus,
-  GraphUp,
-  Eye,
-  EyeClosed,
-  DatabaseExport,
-  Cash,
-} from "@iconoir/vue";
+import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
+import NewRecordBtn from "@/components/basicAccountingRecordsBook/NewRecordBtn.vue";
 </script>

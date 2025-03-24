@@ -1,26 +1,16 @@
 <template>
   <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
+    <!-- Botón toggle resumen -->
     <div
-      class="px-4 py-2 border rounded-lg flex items-center text-xl cursor-pointer"
       @click="showResume = !showResume"
+      class="flex items-center justify-center gap-3 hover:bg-blue-200 text-blue-700 text-xl font-medium px-6 py-4 rounded-xl shadow-md cursor-pointer transition-all duration-200"
     >
-      <component :is="showResume ? EyeClosed : Eye"></component>
-      <span class="ml-2">{{
-        showResume ? "Ocultar resumen" : "Mostrar resumen"
-      }}</span>
+      <component :is="showResume ? EyeClosed : Eye" class="w-6 h-6" />
+      <span>{{ showResume ? "Ocultar resumen" : "Mostrar resumen" }}</span>
     </div>
-    <ResumenDay v-if="showResume" />
 
-    <!-- Historial -->
-
-    <Suspense>
-      <template #default>
-        <ListRecordByDay> </ListRecordByDay>
-      </template>
-      <template #fallback>
-        <div>Cargando ...</div>
-      </template>
-    </Suspense>
+    <!-- Resumen del día -->
+    <ResumenDay v-if="showResume" class="mt-6" />
 
     <!-- ACTIONS Buttons -->
     <div class="flex justify-between mt-6">
@@ -42,6 +32,17 @@
         </template>
       </Suspense>
     </div>
+
+    <!-- Historial -->
+
+    <Suspense>
+      <template #default>
+        <ListRecordByDay> </ListRecordByDay>
+      </template>
+      <template #fallback>
+        <div>Cargando ...</div>
+      </template>
+    </Suspense>
   </div>
 </template>
 

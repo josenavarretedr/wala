@@ -1,7 +1,7 @@
 <template>
   <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
     <div class="flex items-end mt-3 mb-4">
-      <router-link to="/" class="ml-auto text-x">
+      <router-link to="/dashboard" class="ml-auto text-x">
         <Xmark class="cursor-pointer text-red-500 w-10 h-10"></Xmark>
       </router-link>
     </div>
