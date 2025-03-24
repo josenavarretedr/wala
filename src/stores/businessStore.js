@@ -22,6 +22,8 @@ export const useBusinessStore = defineStore("business", () => {
     error.value = null;
 
     try {
+      businesses.value = [];
+
       const uid = authStore.user?.value?.uid;
       if (!uid) throw new Error("Usuario no autenticado");
 
@@ -53,6 +55,8 @@ export const useBusinessStore = defineStore("business", () => {
         createdAt: new Date(),
       });
 
+      setCurrentBusinessId(newId);
+
       return newId;
     } catch (err) {
       error.value = err.message;
@@ -77,6 +81,13 @@ export const useBusinessStore = defineStore("business", () => {
     currentBusinessId.value = id;
   };
 
+  const resetStore = () => {
+    businesses.value = [];
+    currentBusinessId.value = null;
+    loading.value = false;
+    error.value = null;
+  }
+
   return {
     businesses,
     currentBusinessId,
@@ -85,6 +96,7 @@ export const useBusinessStore = defineStore("business", () => {
     fetchBusinessesForCurrentUser,
     createNewBusiness,
     addCollaborator,
-    setCurrentBusinessId
+    setCurrentBusinessId,
+    resetStore
   };
 });

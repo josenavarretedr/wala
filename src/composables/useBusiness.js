@@ -1,6 +1,8 @@
 // src/composables/useBusiness.js
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, getFirestore } from "firebase/firestore";
+import { collection, query, where, getDocs, setDoc, updateDoc, doc, arrayUnion, getFirestore } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const db = getFirestore(appFirebase);
 
@@ -18,16 +20,19 @@ export const fetchBusinessesByOwner = async (uid) => {
 
 // 🆕 Crear nuevo negocio
 export const createBusiness = async (uid, businessData) => {
-  const businessRef = collection(db, "business");
 
-  const docRef = await addDoc(businessRef, {
+  const businessUuid = uuidv4();
+  const businessRef = doc(db, 'business', businessUuid);
+
+  await setDoc(businessRef, {
     ...businessData,
+    uuid: businessUuid,
     owner: uid,
     collaborators: [],
     createdAt: new Date(),
   });
 
-  return docRef.id;
+  return businessUuid;
 };
 
 // 🤝 Agregar colaborador

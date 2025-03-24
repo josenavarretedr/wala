@@ -98,13 +98,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { computed } from "vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
+import { useBusinessStore } from "@/stores/businessStore";
 
 const inventoryStore = useInventoryStore();
 const transactionStore = useTransactionStore();
+const businessStore = useBusinessStore();
 
 import {
   GraphUp,
@@ -132,5 +134,5 @@ const formatedDate = (timestamp) => {
 };
 
 await transactionStore.getTransactionsToday();
-await inventoryStore.getItemsInInventory();
+// await inventoryStore.getItemsInInventory();
 </script>

@@ -1,16 +1,17 @@
 import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
-import { useBusinessStore } from '@/stores/businessStore';
-const businessStore = useBusinessStore();
-const businessId = businessStore.currentBusinessId;
+import { ensureBusinessId } from "@/composables/useBusinessUtils";
+
 
 const db = getFirestore(appFirebase);
 
 export function useTransaccion() {
   const createTransaction = async (transaction) => {
     try {
-      const transactionRef = doc(db, `business/${businessId}/transactions`, transaction.uuid)
+      const businessId = ensureBusinessId();
+      const transactionRef = doc(db, 'business', businessId, 'transactions', transaction.uuid);
+
       await setDoc(transactionRef, {
         ...transaction,
         createdAt: serverTimestamp(),
@@ -23,7 +24,10 @@ export function useTransaccion() {
 
   const updateTransaction = async (transactionId, updatedData) => {
     try {
-      const transactionRef = doc(db, 'business', updatedData.businessId, 'transactions', transactionId);
+      const businessId = ensureBusinessId();
+
+
+      const transactionRef = doc(db, 'business', businessId, 'transactions', transactionId);
       await updateDoc(transactionRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),
@@ -36,6 +40,11 @@ export function useTransaccion() {
 
   const getAllTransactions = async () => {
     try {
+      const businessId = ensureBusinessId();
+
+
+      console.log('El id del negocio es, desde el useTransactions: ', businessId);
+
       const transactionsSnapshot = await getDocs(collection(db, 'business', businessId, 'transactions'));
 
       const transactions = [];
@@ -57,6 +66,9 @@ export function useTransaccion() {
   };
 
   const getTransactionsTodayCmps = async () => {
+    const businessId = ensureBusinessId();
+
+
 
     let transactions = [];
     // Obtén el inicio del día actual (00:00:00)
@@ -85,11 +97,15 @@ export function useTransaccion() {
       transactions.push(doc.data());
     });
 
+    console.log('Se obtuvieron las transacciones de hoy, desde cpmposbale: ', transactions);
+
     return transactions;
   };
 
   const deleteTransactionByID = async (transactionID) => {
     try {
+      const businessId = ensureBusinessId();
+
       const transactionRef = doc(db, `business/${businessId}/transactions`, transactionID);
       await deleteDoc(transactionRef);
     }

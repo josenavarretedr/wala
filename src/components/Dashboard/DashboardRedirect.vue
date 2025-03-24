@@ -18,6 +18,9 @@ onMounted(async () => {
 
   if (businesses.length > 0) {
     const businessId = businesses[0].id;
+    businessStore.setCurrentBusinessId(businessId);
+
+    console.log("Redirecting to business", businessId);
     router.replace(`/dashboard/${businessId}`);
   } else {
     router.replace("/dashboard/createNewBusiness");

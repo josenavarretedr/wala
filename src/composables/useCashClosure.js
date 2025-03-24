@@ -1,14 +1,16 @@
 import { getFirestore, collection, setDoc, doc, getDocs, query, where, serverTimestamp, getDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
-import { useBusinessStore } from '@/stores/businessStore';
-const businessStore = useBusinessStore();
-const businessId = businessStore.currentBusinessId;
+
+import { ensureBusinessId } from "@/composables/useBusinessUtils";
+
 
 const db = getFirestore(appFirebase);
 
 export function useCashClosure() {
   const createCashClosure = async (cashClosureData) => {
     try {
+      const businessId = ensureBusinessId();
+
       const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureData.uuid);
       await setDoc(cashClosureRef, {
         ...cashClosureData,
@@ -23,6 +25,8 @@ export function useCashClosure() {
 
   const getCashClosureById = async (cashClosureId) => {
     try {
+      const businessId = ensureBusinessId();
+
       const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureId);
       const cashClosureSnap = await getDoc(cashClosureRef);
       if (cashClosureSnap.exists()) {
@@ -40,8 +44,10 @@ export function useCashClosure() {
     }
   };
 
-  const getCashClosuresForBusiness = async (businessId) => {
+  const getCashClosuresForBusiness = async () => {
     try {
+      const businessId = ensureBusinessId();
+
       const cashClosuresSnapshot = await getDocs(collection(db, `business/${businessId}/cashClosures`));
       const cashClosures = [];
       cashClosuresSnapshot.forEach(doc => {
@@ -57,8 +63,10 @@ export function useCashClosure() {
     }
   };
 
-  const checkCashClosureForToday = async (businessId) => {
+  const checkCashClosureForToday = async () => {
     try {
+      const businessId = ensureBusinessId();
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);

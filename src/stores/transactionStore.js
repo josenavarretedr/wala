@@ -77,7 +77,6 @@ export function useTransactionStore() {
     }
   };
 
-
   const getTransactions = async () => {
     try {
       transactionsInStore.value = await getAllTransactions();

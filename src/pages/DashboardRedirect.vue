@@ -12,11 +12,12 @@ const router = useRouter();
 const businessStore = useBusinessStore();
 
 async function checkBusinessOwner() {
+  // await businessStore.resetStore();
   const businesses = await businessStore.fetchBusinessesForCurrentUser();
   if (businesses.length > 0) {
-    console.log("Negocio id: ", businesses[0].id);
-    businessStore.setCurrentBusinessId(businesses[0].id);
-    router.replace(`/dashboard/${businesses[0].id}`);
+    const businessId = businesses[0].id;
+    businessStore.setCurrentBusinessId(businessId);
+    router.replace(`/dashboard/${businessId}`);
   } else {
     console.log("Sin negocios");
     router.replace("/dashboard/createNewBusiness");

@@ -1,17 +1,15 @@
 import { getFirestore, collection, setDoc, query, where, doc, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
+import { ensureBusinessId } from "@/composables/useBusinessUtils";
 
-
-import { useBusinessStore } from '@/stores/businessStore';
-const businessStore = useBusinessStore();
-
-const businessId = businessStore.currentBusinessId;
 
 const db = getFirestore(appFirebase);
 
 export function useExpenses() {
   const createExpense = async (expense, transactionRef) => {
     try {
+      const businessId = ensureBusinessId();
+
       const expenseRef = doc(db, `business/${businessId}/expenses`, expense.uuid); // Usa UUID del expense
       await setDoc(expenseRef, {
         ...expense,
@@ -25,8 +23,10 @@ export function useExpenses() {
     }
   };
 
-  const getAllExpenses = async (businessId) => {
+  const getAllExpenses = async () => {
     try {
+      const businessId = ensureBusinessId();
+
       const expensesSnapshot = await getDocs(collection(db, `business/${businessId}/expenses`));
       const expenses = [];
       expensesSnapshot.forEach(doc => {
@@ -46,6 +46,8 @@ export function useExpenses() {
   // Actualiza un gasto existente
   const updateExpense = async (expenseId, updatedData) => {
     try {
+      const businessId = ensureBusinessId();
+
       const expenseRef = doc(db, `business/${businessId}/expenses`, expenseId);
       await updateDoc(expenseRef, {
         ...updatedData,
@@ -60,6 +62,8 @@ export function useExpenses() {
 
   const deleteExpenseByID = async (expenseID) => {
     try {
+      const businessId = ensureBusinessId();
+
       const expenseRef = doc(db, `business/${businessId}/expenses`, expenseID);
       await deleteDoc(expenseRef);
       console.log('Expense deleted in Firestore');
@@ -71,6 +75,9 @@ export function useExpenses() {
 
   const deleteExpenseByTransactionRef = async (transactionRef) => {
     try {
+      const businessId = ensureBusinessId();
+
+
       // Creamos una consulta que solo recupere los documentos donde transactionRef es igual al valor dado.
       const expensesQuery = query(
         collection(db, `business/${businessId}/expenses`),
