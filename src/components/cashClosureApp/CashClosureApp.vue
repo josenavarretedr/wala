@@ -1,54 +1,107 @@
 <template>
   <div class="w-full max-w-3xl mx-auto px-4 py-8 space-y-8 text-gray-800">
     <!-- Título -->
-    <h1 class="text-2xl md:text-3xl font-bold text-center">Cierre de Caja</h1>
-
-    <!-- Botón inicial -->
-    <div class="text-center">
-      <button
-        @click="startClosureProcess"
-        class="bg-blue-500 hover:bg-blue-600 text-white text-lg font-semibold w-full md:w-auto px-6 py-3 rounded-xl shadow-md transition-all"
-      >
-        Iniciar Cierre de Caja
-      </button>
+    <div class="flex items-center justify-center mb-4">
+      <Safe class="w-8 h-8 text-purple-600 mr-2" />
+      <h1 class="text-3xl font-bold text-purple-700">Cierre de Caja</h1>
     </div>
 
-    <!-- Formulario de cierre -->
-    <div v-if="showClosureForm" class="space-y-6">
-      <!-- Efectivo -->
+    <!-- Formulario de cierre SIEMPRE visible -->
+    <div class="space-y-6">
+      <!-- Sección efectivo -->
       <div
-        class="bg-white shadow-md rounded-xl p-5 space-y-4 border border-blue-100"
+        class="bg-white shadow-md rounded-xl p-5 border-l-4 border-green-500 relative"
       >
-        <div class="flex items-center gap-2 text-blue-700">
-          <Cash class="w-6 h-6" />
-          <h2 class="text-xl md:text-2xl font-semibold">Efectivo</h2>
+        <div class="flex items-center gap-2 text-green-600 mb-4">
+          <Coins class="w-7 h-7" />
+          <h2 class="text-2xl font-bold">Efectivo</h2>
         </div>
 
-        <p class="text-base md:text-lg text-gray-600">
-          Saldo Esperado:
+        <p class="text-lg text-gray-600 mb-4">
+          Saldo esperado:
           <strong>S/ {{ cashClosureStore.expectedCashBalance }}</strong>
         </p>
 
-        <div class="flex items-center gap-3">
-          <label
-            for="actual-cash"
-            class="text-sm md:text-base font-medium text-gray-700"
-            >Conteo Real:</label
+        <template v-if="selectedCashOption === null">
+          <button
+            @click="selectCashOption('expected')"
+            :disabled="cashClosureData"
+            class="w-full bg-green-100 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
           >
-          <input
-            type="number"
-            id="actual-cash"
-            v-model.number="cashClosureStore.realBalances.cash"
-            class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 w-32"
-            @input="
-              cashClosureStore.setrealBalance('cash', $event.target.value)
-            "
-          />
-        </div>
+            Sí, S/ {{ cashClosureStore.expectedCashBalance }}
+          </button>
+
+          <div class="space-y-2">
+            <label
+              for="real-cash-input"
+              class="block text-gray-700 text-base font-semibold"
+            >
+              No, tengo:
+            </label>
+            <input
+              id="real-cash-input"
+              type="number"
+              inputmode="decimal"
+              pattern="[0-9]*"
+              :disabled="cashClosureData"
+              v-model.number="cashClosureStore.realBalances.cash"
+              @blur="onBlurCashInput"
+              class="w-full px-4 py-4 text-2xl text-center border-2 border-green-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50"
+              placeholder="Otro monto"
+            />
+          </div>
+        </template>
+
+        <template v-else-if="selectedCashOption === 'expected'">
+          <div class="relative">
+            <button
+              class="absolute top-0 right-0 text-red-600 text-2xl font-bold"
+              @click="clearCashSelection"
+              :disabled="cashClosureData"
+            >
+              <Xmark class="w-6 h-6" />
+            </button>
+            <button
+              disabled
+              class="w-full bg-green-200 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md"
+            >
+              Sí, S/ {{ cashClosureStore.expectedCashBalance }}
+            </button>
+          </div>
+        </template>
+
+        <template v-else-if="selectedCashOption === 'custom'">
+          <div class="relative space-y-2">
+            <button
+              class="absolute top-0 right-0 text-red-600 text-2xl font-bold"
+              @click="clearCashSelection"
+              :disabled="cashClosureData"
+            >
+              <Xmark class="w-6 h-6" />
+            </button>
+            <label
+              for="real-cash-input-selected"
+              class="block text-gray-700 text-base font-semibold"
+            >
+              No, tengo:
+            </label>
+            <input
+              id="real-cash-input-selected"
+              type="number"
+              inputmode="decimal"
+              pattern="[0-9]*"
+              :disabled="cashClosureData"
+              v-model.number="cashClosureStore.realBalances.cash"
+              @blur="onBlurCashInput"
+              class="w-full px-4 py-4 text-2xl text-center border-2 border-green-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50"
+              placeholder="Otro monto"
+            />
+          </div>
+        </template>
 
         <p
           v-if="cashClosureStore.cashDifference !== 0"
-          class="text-base md:text-lg font-semibold"
+          class="text-lg font-bold mt-4"
           :class="{
             'text-red-500': cashClosureStore.cashDifference < 0,
             'text-green-500': cashClosureStore.cashDifference > 0,
@@ -58,40 +111,100 @@
         </p>
       </div>
 
-      <!-- Banco -->
+      <!-- Sección banco -->
       <div
-        class="bg-white shadow-md rounded-xl p-5 space-y-4 border border-purple-100"
+        class="bg-white shadow-md rounded-xl p-5 border-l-4 border-purple-500 relative"
       >
-        <div class="flex items-center gap-2 text-purple-700">
-          <Bank class="w-6 h-6" />
-          <h2 class="text-xl md:text-2xl font-semibold">Banco</h2>
+        <div class="flex items-center gap-2 text-purple-600 mb-4">
+          <SmartphoneDevice class="w-7 h-7" />
+          <h2 class="text-2xl font-bold">Yape / Plin</h2>
         </div>
 
-        <p class="text-base md:text-lg text-gray-600">
-          Saldo Esperado:
+        <p class="text-lg text-gray-600 mb-4">
+          Saldo esperado:
           <strong>S/ {{ cashClosureStore.expectedBankBalance }}</strong>
         </p>
 
-        <div class="flex items-center gap-3">
-          <label
-            for="actual-bank"
-            class="text-sm md:text-base font-medium text-gray-700"
-            >Saldo Real:</label
+        <template v-if="selectedBankOption === null">
+          <button
+            @click="selectBankOption('expected')"
+            :disabled="cashClosureData"
+            class="w-full bg-purple-100 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
           >
-          <input
-            type="number"
-            id="actual-bank"
-            v-model.number="cashClosureStore.realBalances.bank"
-            class="flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-300 w-32"
-            @input="
-              cashClosureStore.setrealBalance('bank', $event.target.value)
-            "
-          />
-        </div>
+            Sí, S/ {{ cashClosureStore.expectedBankBalance }}
+          </button>
+
+          <div class="space-y-2">
+            <label
+              for="real-bank-input"
+              class="block text-gray-700 text-base font-semibold"
+            >
+              No, tengo:
+            </label>
+            <input
+              id="real-bank-input"
+              type="number"
+              inputmode="decimal"
+              pattern="[0-9]*"
+              :disabled="cashClosureData"
+              v-model.number="cashClosureStore.realBalances.bank"
+              @blur="onBlurBankInput"
+              class="w-full px-4 py-4 text-2xl text-center border-2 border-purple-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50"
+              placeholder="Otro monto"
+            />
+          </div>
+        </template>
+
+        <template v-else-if="selectedBankOption === 'expected'">
+          <div class="relative">
+            <button
+              class="absolute top-0 right-0 text-red-600 text-2xl font-bold"
+              @click="clearBankSelection"
+              :disabled="cashClosureData"
+            >
+              <Xmark class="w-6 h-6" />
+            </button>
+            <button
+              disabled
+              class="w-full bg-purple-200 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md"
+            >
+              Sí, S/ {{ cashClosureStore.expectedBankBalance }}
+            </button>
+          </div>
+        </template>
+
+        <template v-else-if="selectedBankOption === 'custom'">
+          <div class="relative space-y-2">
+            <button
+              class="absolute top-0 right-0 text-red-600 text-2xl font-bold"
+              @click="clearBankSelection"
+              :disabled="cashClosureData"
+            >
+              <Xmark class="w-6 h-6" />
+            </button>
+            <label
+              for="real-bank-input-selected"
+              class="block text-gray-700 text-base font-semibold"
+            >
+              No, tengo:
+            </label>
+            <input
+              id="real-bank-input-selected"
+              type="number"
+              inputmode="decimal"
+              pattern="[0-9]*"
+              :disabled="cashClosureData"
+              v-model.number="cashClosureStore.realBalances.bank"
+              @blur="onBlurBankInput"
+              class="w-full px-4 py-4 text-2xl text-center border-2 border-purple-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50"
+              placeholder="Otro monto"
+            />
+          </div>
+        </template>
 
         <p
           v-if="cashClosureStore.bankDifference !== 0"
-          class="text-base md:text-lg font-semibold"
+          class="text-lg font-bold mt-4"
           :class="{
             'text-red-500': cashClosureStore.bankDifference < 0,
             'text-green-500': cashClosureStore.bankDifference > 0,
@@ -101,73 +214,25 @@
         </p>
       </div>
 
-      <!-- Botón Final -->
+      <!-- Botón de acción final -->
       <div class="text-center">
+        <router-link
+          v-if="cashClosureData"
+          :to="{
+            name: 'CashClosureDetails',
+            params: { cashClosureId: cashClosureData.uuid },
+          }"
+          class="block bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold w-full px-6 py-4 rounded-xl shadow-lg transition-all"
+        >
+          Ver Detalle del Cierres
+        </router-link>
+
         <button
+          v-else
           @click="performClosure"
-          class="bg-green-500 hover:bg-green-600 text-white text-lg font-semibold w-full md:w-auto px-6 py-3 rounded-xl shadow-md transition-all"
+          class="bg-green-500 hover:bg-green-600 text-white text-xl font-bold w-full px-6 py-4 rounded-xl shadow-lg transition-all"
         >
           Realizar Cierre de Caja
-        </button>
-      </div>
-    </div>
-
-    <!-- Resumen -->
-    <div v-if="showClosureSummary" class="space-y-6">
-      <h2 class="text-2xl font-bold text-center text-gray-800">
-        Resumen del Cierre de Caja
-      </h2>
-
-      <div
-        v-for="accountInfo in cashClosureData.accounts"
-        :key="accountInfo.account"
-        class="bg-white border shadow-sm rounded-xl p-5 space-y-2"
-      >
-        <div class="flex items-center gap-2 text-gray-700">
-          <component
-            :is="accountInfo.account === 'cash' ? Cash : Bank"
-            class="w-5 h-5"
-          />
-          <h3 class="text-lg font-semibold uppercase">
-            {{ accountInfo.account }}
-          </h3>
-        </div>
-
-        <p class="text-gray-600">
-          Saldo Esperado: S/ {{ accountInfo.expectedBalance }}
-        </p>
-        <p class="text-gray-600">
-          Saldo Real: S/ {{ accountInfo.realBalance }}
-        </p>
-        <p
-          class="font-semibold"
-          :class="{
-            'text-red-500': accountInfo.difference < 0,
-            'text-green-500': accountInfo.difference > 0,
-          }"
-        >
-          Diferencia: S/ {{ accountInfo.difference }}
-        </p>
-        <p class="text-sm text-gray-500">
-          {{
-            accountInfo.adjustmentTransactionUuid
-              ? `Transacción de ajuste: ${accountInfo.adjustmentTransactionUuid}`
-              : "No se requirió transacción de ajuste."
-          }}
-        </p>
-      </div>
-
-      <p class="text-center text-lg font-semibold text-gray-700">
-        Estado del Cierre:
-        <span class="uppercase">{{ cashClosureData.status }}</span>
-      </p>
-
-      <div class="text-center">
-        <button
-          @click="resetFormAndSummary"
-          class="bg-gray-500 hover:bg-gray-600 text-white text-lg font-semibold w-full md:w-auto px-6 py-3 rounded-xl shadow-md"
-        >
-          Realizar Nuevo Cierre
         </button>
       </div>
     </div>
@@ -175,32 +240,73 @@
 </template>
 
 <script setup>
-import { Cash, Bank } from "@iconoir/vue";
+import { Coins, SmartphoneDevice, Safe, Xmark } from "@iconoir/vue";
 import { useCashClosureStore } from "@/stores/cashClosureStore";
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 
 const cashClosureStore = useCashClosureStore();
+const cashClosureData = ref(null);
 
-const showClosureForm = ref(false); // Controla la visibilidad del formulario de cierre
-const showClosureSummary = ref(false); // Controla la visibilidad del resumen
-const cashClosureData = ref(null); // Para almacenar los datos del cierre y mostrar el resumen
+const selectedCashOption = ref(null); // null | 'expected' | 'custom'
+const selectedBankOption = ref(null);
 
-const startClosureProcess = async () => {
-  await cashClosureStore.startCashClosureProcess(); // Inicia el proceso y calcula saldos esperados
-  showClosureForm.value = true; // Muestra el formulario después de calcular los saldos
+const selectCashOption = (option) => {
+  if (cashClosureData.value) return; // No editable si ya está cerrado
+  selectedCashOption.value = option;
+  if (option === "expected") {
+    cashClosureStore.setrealBalance(
+      "cash",
+      cashClosureStore.expectedCashBalance.value
+    );
+  }
 };
+const clearCashSelection = () => {
+  if (cashClosureData.value) return;
+  selectedCashOption.value = null;
+  cashClosureStore.setrealBalance("cash", null);
+};
+
+const onBlurCashInput = (e) => {
+  if (cashClosureData.value) return;
+  nextTick(() => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value)) {
+      selectedCashOption.value = "custom";
+      cashClosureStore.setrealBalance("cash", value);
+    }
+  });
+};
+
+const selectBankOption = (option) => {
+  if (cashClosureData.value) return;
+  selectedBankOption.value = option;
+  if (option === "expected") {
+    cashClosureStore.setrealBalance(
+      "bank",
+      cashClosureStore.expectedBankBalance.value
+    );
+  }
+};
+const clearBankSelection = () => {
+  if (cashClosureData.value) return;
+  selectedBankOption.value = null;
+  cashClosureStore.setrealBalance("bank", null);
+};
+
+const onBlurBankInput = (e) => {
+  if (cashClosureData.value) return;
+  nextTick(() => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value)) {
+      selectedBankOption.value = "custom";
+      cashClosureStore.setrealBalance("bank", value);
+    }
+  });
+};
+
+await cashClosureStore.startCashClosureProcess();
 
 const performClosure = async () => {
-  cashClosureData.value = await cashClosureStore.performCashClosure(); // Realiza el cierre y guarda en Firestore
-  showClosureForm.value = false; // Oculta el formulario
-  showClosureSummary.value = true; // Muestra el resumen
-  console.log("Realizar cierre de caja");
-};
-
-const resetFormAndSummary = () => {
-  showClosureForm.value = true; // Oculta el formulario
-  showClosureSummary.value = false; // Oculta el resumen
-  cashClosureData.value = null; // Limpia los datos del cierre
-  cashClosureStore.resetCashClosureState(); // Resetea el estado del store
+  cashClosureData.value = await cashClosureStore.performCashClosure();
 };
 </script>

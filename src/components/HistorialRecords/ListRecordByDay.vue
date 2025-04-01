@@ -4,6 +4,11 @@
     <h3 class="text-xl font-bold text-gray-700 mb-4">Registros diarios</h3>
     <div class="space-y-4">
       <template v-if="transactionStore.transactionsInStore.value.length">
+        <!-- Tarjeta de resumen -->
+        <!-- Tarjeta de Arqueo -->
+
+        <CardClosure v-if="isClousureDay"> </CardClosure>
+
         <!-- Itera sobre el historial de ahorros -->
         <div
           v-for="(record, index) in dataOrdenada"
@@ -102,11 +107,13 @@ import { computed } from "vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
-import { useBusinessStore } from "@/stores/businessStore";
+import { useCashClosureStore } from "@/stores/cashClosureStore";
 
-const inventoryStore = useInventoryStore();
+import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
+
 const transactionStore = useTransactionStore();
-const businessStore = useBusinessStore();
+
+const cashClosureStore = useCashClosureStore();
 
 import {
   GraphUp,
@@ -120,6 +127,10 @@ const dataOrdenada = computed(() => {
   return transactionStore.transactionsInStore.value.sort((a, b) => {
     return b.createdAt.seconds - a.createdAt.seconds;
   });
+});
+
+const isClousureDay = computed(() => {
+  return cashClosureStore.cashClosureForToday.value.length > 0;
 });
 
 const formatedDate = (timestamp) => {
