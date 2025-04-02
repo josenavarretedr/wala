@@ -1,60 +1,70 @@
 <template>
-  <div>
-    <h1 class="text-3xl font-bold mb-6 text-center">Agregar Productos</h1>
-    <div class="flex flex-col space-y-6">
-      <!-- Componente de Suspense con estilo de cargando -->
+  <div class="w-full max-w-2xl mx-auto p-6">
+    <h1 class="text-4xl lg:text-3xl font-bold mb-8 text-center text-purple-700">
+      Agregar Productos
+    </h1>
+
+    <div class="flex flex-col gap-6">
       <Suspense>
         <template #default>
           <SearchProductAsync />
         </template>
         <template #fallback>
-          <!-- Mensaje de carga centrado con estilo -->
-          <div class="text-center text-lg font-semibold text-gray-600 mt-4">
+          <div
+            class="text-center text-xl lg:text-lg font-semibold text-gray-600"
+          >
             Cargando resultados...
           </div>
         </template>
       </Suspense>
-      <div class="flex items-center justify-between">
+
+      <div class="relative">
         <input
           v-model="transactionStore.itemToAddInTransaction.value.description"
           type="text"
           disabled
           placeholder="Nombre del producto"
-          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-full"
-          :class="{
-            'w-full':
-              transactionStore.itemToAddInTransaction.value.description !== '',
-          }"
+          class="w-full px-6 py-4 border border-gray-300 rounded-2xl shadow text-2xl lg:text-xl text-gray-700"
         />
         <Xmark
           v-if="transactionStore.itemToAddInTransaction.value.description"
-          class="cursor-pointer text-red-500 w-5"
           @click="transactionStore.resetItemToAddInTransaction()"
-        ></Xmark>
-      </div>
-
-      <div>
-        <span class="px-3 text-lg font-semibold">Q:</span>
-        <input
-          v-model="transactionStore.itemToAddInTransaction.value.quantity"
-          type="number"
-          placeholder="Cantidad"
-          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
-        />
-        <span class="pl-3 font-semibold">uni</span>
-      </div>
-
-      <div>
-        <span class="px-3 text-lg font-semibold">S/</span>
-        <input
-          v-model="transactionStore.itemToAddInTransaction.value.price"
-          type="number"
-          placeholder="Precio"
-          class="px-4 py-2 border rounded-lg shadow-lg text-lg w-1/3"
+          class="absolute top-3 right-3 text-red-500 w-6 h-6 cursor-pointer"
         />
       </div>
 
-      <div class="flex justify-around">
+      <div class="flex flex-col gap-2">
+        <label class="text-xl lg:text-lg font-semibold text-gray-600"
+          >Cantidad</label
+        >
+        <div class="flex items-center gap-2">
+          <span class="text-2xl lg:text-xl font-bold text-gray-800">Q:</span>
+          <input
+            v-model="transactionStore.itemToAddInTransaction.value.quantity"
+            type="number"
+            placeholder="Cantidad"
+            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl w-2/3 text-center"
+          />
+          <span class="text-lg lg:text-base font-semibold">uni</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <label class="text-xl lg:text-lg font-semibold text-gray-600"
+          >Precio</label
+        >
+        <div class="flex items-center gap-2">
+          <span class="text-2xl lg:text-xl font-bold text-gray-800">S/</span>
+          <input
+            v-model="transactionStore.itemToAddInTransaction.value.price"
+            type="number"
+            placeholder="Precio"
+            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl w-2/3 text-center"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-around mt-4">
         <button
           @click="transactionStore.addItemToTransaction()"
           :disabled="
@@ -62,59 +72,62 @@
             !transactionStore.itemToAddInTransaction.value.quantity ||
             !transactionStore.itemToAddInTransaction.value.price
           "
-          class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg disabled:opacity-50"
+          class="p-4 bg-blue-600 text-white rounded-full shadow-lg disabled:opacity-40"
         >
-          <KeyframePlus class="w-12 h-12"></KeyframePlus>
+          <KeyframePlus class="w-10 h-10" />
         </button>
+
         <button
           @click="handleSaveBtn()"
           :disabled="transactionStore.transactionToAdd.value.items.length === 0"
-          class="px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg disabled:opacity-50"
+          class="p-4 bg-green-600 text-white rounded-full shadow-lg disabled:opacity-40"
         >
-          <FastArrowRight class="w-12 h-12"></FastArrowRight>
+          <FastArrowRight class="w-10 h-10" />
         </button>
       </div>
     </div>
 
     <div
       v-if="transactionStore.transactionToAdd.value.items.length > 0"
-      class="mt-6 border-t-4 border-dashed border-gray-300 pt-4"
+      class="mt-10 border-t-4 border-dashed border-gray-300 pt-6"
     >
-      <h2 class="text-2xl font-semibold mb-4">Items agregados:</h2>
-      <table class="min-w-full text-left bg-white">
-        <thead>
-          <tr>
-            <th class="py-2">Acción</th>
-            <th class="py-2">Producto</th>
-            <th class="py-2">Cantidad</th>
-            <th class="py-2">Precio</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="item in transactionStore.transactionToAdd.value.items"
-            :key="item.uuid"
-            class="border-b"
+      <h2 class="text-3xl lg:text-2xl font-bold text-gray-800 mb-6 text-center">
+        Items agregados
+      </h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div
+          v-for="item in transactionStore.transactionToAdd.value.items"
+          :key="item.uuid"
+          class="relative bg-white rounded-xl border shadow-sm px-4 py-3 flex items-center justify-between gap-4 hover:shadow-md"
+        >
+          <div class="flex-1">
+            <div class="text-xl lg:text-lg font-bold text-gray-800 truncate">
+              {{ item.description }}
+            </div>
+            <div class="text-sm text-gray-500">
+              {{ item.quantity }} uni × S/ {{ item.price }}
+            </div>
+          </div>
+
+          <div class="text-green-600 text-xl lg:text-lg font-bold">
+            S/ {{ (item.quantity * item.price).toFixed(2) }}
+          </div>
+
+          <button
+            @click="transactionStore.removeItemToTransaction(item.uuid)"
+            class="text-gray-400 hover:text-red-500"
           >
-            <td class="py-2 text-center">
-              <BinMinusIn
-                @click="transactionStore.removeItemToTransaction(item.uuid)"
-                class="cursor-pointer text-red-500 shadow-lg"
-              ></BinMinusIn>
-            </td>
-            <td class="py-2 text-left">{{ item.description }}</td>
-            <td class="py-2 text-left">{{ item.quantity }}</td>
-            <td class="py-2 text-left">S/{{ item.price }}</td>
-          </tr>
-        </tbody>
-      </table>
+            <Xmark class="w-5 h-5" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue"; // Importar iconos de Iconoir
-import SearchProductAsync from "./SearchProductAsync.vue"; // Importar componente asíncrono
+import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue";
+import SearchProductAsync from "./SearchProductAsync.vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
 import { useInventoryStore } from "@/stores/InventoryStore";
@@ -130,7 +143,6 @@ const handleSaveBtn = () => {
 </script>
 
 <style scoped>
-/* Estilos adicionales para mejorar la visualización */
 .border-dashed {
   border-style: dashed;
 }
