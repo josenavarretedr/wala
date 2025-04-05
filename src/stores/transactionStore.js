@@ -60,12 +60,6 @@ export function useTransactionStore() {
         await expensesStore.addExpense(transactionToAdd.value.uuid);
         // Llama a la acción para agregar el gasto desde el store
         expensesStore.resetExpenseToAdd();
-        // Limpia el formulario después de agregar
-
-        // Procesar transacción de egreso:
-        // Para gastos, se toma directamente el costo ingresado como total
-        // No se requieren arrays de items ni stockLogs.
-        // Se debe asegurar que los campos 'description' y 'cost' estén asignados.
       }
 
       // Crear la transacción en Firestore

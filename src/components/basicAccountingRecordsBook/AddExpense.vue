@@ -36,6 +36,9 @@ import { useTransactionStore } from "@/stores/transactionStore";
 import { FastArrowRight } from "@iconoir/vue";
 import { ref } from "vue";
 
+import { useTransactionFlow } from "@/composables/useTransactionFlow";
+const { goNext } = useTransactionFlow();
+
 const description = ref("");
 const cost = ref(0);
 
@@ -53,8 +56,7 @@ const addExpenseHandler = async () => {
   expensesStore.modifyExpenseToAddAccount(
     transactionStore.transactionToAdd.value.account
   );
-
-  transactionStore.nextStepToAddTransaction();
+  goNext();
 };
 </script>
 

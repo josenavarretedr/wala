@@ -44,41 +44,11 @@
 
       <!-- Step Content -->
       <div class="p-6">
-        <div
-          v-if="
-            transactionStore.currentStepOfAddTransaction.value === 0 &&
-            transactionStore.hasCajaDiaria
-          "
-        >
-          <CajaDiaria type="opening" />
-          <!-- <CajaDiaria :type="closure" /> -->
-        </div>
-        <div v-if="transactionStore.currentStepOfAddTransaction.value === 1">
-          <IncomeOrExpense></IncomeOrExpense>
-          <!-- <CajaDiaria type="opening" /> -->
-        </div>
-        <div
-          v-else-if="transactionStore.currentStepOfAddTransaction.value === 2"
-        >
-          <CashOrBank></CashOrBank>
-        </div>
-        <div
-          v-else-if="transactionStore.currentStepOfAddTransaction.value === 3"
-        >
-          <AddIncome
-            v-if="transactionStore.transactionToAdd.value.type === 'income'"
-          />
-          <AddExpense
-            v-else-if="
-              transactionStore.transactionToAdd.value.type === 'expense'
-            "
-          />
-        </div>
-        <div
-          v-else-if="transactionStore.currentStepOfAddTransaction.value === 4"
-        >
-          <PreRegister />
-        </div>
+        <component
+          v-if="currentStepConfig"
+          :is="currentStepConfig.component"
+          v-bind="currentStepConfig.props"
+        />
       </div>
     </div>
 
@@ -89,12 +59,9 @@
     <!-- Navigation Buttons -->
     <div class="flex justify-between mt-6">
       <button
-        @click="transactionStore.prevStepToAddTransaction()"
-        v-if="finish === false"
-        :disabled="
-          transactionStore.currentStepOfAddTransaction.value === 0 ||
-          transactionStore.currentStepOfAddTransaction.value === 1
-        "
+        @click="goBack"
+        v-if="!finish"
+        :disabled="isFirstStep"
         class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50 flex items-center"
       >
         <NavArrowLeft />
@@ -103,11 +70,7 @@
 
       <button
         @click="saveRegister"
-        v-if="
-          transactionStore.currentStepOfAddTransaction.value ===
-            (steps[0] === 'CajaDiaria' ? steps.length - 1 : steps.length) &&
-          !finish
-        "
+        v-if="isFinalStep && !finish"
         class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center"
       >
         <CloudUpload />
@@ -130,12 +93,24 @@ import { NavArrowLeft, CloudUpload, BinMinusIn, Xmark } from "@iconoir/vue";
 import CajaDiaria from "@/components/cashClosureApp/CajaDiaria.vue";
 
 import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionFlow } from "@/composables/useTransactionFlow";
 
 const transactionStore = useTransactionStore();
 
-const steps = computed(() => transactionStore.getSteps());
+// const steps = computed(() => transactionStore.getSteps());
 
 const finish = ref(false);
+
+// 🚀 microfábrica del flujo
+const {
+  steps,
+  isFirstStep,
+  isFinalStep,
+  goNext,
+  goBack,
+  hasCajaDiaria,
+  startStep,
+} = useTransactionFlow();
 
 async function saveRegister() {
   try {
@@ -148,7 +123,44 @@ async function saveRegister() {
 
 onMounted(() => {
   transactionStore.resetTransactionToAdd();
+  transactionStore.currentStepOfAddTransaction.value = startStep.value;
 });
+
+const addIncomeOrExpenseComponent = computed(() => {
+  const type = transactionStore.transactionToAdd.value.type;
+  if (type === "expense") return AddExpense;
+  return AddIncome; // por defecto
+});
+
+const stepComponents = computed(() => ({
+  CajaDiaria: {
+    component: CajaDiaria,
+    props: { type: "opening" },
+  },
+  IncomeOrExpense: { component: IncomeOrExpense },
+  CashOrBank: { component: CashOrBank },
+  AddIncomeOrExpense: {
+    component: addIncomeOrExpenseComponent.value,
+  },
+  Summary: { component: PreRegister },
+}));
+
+const currentStepConfig = computed(
+  () => stepComponents.value[currentStepName.value] ?? null
+);
+
+const currentStepIndex = computed(
+  () => transactionStore.currentStepOfAddTransaction.value
+);
+
+const currentStepName = computed(() => {
+  const index = currentStepIndex.value - startStep.value;
+  return steps.value[index] ?? null;
+});
+
+const currentStepComponent = computed(
+  () => stepComponents.value[currentStepName.value] ?? null
+);
 </script>
 
 <style scoped>

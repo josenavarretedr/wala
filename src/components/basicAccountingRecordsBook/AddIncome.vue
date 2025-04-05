@@ -76,7 +76,7 @@
         >
           <KeyframePlus class="w-10 h-10" />
         </button>
-
+        asd
         <button
           @click="handleSaveBtn()"
           :disabled="transactionStore.transactionToAdd.value.items.length === 0"
@@ -134,11 +134,15 @@ import { useInventoryStore } from "@/stores/InventoryStore";
 const transactionStore = useTransactionStore();
 const inventoryStore = useInventoryStore();
 
+import { useTransactionFlow } from "@/composables/useTransactionFlow";
+
+const { goNext } = useTransactionFlow();
+
 const handleSaveBtn = () => {
   inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(
     transactionStore.transactionToAdd.value.items
   );
-  transactionStore.nextStepToAddTransaction();
+  goNext();
 };
 </script>
 

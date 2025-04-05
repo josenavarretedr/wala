@@ -76,6 +76,23 @@ export function useCashEventStore() {
     });
   };
 
+  const registerCashEventTransaction = async (eventData) => {
+    const transaction = {
+      uuid: uuidv4(),
+      type: eventData.type, // 'opening' o 'closure'
+      eventUuid: eventData.uuid,
+      date: eventData.date,
+      totalCash: realBalances.value.cash,
+      totalBank: realBalances.value.bank,
+      status: eventData.status,
+      accounts: eventData.accounts,
+      createdAt: new Date(),
+    };
+    await createTransaction(transaction);
+    console.log('Transacción de evento de caja registrada:', transaction);
+  };
+
+
   const performCashEvent = async (type) => {
     cashEventToAdd.value.uuid = uuidv4();
     cashEventToAdd.value.date = new Date();
@@ -106,7 +123,9 @@ export function useCashEventStore() {
     cashEventToAdd.value.status = eventStatus;
 
     try {
+      console.log('QUe fue antes?')
       await createCashEvent(cashEventToAdd.value);
+      await registerCashEventTransaction(cashEventToAdd.value);
     } catch (error) {
       console.error('Error al guardar el evento de caja en Firestore:', error);
       throw error;

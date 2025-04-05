@@ -21,15 +21,16 @@ export function useTransactionFlow() {
   const hasCajaDiaria = computed(() => steps.value[0] === "CajaDiaria");
 
   const startStep = computed(() => (hasCajaDiaria.value ? 0 : 1));
-  const endStep = computed(() => steps.value.length - 1);
+  const endStep = computed(() => startStep.value + steps.value.length - 1);
 
   const isFirstStep = computed(() =>
     transactionStore.currentStepOfAddTransaction.value === startStep.value
   );
 
-  const isFinalStep = computed(() =>
-    transactionStore.currentStepOfAddTransaction.value === endStep.value
-  );
+  const isFinalStep = computed(() => {
+    return transactionStore.currentStepOfAddTransaction.value === endStep.value;
+  });
+
 
   const goNext = () => {
     if (transactionStore.currentStepOfAddTransaction.value < endStep.value) {
