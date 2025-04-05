@@ -1,5 +1,6 @@
 <template>
   <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
+    <!-- Cerrar pabel de Register transaction -->
     <div class="flex items-end mt-3 mb-4">
       <router-link
         to="/dashboard"
@@ -43,8 +44,18 @@
 
       <!-- Step Content -->
       <div class="p-6">
+        <div
+          v-if="
+            transactionStore.currentStepOfAddTransaction.value === 0 &&
+            transactionStore.hasCajaDiaria
+          "
+        >
+          <CajaDiaria type="opening" />
+          <!-- <CajaDiaria :type="closure" /> -->
+        </div>
         <div v-if="transactionStore.currentStepOfAddTransaction.value === 1">
           <IncomeOrExpense></IncomeOrExpense>
+          <!-- <CajaDiaria type="opening" /> -->
         </div>
         <div
           v-else-if="transactionStore.currentStepOfAddTransaction.value === 2"
@@ -80,7 +91,10 @@
       <button
         @click="transactionStore.prevStepToAddTransaction()"
         v-if="finish === false"
-        :disabled="transactionStore.currentStepOfAddTransaction.value === 1"
+        :disabled="
+          transactionStore.currentStepOfAddTransaction.value === 0 ||
+          transactionStore.currentStepOfAddTransaction.value === 1
+        "
         class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50 flex items-center"
       >
         <NavArrowLeft />
@@ -90,7 +104,8 @@
       <button
         @click="saveRegister"
         v-if="
-          transactionStore.currentStepOfAddTransaction.value === steps.length &&
+          transactionStore.currentStepOfAddTransaction.value ===
+            (steps[0] === 'CajaDiaria' ? steps.length - 1 : steps.length) &&
           !finish
         "
         class="px-4 py-2 bg-blue-500 text-white rounded-lg flex items-center"
@@ -103,7 +118,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from "vue";
+import { computed, ref, onMounted, onBeforeMount } from "vue";
 import AddIncome from "./AddIncome.vue";
 import AddExpense from "./AddExpense.vue";
 import IncomeOrExpense from "./IncomeOrExpense.vue";
@@ -112,18 +127,13 @@ import SummaryOfRegister from "./SummaryOfRegister.vue";
 import CashOrBank from "./CashOrBank.vue";
 import { NavArrowLeft, CloudUpload, BinMinusIn, Xmark } from "@iconoir/vue";
 
+import CajaDiaria from "@/components/cashClosureApp/CajaDiaria.vue";
+
 import { useTransactionStore } from "@/stores/transactionStore";
-import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
-const expensesStore = useExpensesStore(); // Usa el store
 
 const transactionStore = useTransactionStore();
 
-const steps = [
-  "IncomeOrExpense",
-  "CashOrBank",
-  "AddIncomeOrExpense",
-  "Summary",
-];
+const steps = computed(() => transactionStore.getSteps());
 
 const finish = ref(false);
 
@@ -135,6 +145,10 @@ async function saveRegister() {
     console.error("Error writing register: ", error);
   }
 }
+
+onMounted(() => {
+  transactionStore.resetTransactionToAdd();
+});
 </script>
 
 <style scoped>

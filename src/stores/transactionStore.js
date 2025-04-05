@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 import { useTransaccion } from '@/composables/useTransaction';
 import { useInventory } from '@/composables/useInventory';
@@ -34,7 +34,7 @@ const itemToAddInTransaction = ref({
 });
 
 
-const currentStepOfAddTransaction = ref(1);
+const currentStepOfAddTransaction = ref(0);
 
 export function useTransactionStore() {
   const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps } = useTransaccion();
@@ -126,8 +126,7 @@ export function useTransactionStore() {
 
     };
 
-    currentStepOfAddTransaction.value = 1;
-
+    currentStepOfAddTransaction.value = getSteps()[0] === "CajaDiaria" ? 0 : 1;
     resetItemToAddInTransaction();
 
 
@@ -174,13 +173,13 @@ export function useTransactionStore() {
   }
 
   const nextStepToAddTransaction = () => {
-    if (currentStepOfAddTransaction.value < 4) {
+    if (currentStepOfAddTransaction.value < totalSteps.value - 1) {
       currentStepOfAddTransaction.value++;
     }
   }
 
   const prevStepToAddTransaction = () => {
-    if (currentStepOfAddTransaction.value > 1) {
+    if (currentStepOfAddTransaction.value > 0) {
       currentStepOfAddTransaction.value--;
     }
   }
@@ -246,6 +245,22 @@ export function useTransactionStore() {
     }
   };
 
+  const getSteps = () => {
+    const baseSteps = [
+      "IncomeOrExpense",
+      "CashOrBank",
+      "AddIncomeOrExpense",
+      "Summary",
+    ];
+    return transactionsInStore.value.length === 0
+      ? ["CajaDiaria", ...baseSteps]
+      : baseSteps;
+  };
+
+  const totalSteps = computed(() => getSteps().length);
+
+
+  const hasCajaDiaria = computed(() => getSteps()[0] === "CajaDiaria");
 
 
   return {
@@ -276,5 +291,8 @@ export function useTransactionStore() {
     resetItemToAddInTransaction,
     addItemToTransaction,
     removeItemToTransaction,
+    getSteps,
+    totalSteps,
+    hasCajaDiaria
   };
 }

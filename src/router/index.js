@@ -66,7 +66,7 @@ const routes = [
       {
         path: 'basicAccountingRecordsBook',
         name: 'BasicAccountingRecordsBook',
-        component: () => import("@/components/basicAccountingRecordsBook/AddRegister.vue")
+        component: () => import('@/pages/BasicAccountingRecordsWrapper.vue'),
       },
       {
         path: 'basicAccountingRecordsBook/:registerId',
@@ -82,6 +82,12 @@ const routes = [
         path: 'cashClosureApp/:cashClosureId',
         name: 'CashClosureDetails',
         component: () => import('@/components/cashClosureApp/CashClosureDetails.vue')
+      },
+      {
+        path: 'caja',
+        name: 'CajaDiaria',
+        component: () => import('@/components/cashClosureApp/CajaDiaria.vue'),
+        props: route => ({ type: route.query.type || 'closure' })
       }
     ]
   },

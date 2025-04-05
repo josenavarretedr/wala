@@ -4,7 +4,7 @@
       :to="
         dayClosure
           ? { name: 'CashClosureDetails', params: { cashClosureId: idClosure } }
-          : { name: 'CashClosureApp' }
+          : { name: 'CajaDiaria', query: { type: 'closure' } }
       "
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
@@ -21,7 +21,7 @@
       <div v-if="dayClosure" class="flex items-center">
         <FireFlame />
         <span class="ml-2"
-          >{{ cashClosureStore.streakCashClosures }} ARQUEOS</span
+          >{{ cashClosureStore.streakCashClosures }} ARQUEO</span
         >
       </div>
 
