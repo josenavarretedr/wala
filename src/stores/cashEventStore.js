@@ -175,11 +175,53 @@ export function useCashEventStore() {
   const getAllCashEvents = async () => {
     try {
       allCashEvents.value = await getCashEventsForBusiness();
+      console.log('Eventos de caja obtenidos:', allCashEvents.value);
     } catch (error) {
       console.error('Error obteniendo eventos de caja:', error);
       throw error;
     }
   };
+
+  const streakCashEvents = computed(() => {
+    if (allCashEvents.value.length === 0) return 0;
+
+    // Filtrar solo eventos de tipo cierre
+    const closures = allCashEvents.value
+      .filter(e => e.type === 'closure' && e.createdAt)
+      .sort((a, b) => new Date(b.createdAt.seconds * 1000) - new Date(a.createdAt.seconds * 1000));
+
+    let streakCount = 0;
+    let currentDate = new Date();
+
+    for (const closure of closures) {
+      const closureDate = new Date(closure.createdAt.seconds * 1000);
+      const previousDate = new Date(currentDate);
+      previousDate.setDate(currentDate.getDate() - 1);
+
+      if (closureDate.toDateString() === currentDate.toDateString()) {
+        // Cierre hoy
+        streakCount++;
+      } else if (closureDate.toDateString() === previousDate.toDateString()) {
+        // Cierre ayer, sigue racha
+        streakCount++;
+        currentDate = closureDate;
+      } else {
+        break; // racha interrumpida
+      }
+    }
+
+    return streakCount;
+  });
+
+  const hasClosureForToday = computed(() => {
+    const today = new Date().toDateString();
+    return allCashEvents.value.some(
+      e => e.type === 'closure' && new Date(e.createdAt.seconds * 1000).toDateString() === today
+    );
+  });
+
+
+
 
   return {
     expectedBalances,
@@ -204,5 +246,8 @@ export function useCashEventStore() {
     cashEventDataToSave: computed(() => cashEventToAdd.value),
     eventAccounts: computed(() => cashEventToAdd.value.accounts),
     accounts,
+
+    streakCashEvents,
+    hasClosureForToday
   };
 }

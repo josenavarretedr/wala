@@ -1,11 +1,7 @@
 <template>
   <div>
     <router-link
-      :to="
-        dayClosure
-          ? { name: 'CashClosureDetails', params: { cashClosureId: idClosure } }
-          : { name: 'CajaDiaria', query: { type: 'closure' } }
-      "
+      :to="linkTo"
       @mouseenter="isHovered = true"
       @mouseleave="isHovered = false"
       :class="[
@@ -17,15 +13,11 @@
           : 'border-gray-400 text-gray-400',
       ]"
     >
-      <!-- Caso: Existe arqueo para el día -->
       <div v-if="dayClosure" class="flex items-center">
         <FireFlame />
-        <span class="ml-2"
-          >{{ cashClosureStore.streakCashClosures }} ARQUEO</span
-        >
+        <span class="ml-2">{{ streak }} ARQUEO</span>
       </div>
 
-      <!-- Caso: No existe arqueo para el día -->
       <div v-else>
         <template v-if="isHovered">
           <div class="flex items-center">
@@ -36,9 +28,7 @@
         <template v-else>
           <div class="flex items-center">
             <FireFlame />
-            <span class="ml-2"
-              >{{ cashClosureStore.streakCashClosures }} ARQUEOS</span
-            >
+            <span class="ml-2">{{ streak }} ARQUEOS</span>
           </div>
         </template>
       </div>
@@ -47,25 +37,33 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { Safe, FireFlame } from "@iconoir/vue";
-import { useCashClosureStore } from "@/stores/cashClosureStore";
+import { useCashEventStore } from "@/stores/cashEventStore";
 
-const cashClosureStore = useCashClosureStore();
-
-const dayClosure = ref(false);
-const idClosure = ref("");
+const cashEventStore = useCashEventStore();
 const isHovered = ref(false);
+const dayClosure = cashEventStore.hasClosureForToday;
+const streak = cashEventStore.streakCashEvents;
 
-const setupInitBtn = async () => {
-  await cashClosureStore.getCashClosureForToday();
-  await cashClosureStore.getAllCashClosures();
-  if (cashClosureStore.cashClosureForToday.value.length > 0) {
-    dayClosure.value = true;
-    idClosure.value = cashClosureStore.cashClosureForToday.value[0].uuid;
-    return;
+const uuidTodayClosure = computed(() => {
+  return cashEventStore.cashEventsForToday.value[0]?.uuid || null;
+});
+
+const linkTo = computed(() => {
+  if (dayClosure.value && uuidTodayClosure.value) {
+    return {
+      name: "CashClosureDetails",
+      params: { cashClosureId: uuidTodayClosure.value },
+    };
+  } else {
+    return {
+      name: "CajaDiaria",
+      query: { type: "closure" },
+    };
   }
-};
+});
 
-await setupInitBtn();
+await cashEventStore.getAllCashEvents();
+await cashEventStore.getCashEventForToday("closure");
 </script>
