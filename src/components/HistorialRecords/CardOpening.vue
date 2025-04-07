@@ -1,28 +1,77 @@
 <template>
-  <div class="bg-white shadow-md rounded-lg p-4 flex flex-col text-green-600">
-    <div class="flex items-center justify-between mb-2">
+  <div
+    class="bg-white shadow-md rounded-lg p-4 md:p-6 flex flex-col text-green-600 hover:shadow-lg transition-shadow"
+  >
+    <!-- Encabezado -->
+    <div
+      class="flex items-center justify-between mb-2 cursor-pointer"
+      @click="toggleOpen"
+    >
+      <!-- Izquierda: ícono + texto (texto oculto en móvil) -->
+      <div class="flex items-center gap-3">
+        <router-link
+          :to="{
+            name: 'CashClosureDetails',
+            params: { cashClosureId: record.eventUuid || record.uuid },
+          }"
+          class="text-green-600 hover:text-green-800 w-6 h-6"
+        >
+          <InfoCircle class="w-6 h-6 cursor-pointer" />
+        </router-link>
+        <SafeOpen class="w-6 h-6 md:w-7 md:h-7" />
+        <h3 class="hidden md:block text-xl font-bold ml-0">Apertura</h3>
+      </div>
+
+      <!-- Derecha: fecha + ícono de expansión -->
       <div class="flex items-center gap-2">
-        <safe class="w-7 h-7" />
-        <h3 class="text-xl font-bold">Apertura de caja</h3>
+        <ArrowDown
+          :class="[
+            'w-6 h-6 md:w-5 md:h-5 transform transition-transform duration-300',
+            isOpen ? 'rotate-180' : 'rotate-0',
+          ]"
+        />
       </div>
-      <p class="text-sm text-gray-500">{{ formatedDate(record.createdAt) }}</p>
     </div>
-    <div class="flex justify-between mt-2 text-sm">
-      <div>
-        <p>
-          Efectivo inicial: <strong>S/. {{ record.totalCash ?? 0 }}</strong>
-        </p>
-        <p>
-          Banco inicial: <strong>S/. {{ record.totalBank ?? 0 }}</strong>
-        </p>
+
+    <!-- Contenido expandible -->
+    <div v-if="isOpen" class="mt-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
+          class="flex flex-col items-start border border-green-500 rounded-lg p-4 bg-green-50 w-full"
+        >
+          <p class="text-sm text-gray-500 mb-1">Efectivo inicial</p>
+          <p class="text-2xl font-bold text-green-700">
+            S/. {{ record.totalCash ?? 0 }}
+          </p>
+        </div>
+
+        <div
+          class="flex flex-col items-start border border-purple-500 rounded-lg p-4 bg-purple-50 w-full"
+        >
+          <p class="text-sm text-gray-500 mb-1">Banco inicial</p>
+          <p class="text-2xl font-bold text-purple-700">
+            S/. {{ record.totalBank ?? 0 }}
+          </p>
+        </div>
       </div>
+    </div>
+
+    <div class="text-xs text-gray-400 mt-4 italic">
+      {{ formatedDate(record.createdAt) }}
     </div>
   </div>
 </template>
 
 <script setup>
-import { Safe } from "@iconoir/vue";
+import { ref } from "vue";
+import { SafeOpen, ArrowDown, InfoCircle } from "@iconoir/vue";
+
 const props = defineProps({ record: Object });
+
+const isOpen = ref(false);
+const toggleOpen = () => {
+  isOpen.value = !isOpen.value;
+};
 
 function formatedDate(date) {
   if (!date) return "-";

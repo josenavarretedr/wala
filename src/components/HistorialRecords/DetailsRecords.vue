@@ -22,7 +22,7 @@
     <div class="flex justify-between mt-6">
       <button
         @click="saludar"
-        :disabled="cashClosureStore.cashClosureForToday.value.length > 0"
+        :disabled="isDisabled"
         class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50 flex items-center"
       >
         <Edit />
@@ -31,7 +31,7 @@
 
       <button
         @click="deleteRegister()"
-        :disabled="cashClosureStore.cashClosureForToday.value.length > 0"
+        :disabled="isDisabled"
         class="px-4 py-2 border border-red-500 text-red-500 rounded-lg flex items-center disabled:opacity-50 hover:bg-red-500 hover:text-white"
       >
         <Trash />
@@ -42,11 +42,18 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import SummaryOfRegister from "@/components/HistorialRecords/SummaryOfRegister.vue";
 import { useTransactionStore } from "@/stores/transactionStore";
 import { useCashClosureStore } from "@/stores/cashClosureStore";
 import { Edit, Trash, Xmark } from "@iconoir/vue";
 import { useRoute, useRouter } from "vue-router";
+
+import { useCashEventStore } from "@/stores/cashEventStore";
+const cashEventStore = useCashEventStore();
+const dayClosure = cashEventStore.hasClosureForToday;
+
+const isDisabled = computed(() => dayClosure.value);
 
 const route = useRoute();
 const router = useRouter();

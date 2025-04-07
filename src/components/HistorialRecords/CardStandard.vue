@@ -59,10 +59,10 @@
     </div>
 
     <!-- Sección de fecha -->
-    <div class="mt-3 text-xs text-gray-500 flex items-center align-middle">
-      <p class="text-gray-500 mr-3">
-        {{ formatedDate(record.createdAt) }}
-      </p>
+    <div
+      class="mt-3 text-xs text-gray-400 flex items-center align-middle italic"
+    >
+      {{ formatedDate(record.createdAt) }}
     </div>
   </div>
 </template>
@@ -83,12 +83,13 @@ const props = defineProps({
   },
 });
 
-function formatedDate(timestamp) {
-  if (!timestamp) return "-";
-  const date = new Date(
-    timestamp.seconds * 1000 + timestamp.nanoseconds / 1000000
-  );
-  return date.toLocaleString("es-PE", {
+function formatedDate(date) {
+  if (!date) return "-";
+  const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
+  return d.toLocaleString("es-PE", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,

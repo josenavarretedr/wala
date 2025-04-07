@@ -76,7 +76,6 @@
         >
           <KeyframePlus class="w-10 h-10" />
         </button>
-        asd
         <button
           @click="handleSaveBtn()"
           :disabled="transactionStore.transactionToAdd.value.items.length === 0"
