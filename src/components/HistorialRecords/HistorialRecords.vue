@@ -8,7 +8,7 @@
         />
       </template>
       <template #fallback>
-        <div class="text-center text-gray-500 my-4">Cargando resumen...</div>
+        <Loader />
       </template>
     </Suspense>
 
@@ -19,7 +19,7 @@
           <ClashClosureBtn></ClashClosureBtn>
         </template>
         <template #fallback>
-          <div>Cargando ...</div>
+          <Loader />
         </template>
       </Suspense>
 
@@ -28,7 +28,7 @@
           <NewRecordBtn></NewRecordBtn>
         </template>
         <template #fallback>
-          <div>Cargando ...</div>
+          <Loader />
         </template>
       </Suspense>
     </div>
@@ -39,15 +39,15 @@
       <template #default>
         <ListRecordByDay> </ListRecordByDay>
       </template>
-      <template #fallback>
-        <div>Cargando ...</div>
-      </template>
+      <template #fallback> <Loader /> </template>
     </Suspense>
   </div>
 </template>
 
 <script setup>
 import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
+
+import Loader from "@/components/ui/Loader.vue";
 
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
 import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
