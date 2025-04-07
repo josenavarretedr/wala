@@ -1,5 +1,6 @@
 <template>
   <div class="w-full mx-auto px-4 py-8 space-y-8 text-gray-800">
+    <!-- Encabezado -->
     <div class="flex items-center justify-center mb-4">
       <safe class="w-8 h-8 text-purple-600 mr-2" />
       <h1 class="text-3xl font-bold text-purple-700">
@@ -8,24 +9,106 @@
     </div>
 
     <div class="space-y-6">
+      <!-- SALDO INICIAL (solo para cierre) -->
+      <Transition name="fade-scale">
+        <div
+          v-if="type === 'closure'"
+          class="bg-white shadow-md rounded-xl px-5 py-4 space-y-2 animate-in fade-in"
+        >
+          <div class="flex items-center gap-2 text-blue-600">
+            <InfoCircle class="w-6 h-6" />
+            <h2 class="text-xl font-semibold">Saldo Inicial del Día</h2>
+          </div>
+          <div class="flex justify-between text-base text-gray-600">
+            <span>Efectivo</span>
+            <span class="font-semibold">
+              S/ {{ cashEventStore.saldoInicial.value.cash.toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between text-base text-gray-600">
+            <span>Yape / Plin</span>
+            <span class="font-semibold">
+              S/ {{ cashEventStore.saldoInicial.value.bank.toFixed(2) }}
+            </span>
+          </div>
+          <div
+            class="flex justify-between text-lg font-bold text-blue-700 border-t pt-3"
+          >
+            <span>Total Inicial</span>
+            <span>
+              S/
+              {{
+                (
+                  cashEventStore.saldoInicial.value.cash +
+                  cashEventStore.saldoInicial.value.bank
+                ).toFixed(2)
+              }}
+            </span>
+          </div>
+        </div>
+      </Transition>
+
       <!-- EFECTIVO -->
       <div class="bg-white shadow-md rounded-xl p-5 relative">
-        <div class="flex items-center gap-2 text-green-600 mb-4">
+        <div class="flex items-center align-middle text-green-600 mb-4">
           <coins class="w-7 h-7" />
           <h2 class="text-2xl font-bold">Efectivo</h2>
         </div>
+        <div class="flex items-center gap-2 text-green-600 mb-4">
+          <InfoCircle
+            @click="showCashOptions = !showCashOptions"
+            id="infoSaldoEsperadoEfectivo"
+            class="w-5 h-5 cursor-pointer"
+          />
+          <p class="text-lg text-gray-600">
+            Saldo esperado:
+            <strong>S/ {{ cashEventStore.expectedCashBalance }}</strong>
+          </p>
+        </div>
 
-        <p class="text-lg text-gray-600 mb-4">
-          Saldo esperado:
-          <strong>S/ {{ cashEventStore.expectedCashBalance }}</strong>
-        </p>
+        <Transition name="fade-scale">
+          <div
+            v-if="type === 'closure' && showCashOptions"
+            class="bg-white rounded-xl p-4 shadow-md space-y-2"
+          >
+            <h3 class="text-lg font-semibold text-gray-700">
+              Detalle del saldo esperado
+            </h3>
+            <div class="flex justify-between text-base text-gray-600">
+              <span>Efectivo inicial</span>
+              <span class="font-medium">
+                S/ {{ cashEventStore.saldoInicial.value.cash.toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-base text-gray-600">
+              <span>Ingresos netos (efectivo)</span>
+              <span class="font-medium">
+                S/
+                {{
+                  (
+                    cashEventStore.expectedCashBalance.value -
+                    cashEventStore.saldoInicial.value.cash
+                  ).toFixed(2)
+                }}
+              </span>
+            </div>
+            <div
+              class="flex justify-between text-lg font-bold text-green-700 border-t pt-2"
+            >
+              <span>Total esperado</span>
+              <span>
+                S/ {{ cashEventStore.expectedCashBalance.value.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </Transition>
 
         <!-- Opciones para EFECTIVO -->
         <template v-if="selectedCashOption === null">
           <button
             @click="selectCashOption('expected')"
             :disabled="cashEventData"
-            class="w-full bg-green-100 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
+            class="w-full bg-green-100 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md mt-5 hover:scale-105 transition-transform duration-200 disabled:opacity-50"
           >
             Sí, S/ {{ cashEventStore.expectedCashBalance }}
           </button>
@@ -104,30 +187,74 @@
             'text-green-500': cashEventStore.cashDifference > 0,
           }"
         >
-          Diferencia: S/ {{ cashEventStore.cashDifference.value }}
+          Diferencia: S/ {{ cashEventStore.cashDifference }}
         </p>
       </div>
 
-      <!-- BANCO -->
-      <div
-        class="bg-white shadow-md rounded-xl p-5 border-l-4 border-purple-500 relative"
-      >
+      <!-- BANK -->
+
+      <div class="bg-white shadow-md rounded-xl p-5 relative">
         <div class="flex items-center gap-2 text-purple-600 mb-4">
-          <smartphonedevice class="w-7 h-7" />
+          <SmartphoneDevice class="w-7 h-7" />
           <h2 class="text-2xl font-bold">Yape / Plin</h2>
         </div>
 
-        <p class="text-lg text-gray-600 mb-4">
-          Saldo esperado:
-          <strong>S/ {{ cashEventStore.expectedBankBalance }}</strong>
-        </p>
+        <div class="flex items-center gap-2 text-purple-600 mb-4">
+          <InfoCircle
+            @click="showBankOptions = !showBankOptions"
+            id="infoSaldoEsperadoEfectivo"
+            class="w-5 h-5 cursor-pointer"
+          />
+          <p class="text-lg text-gray-600">
+            Saldo esperado:
+            <strong>S/ {{ cashEventStore.expectedBankBalance }}</strong>
+          </p>
+        </div>
+
+        <Transition name="fade-scale">
+          <div
+            v-if="type === 'closure' && showBankOptions"
+            class="bg-white rounded-xl p-4 shadow-md space-y-2"
+          >
+            <h3 class="text-lg font-semibold text-gray-700">
+              Detalle del saldo esperado
+            </h3>
+            <div class="flex justify-between text-base text-gray-600">
+              <span>Saldo inicial</span>
+              <span class="font-medium">
+                S/ {{ cashEventStore.saldoInicial.value.bank.toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-base text-gray-600">
+              <span>Ingresos netos</span>
+              <span class="font-medium">
+                S/
+                {{
+                  (
+                    cashEventStore.expectedBankBalance.value -
+                    cashEventStore.saldoInicial.value.bank
+                  ).toFixed(2)
+                }}
+              </span>
+            </div>
+            <div
+              class="flex justify-between text-lg font-bold text-purple-700 border-t pt-2"
+            >
+              <span>Total esperado</span>
+              <span>
+                S/ {{ cashEventStore.expectedBankBalance.value.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </Transition>
 
         <!-- Opciones para BANCO -->
+
         <template v-if="selectedBankOption === null">
           <button
             @click="selectBankOption('expected')"
             :disabled="cashEventData"
-            class="w-full bg-purple-100 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
+            class="w-full bg-purple-100 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md mt-5 hover:scale-105 transition-transform duration-200 disabled:opacity-50"
           >
             Sí, S/ {{ cashEventStore.expectedBankBalance }}
           </button>
@@ -210,7 +337,7 @@
         </p>
       </div>
 
-      <!-- BOTÓN -->
+      <!-- BOTÓN FINAL -->
       <div class="text-center">
         <router-link
           v-if="cashEventData"
@@ -220,7 +347,7 @@
           }"
           class="block bg-purple-600 hover:bg-purple-700 text-white text-xl font-bold w-full px-6 py-4 rounded-xl shadow-lg transition-all"
         >
-          Ver Detalle del Cierres
+          Ver Detalle del Cierre
         </router-link>
 
         <button
@@ -241,7 +368,7 @@
 
 <script setup>
 import { ref, onMounted, nextTick } from "vue";
-import { Coins, SmartphoneDevice, Safe, Xmark } from "@iconoir/vue";
+import { Coins, SmartphoneDevice, Safe, Xmark, InfoCircle } from "@iconoir/vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
 import { useTransactionStore } from "@/stores/transactionStore";
 
@@ -259,8 +386,14 @@ const cashEventData = ref(null);
 const selectedCashOption = ref(null);
 const selectedBankOption = ref(null);
 
+const showCashOptions = ref(false);
+const showBankOptions = ref(false);
+
 onMounted(async () => {
   await cashEventStore.startCashEventProcess(props.type);
+  if (props.type === "closure") {
+    await cashEventStore.calcularSaldoInicial();
+  }
 });
 
 const selectCashOption = (option) => {
@@ -322,3 +455,15 @@ const performCashEvent = async () => {
   }
 };
 </script>
+
+<style scoped>
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.25s ease;
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+</style>

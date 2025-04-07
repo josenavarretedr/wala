@@ -33,6 +33,31 @@ export function useCashEventStore() {
 
   const accounts = ['cash', 'bank'];
 
+  const saldoInicial = ref({
+    cash: 0,
+    bank: 0,
+  });
+
+  const calcularSaldoInicial = async () => {
+    try {
+      const transactionsToday = await getTransactionsTodayCmps();
+      const opening = transactionsToday.find((tx) => tx.type === "opening");
+      if (opening) {
+        saldoInicial.value.cash = opening.totalCash || 0;
+        saldoInicial.value.bank = opening.totalBank || 0;
+      } else {
+        saldoInicial.value.cash = 0;
+        saldoInicial.value.bank = 0;
+      }
+    } catch (error) {
+      console.error("Error calculando saldo inicial:", error);
+      saldoInicial.value.cash = 0;
+      saldoInicial.value.bank = 0;
+    }
+  };
+
+
+
   const startCashEventProcess = async (type) => {
     isProcessingCash.value = true;
     if (type === 'closure') {
@@ -44,6 +69,9 @@ export function useCashEventStore() {
   };
 
   const calculateExpectedBalancesFromTransactions = async () => {
+
+    await calcularSaldoInicial();
+
     expectedBalances.value.cash = 0;
     expectedBalances.value.bank = 0;
 
@@ -57,6 +85,9 @@ export function useCashEventStore() {
           expectedBalances.value.bank += type === 'income' ? total : -total;
         }
       });
+      expectedBalances.value.cash += saldoInicial.value.cash;
+      expectedBalances.value.bank += saldoInicial.value.bank;
+
     } catch (error) {
       console.error('Error al calcular saldos esperados:', error);
       isProcessingCash.value = false;
@@ -248,6 +279,9 @@ export function useCashEventStore() {
     accounts,
 
     streakCashEvents,
-    hasClosureForToday
+    hasClosureForToday,
+
+    saldoInicial,
+    calcularSaldoInicial,
   };
 }

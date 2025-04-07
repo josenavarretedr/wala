@@ -36,9 +36,22 @@ import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
 const transactionStore = useTransactionStore();
 
 const dataOrdenada = computed(() => {
-  return transactionStore.transactionsInStore.value.sort((a, b) => {
-    return b.createdAt.seconds - a.createdAt.seconds;
-  });
+  const all = transactionStore.transactionsInStore.value;
+
+  const closure = all.find((tx) => tx.type === "closure");
+  const opening = all.find((tx) => tx.type === "opening");
+
+  const middle = all
+    .filter((tx) => tx.type !== "closure" && tx.type !== "opening")
+    .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+
+  const result = [];
+
+  if (closure) result.push(closure);
+  result.push(...middle);
+  if (opening) result.push(opening);
+
+  return result;
 });
 
 /**

@@ -34,28 +34,29 @@
     </div>
 
     <!-- Contenido expandible -->
-    <div v-if="isOpen" class="mt-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div
-          class="flex flex-col items-start border border-green-500 rounded-lg p-4 bg-green-50 w-full"
-        >
-          <p class="text-sm text-gray-500 mb-1">Efectivo final</p>
-          <p class="text-2xl font-bold text-green-700">
-            S/. {{ record.totalCash ?? 0 }}
-          </p>
-        </div>
+    <Transition name="fade-scale">
+      <div v-if="isOpen" class="mt-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            class="flex flex-col items-start border border-green-500 rounded-lg p-4 bg-green-50 w-full"
+          >
+            <p class="text-sm text-gray-500 mb-1">Efectivo final</p>
+            <p class="text-2xl font-bold text-green-700">
+              S/. {{ record.totalCash ?? 0 }}
+            </p>
+          </div>
 
-        <div
-          class="flex flex-col items-start border border-purple-500 rounded-lg p-4 bg-purple-50 w-full"
-        >
-          <p class="text-sm text-gray-500 mb-1">Banco final</p>
-          <p class="text-2xl font-bold text-purple-700">
-            S/. {{ record.totalBank ?? 0 }}
-          </p>
+          <div
+            class="flex flex-col items-start border border-purple-500 rounded-lg p-4 bg-purple-50 w-full"
+          >
+            <p class="text-sm text-gray-500 mb-1">Banco final</p>
+            <p class="text-2xl font-bold text-purple-700">
+              S/. {{ record.totalBank ?? 0 }}
+            </p>
+          </div>
         </div>
       </div>
-    </div>
-
+    </Transition>
     <!-- Fecha -->
     <div class="text-xs text-gray-400 mt-4 italic">
       {{ formatedDate(record.createdAt) }}
@@ -92,3 +93,15 @@ function formatedDate(date) {
   });
 }
 </script>
+
+<style scoped>
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.25s ease;
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+}
+</style>

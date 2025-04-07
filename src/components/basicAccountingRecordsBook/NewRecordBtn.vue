@@ -23,7 +23,7 @@
       <div
         class="absolute z-10 w-64 px-3 py-2 text-sm text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 -top-20 left-1/2 transform -translate-x-1/2"
       >
-        Iniciaremos nuestro registro al iniciar el día siguiente. <br />
+        <!-- Iniciaremos nuestro registro al iniciar el día siguiente. <br /> -->
         <strong class="block mt-2">Tiempo restante:</strong>
         <strong class="block text-center mt-1">{{ countdown }}</strong>
       </div>

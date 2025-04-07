@@ -8,6 +8,22 @@
 
     <!-- Formulario de cierre SIEMPRE visible -->
     <div class="space-y-6">
+      <!-- Saldo Inicial del Día -->
+      <div
+        class="bg-white shadow-md rounded-xl p-5 border-l-4 border-blue-500 relative"
+      >
+        <div class="flex items-center gap-2 text-blue-600 mb-4">
+          <Cash class="w-7 h-7" />
+          <h2 class="text-2xl font-bold">Saldo Inicial del Día</h2>
+        </div>
+        <p class="text-lg text-gray-600">
+          Este es el saldo con el que comenzaste hoy:
+          <strong class="text-blue-700"
+            >S/ {{ cashEventStore.saldoInicial.toFixed(2) }}</strong
+          >
+        </p>
+      </div>
+
       <!-- Sección efectivo -->
       <div
         class="bg-white shadow-md rounded-xl p-5 border-l-4 border-green-500 relative"
@@ -18,7 +34,7 @@
         </div>
 
         <p class="text-lg text-gray-600 mb-4">
-          Saldo esperado:
+          Saldo esperadoasssssss:
           <strong>S/ {{ cashClosureStore.expectedCashBalance }}</strong>
         </p>
 
@@ -240,30 +256,35 @@
 </template>
 
 <script setup>
-import { Coins, SmartphoneDevice, Safe, Xmark } from "@iconoir/vue";
-import { useCashClosureStore } from "@/stores/cashClosureStore";
-import { ref, nextTick } from "vue";
+import { Coins, SmartphoneDevice, Safe, Xmark, Cash } from "@iconoir/vue";
+import { ref, nextTick, onMounted } from "vue";
+import { useCashEventStore } from "@/stores/cashEventStore";
 
-const cashClosureStore = useCashClosureStore();
+const cashEventStore = useCashEventStore();
 const cashClosureData = ref(null);
 
-const selectedCashOption = ref(null); // null | 'expected' | 'custom'
+const selectedCashOption = ref(null);
 const selectedBankOption = ref(null);
 
+// Inicializa proceso y calcula saldoInicial
+onMounted(async () => {
+  await cashEventStore.startCashEventProcess("closure");
+  await cashEventStore.calcularSaldoInicial();
+});
+
+// Manejadores
 const selectCashOption = (option) => {
-  if (cashClosureData.value) return; // No editable si ya está cerrado
+  if (cashClosureData.value) return;
   selectedCashOption.value = option;
   if (option === "expected") {
-    cashClosureStore.setrealBalance(
-      "cash",
-      cashClosureStore.expectedCashBalance.value
-    );
+    cashEventStore.setRealBalance("cash", cashEventStore.expectedBalances.cash);
   }
 };
+
 const clearCashSelection = () => {
   if (cashClosureData.value) return;
   selectedCashOption.value = null;
-  cashClosureStore.setrealBalance("cash", null);
+  cashEventStore.setRealBalance("cash", null);
 };
 
 const onBlurCashInput = (e) => {
@@ -272,7 +293,7 @@ const onBlurCashInput = (e) => {
     const value = parseFloat(e.target.value);
     if (!isNaN(value)) {
       selectedCashOption.value = "custom";
-      cashClosureStore.setrealBalance("cash", value);
+      cashEventStore.setRealBalance("cash", value);
     }
   });
 };
@@ -281,16 +302,14 @@ const selectBankOption = (option) => {
   if (cashClosureData.value) return;
   selectedBankOption.value = option;
   if (option === "expected") {
-    cashClosureStore.setrealBalance(
-      "bank",
-      cashClosureStore.expectedBankBalance.value
-    );
+    cashEventStore.setRealBalance("bank", cashEventStore.expectedBalances.bank);
   }
 };
+
 const clearBankSelection = () => {
   if (cashClosureData.value) return;
   selectedBankOption.value = null;
-  cashClosureStore.setrealBalance("bank", null);
+  cashEventStore.setRealBalance("bank", null);
 };
 
 const onBlurBankInput = (e) => {
@@ -299,14 +318,12 @@ const onBlurBankInput = (e) => {
     const value = parseFloat(e.target.value);
     if (!isNaN(value)) {
       selectedBankOption.value = "custom";
-      cashClosureStore.setrealBalance("bank", value);
+      cashEventStore.setRealBalance("bank", value);
     }
   });
 };
 
-await cashClosureStore.startCashClosureProcess();
-
 const performClosure = async () => {
-  cashClosureData.value = await cashClosureStore.performCashClosure();
+  cashClosureData.value = await cashEventStore.performCashEvent("closure");
 };
 </script>
