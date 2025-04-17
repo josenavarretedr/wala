@@ -84,6 +84,11 @@ const routes = [
         component: () => import('@/components/cashClosureApp/CashClosureDetails.vue')
       },
       {
+        path: 'cashClosureApp/all',
+        name: 'CashClosureAll',
+        component: () => import('@/pages/MonthlyCashCalendarWrapper.vue'),
+      },
+      {
         path: 'caja',
         name: 'CajaDiaria',
         component: () => import('@/components/cashClosureApp/CajaDiaria.vue'),

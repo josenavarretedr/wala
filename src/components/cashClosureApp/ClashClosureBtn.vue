@@ -53,8 +53,7 @@ const uuidTodayClosure = computed(() => {
 const linkTo = computed(() => {
   if (dayClosure.value && uuidTodayClosure.value) {
     return {
-      name: "CashClosureDetails",
-      params: { cashClosureId: uuidTodayClosure.value },
+      name: "CashClosureAll",
     };
   } else {
     return {
