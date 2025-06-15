@@ -33,7 +33,7 @@
 
         <p class="text-lg text-gray-600 mb-4">
           Saldo esperadoasssssss:
-          <strong>S/ {{ cashClosureStore.expectedCashBalance }}</strong>
+          <strong>S/ {{ cashEventStore.expectedCashBalance }}</strong>
         </p>
 
         <template v-if="selectedCashOption === null">
@@ -42,7 +42,7 @@
             :disabled="cashClosureData"
             class="w-full bg-green-100 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
           >
-            Sí, S/ {{ cashClosureStore.expectedCashBalance }}
+            Sí, S/ {{ cashEventStore.expectedCashBalance }}
           </button>
 
           <div class="space-y-2">
@@ -58,7 +58,7 @@
               inputmode="decimal"
               pattern="[0-9]*"
               :disabled="cashClosureData"
-              v-model.number="cashClosureStore.realBalances.cash"
+              v-model.number="cashEventStore.realBalances.cash"
               @blur="onBlurCashInput"
               class="w-full px-4 py-4 text-2xl text-center border-2 border-green-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50"
               placeholder="Otro monto"
@@ -79,7 +79,7 @@
               disabled
               class="w-full bg-green-200 text-green-700 text-2xl font-bold py-6 rounded-lg shadow-md"
             >
-              Sí, S/ {{ cashClosureStore.expectedCashBalance }}
+              Sí, S/ {{ cashEventStore.expectedCashBalance }}
             </button>
           </div>
         </template>
@@ -105,7 +105,7 @@
               inputmode="decimal"
               pattern="[0-9]*"
               :disabled="cashClosureData"
-              v-model.number="cashClosureStore.realBalances.cash"
+              v-model.number="cashEventStore.realBalances.cash"
               @blur="onBlurCashInput"
               class="w-full px-4 py-4 text-2xl text-center border-2 border-green-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-green-300 disabled:opacity-50"
               placeholder="Otro monto"
@@ -114,14 +114,14 @@
         </template>
 
         <p
-          v-if="cashClosureStore.cashDifference !== 0"
+          v-if="cashEventStore.cashDifference !== 0"
           class="text-lg font-bold mt-4"
           :class="{
-            'text-red-500': cashClosureStore.cashDifference < 0,
-            'text-green-500': cashClosureStore.cashDifference > 0,
+            'text-red-500': cashEventStore.cashDifference < 0,
+            'text-green-500': cashEventStore.cashDifference > 0,
           }"
         >
-          Diferencia: S/ {{ cashClosureStore.cashDifference }}
+          Diferencia: S/ {{ cashEventStore.cashDifference }}
         </p>
       </div>
 
@@ -136,7 +136,7 @@
 
         <p class="text-lg text-gray-600 mb-4">
           Saldo esperado:
-          <strong>S/ {{ cashClosureStore.expectedBankBalance }}</strong>
+          <strong>S/ {{ cashEventStore.expectedBankBalance }}</strong>
         </p>
 
         <template v-if="selectedBankOption === null">
@@ -145,7 +145,7 @@
             :disabled="cashClosureData"
             class="w-full bg-purple-100 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md mb-4 hover:scale-105 transition-transform disabled:opacity-50"
           >
-            Sí, S/ {{ cashClosureStore.expectedBankBalance }}
+            Sí, S/ {{ cashEventStore.expectedBankBalance }}
           </button>
 
           <div class="space-y-2">
@@ -161,7 +161,7 @@
               inputmode="decimal"
               pattern="[0-9]*"
               :disabled="cashClosureData"
-              v-model.number="cashClosureStore.realBalances.bank"
+              v-model.number="cashEventStore.realBalances.bank"
               @blur="onBlurBankInput"
               class="w-full px-4 py-4 text-2xl text-center border-2 border-purple-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50"
               placeholder="Otro monto"
@@ -182,7 +182,7 @@
               disabled
               class="w-full bg-purple-200 text-purple-700 text-2xl font-bold py-6 rounded-lg shadow-md"
             >
-              Sí, S/ {{ cashClosureStore.expectedBankBalance }}
+              Sí, S/ {{ cashEventStore.expectedBankBalance }}
             </button>
           </div>
         </template>
@@ -208,7 +208,7 @@
               inputmode="decimal"
               pattern="[0-9]*"
               :disabled="cashClosureData"
-              v-model.number="cashClosureStore.realBalances.bank"
+              v-model.number="cashEventStore.realBalances.bank"
               @blur="onBlurBankInput"
               class="w-full px-4 py-4 text-2xl text-center border-2 border-purple-500 rounded-lg shadow focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50"
               placeholder="Otro monto"
@@ -217,14 +217,14 @@
         </template>
 
         <p
-          v-if="cashClosureStore.bankDifference !== 0"
+          v-if="cashEventStore.bankDifference !== 0"
           class="text-lg font-bold mt-4"
           :class="{
-            'text-red-500': cashClosureStore.bankDifference < 0,
-            'text-green-500': cashClosureStore.bankDifference > 0,
+            'text-red-500': cashEventStore.bankDifference < 0,
+            'text-green-500': cashEventStore.bankDifference > 0,
           }"
         >
-          Diferencia: S/ {{ cashClosureStore.bankDifference }}
+          Diferencia: S/ {{ cashEventStore.bankDifference }}
         </p>
       </div>
 
