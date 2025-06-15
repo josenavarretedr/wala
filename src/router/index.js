@@ -13,7 +13,7 @@ const routes = [
       {
         path: '',
         name: 'Home',
-        component: () => import("@/pages/Home.vue")
+        component: () => import("@/views/Home.vue")
       },
     ],
   },
@@ -49,7 +49,7 @@ const routes = [
       {
         path: '',
         name: 'DashboardRedirect',
-        component: () => import('@/pages/DashboardRedirect.vue'),
+        component: () => import('@/views/dashboard/DashboardRedirect.vue'),
       },
 
       // Creación de nuevo negocio
@@ -99,14 +99,6 @@ const routes = [
           }
         ]
       },
-
-      // Vista Wizard para Caja (Apertura o Cierre)
-      {
-        path: 'caja',
-        name: 'CajaDiaria',
-        component: () => import('@/components/cashClosureApp/CajaDiaria.vue'),
-        props: route => ({ type: route.query.type || 'closure' })
-      }
     ]
   },
 
@@ -115,7 +107,7 @@ const routes = [
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
-    component: () => import("@/pages/NotFound.vue"),
+    component: () => import("@/views/NotFound.vue"),
   },
 ];
 

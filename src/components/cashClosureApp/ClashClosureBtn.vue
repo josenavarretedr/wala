@@ -13,24 +13,9 @@
           : 'border-gray-400 text-gray-400',
       ]"
     >
-      <div v-if="dayClosure" class="flex items-center">
-        <FireFlame />
-        <span class="ml-2">{{ streak }} ARQUEO</span>
-      </div>
-
-      <div v-else>
-        <template v-if="isHovered">
-          <div class="flex items-center">
-            <Safe />
-            <span class="ml-2">ARQUEAR</span>
-          </div>
-        </template>
-        <template v-else>
-          <div class="flex items-center">
-            <FireFlame />
-            <span class="ml-2">{{ streak }} ARQUEOS</span>
-          </div>
-        </template>
+      <div class="flex items-center">
+        <component :is="currentIcon" />
+        <span class="ml-2">{{ currentText }}</span>
       </div>
     </router-link>
   </div>
@@ -41,11 +26,17 @@ import { ref, computed } from "vue";
 import { Safe, FireFlame } from "@iconoir/vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
 
+// Store
 const cashEventStore = useCashEventStore();
+
+// Estado local
 const isHovered = ref(false);
+
+// Datos del store
 const dayClosure = cashEventStore.hasClosureForToday;
 const streak = cashEventStore.streakCashEvents;
 
+// Computados para el link
 const uuidTodayClosure = computed(() => {
   return cashEventStore.cashEventsForToday.value[0]?.uuid || null;
 });
@@ -62,6 +53,18 @@ const linkTo = computed(() => {
   }
 });
 
+// Computados para icono y texto
+const currentIcon = computed(() => {
+  if (dayClosure.value) return FireFlame;
+  return isHovered.value ? Safe : FireFlame;
+});
+
+const currentText = computed(() => {
+  if (dayClosure.value) return `${streak.value} ARQUEO`;
+  return isHovered.value ? "ARQUEAR" : `${streak.value} ARQUEOS`;
+});
+
+// Inicializa datos
 await cashEventStore.getAllCashEvents();
 await cashEventStore.getCashEventForToday("closure");
 </script>
