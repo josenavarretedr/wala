@@ -54,7 +54,7 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push({ label: 'Detalles egreso', component: StepAddExpenseDetails });
       }
 
-      this.steps.push({ label: 'Resumen', component: StepSummary });
+      // this.steps.push({ label: 'Resumen', component: StepSummary });
     }
   }
 });

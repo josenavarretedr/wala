@@ -1,6 +1,6 @@
 // composables/useTransactionFlow.js
 import { computed } from 'vue';
-import { useTransactionStore } from '@/stores/transactionStore';
+import { useTransactionStore } from '@/stores/transaction/transactionStore';
 
 export function useTransactionFlow() {
   const transactionStore = useTransactionStore();

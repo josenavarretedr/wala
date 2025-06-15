@@ -1,5 +1,3 @@
-
-
 <script setup>
 import { computed } from "vue";
 import { useRouter } from "vue-router";
@@ -18,7 +16,8 @@ const finalizarRegistro = async () => {
 
   // Verifica si la operación fue exitosa (puedes definir un status si lo deseas)
   flow.resetFlow();
-  router.push({ name: "TransactionList" }); // Ruta que corresponda al listado
+  // FIXME: Redirigir al listado de transacciones
+  // router.push({ name: "TransactionList" }); // Ruta que corresponda al listado
 };
 </script>
 
