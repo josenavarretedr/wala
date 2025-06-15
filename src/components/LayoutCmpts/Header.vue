@@ -32,7 +32,7 @@ import { Folder } from "@iconoir/vue";
 const authStore = useAuthStore();
 const businessStore = useBusinessStore();
 
-const displayName = ref("SUMMATAP");
+const displayName = ref("WALA");
 
 const businessName = computed(() => {
   const id = businessStore.currentBusinessId;
@@ -45,9 +45,9 @@ watch(
   () => authStore.user.value,
   (newUser) => {
     if (!newUser) {
-      displayName.value = "SUMMATAP";
+      displayName.value = "WALA";
     } else {
-      displayName.value = businessName.value || "SUMMATAP";
+      displayName.value = businessName.value || "WALA";
     }
   },
   { immediate: true }
@@ -58,7 +58,7 @@ watch(
   () => businessStore.currentBusinessId,
   () => {
     if (authStore.user.value) {
-      displayName.value = businessName.value || "SUMMATAP";
+      displayName.value = businessName.value || "WALA";
     }
   }
 );

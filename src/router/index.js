@@ -3,7 +3,6 @@ import { createWebHistory, createRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore"; // Importa el store de autenticación
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
-import Login from "@/pages/Login.vue";
 
 // Definir rutas
 const routes = [
@@ -33,16 +32,15 @@ const routes = [
       {
         path: 'login',
         name: 'Login',
-        component: Login
+        component: () => import('@/views/auth/Login.vue')
       },
       {
         path: 'register',
         name: 'RegisterView',
-        component: () => import('@/pages/Register.vue')
+        component: () => import('@/views/auth/Register.vue')
       },
     ],
   },
-
   {
     path: '/dashboard',
     component: () => import('@/layouts/DashboardLayout.vue'),
@@ -53,41 +51,63 @@ const routes = [
         name: 'DashboardRedirect',
         component: () => import('@/pages/DashboardRedirect.vue'),
       },
+
+      // Creación de nuevo negocio
       {
         path: 'createNewBusiness',
         name: 'CreateNewBusiness',
         component: () => import('@/components/Business/CreateNewBusiness.vue'),
       },
+
+      // Panel por negocio
       {
         path: ':idBusiness',
         name: 'Dashboard',
         component: () => import('@/pages/Dashboard.vue'),
       },
+
+      // Módulo de Registro Contable
       {
         path: 'basicAccountingRecordsBook',
-        name: 'BasicAccountingRecordsBook',
         component: () => import('@/pages/BasicAccountingRecordsWrapper.vue'),
+        children: [
+          {
+            path: '',
+            name: 'BasicAccountingRecordsBook',
+            component: () => import('@/pages/BasicAccountingRecordsWrapper.vue'),
+          },
+          {
+            path: ':registerId',
+            name: 'DetailsRecords',
+            component: () => import('@/components/HistorialRecords/DetailsRecords.vue'),
+          }
+        ]
       },
-      {
-        path: 'basicAccountingRecordsBook/:registerId',
-        name: 'DetailsRecords',
-        component: () => import('@/components/HistorialRecords/DetailsRecords.vue')
-      },
+
+      // Módulo de Caja Diaria
       {
         path: 'cashClosureApp',
-        name: 'CashClosureApp',
-        component: () => import('@/components/cashClosureApp/CashClosureApp.vue')
+        component: () => import('@/components/cashClosureApp/CashClosureApp.vue'),
+        children: [
+          {
+            path: '',
+            name: 'CashClosureApp',
+            component: () => import('@/components/cashClosureApp/CashClosureApp.vue'),
+          },
+          {
+            path: ':cashClosureId',
+            name: 'CashClosureDetails',
+            component: () => import('@/components/cashClosureApp/CashClosureDetails.vue'),
+          },
+          {
+            path: 'all',
+            name: 'CashClosureAll',
+            component: () => import('@/pages/MonthlyCashCalendarWrapper.vue'),
+          }
+        ]
       },
-      {
-        path: 'cashClosureApp/:cashClosureId',
-        name: 'CashClosureDetails',
-        component: () => import('@/components/cashClosureApp/CashClosureDetails.vue')
-      },
-      {
-        path: 'cashClosureApp/all',
-        name: 'CashClosureAll',
-        component: () => import('@/pages/MonthlyCashCalendarWrapper.vue'),
-      },
+
+      // Vista Wizard para Caja (Apertura o Cierre)
       {
         path: 'caja',
         name: 'CajaDiaria',
@@ -97,6 +117,8 @@ const routes = [
     ]
   },
 
+  // Ruta para la página NO encontrada
+  // Debe ser la última ruta definida
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
