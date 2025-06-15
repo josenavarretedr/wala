@@ -63,23 +63,26 @@ const routes = [
       {
         path: ':idBusiness',
         name: 'Dashboard',
-        component: () => import('@/pages/Dashboard.vue'),
+        component: () => import('@/views/Dashboard.vue'),
       },
 
       // Módulo de Registro Contable
       {
         path: 'basicAccountingRecordsBook',
-        component: () => import('@/pages/BasicAccountingRecordsWrapper.vue'),
+        // name: 'BasicAccountingRecordsBook',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
         children: [
           {
             path: '',
             name: 'BasicAccountingRecordsBook',
-            component: () => import('@/pages/BasicAccountingRecordsWrapper.vue'),
+            component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+
           },
           {
             path: ':registerId',
             name: 'DetailsRecords',
-            component: () => import('@/components/HistorialRecords/DetailsRecords.vue'),
+            // TODO arreglar esto porque no funciona para RecordsDetails.vue. Por el contrario, lo que está cargando es BasicAccountingRecordsWrapper.vue y está cargando a '@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+            component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
           }
         ]
       },
@@ -87,22 +90,21 @@ const routes = [
       // Módulo de Caja Diaria
       {
         path: 'cashClosureApp',
-        component: () => import('@/components/cashClosureApp/CashClosureApp.vue'),
         children: [
           {
             path: '',
             name: 'CashClosureApp',
-            component: () => import('@/components/cashClosureApp/CashClosureApp.vue'),
+            component: () => import('@/views/cashClosureApp/CashClosureApp.vue'),
           },
           {
             path: ':cashClosureId',
             name: 'CashClosureDetails',
-            component: () => import('@/components/cashClosureApp/CashClosureDetails.vue'),
+            component: () => import('@/views/cashClosureApp/CashClosureDetails.vue'),
           },
           {
             path: 'all',
             name: 'CashClosureAll',
-            component: () => import('@/pages/MonthlyCashCalendarWrapper.vue'),
+            component: () => import('@/views/cashClosureApp/MonthlyCashCalendarWrapper.vue'),
           }
         ]
       },

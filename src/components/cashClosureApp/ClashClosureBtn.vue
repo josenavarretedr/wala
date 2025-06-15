@@ -57,8 +57,7 @@ const linkTo = computed(() => {
     };
   } else {
     return {
-      name: "CajaDiaria",
-      query: { type: "closure" },
+      name: "CashClosureApp",
     };
   }
 });

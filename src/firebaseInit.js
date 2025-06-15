@@ -20,9 +20,27 @@ const firebaseConfig = {
 
 const appFirebase = initializeApp(firebaseConfig);
 
-// Obtener instancias de Firestore y Authentication
+
 const db = getFirestore(appFirebase);
+/**
+ * An instance of Firebase Authentication service.
+ * 
+ * Provides methods for user authentication, such as sign-in, sign-out,
+ * password management, and user account management.
+ * 
+ * @type {import('firebase/auth').Auth}
+ * @see {@link https://firebase.google.com/docs/reference/js/auth.Auth}
+ */
 const auth = getAuth(appFirebase);
+/**
+ * Firebase Cloud Storage instance initialized with the provided Firebase app.
+ * 
+ * Use this instance to upload, download, and manage files in Firebase Storage.
+ * 
+ * @constant
+ * @type {import("firebase/storage").FirebaseStorage}
+ * @see {@link https://firebase.google.com/docs/storage}
+ */
 const storage = getStorage(appFirebase);
 
 // Verificar si estamos en un entorno local para conectar a los emuladores

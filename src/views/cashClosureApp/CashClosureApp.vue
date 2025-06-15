@@ -18,9 +18,7 @@
         </div>
         <p class="text-lg text-gray-600">
           Este es el saldo con el que comenzaste hoy:
-          <strong class="text-blue-700"
-            >S/ {{ cashEventStore.saldoInicial.toFixed(2) }}</strong
-          >
+          <!-- <strong class="text-blue-700">S/ {{ cashEventStore.saldoInicial.toFixed(2) }}</strong> -->
         </p>
       </div>
 

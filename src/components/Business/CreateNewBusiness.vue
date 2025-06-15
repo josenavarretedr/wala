@@ -40,6 +40,7 @@
           >
             <option disabled value="">Selecciona el tipo de negocio</option>
             <option value="producción">Producción</option>
+            <option value="servicios">Servicios</option>
             <option value="comercio">Comercio</option>
             <option value="mixto">Mixto</option>
           </select>
