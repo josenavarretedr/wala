@@ -126,7 +126,7 @@
 
 <script setup>
 import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue";
-import SearchProductAsync from "./SearchProductAsync.vue";
+import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useInventoryStore } from "@/stores/InventoryStore";

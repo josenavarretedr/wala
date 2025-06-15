@@ -370,7 +370,7 @@
 import { ref, onMounted, nextTick } from "vue";
 import { Coins, SmartphoneDevice, Safe, Xmark, InfoCircle } from "@iconoir/vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const props = defineProps({
   type: {

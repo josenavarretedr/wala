@@ -122,7 +122,7 @@ import { useRoute } from "vue-router";
 
 const route = useRoute();
 
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const transactionStore = useTransactionStore();
 

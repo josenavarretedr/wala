@@ -38,7 +38,7 @@
 import { ref } from "vue";
 import { Safe, Coins, SmartphoneDevice } from "@iconoir/vue";
 import BalanceInput from "@/components/cashClosureApp/BalanceInput.vue"; // Componente reusable por tipo de cuenta
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const transactionStore = useTransactionStore();
 

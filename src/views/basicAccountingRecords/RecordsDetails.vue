@@ -44,7 +44,7 @@
 <script setup>
 import { computed } from "vue";
 import SummaryOfRegister from "@/components/HistorialRecords/SummaryOfRegister.vue";
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useCashClosureStore } from "@/stores/cashClosureStore";
 import { Edit, Trash, Xmark } from "@iconoir/vue";
 import { useRoute, useRouter } from "vue-router";

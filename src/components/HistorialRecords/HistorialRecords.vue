@@ -53,7 +53,7 @@ import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
 import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
 import NewRecordBtn from "@/components/basicAccountingRecordsBook/NewRecordBtn.vue";
 
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 const transactionStore = useTransactionStore();
 </script>
 

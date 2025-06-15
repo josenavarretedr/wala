@@ -1,3 +1,5 @@
+//  @/src/stores/transaction/transactionStore.js 
+
 import { ref, computed } from 'vue';
 
 import { useTransaccion } from '@/composables/useTransaction';
@@ -10,7 +12,7 @@ const expensesStore = useExpensesStore(); // Usa el store
 
 
 
-
+const status = ref(null);
 const transactionsInStore = ref([]);
 
 const transactionToAdd = ref({
@@ -65,6 +67,11 @@ export function useTransactionStore() {
       // Crear la transacción en Firestore
       await createTransaction(transactionToAdd.value);
       console.log('Transaction added successfully');
+
+      await createTransaction(transactionToAdd.value);
+      console.log('Transaction added successfully');
+      status.value = 'success';
+
 
     } catch (error) {
       console.error('Error adding transaction: ', error);
@@ -262,6 +269,7 @@ export function useTransactionStore() {
     transactionToAdd,
     currentStepOfAddTransaction,
     itemToAddInTransaction,
+    status,
     addTransaction,
     getTransactions,
     getTransactionsToday,

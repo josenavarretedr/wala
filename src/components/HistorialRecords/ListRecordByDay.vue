@@ -27,7 +27,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";

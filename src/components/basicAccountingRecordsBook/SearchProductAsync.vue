@@ -14,7 +14,7 @@ const emit = defineEmits(["update:productToAdd"]);
 import { ref, onMounted } from "vue";
 
 import { useInventoryStore } from "@/stores/inventoryStore";
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 const inventoryStore = useInventoryStore();
 const transactionStore = useTransactionStore();
 

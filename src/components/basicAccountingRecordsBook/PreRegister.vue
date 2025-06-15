@@ -118,7 +118,7 @@
 
 <script setup>
 import { GraphUp, DatabaseExport, Coins, SmartphoneDevice } from "@iconoir/vue";
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 const transactionStore = useTransactionStore();
 </script>
 

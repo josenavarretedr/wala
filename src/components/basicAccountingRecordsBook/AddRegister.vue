@@ -92,7 +92,7 @@ import { NavArrowLeft, CloudUpload, BinMinusIn, Xmark } from "@iconoir/vue";
 
 import CajaDiaria from "@/components/cashClosureApp/CajaDiaria.vue";
 
-import { useTransactionStore } from "@/stores/transactionStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useTransactionFlow } from "@/composables/useTransactionFlow";
 
 const transactionStore = useTransactionStore();

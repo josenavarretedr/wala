@@ -42,11 +42,15 @@
 import { GraphUp, DatabaseExport } from "@iconoir/vue"; // Importar iconos de Iconoir
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
+import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+const flow = useTransactionFlowStore();
+
 const transactionStore = useTransactionStore();
 
 const handleSelectedType = (type) => {
   transactionStore.modifyTransactionToAddType(type);
-  transactionStore.nextStepToAddTransaction();
+  flow.defineDynamicSteps(type);
+  flow.nextStep();
 };
 </script>
 

@@ -42,11 +42,13 @@
 import { Coins, SmartphoneDevice } from "@iconoir/vue"; // Importar iconos de Iconoir
 
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+const flow = useTransactionFlowStore();
 
 const transactionStore = useTransactionStore();
 
 const handleSelectedAccount = (account) => {
   transactionStore.modifyTransactionToAddAccount(account);
-  transactionStore.nextStepToAddTransaction();
+  flow.nextStep();
 };
 </script>
