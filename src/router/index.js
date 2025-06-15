@@ -69,22 +69,13 @@ const routes = [
       // Módulo de Registro Contable
       {
         path: 'basicAccountingRecordsBook',
-        // name: 'BasicAccountingRecordsBook',
+        name: 'BasicAccountingRecordsBook',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-        children: [
-          {
-            path: '',
-            name: 'BasicAccountingRecordsBook',
-            component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-
-          },
-          {
-            path: ':registerId',
-            name: 'DetailsRecords',
-            // TODO arreglar esto porque no funciona para RecordsDetails.vue. Por el contrario, lo que está cargando es BasicAccountingRecordsWrapper.vue y está cargando a '@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-            component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
-          }
-        ]
+      },
+      {
+        path: 'basicAccountingRecordsBook/:registerId',
+        name: 'DetailsRecords',
+        component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
       },
 
       // Módulo de Caja Diaria
