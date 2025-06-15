@@ -3,6 +3,7 @@ import { createWebHistory, createRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore"; // Importa el store de autenticación
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import AuthLayout from "@/layouts/AuthLayout.vue";
+import BasicAccountingRecordsWrapper from "@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue";
 
 // Definir rutas
 const routes = [
@@ -70,7 +71,7 @@ const routes = [
       {
         path: 'basicAccountingRecordsBook',
         name: 'BasicAccountingRecordsBook',
-        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+        component: BasicAccountingRecordsWrapper,
       },
       {
         path: 'basicAccountingRecordsBook/:registerId',
