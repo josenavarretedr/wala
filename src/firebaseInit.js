@@ -48,7 +48,7 @@ if (window.location.hostname === 'localhost') {
   connectFirestoreEmulator(db, 'localhost', 8080); // Conectar Firestore Emulator en el puerto 8080
   connectAuthEmulator(auth, 'http://localhost:9099'); // Conectar Authentication Emulator en el puerto 9099
   connectStorageEmulator(storage, 'localhost', 9199); // Conectar Storage Emulator en el puerto 9199
-
 }
 
 export default appFirebase;
+export { db, auth, storage };

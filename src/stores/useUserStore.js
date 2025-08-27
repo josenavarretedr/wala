@@ -1,54 +1,391 @@
-// stores/useUserStore.js
-import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { defineStore } from 'pinia'
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
+import { db } from '@/firebaseInit'
 
-import { getUserProfile, getUserCredencialInfo } from "@/api/utilsFirebase";
+// Claves de localStorage
+const STORAGE_KEYS = {
+  PROFILE: 'walla_profile',
+  BUSINESSES: 'walla_businesses',
+  CURRENT_BUSINESS: 'walla_current_business'
+}
 
-export const useUserStore = defineStore('user', () => {
-  const userUUID = ref(null);
-  const userProfile = ref(null);
-  const userCredencial = ref(null);
-
-  const initialState = {
-    userUUID: null,
+export const useUserStore = defineStore('user', {
+  state: () => ({
     userProfile: null,
-    userCredencial: null,
-  };
+    userBusinesses: [], // ✅ NUEVO: Array de negocios
+    currentBusiness: null, // ✅ NUEVO: Negocio seleccionado
+    isLoading: false,
+    error: null
+  }),
 
-  const resetStore = () => {
-    userUUID.value = initialState.userUUID;
-    userProfile.value = initialState.userProfile;
-    userCredencial.value = initialState.userCredencial;
-  };
+  getters: {
+    // Verificar si es gerente de al menos un negocio
+    isManager: (state) => {
+      return state.userBusinesses.some(b => b.rol === 'gerente');
+    },
 
+    // Verificar si es empleado en al menos un negocio
+    isEmployee: (state) => {
+      return state.userBusinesses.some(b => b.rol === 'empleado');
+    },
 
-  // Función para suscribirse a cambios en tiempo real
+    // Obtener permisos del negocio actual
+    currentPermissions: (state) => {
+      return state.currentBusiness?.permissions || {};
+    },
 
-  const setUserProfileToStore = async (userId) => {
-    try {
-      const userProfileFromStore = await getUserProfile(userId);
-      userUUID.value = userId;
-      userProfile.value = userProfileFromStore;
-    } catch (error) {
-      console.error("Error getting user savings:", error);
+    // Obtener negocio principal (por defecto)
+    primaryBusiness: (state) => {
+      return state.userBusinesses.find(b => b.esPrincipal) || state.userBusinesses[0];
+    },
+
+    // Verificar si es gerente del negocio actual
+    isCurrentBusinessManager: (state) => {
+      return state.currentBusiness?.rol === 'gerente';
+    },
+
+    // Obtener rol en el negocio actual
+    getCurrentBusinessRole: (state) => {
+      return state.currentBusiness?.rol || null;
+    },
+
+    // Verificar si tiene al menos un negocio
+    hasBusinesses: (state) => {
+      return state.userBusinesses.length > 0;
+    }
+  },
+
+  actions: {
+    async loadUserProfile(uid) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        // Cargar perfil básico (SIN businessId, businessName, rol)
+        const userDocRef = doc(db, 'users', uid)
+        const userDoc = await getDoc(userDocRef)
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data()
+
+          this.userProfile = {
+            uid: userData.uid || uid,
+            email: userData.email,
+            nombre: userData.nombre,
+            apellidos: userData.apellidos,
+            fechaRegistro: userData.fechaRegistro || new Date(),
+            activo: userData.activo !== false,
+            configuracion: userData.configuracion || {
+              theme: 'light',
+              notifications: true
+            }
+          }
+
+          // Guardar perfil en localStorage
+          localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
+
+        } else {
+          // Usuario no existe en Firestore - crear perfil básico
+          console.log('⚠️ Usuario no encontrado en Firestore, creando perfil básico')
+
+          const basicProfile = {
+            uid: uid,
+            email: null, // Se llenará desde Firebase Auth
+            nombre: '',
+            apellidos: '',
+            fechaRegistro: new Date(),
+            activo: true,
+            configuracion: {
+              theme: 'light',
+              notifications: true
+            }
+          }
+
+          this.userProfile = basicProfile
+          localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
+        }
+
+        // ✅ NUEVO: Cargar negocios del usuario
+        await this.loadUserBusinesses(uid)
+
+        // Establecer negocio por defecto
+        if (this.userBusinesses.length > 0) {
+          // Intentar restaurar negocio actual desde localStorage
+          const cachedCurrentBusiness = localStorage.getItem(STORAGE_KEYS.CURRENT_BUSINESS)
+          if (cachedCurrentBusiness) {
+            const parsed = JSON.parse(cachedCurrentBusiness)
+            const businessExists = this.userBusinesses.find(b => b.businessId === parsed.businessId)
+            if (businessExists) {
+              this.currentBusiness = businessExists
+            } else {
+              this.currentBusiness = this.primaryBusiness
+            }
+          } else {
+            this.currentBusiness = this.primaryBusiness
+          }
+        }
+
+        console.log('✅ Perfil de usuario cargado:', this.userProfile.email)
+        console.log(`📊 ${this.userBusinesses.length} negocios encontrados`)
+        return this.userProfile
+
+      } catch (error) {
+        console.error('❌ Error al cargar perfil de usuario:', error)
+        this.error = 'Error al cargar el perfil de usuario'
+
+        // Intentar restaurar desde localStorage como fallback
+        const cachedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE)
+        const cachedBusinesses = localStorage.getItem(STORAGE_KEYS.BUSINESSES)
+
+        if (cachedProfile && cachedBusinesses) {
+          this.userProfile = JSON.parse(cachedProfile)
+          this.userBusinesses = JSON.parse(cachedBusinesses)
+          console.log('⚡ Perfil y negocios restaurados desde caché')
+          return this.userProfile
+        }
+
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    // ✅ NUEVO: Cargar negocios del usuario
+    async loadUserBusinesses(uid) {
+      try {
+        const businessesRef = collection(db, 'users', uid, 'businesses')
+        const q = query(businessesRef, where('activo', '==', true))
+        const querySnapshot = await getDocs(q)
+
+        const allUserBusinesses = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        console.log(`🔍 ${allUserBusinesses.length} relaciones usuario-negocio encontradas`)
+
+        // ✅ VALIDACIÓN: Verificar que los negocios existan en la collection principal
+        const validBusinesses = []
+        const invalidBusinesses = []
+
+        for (const userBusiness of allUserBusinesses) {
+          try {
+            const businessDocRef = doc(db, 'businesses', userBusiness.businessId)
+            const businessDoc = await getDoc(businessDocRef)
+
+            console.log(`🔍 Verificando: users/${uid}/businesses/${userBusiness.id} ↔ businesses/${userBusiness.businessId}`)
+
+            if (businessDoc.exists()) {
+              validBusinesses.push(userBusiness)
+              console.log(`✅ Negocio válido: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
+            } else {
+              invalidBusinesses.push(userBusiness)
+              console.warn(`⚠️  Negocio inválido encontrado: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
+            }
+          } catch (validateError) {
+            console.error(`❌ Error validando negocio ${userBusiness.businessId}:`, validateError)
+            invalidBusinesses.push(userBusiness)
+          }
+        }
+
+        // Usar solo negocios válidos
+        this.userBusinesses = validBusinesses
+
+        // Advertir sobre negocios inválidos
+        if (invalidBusinesses.length > 0) {
+          console.warn(`⚠️  ${invalidBusinesses.length} relaciones de negocio inválidas ignoradas`)
+          console.log('💡 Usa businessDiagnostics.js para limpiar datos inconsistentes')
+        }
+
+        // Guardar en localStorage solo negocios válidos
+        localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(this.userBusinesses))
+
+        console.log(`✅ ${this.userBusinesses.length} negocios válidos cargados para usuario ${uid}`)
+        return this.userBusinesses
+      } catch (error) {
+        console.error('❌ Error al cargar negocios del usuario:', error)
+        throw new Error('Error al cargar negocios del usuario: ' + error.message)
+      }
+    },
+
+    // ✅ NUEVO: Cambiar negocio activo
+    switchBusiness(businessId) {
+      const business = this.userBusinesses.find(b => b.businessId === businessId)
+      if (business) {
+        this.currentBusiness = business
+        localStorage.setItem(STORAGE_KEYS.CURRENT_BUSINESS, JSON.stringify(business))
+        console.log(`🔄 Negocio cambiado a: ${business.businessName}`)
+        return true
+      }
+      console.error(`❌ No se encontró el negocio con ID: ${businessId}`)
+      return false
+    },
+
+    // ✅ NUEVO: Crear relación usuario-negocio
+    async addBusinessToUser(uid, businessData) {
+      try {
+        const newUserBusiness = {
+          businessId: businessData.businessId,
+          businessName: businessData.businessName,
+          rol: businessData.rol,
+          permissions: businessData.permissions || {},
+          departamento: businessData.departamento || null,
+          fechaIngreso: new Date(),
+          activo: true,
+          esPrincipal: this.userBusinesses.length === 0, // Primer negocio es principal
+          estadoInvitacion: 'aceptada'
+        }
+
+        // ✅ CORRECCIÓN CRÍTICA: Usar businessId como ID del documento
+        // Esto asegura que users/{uid}/businesses/{businessId} coincida con businesses/{businessId}
+        const businessRef = doc(db, 'users', uid, 'businesses', businessData.businessId)
+        await setDoc(businessRef, newUserBusiness)
+
+        console.log(`✅ Negocio ${businessData.businessName} agregado al usuario con ID: ${businessData.businessId}`)
+
+        // ✅ OPTIMIZACIÓN: Agregar localmente sin revalidar inmediatamente
+        // Esto evita problemas de latencia al validar un negocio recién creado
+        newUserBusiness.id = businessData.businessId // Usar el businessId como document ID
+        this.userBusinesses.push(newUserBusiness)
+
+        // Actualizar localStorage
+        localStorage.setItem(STORAGE_KEYS.BUSINESSES, JSON.stringify(this.userBusinesses))
+
+        // Si es el primer negocio, establecerlo como actual
+        if (this.userBusinesses.length === 1) {
+          this.currentBusiness = this.userBusinesses[0]
+          localStorage.setItem(STORAGE_KEYS.CURRENT_BUSINESS, JSON.stringify(this.currentBusiness))
+        }
+
+        console.log(`📊 Total de negocios: ${this.userBusinesses.length}`)
+        console.log(`🔗 Relación creada: users/${uid}/businesses/${businessData.businessId} ↔ businesses/${businessData.businessId}`)
+
+      } catch (error) {
+        console.error('❌ Error al agregar negocio al usuario:', error)
+        throw new Error('Error al agregar negocio al usuario: ' + error.message)
+      }
+    },
+
+    async createUserProfile(userData) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const userDocRef = doc(db, 'users', userData.uid)
+
+        const userProfile = {
+          uid: userData.uid,
+          email: userData.email,
+          nombre: userData.nombre || '',
+          apellidos: userData.apellidos || '',
+          fechaRegistro: userData.fechaRegistro || new Date(),
+          activo: true,
+          configuracion: userData.configuracion || {
+            theme: 'light',
+            notifications: true
+          }
+        }
+
+        await setDoc(userDocRef, userProfile)
+
+        this.userProfile = userProfile
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
+
+        console.log('✅ Perfil de usuario creado:', userProfile.email)
+        return userProfile
+
+      } catch (error) {
+        console.error('❌ Error al crear perfil de usuario:', error)
+        this.error = 'Error al crear el perfil de usuario'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async updateUserProfile(updates) {
+      if (!this.userProfile?.uid) {
+        throw new Error('No hay usuario para actualizar')
+      }
+
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const userDocRef = doc(db, 'users', this.userProfile.uid)
+
+        // Actualizar en Firestore
+        await updateDoc(userDocRef, updates)
+
+        // Actualizar estado local
+        this.userProfile = { ...this.userProfile, ...updates }
+
+        // Actualizar localStorage
+        localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
+
+        console.log('✅ Perfil de usuario actualizado')
+        return this.userProfile
+
+      } catch (error) {
+        console.error('❌ Error al actualizar perfil de usuario:', error)
+        this.error = 'Error al actualizar el perfil de usuario'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    restoreFromCache() {
+      try {
+        const cachedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE)
+        const cachedBusinesses = localStorage.getItem(STORAGE_KEYS.BUSINESSES)
+        const cachedCurrentBusiness = localStorage.getItem(STORAGE_KEYS.CURRENT_BUSINESS)
+
+        if (cachedProfile) {
+          this.userProfile = JSON.parse(cachedProfile)
+        }
+
+        if (cachedBusinesses) {
+          this.userBusinesses = JSON.parse(cachedBusinesses)
+        }
+
+        if (cachedCurrentBusiness && this.userBusinesses.length > 0) {
+          const parsed = JSON.parse(cachedCurrentBusiness)
+          const businessExists = this.userBusinesses.find(b => b.businessId === parsed.businessId)
+          if (businessExists) {
+            this.currentBusiness = businessExists
+          }
+        }
+
+        if (cachedProfile || cachedBusinesses) {
+          console.log('⚡ Datos de usuario restaurados desde caché')
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('❌ Error al restaurar desde caché:', error)
+        return false
+      }
+    },
+
+    clearUserData() {
+      this.userProfile = null
+      this.userBusinesses = []
+      this.currentBusiness = null
+      this.error = null
+
+      localStorage.removeItem(STORAGE_KEYS.PROFILE)
+      localStorage.removeItem(STORAGE_KEYS.BUSINESSES)
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_BUSINESS)
+
+      console.log('🧹 Datos de usuario limpiados')
+    },
+
+    updateCurrentBusinessPermissions(newPermissions) {
+      if (this.currentBusiness) {
+        this.currentBusiness.permissions = { ...this.currentBusiness.permissions, ...newPermissions }
+        localStorage.setItem(STORAGE_KEYS.CURRENT_BUSINESS, JSON.stringify(this.currentBusiness))
+      }
     }
   }
-
-  const setUserCredencialToStore = async () => {
-    try {
-      const userCredencialFromStore = await getUserCredencialInfo();
-      userCredencial.value = userCredencialFromStore;
-    } catch (error) {
-      console.error("Error getting user Credencial:", error);
-    }
-  }
-
-  return {
-    userUUID,
-    userProfile,
-    userCredencial,
-    resetStore,
-    setUserProfileToStore,
-    setUserCredencialToStore,
-  };
-});
+})

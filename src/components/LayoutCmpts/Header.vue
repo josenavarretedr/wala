@@ -18,7 +18,7 @@
     </RouterLink>
 
     <!-- Botón de cerrar sesión -->
-    <BtnLogout v-if="authStore.user.value" />
+    <BtnLogout v-if="authStore.user" />
   </header>
 </template>
 
@@ -35,14 +35,13 @@ const businessStore = useBusinessStore();
 const displayName = ref("WALA");
 
 const businessName = computed(() => {
-  const id = businessStore.currentBusinessId;
-  const match = businessStore.businesses.find((b) => b.id === id);
-  return match?.name || null;
+  const currentBusiness = businessStore.business;
+  return currentBusiness?.nombre || null;
 });
 
 // Watch para actualizar el título dinámicamente
 watch(
-  () => authStore.user.value,
+  () => authStore.user,
   (newUser) => {
     if (!newUser) {
       displayName.value = "WALA";
@@ -55,9 +54,9 @@ watch(
 
 // También observar si cambia el negocio seleccionado
 watch(
-  () => businessStore.currentBusinessId,
+  () => businessStore.business,
   () => {
-    if (authStore.user.value) {
+    if (authStore.user) {
       displayName.value = businessName.value || "WALA";
     }
   }

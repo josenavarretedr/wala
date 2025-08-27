@@ -1,102 +1,297 @@
-// src/stores/businessStore.js
-import { defineStore } from "pinia";
-import { ref } from "vue";
-import { useAuthStore } from "@/stores/authStore";
-import {
-  fetchBusinessesByOwner,
-  createBusiness,
-  addBusinessCollaborator
-} from "@/composables/useBusiness";
+import { defineStore } from 'pinia'
+import { collection, doc, getDoc, setDoc, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore'
+import { db } from '@/firebaseInit'
+import { v4 as uuidv4 } from 'uuid'
 
-export const useBusinessStore = defineStore("business", () => {
-  const businesses = ref([]);
-  const currentBusinessId = ref(null);
-  const loading = ref(false);
-  const error = ref(null);
+export const useBusinessStore = defineStore('business', {
+  state: () => ({
+    business: null,
+    employees: [],
+    businessList: [],
+    isLoading: false,
+    error: null
+  }),
 
-  const authStore = useAuthStore();
+  getters: {
+    getBusinessId: (state) => state.business?.id || null,
+    getBusinessName: (state) => state.business?.nombre || null,
+    getBusinessType: (state) => state.business?.tipo || null,
+    isBusinessOwner: (state) => (userId) => state.business?.gerenteId === userId,
+    getEmployeeCount: (state) => state.employees.length,
+    hasEmployees: (state) => state.employees.length > 0
+  },
 
-  // 🔍 Obtener negocios del usuario actual
-  const fetchBusinessesForCurrentUser = async () => {
-    loading.value = true;
-    error.value = null;
+  actions: {
+    async createBusiness(businessData) {
+      this.isLoading = true
+      this.error = null
 
-    try {
-      businesses.value = [];
+      try {
+        // Generar ID único para el negocio
 
-      const uid = authStore.user?.value?.uid;
-      if (!uid) throw new Error("Usuario no autenticado");
+        const business = {
+          id: businessData.id,
+          nombre: businessData.nombre,
+          tipo: businessData.tipo,
+          direccion: businessData.direccion || '',
+          telefono: businessData.telefono || '',
+          email: businessData.email || '',
+          gerenteId: businessData.gerenteId,
+          fechaCreacion: new Date(),
+          activo: true,
+          configuracion: {
+            moneda: businessData.moneda || 'PEN',
+            timezone: businessData.timezone || 'America/Lima',
+            permisos: {
+              empleados: {
+                verIngresos: true,
+                verEgresos: true,
+                crearMovimientos: true,
+                editarMovimientos: false,
+                verReportes: false
+              }
+            }
+          }
+        }
 
-      const data = await fetchBusinessesByOwner(uid);
-      businesses.value = data;
-      return data;
-    } catch (err) {
-      error.value = err.message;
-      console.error("Store - Error al obtener negocios:", err);
-      return [];
-    } finally {
-      loading.value = false;
+        // Crear documento en Firestore
+        const businessDocRef = doc(db, 'businesses', businessData.id)
+        await setDoc(businessDocRef, business)
+
+        // Actualizar estado local
+        this.business = business
+        this.businessList = [business]
+
+        console.log('✅ Negocio creado exitosamente:', business.nombre)
+        console.log('🔗 ID del negocio:', businessData.id)
+        console.log('👤 Gerente asignado:', businessData.gerenteId)
+        return business
+
+      } catch (error) {
+        console.error('❌ Error al crear negocio:', error)
+        this.error = 'Error al crear el negocio'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async searchBusinessByName(nombre) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        // Buscar en Firestore por nombre exacto
+        const businessesRef = collection(db, 'businesses')
+        const q = query(businessesRef, where('nombre', '==', nombre), where('activo', '==', true))
+        const querySnapshot = await getDocs(q)
+
+        const businesses = []
+        querySnapshot.forEach((doc) => {
+          businesses.push({
+            id: doc.id,
+            ...doc.data()
+          })
+        })
+
+        this.businessList = businesses
+
+        console.log(`🔍 Búsqueda completada. Encontrados ${businesses.length} negocios con nombre "${nombre}"`)
+        return businesses
+
+      } catch (error) {
+        console.error('❌ Error al buscar negocio:', error)
+        this.error = 'Error al buscar el negocio'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async loadBusiness(businessId) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        console.log(`🔍 Intentando cargar negocio con ID: ${businessId}`);
+
+        // Cargar negocio desde Firestore
+        const businessDocRef = doc(db, 'businesses', businessId)
+        const businessDoc = await getDoc(businessDocRef)
+
+        if (businessDoc.exists()) {
+          const businessData = {
+            id: businessDoc.id,
+            ...businessDoc.data()
+          }
+
+          this.business = businessData
+
+          // Cargar empleados del negocio
+          await this.loadEmployees(businessId)
+
+          console.log('✅ Negocio cargado exitosamente:', businessData.nombre)
+          return businessData
+
+        } else {
+          console.error(`❌ Negocio no encontrado en Firestore: ${businessId}`);
+          console.log('💡 Verificar si el ID del negocio es correcto y existe en la collection businesses');
+          throw new Error(`El negocio con ID "${businessId}" no existe en la base de datos`)
+        }
+
+      } catch (error) {
+        console.error('❌ Error al cargar negocio:', error)
+        this.error = 'Error al cargar el negocio: ' + error.message
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async loadEmployees(businessId) {
+      try {
+        // Buscar empleados asignados a este negocio
+        const usersRef = collection(db, 'users')
+        const q = query(
+          usersRef,
+          where('businessId', '==', businessId),
+          where('activo', '==', true)
+        )
+        const querySnapshot = await getDocs(q)
+
+        const employees = []
+        querySnapshot.forEach((doc) => {
+          const userData = doc.data()
+          employees.push({
+            uid: doc.id,
+            ...userData
+          })
+        })
+
+        this.employees = employees
+
+        console.log(`👥 ${employees.length} empleados cargados para el negocio ${businessId}`)
+        return employees
+
+      } catch (error) {
+        console.error('❌ Error al cargar empleados:', error)
+        this.error = 'Error al cargar empleados'
+        throw error
+      }
+    },
+
+    async updateBusiness(businessId, updates) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        const businessDocRef = doc(db, 'businesses', businessId)
+        await updateDoc(businessDocRef, updates)
+
+        // Actualizar estado local
+        if (this.business && this.business.id === businessId) {
+          this.business = { ...this.business, ...updates }
+        }
+
+        console.log('✅ Negocio actualizado exitosamente')
+        return true
+
+      } catch (error) {
+        console.error('❌ Error al actualizar negocio:', error)
+        this.error = 'Error al actualizar el negocio'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async addEmployee(employeeData) {
+      try {
+        // El empleado se agrega mediante la actualización de su perfil de usuario
+        // Esto se maneja en el userStore.assignToBusiness()
+
+        // Recargar empleados para reflejar los cambios
+        if (this.business?.id) {
+          await this.loadEmployees(this.business.id)
+        }
+
+        console.log('✅ Empleado agregado exitosamente')
+        return true
+
+      } catch (error) {
+        console.error('❌ Error al agregar empleado:', error)
+        this.error = 'Error al agregar empleado'
+        throw error
+      }
+    },
+
+    async removeEmployee(employeeUid) {
+      try {
+        // Actualizar el perfil del empleado para desasignarlo
+        const userDocRef = doc(db, 'users', employeeUid)
+        await updateDoc(userDocRef, {
+          businessId: null,
+          businessName: ''
+        })
+
+        // Remover de la lista local
+        this.employees = this.employees.filter(emp => emp.uid !== employeeUid)
+
+        console.log('✅ Empleado removido exitosamente')
+        return true
+
+      } catch (error) {
+        console.error('❌ Error al remover empleado:', error)
+        this.error = 'Error al remover empleado'
+        throw error
+      }
+    },
+
+    async searchBusinesses(searchTerm) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        // Buscar negocios que contengan el término de búsqueda
+        const businessesRef = collection(db, 'businesses')
+        const querySnapshot = await getDocs(businessesRef)
+
+        const businesses = []
+        querySnapshot.forEach((doc) => {
+          const businessData = doc.data()
+          if (businessData.nombre.toLowerCase().includes(searchTerm.toLowerCase()) && businessData.activo) {
+            businesses.push({
+              id: doc.id,
+              ...businessData
+            })
+          }
+        })
+
+        this.businessList = businesses
+
+        console.log(`🔍 Encontrados ${businesses.length} negocios con "${searchTerm}"`)
+        return businesses
+
+      } catch (error) {
+        console.error('❌ Error al buscar negocios:', error)
+        this.error = 'Error al buscar negocios'
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    clearBusinessData() {
+      this.business = null
+      this.employees = []
+      this.businessList = []
+      this.error = null
+      console.log('🧹 Datos de negocio limpiados')
+    },
+
+    setCurrentBusiness(business) {
+      this.business = business
+      console.log('📍 Negocio actual establecido:', business.nombre)
     }
-  };
-
-  // 🆕 Crear nuevo negocio
-  const createNewBusiness = async (businessData) => {
-    try {
-      const uid = authStore.user?.value?.uid;
-      if (!uid) throw new Error("Usuario no autenticado");
-
-      const newId = await createBusiness(uid, businessData);
-
-      businesses.value.push({
-        id: newId,
-        ...businessData,
-        owner: uid,
-        collaborators: [],
-        createdAt: new Date(),
-      });
-
-      setCurrentBusinessId(newId);
-
-      return newId;
-    } catch (err) {
-      error.value = err.message;
-      console.error("Store - Error al crear negocio:", err);
-      return null;
-    }
-  };
-
-  // 🤝 Agregar colaborador
-  const addCollaborator = async (businessId, collaboratorUid) => {
-    try {
-      await addBusinessCollaborator(businessId, collaboratorUid);
-      return true;
-    } catch (err) {
-      error.value = err.message;
-      console.error("Store - Error al agregar colaborador:", err);
-      return false;
-    }
-  };
-
-  const setCurrentBusinessId = (id) => {
-    currentBusinessId.value = id;
-  };
-
-  const resetStore = () => {
-    businesses.value = [];
-    currentBusinessId.value = null;
-    loading.value = false;
-    error.value = null;
   }
-
-  return {
-    businesses,
-    currentBusinessId,
-    loading,
-    error,
-    fetchBusinessesForCurrentUser,
-    createNewBusiness,
-    addCollaborator,
-    setCurrentBusinessId,
-    resetStore
-  };
-});
+})

@@ -13,13 +13,13 @@ import { LogOut } from "@iconoir/vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const { logout } = useAuthStore();
+const authStore = useAuthStore();
 
 const handleLogout = async () => {
   try {
-    await logout();
+    await authStore.logout();
     alert("Sesión cerrada exitosamente.");
-    router.push("/");
+    router.push("/login");
   } catch (error) {
     console.error("Error al cerrar sesión:", error);
   }
