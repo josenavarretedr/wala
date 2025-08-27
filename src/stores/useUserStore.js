@@ -221,6 +221,11 @@ export const useUserStore = defineStore('user', {
       return false
     },
 
+    // ✅ Alias para consistencia con router (método async para compatibilidad)
+    async setCurrentBusiness(businessId) {
+      return this.switchBusiness(businessId)
+    },
+
     // ✅ NUEVO: Crear relación usuario-negocio
     async addBusinessToUser(uid, businessData) {
       try {

@@ -1,18 +1,20 @@
 import { createWebHistory, createRouter } from "vue-router"
 import { useAuthStore } from "@/stores/authStore"
 import { useUserStore } from "@/stores/useUserStore"
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '@/firebaseInit'
+import { useBusinessStore } from "@/stores/businessStore"
 
 // Layouts
 import DefaultLayout from "@/layouts/DefaultLayout.vue"
 import AuthLayout from "@/layouts/AuthLayout.vue"
 
 const routes = [
-  // Redirección por defecto
+  // Redirección inteligente basada en estado de autenticación
   {
     path: '/',
-    redirect: '/login'
+    redirect: (to) => {
+      // Esta lógica se maneja en el guard, por defecto ir a login
+      return '/login'
+    }
   },
 
   // Autenticación
@@ -51,6 +53,14 @@ const routes = [
     meta: { requiresAuth: true }
   },
 
+  // ✅ NUEVO: Dashboard general (redirige según contexto)
+  {
+    path: '/dashboard',
+    name: 'DashboardGeneral',
+    component: () => import('@/views/dashboard/DashboardRedirect.vue'),
+    meta: { requiresAuth: true }
+  },
+
   // Configuración inicial del negocio (LEGACY - mantener por compatibilidad)
   {
     path: '/setup/business/:tempId',
@@ -70,14 +80,15 @@ const routes = [
   // Dashboard principal del negocio
   {
     path: '/business/:businessId',
-    component: () => import('@/views/business/Dashboard.vue'),
+    component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
       // Dashboard principal
       {
         path: 'dashboard',
         name: 'BusinessDashboard',
-        component: () => import('@/views/dashboard/DashboardRedirect.vue')
+        component: () => import('@/views/dashboard/DashboardRedirect.vue'),
+        meta: { title: 'Dashboard' }
       },
 
       // Rutas para gerentes
@@ -85,35 +96,87 @@ const routes = [
         path: 'employees',
         name: 'EmployeeManagement',
         component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
-        meta: { role: 'gerente' }
+        meta: { role: 'gerente', title: 'Empleados' }
       },
       {
         path: 'settings',
         name: 'BusinessSettings',
         component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
-        meta: { role: 'gerente' }
+        meta: { role: 'gerente', title: 'Configuración' }
+      },
+      {
+        path: 'business-info',
+        name: 'BusinessInfo',
+        component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
+        meta: { role: 'gerente', title: 'Datos del Negocio' }
       },
 
-      // Rutas compartidas
+      // Rutas de transacciones
       {
         path: 'income',
         name: 'IncomeManagement',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-        meta: { permission: 'verIngresos' }
+        meta: { permission: 'verIngresos', title: 'Ingresos' }
       },
       {
         path: 'expenses',
         name: 'ExpenseManagement',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-        meta: { permission: 'verEgresos' }
+        meta: { permission: 'verEgresos', title: 'Egresos' }
       },
+      {
+        path: 'transfers',
+        name: 'TransferManagement',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+        meta: { permission: 'verTransferencias', title: 'Transferencias' }
+      },
+
+      // Rutas de reportes
       {
         path: 'reports',
         name: 'Reports',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-        meta: { permission: 'verReportes' }
+        meta: { permission: 'verReportes', title: 'Reportes' }
+      },
+      {
+        path: 'reports/financial',
+        name: 'FinancialReports',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+        meta: { permission: 'verReportes', title: 'Estado Financiero' }
+      },
+      {
+        path: 'reports/cash-flow',
+        name: 'CashFlowReports',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+        meta: { permission: 'verReportes', title: 'Análisis de Flujo' }
+      },
+      {
+        path: 'reports/monthly',
+        name: 'MonthlyReports',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
+        meta: { permission: 'verReportes', title: 'Resumen Mensual' }
       }
     ]
+  },
+
+  // Rutas de perfil y cuenta (fuera del negocio específico)
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/profile/Profile.vue'),
+    meta: { requiresAuth: true, title: 'Mi Perfil' }
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/views/profile/Notifications.vue'),
+    meta: { requiresAuth: true, title: 'Notificaciones' }
+  },
+  {
+    path: '/security',
+    name: 'Security',
+    component: () => import('@/views/profile/Security.vue'),
+    meta: { requiresAuth: true, title: 'Seguridad' }
   },
 
   // Rutas legacy (mantener compatibilidad)
@@ -216,53 +279,100 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const userStore = useUserStore()
+  const businessStore = useBusinessStore()
 
   console.log('🔄 Navegando a:', to.path)
-  console.log('🔑 Autenticado:', authStore.isAuthenticated)
+  console.log('🔑 Usuario actual:', authStore.user?.email || 'No autenticado')
 
-  // ✅ CRÍTICO: Verificar sesión real antes de aplicar guards
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    console.log('🔍 Verificando sesión real con Firebase...')
-
-    try {
-      const user = await authStore.checkUser()
-      if (!user) {
-        console.log('❌ No hay sesión válida, redirigiendo a login')
-        return next('/login')
-      }
-    } catch (error) {
-      console.error('❌ Error al verificar sesión:', error)
-      return next('/login')
-    }
+  // ✅ CRÍTICO: Inicializar autenticación antes de aplicar guards
+  if (!authStore.user) {
+    await authStore.restoreSession()
   }
 
-  if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    console.log('� Usuario ya autenticado, redirigiendo...')
+  // Rutas que requieren autenticación
+  if (to.meta.requiresAuth && !authStore.user) {
+    console.log('❌ Acceso denegado - Se requiere autenticación')
+    return next('/login')
+  }
 
-    // Si ya está autenticado, usar la lógica de redirección inteligente
-    try {
-      await userStore.loadUserProfile(authStore.user.uid)
-      const userBusinesses = userStore.userBusinesses
+  // Si el usuario está autenticado y va a rutas de invitado
+  if (to.meta.requiresGuest && authStore.user) {
+    console.log('🔄 Usuario ya autenticado, redirigiendo...')
 
-      if (userBusinesses.length === 0) {
-        return next('/onboarding')
-      } else if (userBusinesses.length === 1) {
-        return next(`/business/${userBusinesses[0].businessId}/dashboard`)
-      } else {
-        return next('/select-business')
-      }
-    } catch (error) {
-      console.error('❌ Error al cargar datos del usuario:', error)
+    // Cargar negocios del usuario si no están cargados
+    if (!userStore.userBusinesses || userStore.userBusinesses.length === 0) {
+      await userStore.loadUserBusinesses(authStore.user.uid)
+    }
+
+    // Lógica de redirección inteligente
+    if (userStore.userBusinesses.length === 0) {
       return next('/onboarding')
+    } else if (userStore.userBusinesses.length === 1) {
+      const business = userStore.userBusinesses[0]
+      return next(`/business/${business.businessId}/dashboard`)
+    } else {
+      return next('/select-business')
     }
   }
 
-  if (to.meta.role && userStore.currentBusiness?.rol !== to.meta.role) {
-    console.log('❌ Acceso denegado por rol')
-    return next('/unauthorized')
+  // Si está accediendo a una ruta de negocio específico
+  if (to.params.businessId && authStore.user) {
+    const businessId = to.params.businessId
+
+    // Cargar negocios del usuario si no están cargados
+    if (!userStore.userBusinesses || userStore.userBusinesses.length === 0) {
+      await userStore.loadUserBusinesses(authStore.user.uid)
+    }
+
+    // Verificar que el usuario tiene acceso a este negocio
+    const userBusiness = userStore.userBusinesses.find(b => b.businessId === businessId)
+
+    if (!userBusiness) {
+      console.log('❌ Usuario no tiene acceso al negocio:', businessId)
+      return next('/select-business')
+    }
+
+    // ✅ ARQUITECTURA COHERENTE: UserStore gestiona currentBusiness, BusinessStore carga datos completos
+
+    // Establecer el negocio activo en UserStore si no lo está
+    if (userStore.currentBusiness?.businessId !== businessId) {
+      console.log('🔄 Estableciendo negocio activo en UserStore:', businessId)
+      await userStore.setCurrentBusiness(businessId)
+    }
+
+    // Cargar datos completos del negocio en BusinessStore si no está cargado
+    if (businessStore.business?.id !== businessId) {
+      console.log('🔄 Cargando datos completos del negocio en BusinessStore:', businessId)
+      await businessStore.loadBusiness(businessId, userBusiness)
+    }
+
+    // Verificar permisos específicos usando BusinessStore
+    if (to.meta.permission) {
+      const hasPermission = businessStore.hasPermission(to.meta.permission)
+      if (!hasPermission) {
+        console.log('❌ Sin permisos para:', to.meta.permission)
+        return next(`/business/${businessId}/dashboard`)
+      }
+    }
+
+    // Verificar roles específicos usando BusinessStore
+    if (to.meta.role) {
+      const userRole = businessStore.getCurrentUserRole
+      if (userRole !== to.meta.role && userRole !== 'gerente') {
+        console.log('❌ Rol insuficiente. Requerido:', to.meta.role, 'Usuario:', userRole)
+        return next(`/business/${businessId}/dashboard`)
+      }
+    }
   }
 
-  console.log('✅ Acceso permitido')
+  // Actualizar el título de la página
+  if (to.meta.title) {
+    document.title = `${to.meta.title} - Wala Business`
+  } else {
+    document.title = 'Wala Business'
+  }
+
+  console.log('✅ Acceso permitido a:', to.path)
   next()
 })
 

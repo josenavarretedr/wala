@@ -5,9 +5,11 @@ import { v4 as uuidv4 } from 'uuid'
 
 export const useBusinessStore = defineStore('business', {
   state: () => ({
-    business: null,
-    employees: [],
-    businessList: [],
+    business: null,           // Negocio actualmente cargado
+    employees: [],           // Empleados del negocio actual
+    businessList: [],        // Lista de negocios (para búsquedas)
+    currentUserRole: null,   // Rol del usuario actual en este negocio
+    currentUserPermissions: {}, // Permisos del usuario actual en este negocio
     isLoading: false,
     error: null
   }),
@@ -18,10 +20,75 @@ export const useBusinessStore = defineStore('business', {
     getBusinessType: (state) => state.business?.tipo || null,
     isBusinessOwner: (state) => (userId) => state.business?.gerenteId === userId,
     getEmployeeCount: (state) => state.employees.length,
-    hasEmployees: (state) => state.employees.length > 0
+    hasEmployees: (state) => state.employees.length > 0,
+
+    // ✅ NUEVO: Getters para el contexto del usuario actual
+    getCurrentUserRole: (state) => state.currentUserRole,
+    getCurrentUserPermissions: (state) => state.currentUserPermissions,
+    isCurrentUserManager: (state) => state.currentUserRole === 'gerente',
+    isCurrentUserEmployee: (state) => state.currentUserRole === 'empleado',
+
+    // ✅ Verificar permisos específicos
+    hasPermission: (state) => (permission) => {
+      return state.currentUserPermissions[permission] === true
+    }
   },
 
   actions: {
+    // ✅ NUEVO: Cargar negocio específico con contexto del usuario
+    async loadBusiness(businessId, userBusiness = null) {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        console.log('🔄 Cargando negocio:', businessId)
+
+        // Cargar datos completos del negocio desde Firestore
+        const businessDocRef = doc(db, 'businesses', businessId)
+        const businessDoc = await getDoc(businessDocRef)
+
+        if (!businessDoc.exists()) {
+          throw new Error(`Negocio con ID ${businessId} no encontrado`)
+        }
+
+        const businessData = {
+          id: businessDoc.id,
+          ...businessDoc.data()
+        }
+
+        this.business = businessData
+
+        // Establecer contexto del usuario actual (si se proporciona)
+        if (userBusiness) {
+          this.currentUserRole = userBusiness.rol
+          this.currentUserPermissions = userBusiness.permissions || {}
+        }
+
+        console.log('✅ Negocio cargado:', businessData.nombre)
+        console.log('👤 Rol del usuario:', this.currentUserRole)
+        console.log('🔑 Permisos:', Object.keys(this.currentUserPermissions).length)
+
+        return businessData
+
+      } catch (error) {
+        console.error('❌ Error al cargar negocio:', error)
+        this.error = `Error al cargar negocio: ${error.message}`
+        throw error
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    // ✅ NUEVO: Limpiar datos del negocio actual
+    clearCurrentBusiness() {
+      this.business = null
+      this.employees = []
+      this.currentUserRole = null
+      this.currentUserPermissions = {}
+      this.error = null
+      console.log('🧹 Datos del negocio actual limpiados')
+    },
+
     async createBusiness(businessData) {
       this.isLoading = true
       this.error = null
