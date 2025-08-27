@@ -68,35 +68,38 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useRouter } from "vue-router";
 import { Mail, Lock, UserPlus, ProfileCircle } from "@iconoir/vue";
 
+// Estado local del componente
 const name = ref("");
 const email = ref("");
 const password = ref("");
 const error = ref(null);
 const isLoading = ref(false);
 
+// 🏪 Stores (solo estado reactivo)
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const router = useRouter();
 
+// Manejar registro (solo lógica de flujo, Firebase via store)
 const register = async () => {
-  error.value = null;
-  isLoading.value = true;
-
   try {
-    console.log("🔄 Iniciando proceso de registro...");
+    isLoading.value = true;
+    error.value = null;
 
-    // 1. Registrar usuario en Firebase Auth
-    const user = await authStore.register(
+    console.log("🔄 Iniciando proceso de registro en componente...");
+
+    // 1. ✅ Registro via store (que usa composable)
+    const userData = await authStore.register(
       email.value,
       password.value,
       name.value
     );
-    console.log("✅ Usuario registrado en Firebase Auth:", user.email);
+    console.log("✅ Usuario registrado en Firebase Auth:", userData.email);
 
     // 2. Crear perfil de usuario en Firestore
     const userProfileData = {
-      uid: user.uid,
-      email: user.email,
+      uid: userData.uid,
+      email: userData.email,
       nombre: name.value.trim().split(" ")[0] || name.value.trim(), // Primer nombre
       apellidos: name.value.trim().split(" ").slice(1).join(" ") || "", // Resto como apellidos
       fechaRegistro: new Date(),

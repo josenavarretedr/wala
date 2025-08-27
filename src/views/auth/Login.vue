@@ -112,18 +112,21 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
-import { v4 as uuidv4 } from "uuid";
 
 const email = ref("");
 const password = ref("");
-const error = ref(null);
-const isLoading = ref(false);
 
 const router = useRouter();
 const route = useRoute();
+
+// 🏪 Stores (solo estado reactivo)
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore();
+
+// Estado local del componente
+const error = ref(null);
+const isLoading = ref(false);
 
 // Autocompletar demo
 onMounted(() => {
@@ -133,72 +136,105 @@ onMounted(() => {
   }
 });
 
-// LÓGICA DE AUTENTICACIÓN PRINCIPAL
+// Manejar login (solo lógica de flujo, Firebase via store)
 const handleLogin = async () => {
-  error.value = null;
-  isLoading.value = true;
-
   try {
-    // 1. Autenticación Firebase
-    await authStore.login(email.value, password.value);
-    await authStore.checkUser();
-    const uid = authStore.user?.uid;
+    isLoading.value = true;
+    error.value = null;
 
-    console.log("UID:", uid);
+    console.log("🔄 Iniciando proceso de login en componente");
 
-    if (uid) {
-      // 2. Cargar perfil y negocios del usuario
-      await userStore.loadUserProfile(uid);
+    // 1. ✅ Login via store (que usa composable)
+    const userData = await authStore.login(email.value, password.value);
+    const uid = userData.uid;
 
-      // 3. ✅ NUEVA LÓGICA: Verificar cantidad de negocios
-      const userBusinesses = userStore.userBusinesses;
+    console.log("✅ Login exitoso, iniciando flujo post-login");
 
-      console.log(`📊 Usuario tiene ${userBusinesses.length} negocios`);
+    // 2. Cargar perfil y negocios del usuario
+    await userStore.loadUserProfile(uid);
 
-      if (userBusinesses.length === 0) {
-        // Usuario sin negocios - Redirigir a onboarding
-        console.log("Usuario sin negocios. Redirigiendo a onboarding...");
+    // 3. Verificar cantidad de negocios
+    const userBusinesses = userStore.userBusinesses;
+
+    console.log(`📊 Usuario tiene ${userBusinesses.length} negocios`);
+
+    if (userBusinesses.length === 0) {
+      // Usuario sin negocios - Redirigir a onboarding
+      console.log("Usuario sin negocios. Redirigiendo a onboarding...");
+      return router.push("/onboarding");
+    } else if (userBusinesses.length === 1) {
+      // Usuario con un solo negocio - Ir directo
+      const business = userBusinesses[0];
+      console.log(`Usuario con un negocio: ${business.businessName}`);
+      console.log(
+        `🔍 Intentando cargar negocio con ID: ${business.businessId}`
+      );
+
+      // Establecer como negocio actual
+      const switched = userStore.switchBusiness(business.businessId);
+      if (!switched) {
+        console.error("❌ No se pudo establecer el negocio actual");
         return router.push("/onboarding");
-      } else if (userBusinesses.length === 1) {
-        // Usuario con un solo negocio - Ir directo
-        const business = userBusinesses[0];
-        console.log(`Usuario con un negocio: ${business.businessName}`);
-        console.log(
-          `🔍 Intentando cargar negocio con ID: ${business.businessId}`
-        );
+      }
 
-        // Establecer como negocio actual
-        const switched = userStore.switchBusiness(business.businessId);
-        if (!switched) {
-          console.error("❌ No se pudo establecer el negocio actual");
-          return router.push("/onboarding");
-        }
-
-        try {
-          // Cargar datos del negocio
-          await businessStore.loadBusiness(business.businessId);
-          return router.push(`/business/${business.businessId}/dashboard`);
-        } catch (loadError) {
-          console.error("❌ Error al cargar datos del negocio:", loadError);
-          // Si el negocio no existe en la DB, redirigir a onboarding
-          console.log(
-            "🔄 Redirigiendo a onboarding debido a negocio inconsistente"
-          );
-          return router.push("/onboarding");
-        }
-      } else {
-        // Usuario con múltiples negocios - Mostrar selector
+      try {
+        // Cargar datos del negocio
+        await businessStore.loadBusiness(business.businessId);
+        return router.push(`/business/${business.businessId}/dashboard`);
+      } catch (loadError) {
+        console.error("❌ Error al cargar datos del negocio:", loadError);
+        // Si el negocio no existe en la DB, redirigir a onboarding
         console.log(
-          `Usuario con ${userBusinesses.length} negocios. Mostrando selector...`
+          "🔄 Redirigiendo a onboarding debido a negocio inconsistente"
         );
-        return router.push("/select-business");
+        return router.push("/onboarding");
       }
     } else {
-      error.value = "No se pudo recuperar el usuario.";
+      // Usuario con múltiples negocios - Mostrar selector
+      console.log(
+        `Usuario con ${userBusinesses.length} negocios. Mostrando selector...`
+      );
+      return router.push("/select-business");
     }
   } catch (e) {
     error.value = e.message || "Error al iniciar sesión.";
-    console.error("Error en login:", e);
+    console.error("❌ Error en login:", e);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Login con Google (agregado para completar)
+const handleGoogleLogin = async () => {
+  try {
+    isLoading.value = true;
+    error.value = null;
+
+    console.log("🔄 Iniciando Google login en componente");
+
+    // Login via store (que usa composable)
+    const userData = await authStore.loginWithGoogle();
+    const uid = userData.uid;
+
+    console.log("✅ Google login exitoso, iniciando flujo post-login");
+
+    // Mismo flujo que login normal
+    await userStore.loadUserProfile(uid);
+    const userBusinesses = userStore.userBusinesses;
+
+    if (userBusinesses.length === 0) {
+      return router.push("/onboarding");
+    } else if (userBusinesses.length === 1) {
+      const business = userBusinesses[0];
+      userStore.switchBusiness(business.businessId);
+      await businessStore.loadBusiness(business.businessId);
+      return router.push(`/business/${business.businessId}/dashboard`);
+    } else {
+      return router.push("/select-business");
+    }
+  } catch (e) {
+    error.value = e.message || "Error al iniciar sesión con Google.";
+    console.error("❌ Error en Google login:", e);
   } finally {
     isLoading.value = false;
   }

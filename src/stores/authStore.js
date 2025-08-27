@@ -1,286 +1,351 @@
-import { defineStore } from 'pinia'
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { auth } from '@/firebaseInit'
+// authStore.js - Solo estado reactivo y persistencia localStorage
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { useAuth } from '@/composables/useAuth';
 
-// Claves de localStorage
-const STORAGE_KEYS = {
-  AUTH: 'walla_auth',
-  PROFILE: 'walla_profile',
-  TEMP_BUSINESS: 'walla_temp_business',
-  LAST_ROUTE: 'walla_last_route',
-  SESSION_TIMESTAMP: 'walla_session_timestamp'
-}
+export const useAuthStore = defineStore('auth', () => {
+  // 🗄️ Estado reactivo
+  const user = ref(null);
+  const isLoading = ref(false);
+  const error = ref(null);
+  const lastSession = ref(null);
 
-// Traducción de errores Firebase
-const translateFirebaseError = (errorCode) => {
-  const errors = {
-    // Errores de login
-    'auth/user-not-found': 'Usuario no encontrado',
-    'auth/wrong-password': 'Contraseña incorrecta',
-    'auth/too-many-requests': 'Demasiados intentos fallidos. Intenta más tarde',
-    'auth/network-request-failed': 'Error de conexión. Verifica tu internet',
-    'auth/invalid-email': 'Formato de email inválido',
-    'auth/user-disabled': 'Esta cuenta ha sido deshabilitada',
-    'auth/invalid-credential': 'Credenciales inválidas',
+  // 🔧 Composables
+  const router = useRouter();
+  const authComposable = useAuth();
 
-    // Errores de registro
-    'auth/email-already-in-use': 'Este correo electrónico ya está registrado',
-    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres',
-    'auth/operation-not-allowed': 'El registro no está permitido',
-    'auth/invalid-display-name': 'El nombre no es válido'
-  }
-  return errors[errorCode] || 'Error de autenticación'
-}
+  // 📊 Estado computado
+  const isAuthenticated = computed(() => !!user.value);
+  const hasValidSession = computed(() => {
+    if (!user.value || !lastSession.value) return false;
 
-export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null,
-    isAuthenticated: false,
-    isLoading: false
-  }),
+    // Verificar que la sesión no sea muy antigua (24 horas)
+    const sessionAge = Date.now() - lastSession.value.timestamp;
+    const maxAge = 24 * 60 * 60 * 1000; // 24 horas
 
-  getters: {
-    getUserUid: (state) => state.user?.uid || null,
-    getUserEmail: (state) => state.user?.email || null,
-    isLoggedIn: (state) => state.isAuthenticated && state.user !== null
-  },
+    return sessionAge < maxAge;
+  });
 
-  actions: {
-    async login(email, password) {
-      this.isLoading = true
+  // 🏪 LocalStorage keys
+  const STORAGE_KEYS = {
+    USER: 'wala_user',
+    SESSION: 'wala_session',
+    BUSINESS: 'wala_current_business'
+  };
 
-      try {
-        // Autenticación Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, email, password)
-        const user = userCredential.user
+  // 💾 FUNCIONES DE PERSISTENCIA
 
-        // Actualizar estado
-        this.user = {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          emailVerified: user.emailVerified
-        }
-        this.isAuthenticated = true
+  // Guardar en localStorage
+  function saveToStorage(userData) {
+    try {
+      if (userData) {
+        const sessionData = {
+          timestamp: Date.now(),
+          userUid: userData.uid
+        };
 
-        // Guardar en localStorage
-        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          isAuthenticated: true,
-          timestamp: Date.now()
-        }))
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+        localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(sessionData));
 
-        localStorage.setItem(STORAGE_KEYS.SESSION_TIMESTAMP, Date.now().toString())
-
-        console.log('✅ Usuario autenticado exitosamente:', user.email)
-        return user
-
-      } catch (error) {
-        console.error('❌ Error en login:', error)
-        const translatedError = translateFirebaseError(error.code)
-        throw new Error(translatedError)
-      } finally {
-        this.isLoading = false
+        console.log('💾 Datos guardados en localStorage');
       }
-    },
-
-    async register(email, password, displayName) {
-      this.isLoading = true
-
-      try {
-        console.log('🔄 Iniciando registro de usuario...', email)
-
-        // Validaciones básicas
-        if (!email || !password || !displayName) {
-          throw new Error('Todos los campos son obligatorios')
-        }
-
-        if (password.length < 6) {
-          throw new Error('La contraseña debe tener al menos 6 caracteres')
-        }
-
-        if (displayName.trim().length < 2) {
-          throw new Error('El nombre debe tener al menos 2 caracteres')
-        }
-
-        // Crear usuario en Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-        const user = userCredential.user
-
-        // Actualizar perfil con el nombre
-        await updateProfile(user, {
-          displayName: displayName.trim()
-        })
-
-        // Actualizar estado local
-        this.user = {
-          uid: user.uid,
-          email: user.email,
-          displayName: displayName.trim(),
-          emailVerified: user.emailVerified
-        }
-        this.isAuthenticated = true
-
-        // Guardar en localStorage
-        localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify({
-          uid: user.uid,
-          email: user.email,
-          isAuthenticated: true,
-          timestamp: Date.now()
-        }))
-
-        localStorage.setItem(STORAGE_KEYS.SESSION_TIMESTAMP, Date.now().toString())
-
-        console.log('✅ Usuario registrado exitosamente:', user.email)
-        console.log('👤 Nombre establecido:', displayName.trim())
-
-        return user
-
-      } catch (error) {
-        console.error('❌ Error en registro:', error)
-        const translatedError = translateFirebaseError(error.code) || error.message
-        throw new Error(translatedError)
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async logout() {
-      this.isLoading = true
-
-      try {
-        // Cerrar sesión en Firebase
-        await signOut(auth)
-
-        // Limpiar estado
-        this.user = null
-        this.isAuthenticated = false
-
-        // Limpiar localStorage
-        localStorage.removeItem(STORAGE_KEYS.AUTH)
-        localStorage.removeItem(STORAGE_KEYS.PROFILE)
-        localStorage.removeItem(STORAGE_KEYS.TEMP_BUSINESS)
-        localStorage.removeItem(STORAGE_KEYS.LAST_ROUTE)
-        localStorage.removeItem(STORAGE_KEYS.SESSION_TIMESTAMP)
-
-        console.log('✅ Sesión cerrada exitosamente')
-
-      } catch (error) {
-        console.error('❌ Error al cerrar sesión:', error)
-        throw new Error('Error al cerrar sesión')
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async checkUser() {
-      try {
-        console.log('🔍 Verificando usuario autenticado...');
-
-        // Esperar a que Firebase Auth se inicialice
-        await new Promise((resolve) => {
-          const unsubscribe = onAuthStateChanged(auth, (user) => {
-            unsubscribe();
-            resolve(user);
-          });
-        });
-
-        const currentUser = auth.currentUser;
-
-        if (currentUser) {
-          // Usuario realmente autenticado en Firebase
-          this.user = {
-            uid: currentUser.uid,
-            email: currentUser.email
-          };
-          this.isAuthenticated = true;
-
-          // Actualizar localStorage con sesión válida
-          const authData = {
-            uid: this.user.uid,
-            email: this.user.email,
-            isAuthenticated: true,
-            timestamp: Date.now()
-          };
-          localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(authData));
-
-          console.log('✅ Usuario autenticado:', this.user.email);
-          return this.user;
-        } else {
-          // No hay usuario autenticado en Firebase
-          console.log('ℹ️ No hay usuario autenticado en Firebase');
-
-          // Limpiar estado local inconsistente
-          this.user = null;
-          this.isAuthenticated = false;
-          this.clearStorage();
-
-          return null;
-        }
-      } catch (error) {
-        console.error('❌ Error al verificar usuario:', error);
-
-        // Limpiar estado en caso de error
-        this.user = null;
-        this.isAuthenticated = false;
-        this.clearStorage();
-
-        throw error;
-      }
-    },
-
-    async restoreSession() {
-      try {
-        console.log('🔄 Intentando restaurar sesión...');
-
-        const authData = localStorage.getItem(STORAGE_KEYS.AUTH);
-        if (!authData) {
-          console.log('ℹ️ No hay datos de sesión en localStorage');
-          return false;
-        }
-
-        const parsedAuth = JSON.parse(authData);
-
-        // Verificar si los datos no están muy viejos (24 horas)
-        const maxAge = 24 * 60 * 60 * 1000; // 24 horas
-        if (Date.now() - parsedAuth.timestamp > maxAge) {
-          console.log('⏰ Datos de sesión muy antiguos, limpiando...');
-          localStorage.removeItem(STORAGE_KEYS.AUTH);
-          return false;
-        }
-
-        // ✅ CRÍTICO: Verificar con Firebase Auth antes de marcar como autenticado
-        const currentUser = await this.checkUser();
-
-        if (currentUser) {
-          console.log('✅ Sesión restaurada exitosamente desde localStorage');
-          return true;
-        } else {
-          console.log('❌ La sesión de localStorage no coincide con Firebase Auth');
-          return false;
-        }
-      } catch (error) {
-        console.error('❌ Error al restaurar sesión:', error);
-        this.clearStorage();
-        return false;
-      }
-    },
-
-    // ✅ NUEVO: Método auxiliar para limpiar storage
-    clearStorage() {
-      localStorage.removeItem(STORAGE_KEYS.AUTH);
-      localStorage.removeItem(STORAGE_KEYS.PROFILE);
-      localStorage.removeItem('walla_businesses');
-      localStorage.removeItem('walla_current_business');
-      localStorage.removeItem(STORAGE_KEYS.TEMP_BUSINESS);
-    },
-
-    async initializeAuth() {
-      // Intentar restaurar sesión al inicializar
-      const sessionRestored = await this.restoreSession();
-
-      return sessionRestored;
+    } catch (error) {
+      console.error('❌ Error guardando en localStorage:', error);
     }
   }
-})
+
+  // Cargar desde localStorage
+  function loadFromStorage() {
+    try {
+      const userData = localStorage.getItem(STORAGE_KEYS.USER);
+      const sessionData = localStorage.getItem(STORAGE_KEYS.SESSION);
+
+      if (userData && sessionData) {
+        const parsedUser = JSON.parse(userData);
+        const parsedSession = JSON.parse(sessionData);
+
+        // Verificar que la sesión no sea muy antigua
+        const sessionAge = Date.now() - parsedSession.timestamp;
+        const maxAge = 24 * 60 * 60 * 1000; // 24 horas
+
+        if (sessionAge < maxAge) {
+          console.log('💾 Sesión válida encontrada en localStorage');
+          return { user: parsedUser, session: parsedSession };
+        } else {
+          console.log('⏰ Sesión expirada en localStorage');
+          clearStorage();
+          return null;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('❌ Error cargando desde localStorage:', error);
+      clearStorage();
+      return null;
+    }
+  }
+
+  // Limpiar localStorage
+  function clearStorage() {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      localStorage.removeItem(STORAGE_KEYS.SESSION);
+      localStorage.removeItem(STORAGE_KEYS.BUSINESS);
+      console.log('🧹 LocalStorage limpiado');
+    } catch (error) {
+      console.error('❌ Error limpiando localStorage:', error);
+    }
+  }
+
+  // 🔐 ACCIONES DE AUTENTICACIÓN (usan composables)
+
+  // Login con email y password
+  async function login(email, password) {
+    try {
+      setLoading(true);
+      clearError();
+
+      console.log('🔄 Iniciando login desde store...');
+
+      const userData = await authComposable.loginWithEmail(email, password);
+      setUser(userData);
+      saveToStorage(userData);
+
+      console.log('✅ Login completado en store');
+      return userData;
+
+    } catch (error) {
+      console.error('❌ Error en login (store):', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Registro con email, password y nombre
+  async function register(email, password, displayName) {
+    try {
+      setLoading(true);
+      clearError();
+
+      console.log('🔄 Iniciando registro desde store...');
+
+      const userData = await authComposable.registerWithEmail(email, password, displayName);
+      setUser(userData);
+      saveToStorage(userData);
+
+      console.log('✅ Registro completado en store');
+      return userData;
+
+    } catch (error) {
+      console.error('❌ Error en registro (store):', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Login con Google
+  async function loginWithGoogle() {
+    try {
+      setLoading(true);
+      clearError();
+
+      console.log('🔄 Iniciando login con Google desde store...');
+
+      const userData = await authComposable.loginWithGoogle();
+      setUser(userData);
+      saveToStorage(userData);
+
+      console.log('✅ Login con Google completado en store');
+      return userData;
+
+    } catch (error) {
+      console.error('❌ Error en login con Google (store):', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Logout
+  async function logout() {
+    try {
+      setLoading(true);
+
+      console.log('🔄 Cerrando sesión desde store...');
+
+      await authComposable.logoutUser();
+      clearUser();
+      clearStorage();
+
+      // Redirigir al login
+      await router.push('/auth/login');
+
+      console.log('✅ Logout completado en store');
+
+    } catch (error) {
+      console.error('❌ Error en logout (store):', error);
+      setError(error.message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 🔍 VERIFICACIÓN Y RESTAURACIÓN DE SESIÓN
+
+  // Verificar usuario actual con Firebase
+  async function checkUser() {
+    try {
+      console.log('🔍 Verificando usuario actual...');
+
+      const userData = await authComposable.checkAuthState();
+
+      if (userData) {
+        setUser(userData);
+        saveToStorage(userData);
+        console.log('✅ Usuario verificado y sincronizado');
+        return userData;
+      } else {
+        clearUser();
+        clearStorage();
+        console.log('ℹ️ No hay usuario autenticado');
+        return null;
+      }
+
+    } catch (error) {
+      console.error('❌ Error verificando usuario:', error);
+      clearUser();
+      clearStorage();
+      throw error;
+    }
+  }
+
+  // Restaurar sesión desde localStorage + verificación Firebase
+  async function restoreSession() {
+    try {
+      setLoading(true);
+      console.log('🔄 Restaurando sesión...');
+
+      // 1. Verificar localStorage
+      const storageData = loadFromStorage();
+
+      if (storageData) {
+        console.log('💾 Datos encontrados en localStorage');
+
+        // 2. Verificar con Firebase
+        const firebaseUser = await authComposable.checkAuthState();
+
+        if (firebaseUser && firebaseUser.uid === storageData.user.uid) {
+          // Sincronizar datos (Firebase es la fuente de verdad)
+          setUser(firebaseUser);
+          setSession(storageData.session);
+          saveToStorage(firebaseUser);
+
+          console.log('✅ Sesión restaurada y sincronizada');
+          return firebaseUser;
+        } else {
+          console.log('⚠️ Inconsistencia entre localStorage y Firebase');
+          clearUser();
+          clearStorage();
+          return null;
+        }
+      } else {
+        // 3. Si no hay localStorage, verificar solo Firebase
+        const firebaseUser = await authComposable.checkAuthState();
+
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          saveToStorage(firebaseUser);
+          console.log('✅ Sesión restaurada desde Firebase');
+          return firebaseUser;
+        } else {
+          console.log('ℹ️ No hay sesión para restaurar');
+          return null;
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Error restaurando sesión:', error);
+      clearUser();
+      clearStorage();
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 🔧 FUNCIONES AUXILIARES DE ESTADO
+
+  // Establecer usuario
+  function setUser(userData) {
+    user.value = userData;
+    const sessionData = {
+      timestamp: Date.now(),
+      userUid: userData?.uid
+    };
+    lastSession.value = sessionData;
+  }
+
+  // Establecer sesión
+  function setSession(sessionData) {
+    lastSession.value = sessionData;
+  }
+
+  // Limpiar usuario
+  function clearUser() {
+    user.value = null;
+    lastSession.value = null;
+  }
+
+  // Establecer loading
+  function setLoading(loading) {
+    isLoading.value = loading;
+  }
+
+  // Establecer error
+  function setError(errorMessage) {
+    error.value = errorMessage;
+  }
+
+  // Limpiar error
+  function clearError() {
+    error.value = null;
+  }
+
+  // 🎯 Return del store
+  return {
+    // Estado
+    user,
+    isLoading,
+    error,
+    lastSession,
+
+    // Computed
+    isAuthenticated,
+    hasValidSession,
+
+    // Acciones principales
+    login,
+    register,
+    loginWithGoogle,
+    logout,
+
+    // Verificación y restauración
+    checkUser,
+    restoreSession,
+
+    // Utilidades
+    setUser,
+    clearUser,
+    setLoading,
+    setError,
+    clearError,
+    clearStorage
+  };
+});
