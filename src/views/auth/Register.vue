@@ -52,6 +52,19 @@
         <span v-else>🔄 Creando cuenta...</span>
       </button>
 
+      <!-- Enlace al login -->
+      <div class="text-center pt-2">
+        <p class="text-sm text-gray-600">
+          ¿Ya tienes una cuenta?
+          <router-link
+            to="/auth/login"
+            class="font-semibold text-green-600 hover:text-green-700 transition-colors duration-200 ml-1"
+          >
+            Iniciar sesión
+          </router-link>
+        </p>
+      </div>
+
       <!-- Error message -->
       <div v-if="error" class="bg-red-50 border border-red-200 rounded-xl p-4">
         <span class="text-red-400 mr-2">⚠️</span>

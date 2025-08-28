@@ -84,24 +84,39 @@
         <!-- Dashboard -->
         <SidebarSection title="🏠 Principal" :items="mainItems" />
 
-        <!-- Sección: Transacciones -->
-        <SidebarSection
-          title="💰 Transacciones"
-          :items="transactionItems.filter(hasAccess)"
-        />
+        <!-- Mostrar el menú solo si hay datos cargados -->
+        <template v-if="currentBusiness && userStore.userBusinesses.length > 0">
+          <!-- Sección: Transacciones -->
+          <SidebarSection
+            v-if="filteredTransactionItems.length > 0"
+            title="💰 Transacciones"
+            :items="filteredTransactionItems"
+          />
 
-        <!-- Sección: Reportes -->
-        <SidebarSection
-          title="📊 Reportes"
-          :items="reportItems.filter(hasAccess)"
-        />
+          <!-- Sección: Reportes -->
+          <SidebarSection
+            v-if="filteredReportItems.length > 0"
+            title="📊 Reportes"
+            :items="filteredReportItems"
+          />
 
-        <!-- Sección: Administración (solo gerentes) -->
-        <SidebarSection
-          v-if="isManager"
-          title="⚙️ Administración"
-          :items="adminItems.filter(hasAccess)"
-        />
+          <!-- Sección: Administración (solo gerentes) -->
+          <SidebarSection
+            v-if="filteredAdminItems.length > 0"
+            title="⚙️ Administración"
+            :items="filteredAdminItems"
+          />
+        </template>
+
+        <!-- Loading state -->
+        <div v-else-if="userStore.isLoading" class="px-3 py-4 text-center">
+          <div class="text-sm text-gray-500">Cargando menú...</div>
+        </div>
+
+        <!-- No business state -->
+        <div v-else class="px-3 py-4 text-center">
+          <div class="text-sm text-gray-500">No hay negocio seleccionado</div>
+        </div>
 
         <!-- Sección: Cuenta -->
         <SidebarSection title="👤 Cuenta" :items="accountItems" />
@@ -242,7 +257,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const userStore = useUserStore();
-const businessStore = useBusinessStore(); // ✅ NUEVO: Usar BusinessStore
+const businessStore = useBusinessStore(); // ✅ BusinessStore para datos completos del negocio
 
 // Estado reactivo
 const sidebarOpen = ref(false);
@@ -255,12 +270,10 @@ const currentBusinessId = computed(
   () => route.params.businessId || userStore.currentBusiness?.businessId
 );
 
-// ✅ Usar BusinessStore para roles y permisos
-const isManager = computed(() => businessStore.isCurrentUserManager);
-const currentUserRole = computed(() => businessStore.getCurrentUserRole);
-const currentUserPermissions = computed(
-  () => businessStore.getCurrentUserPermissions
-);
+// ✅ Usar UserStore para roles y permisos (fuente única de verdad para el contexto usuario-negocio)
+const isManager = computed(() => userStore.isCurrentBusinessManager);
+const currentUserRole = computed(() => userStore.getCurrentBusinessRole);
+
 const userInitials = computed(() => {
   if (authStore.user?.displayName) {
     const names = authStore.user.displayName.split(" ");
@@ -379,6 +392,22 @@ const accountItems = computed(() => [
   },
 ]);
 
+// ✅ Computed properties para items filtrados que se revalúan automáticamente
+const filteredTransactionItems = computed(() => {
+  if (!currentBusiness.value) return [];
+  return transactionItems.value.filter(hasAccess);
+});
+
+const filteredReportItems = computed(() => {
+  if (!currentBusiness.value) return [];
+  return reportItems.value.filter(hasAccess);
+});
+
+const filteredAdminItems = computed(() => {
+  if (!currentBusiness.value || !isManager.value) return [];
+  return adminItems.value.filter(hasAccess);
+});
+
 // Métodos
 const handleLogout = async () => {
   try {
@@ -390,7 +419,12 @@ const handleLogout = async () => {
 };
 
 const hasAccess = (item) => {
-  // ✅ ARQUITECTURA COHERENTE: Usar BusinessStore para verificar acceso
+  // ✅ ARQUITECTURA COHERENTE: Usar UserStore para verificar acceso basado en currentBusiness
+
+  // Si no hay negocio actual, solo mostrar items sin permisos
+  if (!currentBusiness.value) {
+    return !item.permission && !item.role;
+  }
 
   // Verificar rol específico si se requiere
   if (
@@ -401,9 +435,21 @@ const hasAccess = (item) => {
     return false;
   }
 
-  // Verificar permisos específicos usando BusinessStore
-  if (item.permission && !businessStore.hasPermission(item.permission)) {
-    return false;
+  // Verificar permisos específicos usando UserStore.currentPermissions
+  if (item.permission) {
+    // Los gerentes tienen todos los permisos
+    if (currentUserRole.value === "gerente") {
+      return true;
+    }
+
+    // Verificar que currentPermissions exista y sea un objeto válido
+    const permissions = userStore.currentPermissions;
+    if (!permissions || typeof permissions !== "object") {
+      return false;
+    }
+
+    // Para otros roles, verificar permiso específico
+    return permissions[item.permission] === true;
   }
 
   return true;

@@ -11,10 +11,8 @@ const routes = [
   // Redirección inteligente basada en estado de autenticación
   {
     path: '/',
-    redirect: (to) => {
-      // Esta lógica se maneja en el guard, por defecto ir a login
-      return '/login'
-    }
+    name: "Home",
+    component: () => import('@/views/Home.vue')
   },
 
   // Autenticación
@@ -23,13 +21,13 @@ const routes = [
     component: AuthLayout,
     children: [
       {
-        path: '/login',
+        path: 'login',
         name: 'Login',
         component: () => import('@/views/auth/Login.vue'),
         meta: { requiresGuest: true }
       },
       {
-        path: '/register',
+        path: 'register',
         name: 'Register',
         component: () => import('@/views/auth/Register.vue'),
         meta: { requiresGuest: true }
@@ -248,19 +246,6 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
-  // Home (legacy)
-  {
-    path: '/home',
-    component: DefaultLayout,
-    children: [
-      {
-        path: '',
-        name: 'Home',
-        component: () => import("@/views/Home.vue")
-      },
-    ],
-  },
-
   // 404 - Debe ser la última ruta
   {
     path: '/:pathMatch(.*)*',
@@ -292,7 +277,7 @@ router.beforeEach(async (to, from, next) => {
   // Rutas que requieren autenticación
   if (to.meta.requiresAuth && !authStore.user) {
     console.log('❌ Acceso denegado - Se requiere autenticación')
-    return next('/login')
+    return next('/auth/login')
   }
 
   // Si el usuario está autenticado y va a rutas de invitado

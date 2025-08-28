@@ -81,6 +81,19 @@
             <span v-else>🔄 Ingresando...</span>
           </button>
 
+          <!-- Enlace al registro -->
+          <div class="text-center pt-2">
+            <p class="text-sm text-gray-600">
+              ¿No tienes una cuenta?
+              <router-link
+                to="/auth/register"
+                class="font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200 ml-1"
+              >
+                Crear cuenta
+              </router-link>
+            </p>
+          </div>
+
           <!-- Error message -->
           <div
             v-if="error"

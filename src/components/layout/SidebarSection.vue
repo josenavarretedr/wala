@@ -9,7 +9,7 @@
 
     <!-- Items de la sección -->
     <div class="space-y-1">
-      <template v-for="item in filteredItems" :key="item.to">
+      <template v-for="item in items" :key="item.to">
         <SidebarItem
           :icon="item.icon"
           :label="item.label"
@@ -23,23 +23,10 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
 import SidebarItem from "./SidebarItem.vue";
 
 const props = defineProps({
   title: String,
-  items: Array,
-  permissions: Object,
-});
-
-// Filtrar items según permisos
-const filteredItems = computed(() => {
-  return props.items.filter((item) => {
-    // Si no requiere permiso, mostrar siempre
-    if (!item.permission) return true;
-
-    // Verificar si el usuario tiene el permiso requerido
-    return props.permissions[item.permission] === true;
-  });
+  items: Array, // Items ya filtrados externamente
 });
 </script>
