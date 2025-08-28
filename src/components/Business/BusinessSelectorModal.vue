@@ -86,6 +86,24 @@
               </svg>
             </div>
           </div>
+
+          <!-- Opción para crear un nuevo negocio -->
+
+          <div
+            @click="createNewBusiness"
+            class="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+          >
+            <div
+              class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4"
+            >
+              <span class="text-blue-600 font-bold text-lg">+</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="text-sm font-medium text-gray-900">
+                Crear Nuevo Negocio
+              </h4>
+            </div>
+          </div>
         </div>
 
         <!-- Footer -->
@@ -142,6 +160,20 @@ const selectBusiness = async (business) => {
     }
   } catch (error) {
     console.error("❌ Error al cambiar negocio:", error);
+  }
+};
+
+const createNewBusiness = () => {
+  try {
+    // Cerrar el modal primero
+    emit("close");
+
+    // Redirigir a la página de creación de negocio con modo create
+    router.push("/onboarding?mode=create");
+
+    console.log("✅ Navegación exitosa a crear negocio");
+  } catch (error) {
+    console.error("❌ Error al navegar a crear negocio:", error);
   }
 };
 </script>

@@ -254,9 +254,10 @@ onMounted(() => {
     return;
   }
 
-  // Si ya tiene negocios y no está en modo create, redirigir
+  // Si ya tiene negocios y NO está en modo create, redirigir al selector
   if (userStore.userBusinesses.length > 0 && !isCreateMode.value) {
     router.push("/select-business");
+    return;
   }
 });
 
@@ -331,12 +332,24 @@ const handleCreateBusiness = async () => {
       );
     }
 
-    console.log(`🚀 Redirigiendo al dashboard del negocio: ${businessId}`);
+    console.log(
+      `🚀 Redirigiendo ${
+        isCreateMode.value
+          ? "al selector de negocios"
+          : "al dashboard del negocio"
+      }: ${businessId}`
+    );
 
-    // Redirigir al dashboard con un pequeño delay para asegurar sincronización
+    // Redirigir con un pequeño delay para asegurar sincronización
     setTimeout(() => {
-      router.push(`/business/${businessId}/dashboard`);
-    }, 500); // Reducido de 1000ms a 500ms
+      if (isCreateMode.value) {
+        // En modo create, ir al selector para que pueda elegir el negocio
+        router.push("/select-business");
+      } else {
+        // En onboarding inicial, ir directamente al dashboard
+        router.push(`/business/${businessId}/dashboard`);
+      }
+    }, 500);
   } catch (err) {
     console.error("❌ Error al crear negocio:", err);
     error.value = err.message || "Error al crear el negocio";

@@ -145,10 +145,10 @@ onMounted(() => {
   }
 
   // Si solo tiene un negocio, redirigir automáticamente
-  if (userStore.userBusinesses.length === 1) {
-    const business = userStore.userBusinesses[0];
-    selectBusiness(business);
-  }
+  // if (userStore.userBusinesses.length === 1) {
+  //   const business = userStore.userBusinesses[0];
+  //   selectBusiness(business);
+  // }
 });
 
 const selectBusiness = async (business) => {

@@ -71,7 +71,7 @@
 
         <!-- Selector de negocio (si tiene múltiples) -->
         <button
-          v-if="userStore.userBusinesses.length > 1"
+          v-if="userStore.userBusinesses.length > 0"
           @click="showBusinessSelector = true"
           class="mt-3 w-full text-left px-3 py-2 text-xs text-blue-600 bg-white rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
         >
@@ -248,7 +248,6 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
 
 // Imports de componentes
-import SidebarItem from "@/components/layout/SidebarItem.vue";
 import SidebarSection from "@/components/layout/SidebarSection.vue";
 import ProfileDropdown from "@/components/layout/ProfileDropdown.vue";
 import BusinessSelectorModal from "@/components/business/BusinessSelectorModal.vue";

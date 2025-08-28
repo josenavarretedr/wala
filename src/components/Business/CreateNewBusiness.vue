@@ -89,10 +89,41 @@
       <!-- Botón de enviar -->
       <button
         type="submit"
-        class="w-full flex justify-center items-center bg-blue-500 hover:bg-blue-600 text-white text-xl font-semibold py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+        :disabled="isLoading"
+        :class="[
+          'w-full flex justify-center items-center text-white text-xl font-semibold py-4 rounded-xl shadow-lg transform transition-all duration-200',
+          isLoading
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-blue-500 hover:bg-blue-600 hover:scale-105',
+        ]"
       >
-        <PlusCircle class="w-6 h-6 mr-2" />
-        Registrar negocio
+        <div v-if="isLoading" class="flex items-center">
+          <svg
+            class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          Creando negocio...
+        </div>
+        <div v-else class="flex items-center">
+          <PlusCircle class="w-6 h-6 mr-2" />
+          Registrar negocio
+        </div>
       </button>
     </form>
   </div>
@@ -111,7 +142,13 @@ import {
 } from "@iconoir/vue";
 
 import { useBusinessStore } from "@/stores/businessStore";
+import { useUserStore } from "@/stores/useUserStore";
+import { useAuthStore } from "@/stores/authStore";
+import { createBusiness } from "@/composables/useBusiness";
+
 const businessStore = useBusinessStore();
+const userStore = useUserStore();
+const authStore = useAuthStore();
 const router = useRouter();
 
 // Refs para formulario
@@ -121,27 +158,80 @@ const type = ref("");
 const region = ref("");
 const socialHandle = ref("");
 const contactNumber = ref("");
+const isLoading = ref(false);
 
 async function handleSubmit() {
-  try {
-    const id = await businessStore.createNewBusiness({
-      name: name.value,
-      description: description.value,
-      type: type.value,
-      region: region.value,
-      socialHandle: socialHandle.value,
-      contactNumber: contactNumber.value,
-    });
+  if (isLoading.value) return;
 
-    if (id) {
-      alert("Negocio registrado exitosamente.");
-      router.push(`/dashboard/${id}`);
-    } else {
-      alert("No se pudo registrar el negocio.");
+  // Validación básica
+  if (!name.value.trim()) {
+    alert("El nombre del negocio es obligatorio");
+    return;
+  }
+
+  if (!type.value) {
+    alert("Selecciona un tipo de negocio");
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    console.log("🔄 Creando nuevo negocio...");
+
+    // Obtener el UID del usuario actual
+    const currentUser = authStore.currentUser;
+    if (!currentUser) {
+      throw new Error("Usuario no autenticado");
     }
+
+    // Preparar datos del negocio
+    const businessData = {
+      nombre: name.value.trim(),
+      descripcion: description.value.trim(),
+      tipo: type.value,
+      region: region.value.trim(),
+      redSocial: socialHandle.value.trim(),
+      telefono: contactNumber.value.trim(),
+    };
+
+    // Crear negocio usando el composable
+    const businessId = await createBusiness(currentUser.uid, businessData);
+
+    console.log("✅ Negocio creado con ID:", businessId);
+
+    // Agregar el negocio al store del usuario
+    const newBusinessForUser = {
+      businessId: businessId,
+      businessName: businessData.nombre,
+      businessType: businessData.tipo,
+      rol: "gerente",
+      permissions: {
+        fullAccess: true,
+        manageEmployees: true,
+        manageFinances: true,
+        viewReports: true,
+      },
+    };
+
+    // Actualizar el store del usuario
+    await userStore.addBusinessToUser(currentUser.uid, newBusinessForUser);
+
+    // Cambiar al negocio recién creado
+    userStore.switchBusiness(businessId);
+
+    // Cargar datos del negocio en el store
+    await businessStore.loadBusiness(businessId, newBusinessForUser);
+
+    alert("¡Negocio registrado exitosamente!");
+
+    // Redirigir al dashboard del nuevo negocio
+    router.push(`/business/${businessId}/dashboard`);
   } catch (error) {
-    console.error("Error al registrar el negocio:", error);
-    alert("Error al registrar el negocio.");
+    console.error("❌ Error al registrar el negocio:", error);
+    alert(`Error al registrar el negocio: ${error.message}`);
+  } finally {
+    isLoading.value = false;
   }
 }
 </script>
