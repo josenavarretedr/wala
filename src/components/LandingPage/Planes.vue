@@ -125,7 +125,7 @@
                   Plan <span class="text-blue-200 font-normal">Empresario</span>
                 </h3>
                 <div class="text-6xl md:text-7xl font-extralight mb-2">
-                  S/20
+                  S/40
                 </div>
                 <p class="text-lg font-light text-blue-200">por mes</p>
               </div>

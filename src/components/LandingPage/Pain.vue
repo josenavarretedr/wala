@@ -1,290 +1,276 @@
 <template>
   <section
-    class="pain-section relative min-h-screen bg-slate-50 py-20 px-4 overflow-hidden"
+    class="py-20 px-4 bg-gradient-to-br from-slate-50 via-gray-50 to-orange-50/30 relative overflow-hidden"
   >
-    <!-- Elementos flotantes decorativos -->
-    <div class="floating-elements absolute inset-0 pointer-events-none">
-      <!-- Calculadora rota -->
-      <div
-        class="absolute top-20 left-10 text-4xl text-red-300 animate-float-slow"
-      >
-        🧮
-      </div>
-      <!-- Reloj corriendo -->
-      <div
-        class="absolute top-32 right-20 text-5xl text-orange-300 animate-float-fast"
-      >
-        ⏰
-      </div>
-      <!-- Gráfico descendente -->
-      <div
-        class="absolute bottom-40 left-20 text-6xl text-red-200 animate-float-medium"
-      >
-        📉
-      </div>
-      <!-- Libreta desordenada -->
-      <div
-        class="absolute top-60 right-10 text-4xl text-slate-300 animate-float-slow"
-      >
-        📔
-      </div>
-      <!-- Signo de interrogación -->
-      <div
-        class="absolute bottom-20 right-40 text-7xl text-slate-400 animate-float-fast opacity-30"
-      >
-        ❓
-      </div>
-      <!-- Excel caótico -->
-      <div
-        class="absolute top-80 left-40 text-3xl text-green-300 animate-float-medium"
-      >
-        📊
-      </div>
+    <!-- Elementos decorativos de fondo -->
+    <div class="absolute inset-0 opacity-5">
+      <div class="absolute top-20 left-10 text-9xl">📝</div>
+      <div class="absolute top-40 right-16 text-7xl">💸</div>
+      <div class="absolute bottom-32 left-20 text-8xl">📦</div>
+      <div class="absolute bottom-20 right-10 text-6xl">❓</div>
     </div>
 
-    <div class="max-w-6xl mx-auto relative z-10">
-      <!-- Título Principal con Gradiente Emocional -->
-      <div class="text-center mb-20">
-        <h2 class="text-5xl md:text-6xl lg:text-7xl font-extralight mb-8">
-          <span class="block text-slate-800 mb-4">Ser emprendedor en</span>
-          <span
-            class="block bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent font-light"
-          >
-            Latinoamérica
-          </span>
-          <span
-            class="block text-slate-600 font-thin text-4xl md:text-5xl lg:text-6xl mt-4"
-          >
-            no es fácil
-          </span>
+    <div class="max-w-7xl mx-auto relative z-10">
+      <!-- Título Visual -->
+      <div class="text-center mb-24">
+        <div class="mb-8">
+          <span class="text-6xl">🤔</span>
+        </div>
+        <h2
+          class="text-5xl md:text-6xl lg:text-7xl font-extralight text-slate-900 mb-8 tracking-tight"
+        >
+          Tu día a día como emprendedor
         </h2>
-      </div>
-
-      <!-- Grid de Dolores con Efectos Parallax -->
-      <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
-        <!-- Dolor 1: Organización Caótica -->
         <div
-          class="pain-card group cursor-pointer relative"
-          data-parallax="0.1"
-        >
-          <!-- Icono flotante fuera del contenedor -->
-          <div
-            class="absolute -top-6 -right-6 text-7xl opacity-35 group-hover:opacity-60 transition-all duration-300 group-hover:scale-110 z-20"
-          >
-            📝
-          </div>
-          <div
-            class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-slate-200 hover:border-orange-300 hover:-translate-y-2 relative"
-          >
-            <div class="relative z-10">
-              <h3
-                class="text-2xl md:text-3xl font-light text-slate-800 mb-4 leading-tight"
-              >
-                Pasas
-                <span class="text-orange-600 font-normal"
-                  >horas organizando</span
-                >
-                tu negocio en libretas o Excel
-              </h3>
-              <div
-                class="w-16 h-1 bg-gradient-to-r from-orange-400 to-red-400 rounded-full group-hover:w-24 transition-all duration-300"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dolor 2: Falta de Claridad Financiera -->
-        <div
-          class="pain-card group cursor-pointer relative"
-          data-parallax="0.15"
-        >
-          <!-- Icono flotante fuera del contenedor -->
-          <div
-            class="absolute -top-6 -right-6 text-7xl opacity-35 group-hover:opacity-60 transition-all duration-300 group-hover:scale-110 z-20"
-          >
-            💸
-          </div>
-          <div
-            class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-slate-200 hover:border-red-300 hover:-translate-y-2 relative"
-          >
-            <div class="relative z-10">
-              <h3
-                class="text-2xl md:text-3xl font-light text-slate-800 mb-4 leading-tight"
-              >
-                <span class="text-red-600 font-normal"
-                  >No sabes con claridad</span
-                >
-                cuánto ganas o pierdes
-              </h3>
-              <div
-                class="w-16 h-1 bg-gradient-to-r from-red-400 to-orange-400 rounded-full group-hover:w-24 transition-all duration-300"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dolor 3: Falta de Tiempo para Clientes -->
-        <div
-          class="pain-card group cursor-pointer relative"
-          data-parallax="0.2"
-        >
-          <!-- Icono flotante fuera del contenedor -->
-          <div
-            class="absolute -top-6 -right-6 text-7xl opacity-35 group-hover:opacity-60 transition-all duration-300 group-hover:scale-110 z-20"
-          >
-            🔥
-          </div>
-          <div
-            class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-slate-200 hover:border-yellow-300 hover:-translate-y-2 relative"
-          >
-            <div class="relative z-10">
-              <h3
-                class="text-2xl md:text-3xl font-light text-slate-800 mb-4 leading-tight"
-              >
-                Te falta
-                <span class="text-yellow-600 font-normal"
-                  >tiempo para clientes</span
-                >
-                porque estás apagando incendios
-              </h3>
-              <div
-                class="w-16 h-1 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full group-hover:w-24 transition-all duration-300"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dolor 4: Falta de Socio Estratégico -->
-        <div
-          class="pain-card group cursor-pointer relative"
-          data-parallax="0.25"
-        >
-          <!-- Icono flotante fuera del contenedor -->
-          <div
-            class="absolute -top-6 -right-6 text-7xl opacity-35 group-hover:opacity-60 transition-all duration-300 group-hover:scale-110 z-20"
-          >
-            🤝
-          </div>
-          <div
-            class="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-slate-200 hover:border-blue-300 hover:-translate-y-2 relative"
-          >
-            <div class="relative z-10">
-              <h3
-                class="text-2xl md:text-3xl font-light text-slate-800 mb-4 leading-tight"
-              >
-                <span class="text-blue-600 font-normal"
-                  >No tienes un socio</span
-                >
-                que te ayude a decidir con estrategia
-              </h3>
-              <div
-                class="w-16 h-1 bg-gradient-to-r from-blue-400 to-slate-400 rounded-full group-hover:w-24 transition-all duration-300"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Llamada a la Reflexión -->
-      <div class="text-center mt-20">
-        <p
-          class="text-xl md:text-2xl font-light text-slate-600 max-w-3xl mx-auto leading-relaxed"
-        >
-          ¿Te sientes
-          <span class="text-orange-600 font-normal">identificado</span>?
-          <br class="hidden md:block" />
-          Es hora de que tengas un
-          <span class="text-blue-600 font-normal">copiloto empresarial</span>
-          que te entienda.
-        </p>
-      </div>
-
-      <!-- Elemento decorativo de transición -->
-      <div class="flex justify-center mt-16">
-        <div
-          class="w-1 h-20 bg-gradient-to-b from-orange-400 via-red-400 to-transparent rounded-full"
+          class="w-24 h-1 bg-gradient-to-r from-orange-500 to-red-500 mx-auto rounded-full"
         ></div>
       </div>
-    </div>
 
-    <!-- Gradiente de fondo sutil -->
-    <div
-      class="absolute inset-0 bg-gradient-to-br from-slate-50 via-orange-50/30 to-blue-50/20 pointer-events-none"
-    ></div>
+      <!-- Grid Mobile-First de Problemas -->
+      <div
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8"
+      >
+        <!-- Problema 1 -->
+        <div class="pain-card group">
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-7 lg:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 hover:border-orange-200 relative overflow-hidden h-full flex flex-col justify-center min-h-[280px] md:min-h-[300px] lg:min-h-[320px] xl:min-h-[340px]"
+          >
+            <!-- Icono grande -->
+            <div class="text-center mb-4 md:mb-6">
+              <div
+                class="text-6xl md:text-7xl lg:text-8xl mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300"
+              >
+                <!-- <Book
+                class="w-16 h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 xl:w-24 xl:h-24 mx-auto text-orange-500 group-hover:scale-110 transition-transform duration-300"
+              /> -->
+                📝
+              </div>
+              <div
+                class="w-16 md:w-18 lg:w-20 h-1 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full"
+              ></div>
+            </div>
+            <!-- Texto mobile-first optimizado -->
+            <div class="text-center">
+              <p
+                class="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-slate-800 leading-relaxed"
+              >
+                Anotás en<br />
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-slate-900"
+                  >cuaderno</span
+                ><br />
+                <span
+                  class="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-light"
+                  >+</span
+                ><br />
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-green-600"
+                  >WhatsApp</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problema 2 -->
+        <div class="pain-card group">
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-7 lg:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 hover:border-red-200 relative overflow-hidden h-full flex flex-col justify-center min-h-[280px] md:min-h-[300px] lg:min-h-[320px] xl:min-h-[340px]"
+          >
+            <!-- Icono grande -->
+            <div class="text-center mb-4 md:mb-6">
+              <div
+                class="text-6xl md:text-7xl lg:text-8xl mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300"
+              >
+                💸
+              </div>
+              <div
+                class="w-16 md:w-18 lg:w-20 h-1 bg-gradient-to-r from-red-400 to-red-600 mx-auto rounded-full"
+              ></div>
+            </div>
+            <!-- Texto mobile-first optimizado -->
+            <div class="text-center">
+              <p
+                class="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-slate-800 leading-relaxed"
+              >
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-red-600"
+                  >¿Ganaste?</span
+                ><br />
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-red-600"
+                  >¿Perdiste?</span
+                ><br />
+                <span
+                  class="text-lg md:text-xl lg:text-2xl xl:text-3xl text-slate-600"
+                  >🤷‍♂️ Ni idea</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problema 3 -->
+        <div class="pain-card group">
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-7 lg:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 hover:border-blue-200 relative overflow-hidden h-full flex flex-col justify-center min-h-[280px] md:min-h-[300px] lg:min-h-[320px] xl:min-h-[340px]"
+          >
+            <!-- Icono grande -->
+            <div class="text-center mb-4 md:mb-6">
+              <div
+                class="text-6xl md:text-7xl lg:text-8xl mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300"
+              >
+                📦
+              </div>
+              <div
+                class="w-16 md:w-18 lg:w-20 h-1 bg-gradient-to-r from-blue-400 to-blue-600 mx-auto rounded-full"
+              ></div>
+            </div>
+            <!-- Texto mobile-first optimizado -->
+            <div class="text-center">
+              <p
+                class="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-slate-800 leading-relaxed"
+              >
+                Stock:
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-red-600"
+                  >CERO</span
+                ><br />
+                Clientes:
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-green-600"
+                  >MUCHOS</span
+                ><br />
+                <span
+                  class="text-lg md:text-xl lg:text-2xl xl:text-3xl text-slate-600"
+                  >😩 Típico</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Problema 4 -->
+        <div class="pain-card group">
+          <div
+            class="bg-white/80 backdrop-blur-sm rounded-3xl p-6 md:p-7 lg:p-8 shadow-xl hover:shadow-2xl transition-all duration-500 border border-white/50 hover:border-purple-200 relative overflow-hidden h-full flex flex-col justify-center min-h-[280px] md:min-h-[300px] lg:min-h-[320px] xl:min-h-[340px]"
+          >
+            <!-- Icono grande -->
+            <div class="text-center mb-4 md:mb-6">
+              <div
+                class="text-6xl md:text-7xl lg:text-8xl mb-3 md:mb-4 group-hover:scale-110 transition-transform duration-300"
+              >
+                🎯
+              </div>
+              <div
+                class="w-16 md:w-18 lg:w-20 h-1 bg-gradient-to-r from-purple-400 to-purple-600 mx-auto rounded-full"
+              ></div>
+            </div>
+            <!-- Texto mobile-first optimizado -->
+            <div class="text-center">
+              <p
+                class="text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-slate-800 leading-relaxed"
+              >
+                Decidís
+                <span
+                  class="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-semibold text-slate-900"
+                  >a ciegas</span
+                ><br />
+                <span
+                  class="text-lg md:text-xl lg:text-2xl xl:text-3xl text-slate-600"
+                  >🙏 Rezando que funcione</span
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transición y Propuesta de Valor -->
+      <div class="mt-32">
+        <!-- Separador elegante -->
+        <div class="flex items-center justify-center mb-16">
+          <div
+            class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+          ></div>
+          <div class="px-6 text-4xl">💡</div>
+          <div
+            class="flex-1 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"
+          ></div>
+        </div>
+
+        <!-- Mensaje principal mejorado -->
+        <div class="text-center max-w-4xl mx-auto">
+          <h3
+            class="text-4xl md:text-5xl lg:text-6xl font-light text-slate-900 mb-8 leading-tight"
+          >
+            Si te reconociste en
+            <span class="font-medium text-orange-600">alguna</span>,
+            <br class="hidden md:block" />
+            no estás <span class="font-medium text-slate-900">solo</span>
+          </h3>
+
+          <div
+            class="bg-gradient-to-r from-orange-50 to-red-50 rounded-3xl p-12 mb-12 border border-orange-100"
+          >
+            <p
+              class="text-2xl md:text-3xl font-light text-slate-800 leading-relaxed mb-8"
+            >
+              Cada emprendedor pasa por esto.<br />
+              La diferencia está en
+              <span class="font-medium text-orange-600">cómo salis</span> de
+              ahí.
+            </p>
+
+            <!-- Stats visuales -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+              <div class="text-center">
+                <div class="text-4xl font-bold text-red-600 mb-2">85%</div>
+                <p class="text-sm text-slate-600">
+                  De emprendedores no saben sus números reales
+                </p>
+              </div>
+              <div class="text-center">
+                <div class="text-4xl font-bold text-orange-600 mb-2">70%</div>
+                <p class="text-sm text-slate-600">
+                  Pierden ventas por falta de stock
+                </p>
+              </div>
+              <div class="text-center">
+                <div class="text-4xl font-bold text-blue-600 mb-2">90%</div>
+                <p class="text-sm text-slate-600">Toman decisiones sin datos</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Call to action sutil -->
+          <div class="text-center">
+            <p class="text-xl md:text-2xl font-light text-slate-700 mb-6">
+              ¿Qué pasaría si tuvieras un
+              <span class="font-medium text-orange-600">copiloto</span> que te
+              ayude?
+            </p>
+            <div class="text-6xl mb-4">🚀</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from "vue";
+// Componente minimalista sin efectos
 
-// Efecto parallax sutil
-const handleScroll = () => {
-  const cards = document.querySelectorAll(".pain-card");
-  const scrolled = window.pageYOffset;
-
-  cards.forEach((card) => {
-    const rate = scrolled * (card.dataset.parallax || 0.1);
-    card.style.transform = `translateY(${rate}px)`;
-  });
-};
-
-onMounted(() => {
-  window.addEventListener("scroll", handleScroll);
-});
-
-onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
-});
+import { Book } from "@iconoir/vue";
 </script>
 
 <style scoped>
-/* Animaciones para elementos flotantes */
-@keyframes float-slow {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(2deg);
-  }
-}
+/* Estilos visuales modernos */
 
-@keyframes float-medium {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-15px) rotate(-1deg);
-  }
-}
-
-@keyframes float-fast {
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(1deg);
-  }
-}
-
-.animate-float-slow {
-  animation: float-slow 6s ease-in-out infinite;
-}
-
-.animate-float-medium {
-  animation: float-medium 4s ease-in-out infinite;
-}
-
-.animate-float-fast {
-  animation: float-fast 3s ease-in-out infinite;
-}
-
-/* Efecto de aparición escalonada */
 .pain-card {
   opacity: 0;
-  animation: fadeInUp 0.8s ease-out forwards;
+  transform: translateY(30px) scale(0.95);
+  animation: cardAppear 0.8s ease-out forwards;
 }
 
 .pain-card:nth-child(1) {
@@ -300,21 +286,79 @@ onUnmounted(() => {
   animation-delay: 0.4s;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px);
-  }
+@keyframes cardAppear {
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-/* Mejoras para móviles */
-@media (max-width: 768px) {
-  .floating-elements {
-    display: none; /* Ocultar elementos flotantes en móvil para mejor rendimiento */
+/* Efectos hover avanzados */
+.pain-card:hover {
+  transform: translateY(-8px) scale(1.02);
+}
+
+.pain-card:hover .bg-white\/80 {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Glassmorphism effect */
+.backdrop-blur-sm {
+  backdrop-filter: blur(12px);
+}
+
+/* Mejora de iconos */
+.pain-card .text-7xl {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+/* Estilos Mobile-First optimizados */
+
+/* Base mobile - perfecto para móviles */
+.pain-card > div {
+  padding: 1.5rem;
+  min-height: 280px;
+}
+
+/* Tablet y superior */
+@media (min-width: 768px) {
+  .pain-card > div {
+    padding: 1.75rem;
+    min-height: 300px;
   }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .pain-card > div {
+    padding: 2rem;
+    min-height: 320px;
+  }
+}
+
+/* Desktop grande */
+@media (min-width: 1280px) {
+  .pain-card > div {
+    min-height: 340px;
+  }
+} /* Animación del gradiente de fondo */
+@keyframes gradientShift {
+  0%,
+  100% {
+    transform: translateX(0) translateY(0);
+  }
+  25% {
+    transform: translateX(5px) translateY(-5px);
+  }
+  50% {
+    transform: translateX(-5px) translateY(5px);
+  }
+  75% {
+    transform: translateX(-3px) translateY(-3px);
+  }
+}
+
+.absolute.opacity-5 {
+  animation: gradientShift 10s ease-in-out infinite;
 }
 </style>

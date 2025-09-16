@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "reac-68d63"
-  }
+    "default": "wala-lat",
+    "prod": "wala-lat"
+  },
+  "targets": {},
+  "etags": {}
 }
