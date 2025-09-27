@@ -1,5 +1,6 @@
 <template>
   <section
+    id="pain-section"
     class="py-20 px-4 bg-gradient-to-br from-slate-50 via-gray-50 to-orange-50/30 relative overflow-hidden"
   >
     <!-- Elementos decorativos de fondo -->

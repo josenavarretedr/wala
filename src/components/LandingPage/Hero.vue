@@ -66,13 +66,15 @@
         <!-- CTA Primario -->
         <button
           class="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 sm:px-10 py-4 sm:py-5 rounded-xl font-bold text-lg sm:text-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 min-w-[180px] sm:min-w-[200px] hover:from-orange-600 hover:to-orange-700"
+          @click="$router.push({ name: 'Login' })"
         >
-          <span class="font-semibold tracking-wide">Probar gratis</span>
+          <span class="font-semibold tracking-wide">Iniciar sesión</span>
         </button>
 
         <!-- CTA Secundario -->
         <button
           class="bg-slate-50 text-slate-700 px-8 sm:px-10 py-4 sm:py-5 rounded-xl font-medium text-lg sm:text-xl shadow-sm hover:shadow-md transition-all duration-300 border border-slate-200 hover:border-blue-300 hover:-translate-y-1 min-w-[180px] sm:min-w-[200px] hover:bg-blue-50"
+          @click="scrollToPainSection"
         >
           <span
             class="group-hover:text-blue-700 transition-colors duration-200 font-semibold"
@@ -107,7 +109,16 @@
 </template>
 
 <script setup>
-// Script vacío por ahora - se puede agregar lógica más adelante si es necesario
+// Función para hacer scroll suave hacia la sección Pain
+const scrollToPainSection = () => {
+  const painElement = document.getElementById("pain-section");
+  if (painElement) {
+    painElement.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+};
 </script>
 
 <style scoped>
