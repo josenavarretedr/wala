@@ -21,15 +21,21 @@ export function useInventory() {
     try {
       const businessId = ensureBusinessId();
 
+      if (!businessId) {
+        console.warn('No se puede crear item sin businessId activo');
+        return null;
+      }
+
       // const productRef = doc(db, 'business', businessId, 'products', item.uuid);
 
-      const productRef = doc(collection(db, `business/${businessId}/products`), item.uuid);
+      const productRef = doc(collection(db, `businesses/${businessId}/products`), item.uuid);
       await setDoc(productRef, {
         description: item.description,
         price: item.price,
         cost: null,
         stock: item.quantity || 0,
         createdAt: serverTimestamp(),
+        unit: item.unit || 'uni',
       });
       console.log('BusinessId', businessId);
       console.log("Item created successfully", item);
@@ -43,13 +49,18 @@ export function useInventory() {
     try {
       const businessId = ensureBusinessId();
 
+      if (!businessId) {
+        console.warn('No se puede crear stock log sin businessId activo');
+        return null;
+      }
+
       const stockLog = {
         uuid: uuidv4(),
         quantity: item.quantity,
         type: 'sell',
       };
 
-      const productRef = doc(db, `business/${businessId}/products`, item.uuid);
+      const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
 
       await updateDoc(productRef, {
         stockLog: arrayUnion({ ...stockLog, createdAt: new Date() }),
@@ -70,12 +81,17 @@ export function useInventory() {
     try {
       const businessId = ensureBusinessId();
 
+      if (!businessId) {
+        console.warn('No se puede eliminar stock log sin businessId activo');
+        return null;
+      }
+
 
       for (const pair of transactionDataById[0].itemsAndStockLogs) {
         const itemUuid = pair.itemUuid;
         const stockLogUuid = pair.stockLogUuid;
 
-        const itemRef = doc(db, `business/${businessId}/products`, itemUuid);
+        const itemRef = doc(db, `businesses/${businessId}/products`, itemUuid);
         const itemDoc = await getDoc(itemRef);
         if (!itemDoc.exists()) {
           throw new Error(`Item with UUID ${itemUuid} does not exist`);
@@ -130,7 +146,12 @@ export function useInventory() {
     try {
       const businessId = ensureBusinessId();
 
-      const querySnapshot = await getDocs(collection(db, 'business', businessId, 'products'));
+      if (!businessId) {
+        console.warn('No se puede obtener inventario sin businessId activo');
+        return [];
+      }
+
+      const querySnapshot = await getDocs(collection(db, 'businesses', businessId, 'products'));
       if (querySnapshot.empty) return [];
 
       return querySnapshot.docs.map(doc => ({

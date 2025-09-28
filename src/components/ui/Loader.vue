@@ -1,33 +1,49 @@
 <template>
-  <div class="flex gap-2 justify-center py-10">
-    <div class="w-3 h-3 bg-cyan-600 rounded-full animate-pop"></div>
-    <div class="w-3 h-3 bg-cyan-600 rounded-full animate-pop delay-150"></div>
-    <div class="w-3 h-3 bg-cyan-600 rounded-full animate-pop delay-300"></div>
+  <div class="loader">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
   </div>
 </template>
 
 <style scoped>
-@keyframes pop {
-  0% {
-    transform: scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: scale(1.6);
-    opacity: 0.4;
-  }
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 0;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #64748b;
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.dot:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 150ms;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 300ms;
+}
+
+@keyframes pulse {
+  0%,
   100% {
     transform: scale(1);
-    opacity: 0.9;
+    opacity: 0.7;
   }
-}
-.animate-pop {
-  animation: pop 1.2s infinite ease-in-out;
-}
-.delay-150 {
-  animation-delay: 0.15s;
-}
-.delay-300 {
-  animation-delay: 0.3s;
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
 }
 </style>

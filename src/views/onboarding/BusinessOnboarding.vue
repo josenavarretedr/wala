@@ -66,52 +66,8 @@
             </select>
           </div>
 
-          <!-- Rol en el negocio -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Tu rol en este negocio *
-            </label>
-            <div class="space-y-3">
-              <label
-                class="flex items-start cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <input
-                  v-model="businessForm.userRole"
-                  type="radio"
-                  value="gerente"
-                  class="h-4 w-4 text-blue-600 mt-1"
-                />
-                <div class="ml-3">
-                  <span class="font-medium text-gray-900"
-                    >👑 Soy el dueño/gerente</span
-                  >
-                  <p class="text-sm text-gray-500 mt-1">
-                    Tendré acceso completo a todas las funciones del sistema
-                  </p>
-                </div>
-              </label>
-
-              <label
-                class="flex items-start cursor-pointer p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <input
-                  v-model="businessForm.userRole"
-                  type="radio"
-                  value="empleado"
-                  class="h-4 w-4 text-blue-600 mt-1"
-                />
-                <div class="ml-3">
-                  <span class="font-medium text-gray-900">👤 Soy empleado</span>
-                  <p class="text-sm text-gray-500 mt-1">
-                    El gerente me dará acceso a funciones específicas
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
           <!-- Departamento (opcional para empleados) -->
-          <div v-if="businessForm.userRole === 'empleado'">
+          <!-- <div v-if="businessForm.userRole === 'empleado'">
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Departamento (opcional)
             </label>
@@ -121,10 +77,10 @@
               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
               placeholder="Ej: Cocina, Ventas, Administración"
             />
-          </div>
+          </div> -->
 
           <!-- Información adicional -->
-          <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <!-- <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <div class="flex">
               <span class="text-blue-400 text-lg mr-3">💡</span>
               <div>
@@ -132,15 +88,11 @@
                   Información importante
                 </h4>
                 <p class="text-sm text-blue-700 mt-1">
-                  {{
-                    businessForm.userRole === "gerente"
-                      ? "Como gerente, podrás agregar empleados y configurar permisos después de crear el negocio."
-                      : "Como empleado, tendrás acceso limitado según los permisos que configure el gerente."
-                  }}
+                  
                 </p>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <!-- Botones -->
           <div class="flex flex-col sm:flex-row gap-4">

@@ -10,7 +10,7 @@ export function useTransaccion() {
   const createTransaction = async (transaction) => {
     try {
       const businessId = ensureBusinessId();
-      const transactionRef = doc(db, 'business', businessId, 'transactions', transaction.uuid);
+      const transactionRef = doc(db, 'businesses', businessId, 'transactions', transaction.uuid);
 
       await setDoc(transactionRef, {
         ...transaction,
@@ -27,7 +27,7 @@ export function useTransaccion() {
       const businessId = ensureBusinessId();
 
 
-      const transactionRef = doc(db, 'business', businessId, 'transactions', transactionId);
+      const transactionRef = doc(db, 'businesses', businessId, 'transactions', transactionId);
       await updateDoc(transactionRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),
@@ -45,7 +45,7 @@ export function useTransaccion() {
 
       console.log('El id del negocio es, desde el useTransactions: ', businessId);
 
-      const transactionsSnapshot = await getDocs(collection(db, 'business', businessId, 'transactions'));
+      const transactionsSnapshot = await getDocs(collection(db, 'businesses', businessId, 'transactions'));
 
       const transactions = [];
 
@@ -67,7 +67,7 @@ export function useTransaccion() {
 
   const getTransactionsTodayCmps = async () => {
     const businessId = ensureBusinessId();
-
+    console.log('El id del negocio es, desde el useTransactions: ', businessId);
 
 
     let transactions = [];
@@ -86,7 +86,7 @@ export function useTransaccion() {
       today.getDate() + 1
     );
     const q = query(
-      collection(db, `business/${businessId}/transactions`),
+      collection(db, `businesses/${businessId}/transactions`),
       where("createdAt", ">=", startOfDay),
       where("createdAt", "<", endOfDay)
     );

@@ -164,32 +164,51 @@ export const useUserStore = defineStore('user', {
 
         console.log(`🔍 ${allUserBusinesses.length} relaciones usuario-negocio encontradas`)
 
+        // 🔍 DEBUG: Mostrar detalles de cada relación encontrada
+        allUserBusinesses.forEach((userBusiness, index) => {
+          console.log(`📋 Relación ${index + 1}:`, {
+            documentId: userBusiness.id,
+            businessId: userBusiness.businessId,
+            businessName: userBusiness.businessName,
+            rol: userBusiness.rol
+          })
+        })
+
         // ✅ VALIDACIÓN: Verificar que los negocios existan en la collection principal
         const validBusinesses = []
         const invalidBusinesses = []
 
         for (const userBusiness of allUserBusinesses) {
           try {
+            console.log(`🔍 Verificando negocio: ${userBusiness.businessName}`)
+            console.log(`📋 BusinessID a buscar: "${userBusiness.businessId}"`)
+
             const businessDocRef = doc(db, 'businesses', userBusiness.businessId)
             const businessDoc = await getDoc(businessDocRef)
 
-            console.log(`🔍 Verificando: users/${uid}/businesses/${userBusiness.id} ↔ businesses/${userBusiness.businessId}`)
+            console.log(`📊 businessDoc.exists(): ${businessDoc.exists()}`)
 
             if (businessDoc.exists()) {
               validBusinesses.push(userBusiness)
+              console.log(`✅ Negocio válido encontrado:`, businessDoc.data())
               console.log(`✅ Negocio válido: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
             } else {
               invalidBusinesses.push(userBusiness)
-              console.warn(`⚠️  Negocio inválido encontrado: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
+              console.log(`❌ Negocio NO encontrado en colección 'businesses': ${userBusiness.businessId}`)
+              console.warn(`⚠️  Negocio inválido: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
             }
           } catch (validateError) {
             console.error(`❌ Error validando negocio ${userBusiness.businessId}:`, validateError)
             invalidBusinesses.push(userBusiness)
           }
-        }
-
-        // Usar solo negocios válidos
+        }        // Usar solo negocios válidos
         this.userBusinesses = validBusinesses
+
+        // 🔍 DEBUG: Mostrar resultados finales
+        console.log(`📊 RESULTADOS DE VALIDACIÓN:`)
+        console.log(`✅ Negocios válidos: ${validBusinesses.length}`)
+        console.log(`❌ Negocios inválidos: ${invalidBusinesses.length}`)
+        console.log(`📋 Array final userBusinesses.length: ${this.userBusinesses.length}`)
 
         // Advertir sobre negocios inválidos
         if (invalidBusinesses.length > 0) {

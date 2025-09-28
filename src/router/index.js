@@ -51,28 +51,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
 
-  // ✅ NUEVO: Dashboard general (redirige según contexto)
-  {
-    path: '/dashboard',
-    name: 'DashboardGeneral',
-    component: () => import('@/views/dashboard/DashboardRedirect.vue'),
-    meta: { requiresAuth: true }
-  },
-
   // Configuración inicial del negocio (LEGACY - mantener por compatibilidad)
   {
     path: '/setup/business/:tempId',
     name: 'BusinessSetup',
     component: () => import('@/views/business/BusinessSetup.vue'),
     meta: { requiresAuth: true, role: 'gerente' }
-  },
-
-  // Página de espera para empleados sin asignación (LEGACY)
-  {
-    path: '/waiting-assignment',
-    name: 'WaitingAssignment',
-    component: () => import('@/views/auth/WaitingAssignment.vue'),
-    meta: { requiresAuth: true, role: 'empleado' }
   },
 
   // Dashboard principal del negocio
@@ -87,6 +71,12 @@ const routes = [
         name: 'BusinessDashboard',
         component: () => import('@/views/dashboard/DashboardRedirect.vue'),
         meta: { title: 'Dashboard' }
+      },
+
+      {
+        path: 'basicAccountingRecordsBook',
+        name: 'BasicAccountingRecordsBook',
+        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
       },
 
       // Rutas para gerentes
@@ -153,6 +143,34 @@ const routes = [
         name: 'MonthlyReports',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
         meta: { permission: 'verReportes', title: 'Resumen Mensual' }
+      },
+
+      // Rutas de detalles de registros
+      {
+        path: 'records/:registerId',
+        name: 'DetailsRecords',
+        component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
+        meta: { permission: 'verRegistros', title: 'Detalle de Registro' }
+      },
+
+      // Rutas de arqueo de caja
+      {
+        path: 'cash-closure',
+        name: 'CashClosureApp',
+        component: () => import('@/views/cashClosureApp/CashClosureApp.vue'),
+        meta: { permission: 'verArqueos', title: 'Arqueo de Caja' }
+      },
+      {
+        path: 'cash-closure/:cashClosureId',
+        name: 'CashClosureDetails',
+        component: () => import('@/views/cashClosureApp/CashClosureDetails.vue'),
+        meta: { permission: 'verArqueos', title: 'Detalle de Arqueo' }
+      },
+      {
+        path: 'cash-closure-all',
+        name: 'CashClosureAll',
+        component: () => import('@/views/cashClosureApp/MonthlyCashCalendarWrapper.vue'),
+        meta: { permission: 'verArqueos', title: 'Histórico de Arqueos' }
       }
     ]
   },
@@ -175,60 +193,6 @@ const routes = [
     name: 'Security',
     component: () => import('@/views/profile/Security.vue'),
     meta: { requiresAuth: true, title: 'Seguridad' }
-  },
-
-  // Rutas legacy (mantener compatibilidad)
-  {
-    path: '/dashboard',
-    component: () => import('@/layouts/DashboardLayout.vue'),
-    meta: { requiresAuth: true },
-    children: [
-      {
-        path: '',
-        name: 'DashboardRedirect',
-        component: () => import('@/views/dashboard/DashboardRedirect.vue'),
-      },
-      {
-        path: 'createNewBusiness',
-        name: 'CreateNewBusiness',
-        component: () => import('@/components/Business/CreateNewBusiness.vue'),
-      },
-      {
-        path: ':idBusiness',
-        name: 'Dashboard',
-        component: () => import('@/views/Dashboard.vue'),
-      },
-      {
-        path: 'basicAccountingRecordsBook',
-        name: 'BasicAccountingRecordsBook',
-        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-      },
-      {
-        path: 'basicAccountingRecordsBook/:registerId',
-        name: 'DetailsRecords',
-        component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
-      },
-      {
-        path: 'cashClosureApp',
-        children: [
-          {
-            path: '',
-            name: 'CashClosureApp',
-            component: () => import('@/views/cashClosureApp/CashClosureApp.vue'),
-          },
-          {
-            path: ':cashClosureId',
-            name: 'CashClosureDetails',
-            component: () => import('@/views/cashClosureApp/CashClosureDetails.vue'),
-          },
-          {
-            path: 'all',
-            name: 'CashClosureAll',
-            component: () => import('@/views/cashClosureApp/MonthlyCashCalendarWrapper.vue'),
-          }
-        ]
-      },
-    ]
   },
 
   // Página de acceso no autorizado

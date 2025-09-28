@@ -43,15 +43,34 @@
             v-model="transactionStore.itemToAddInTransaction.value.quantity"
             type="number"
             placeholder="Cantidad"
-            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl w-2/3 text-center"
+            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl flex-1 text-center"
           />
-          <span class="text-lg lg:text-base font-semibold">uni</span>
+          <select
+            v-model="transactionStore.itemToAddInTransaction.value.unit"
+            class="px-3 py-3 border rounded-xl shadow text-lg lg:text-base font-semibold bg-white min-w-20"
+          >
+            <option value="uni">uni</option>
+            <option value="docena">docena</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="lt">lt</option>
+            <option value="ml">ml</option>
+            <option value="m">m</option>
+            <option value="cm">cm</option>
+            <option value="pza">pza</option>
+            <option value="caja">caja</option>
+            <option value="pack">pack</option>
+            <option value="rollo">rollo</option>
+            <option value="botella">botella</option>
+            <option value="bolsa">bolsa</option>
+          </select>
         </div>
       </div>
+      ????
 
       <div class="flex flex-col gap-2">
         <label class="text-xl lg:text-lg font-semibold text-gray-600"
-          >Precio</label
+          >Precios</label
         >
         <div class="flex items-center gap-2">
           <span class="text-2xl lg:text-xl font-bold text-gray-800">S/</span>
@@ -104,7 +123,7 @@
               {{ item.description }}
             </div>
             <div class="text-sm text-gray-500">
-              {{ item.quantity }} uni × S/ {{ item.price }}
+              {{ item.quantity }} {{ item.unit || "uni" }} × S/ {{ item.price }}
             </div>
           </div>
 
@@ -133,15 +152,15 @@ import { useInventoryStore } from "@/stores/InventoryStore";
 const transactionStore = useTransactionStore();
 const inventoryStore = useInventoryStore();
 
-import { useTransactionFlow } from "@/composables/useTransactionFlow";
+import { useTransactionFlow } from "@/store/transaction/useTransactionFlowStore";
 
-const { goNext } = useTransactionFlow();
+const { nextStep } = useTransactionFlow();
 
 const handleSaveBtn = () => {
   inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(
     transactionStore.transactionToAdd.value.items
   );
-  goNext();
+  nextStep();
 };
 </script>
 

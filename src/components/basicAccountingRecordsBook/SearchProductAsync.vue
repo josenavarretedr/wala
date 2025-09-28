@@ -128,6 +128,7 @@ document.addEventListener("click", (e) => {
         price: null,
         oldOrNewProduct: "new",
         selectedProductUuid: null,
+        unit: "uni",
       });
 
       document.querySelector("#autocomplete input").value = "";
@@ -145,6 +146,7 @@ document.addEventListener("click", (e) => {
           price: selectedProduct.price,
           oldOrNewProduct: "old",
           selectedProductUuid: selectedProduct.uuid,
+          unit: selectedProduct.unit || "uni",
         });
 
         document.querySelector("#autocomplete input").value = "";

@@ -10,7 +10,7 @@ export function useExpenses() {
     try {
       const businessId = ensureBusinessId();
 
-      const expenseRef = doc(db, `business/${businessId}/expenses`, expense.uuid); // Usa UUID del expense
+      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expense.uuid); // Usa UUID del expense
       await setDoc(expenseRef, {
         ...expense,
         transactionRef,
@@ -27,7 +27,7 @@ export function useExpenses() {
     try {
       const businessId = ensureBusinessId();
 
-      const expensesSnapshot = await getDocs(collection(db, `business/${businessId}/expenses`));
+      const expensesSnapshot = await getDocs(collection(db, `businesses/${businessId}/expenses`));
       const expenses = [];
       expensesSnapshot.forEach(doc => {
         expenses.push({
@@ -48,7 +48,7 @@ export function useExpenses() {
     try {
       const businessId = ensureBusinessId();
 
-      const expenseRef = doc(db, `business/${businessId}/expenses`, expenseId);
+      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
       await updateDoc(expenseRef, {
         ...updatedData,
         updatedAt: serverTimestamp(),
@@ -64,7 +64,7 @@ export function useExpenses() {
     try {
       const businessId = ensureBusinessId();
 
-      const expenseRef = doc(db, `business/${businessId}/expenses`, expenseID);
+      const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseID);
       await deleteDoc(expenseRef);
       console.log('Expense deleted in Firestore');
     } catch (error) {
@@ -80,7 +80,7 @@ export function useExpenses() {
 
       // Creamos una consulta que solo recupere los documentos donde transactionRef es igual al valor dado.
       const expensesQuery = query(
-        collection(db, `business/${businessId}/expenses`),
+        collection(db, `businesses/${businessId}/expenses`),
         where("transactionRef", "==", transactionRef)
       );
 

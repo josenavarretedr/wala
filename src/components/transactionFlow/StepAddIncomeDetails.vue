@@ -43,9 +43,27 @@
             v-model="transactionStore.itemToAddInTransaction.value.quantity"
             type="number"
             placeholder="Cantidad"
-            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl w-2/3 text-center"
+            class="px-6 py-3 border rounded-xl shadow text-2xl lg:text-xl flex-1 text-center"
           />
-          <span class="text-lg lg:text-base font-semibold">uni</span>
+          <select
+            v-model="transactionStore.itemToAddInTransaction.value.unit"
+            class="px-3 py-3 border rounded-xl shadow text-lg lg:text-base font-semibold bg-white min-w-24"
+          >
+            <option value="uni">uni</option>
+            <option value="docena">docena</option>
+            <option value="kg">kg</option>
+            <option value="g">g</option>
+            <option value="lt">lt</option>
+            <option value="ml">ml</option>
+            <option value="m">m</option>
+            <option value="cm">cm</option>
+            <option value="pza">pza</option>
+            <option value="caja">caja</option>
+            <option value="pack">pack</option>
+            <option value="rollo">rollo</option>
+            <option value="botella">botella</option>
+            <option value="bolsa">bolsa</option>
+          </select>
         </div>
       </div>
 
@@ -70,18 +88,12 @@
           :disabled="
             !transactionStore.itemToAddInTransaction.value.description ||
             !transactionStore.itemToAddInTransaction.value.quantity ||
-            !transactionStore.itemToAddInTransaction.value.price
+            !transactionStore.itemToAddInTransaction.value.price ||
+            !transactionStore.itemToAddInTransaction.value.unit
           "
           class="p-4 bg-blue-600 text-white rounded-full shadow-lg disabled:opacity-40"
         >
           <KeyframePlus class="w-10 h-10" />
-        </button>
-        <button
-          @click="handleSaveBtn()"
-          :disabled="transactionStore.transactionToAdd.value.items.length === 0"
-          class="p-4 bg-green-600 text-white rounded-full shadow-lg disabled:opacity-40"
-        >
-          <FastArrowRight class="w-10 h-10" />
         </button>
       </div>
     </div>
@@ -104,7 +116,7 @@
               {{ item.description }}
             </div>
             <div class="text-sm text-gray-500">
-              {{ item.quantity }} uni × S/ {{ item.price }}
+              {{ item.quantity }} {{ item.unit || "uni" }} × S/ {{ item.price }}
             </div>
           </div>
 
@@ -129,20 +141,11 @@ import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useInventoryStore } from "@/stores/InventoryStore";
+
 const transactionStore = useTransactionStore();
-const inventoryStore = useInventoryStore();
-
-import { useTransactionFlow } from "@/composables/useTransactionFlow";
-
-const { goNext } = useTransactionFlow();
-
-const handleSaveBtn = () => {
-  inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(
-    transactionStore.transactionToAdd.value.items
-  );
-  goNext();
-};
+const flowStore = useTransactionFlowStore();
 </script>
 
 <style scoped>

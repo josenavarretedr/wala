@@ -33,6 +33,7 @@ const itemToAddInTransaction = ref({
   price: null,
   oldOrNewProduct: null,
   selectedProductUuid: null,
+  unit: null,
 });
 
 
@@ -197,6 +198,7 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.price = product.price;
     itemToAddInTransaction.value.oldOrNewProduct = product.oldOrNewProduct;
     itemToAddInTransaction.value.selectedProductUuid = product.selectedProductUuid;
+    itemToAddInTransaction.value.unit = product.unit;
   }
 
   const resetItemToAddInTransaction = () => {

@@ -1,24 +1,57 @@
 <template>
   <header
-    class="bg-white border-b border-gray-200 shadow-sm px-6 py-4 flex items-center justify-between"
+    class="bg-white border-b border-gray-200 shadow-sm px-6 py-6 lg:py-5 flex items-center justify-between min-h-[80px]"
   >
-    <!-- Logo / Nombre del negocio -->
-    <RouterLink
-      :to="{ name: 'DashboardRedirect' }"
-      class="flex items-center gap-3 group"
+    <!-- Botón menú mobile y desktop - Lado izquierdo -->
+    <button
+      @click="$emit('toggle-sidebar')"
+      class="text-gray-500 hover:text-gray-700 transition-colors p-2 hover:bg-gray-100 rounded-lg"
     >
-      <Folder
-        class="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition"
-      />
-      <h1
-        class="text-xl md:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
+      <svg
+        class="w-6 h-6"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
       >
-        {{ displayName }}
-      </h1>
-    </RouterLink>
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        />
+      </svg>
+    </button>
 
-    <!-- Botón de cerrar sesión -->
-    <BtnLogout v-if="authStore.user" />
+    <!-- Logo / Nombre del negocio - Centro -->
+    <div class="absolute left-1/2 transform -translate-x-1/2">
+      <component
+        :is="currentBusinessId ? 'RouterLink' : 'div'"
+        :to="
+          currentBusinessId
+            ? {
+                name: 'BusinessDashboard',
+                params: { businessId: currentBusinessId },
+              }
+            : undefined
+        "
+        class="flex items-center gap-3 group cursor-pointer"
+        @click="handleLogoClick"
+      >
+        <Folder
+          class="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition"
+        />
+        <h1
+          class="text-xl md:text-2xl lg:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
+        >
+          {{ displayName }}
+        </h1>
+      </component>
+    </div>
+
+    <!-- Espacio para elementos del lado derecho (reservado para futuro uso) -->
+    <div class="w-12 flex justify-end">
+      <!-- Aquí puedes agregar elementos como notificaciones, perfil, etc. -->
+    </div>
   </header>
 </template>
 
@@ -26,13 +59,49 @@
 import { ref, watch, computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useUserStore } from "@/stores/useUserStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useRoute } from "vue-router";
 import BtnLogout from "@/components/Auth/BtnLogout.vue";
 import { Folder } from "@iconoir/vue";
+import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 
+// ✅ Definir el emit para comunicarse con el componente padre
+const emit = defineEmits(["toggle-sidebar"]);
+
+const route = useRoute();
 const authStore = useAuthStore();
 const businessStore = useBusinessStore();
+const userStore = useUserStore();
+const transactionStore = useTransactionStore();
+const flow = useTransactionFlowStore();
 
 const displayName = ref("WALA");
+
+// Computed para obtener el businessId actual
+const currentBusinessId = computed(() => {
+  const id =
+    route.params.businessId ||
+    businessStore.business?.id ||
+    userStore.currentBusiness?.businessId ||
+    null;
+
+  console.log("🔍 Header currentBusinessId:", {
+    routeParam: route.params.businessId,
+    businessStoreId: businessStore.business?.id,
+    userStoreBusiness: userStore.currentBusiness?.businessId,
+    finalId: id,
+  });
+
+  return id;
+});
+
+// ✅ Función para manejar el click en el logo - mantiene @click.stop y agrega reset
+const handleLogoClick = (event) => {
+  event.stopPropagation(); // Equivalente a @click.stop
+  flow.resetFlow();
+  transactionStore.resetTransactionToAdd();
+};
 
 const businessName = computed(() => {
   const currentBusiness = businessStore.business;

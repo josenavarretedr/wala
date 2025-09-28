@@ -17,7 +17,7 @@ export function useCashEvent() {
   const createCashEvent = async (cashEventData) => {
     try {
       const businessId = ensureBusinessId();
-      const ref = doc(db, `business/${businessId}/cashEvents`, cashEventData.uuid);
+      const ref = doc(db, `businesses/${businessId}/cashEvents`, cashEventData.uuid);
       await setDoc(ref, { ...cashEventData, createdAt: serverTimestamp() });
       console.log('Cash event created in Firestore');
     } catch (error) {
@@ -29,7 +29,7 @@ export function useCashEvent() {
   const getCashEventsForBusiness = async () => {
     try {
       const businessId = ensureBusinessId();
-      const snapshot = await getDocs(collection(db, `business/${businessId}/cashEvents`));
+      const snapshot = await getDocs(collection(db, `businesses/${businessId}/cashEvents`));
       const events = [];
       snapshot.forEach(doc => {
         events.push({ id: doc.id, ...doc.data() });

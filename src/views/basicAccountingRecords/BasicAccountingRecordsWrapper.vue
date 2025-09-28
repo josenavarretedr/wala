@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { ensureBusinessId } from "../../composables/useBusinessUtils";
 
 const flow = useTransactionFlowStore();
 const transactionStore = useTransactionStore();
@@ -16,6 +17,12 @@ const finalizarRegistro = async () => {
 
   // Verifica si la operación fue exitosa (puedes definir un status si lo deseas)
   flow.resetFlow();
+  // TODO: Resetear el store tambien del transactionStore
+  transactionStore.resetTransactionToAdd();
+  router.push({
+    name: "BusinessDashboard",
+    params: { businessId: ensureBusinessId() },
+  });
   // FIXME: Redirigir al listado de transacciones
   // router.push({ name: "TransactionList" }); // Ruta que corresponda al listado
 };

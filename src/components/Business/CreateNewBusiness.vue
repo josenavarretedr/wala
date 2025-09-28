@@ -144,7 +144,7 @@ import {
 import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthStore } from "@/stores/authStore";
-import { createBusiness } from "@/composables/useBusiness";
+import { v4 as uuidv4 } from "uuid";
 
 const businessStore = useBusinessStore();
 const userStore = useUserStore();
@@ -185,26 +185,32 @@ async function handleSubmit() {
       throw new Error("Usuario no autenticado");
     }
 
+    // Generar ID único para el negocio
+    const businessId = uuidv4();
+
     // Preparar datos del negocio
     const businessData = {
+      id: businessId,
       nombre: name.value.trim(),
-      descripcion: description.value.trim(),
       tipo: type.value,
-      region: region.value.trim(),
-      redSocial: socialHandle.value.trim(),
+      direccion: region.value.trim(), // Mapear region a direccion
       telefono: contactNumber.value.trim(),
+      email: "", // Campo requerido por el store
+      gerenteId: currentUser.uid,
+      descripcion: description.value.trim(),
+      redSocial: socialHandle.value.trim(),
     };
 
-    // Crear negocio usando el composable
-    const businessId = await createBusiness(currentUser.uid, businessData);
+    // Crear negocio usando el store
+    const business = await businessStore.createBusiness(businessData);
 
-    console.log("✅ Negocio creado con ID:", businessId);
+    console.log("✅ Negocio creado:", business.nombre, "con ID:", business.id);
 
     // Agregar el negocio al store del usuario
     const newBusinessForUser = {
-      businessId: businessId,
-      businessName: businessData.nombre,
-      businessType: businessData.tipo,
+      businessId: business.id,
+      businessName: business.nombre,
+      businessType: business.tipo,
       rol: "gerente",
       permissions: {
         fullAccess: true,
@@ -218,15 +224,14 @@ async function handleSubmit() {
     await userStore.addBusinessToUser(currentUser.uid, newBusinessForUser);
 
     // Cambiar al negocio recién creado
-    userStore.switchBusiness(businessId);
+    userStore.switchBusiness(business.id);
 
-    // Cargar datos del negocio en el store
-    await businessStore.loadBusiness(businessId, newBusinessForUser);
+    // El negocio ya está cargado en businessStore.business, no necesitamos llamar loadBusiness
 
     alert("¡Negocio registrado exitosamente!");
 
     // Redirigir al dashboard del nuevo negocio
-    router.push(`/business/${businessId}/dashboard`);
+    router.push(`/business/${business.id}/dashboard`);
   } catch (error) {
     console.error("❌ Error al registrar el negocio:", error);
     alert(`Error al registrar el negocio: ${error.message}`);

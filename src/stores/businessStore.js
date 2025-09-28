@@ -64,6 +64,9 @@ export const useBusinessStore = defineStore('business', {
           this.currentUserPermissions = userBusiness.permissions || {}
         }
 
+        // Cargar empleados del negocio
+        await this.loadEmployees(businessId)
+
         console.log('✅ Negocio cargado:', businessData.nombre)
         console.log('👤 Rol del usuario:', this.currentUserRole)
         console.log('🔑 Permisos:', Object.keys(this.currentUserPermissions).length)
@@ -169,46 +172,6 @@ export const useBusinessStore = defineStore('business', {
       } catch (error) {
         console.error('❌ Error al buscar negocio:', error)
         this.error = 'Error al buscar el negocio'
-        throw error
-      } finally {
-        this.isLoading = false
-      }
-    },
-
-    async loadBusiness(businessId) {
-      this.isLoading = true
-      this.error = null
-
-      try {
-        console.log(`🔍 Intentando cargar negocio con ID: ${businessId}`);
-
-        // Cargar negocio desde Firestore
-        const businessDocRef = doc(db, 'businesses', businessId)
-        const businessDoc = await getDoc(businessDocRef)
-
-        if (businessDoc.exists()) {
-          const businessData = {
-            id: businessDoc.id,
-            ...businessDoc.data()
-          }
-
-          this.business = businessData
-
-          // Cargar empleados del negocio
-          await this.loadEmployees(businessId)
-
-          console.log('✅ Negocio cargado exitosamente:', businessData.nombre)
-          return businessData
-
-        } else {
-          console.error(`❌ Negocio no encontrado en Firestore: ${businessId}`);
-          console.log('💡 Verificar si el ID del negocio es correcto y existe en la collection businesses');
-          throw new Error(`El negocio con ID "${businessId}" no existe en la base de datos`)
-        }
-
-      } catch (error) {
-        console.error('❌ Error al cargar negocio:', error)
-        this.error = 'Error al cargar el negocio: ' + error.message
         throw error
       } finally {
         this.isLoading = false

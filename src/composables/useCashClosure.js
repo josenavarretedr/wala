@@ -11,7 +11,7 @@ export function useCashClosure() {
     try {
       const businessId = ensureBusinessId();
 
-      const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureData.uuid);
+      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureData.uuid);
       await setDoc(cashClosureRef, {
         ...cashClosureData,
         createdAt: serverTimestamp(),
@@ -27,7 +27,7 @@ export function useCashClosure() {
     try {
       const businessId = ensureBusinessId();
 
-      const cashClosureRef = doc(db, `business/${businessId}/cashClosures`, cashClosureId);
+      const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureId);
       const cashClosureSnap = await getDoc(cashClosureRef);
       if (cashClosureSnap.exists()) {
         return {
@@ -48,7 +48,7 @@ export function useCashClosure() {
     try {
       const businessId = ensureBusinessId();
 
-      const cashClosuresSnapshot = await getDocs(collection(db, `business/${businessId}/cashClosures`));
+      const cashClosuresSnapshot = await getDocs(collection(db, `businesses/${businessId}/cashClosures`));
       const cashClosures = [];
       cashClosuresSnapshot.forEach(doc => {
         cashClosures.push({
@@ -73,7 +73,7 @@ export function useCashClosure() {
       tomorrow.setDate(today.getDate() + 1);
 
       const q = query(
-        collection(db, `business/${businessId}/cashClosures`),
+        collection(db, `businesses/${businessId}/cashClosures`),
         where('createdAt', '>=', today),
         where('createdAt', '<', tomorrow)
       );
