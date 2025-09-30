@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 
 import { useTransaccion } from '@/composables/useTransaction';
 import { useInventory } from '@/composables/useInventory';
+import { useTraceability } from '@/composables/useTraceability';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -42,17 +43,46 @@ const currentStepOfAddTransaction = ref(0);
 export function useTransactionStore() {
   const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps } = useTransaccion();
   const { createStockLog, deleteStockLog } = useInventory();
+  const { logTransactionOperation, logInventoryOperation, startOperationChain } = useTraceability();
 
   const addTransaction = async () => {
+    let traceId = null;
+    
     try {
       // Asignar un UUID para la transacción
       transactionToAdd.value.uuid = uuidv4();
 
+      // === TRAZABILIDAD: Iniciar operación compleja ===
+      const operationChain = startOperationChain('add_transaction');
+      
+      // Preparar datos para trazabilidad
+      const relatedEntities = [];
+      
       if (transactionToAdd.value.type === 'income') {
         // Procesar transacción de ingreso:
         transactionToAdd.value.total = getTransactionToAddTotal();
-        // Procesar cada ítem y registrar los stockLogs
+        
+        // === TRAZABILIDAD: Log de items relacionados ===
         for (const item of transactionToAdd.value.items) {
+          relatedEntities.push({
+            type: 'inventory',
+            id: item.uuid || item.selectedProductUuid,
+            relationship: 'stock_affected',
+            impact: 'high'
+          });
+        }
+        
+        // Procesar cada ítem y registrar los stockLogs con trazabilidad
+        for (const item of transactionToAdd.value.items) {
+          // === TRAZABILIDAD: Log antes de crear stock log ===
+          await operationChain.addStep('update', 'inventory', item.uuid || item.selectedProductUuid, {
+            previousState: { stock: item.currentStock || 0 },
+            newState: { stock: (item.currentStock || 0) + item.quantity },
+            reason: 'stock_increase_from_income_transaction',
+            severity: 'high',
+            tags: ['stock_update', 'income_transaction']
+          });
+
           const stockLogUuid = await createStockLog(item);
           const itemUuid = item.uuid;
           const itemStockLog = { itemUuid, stockLogUuid };
@@ -60,39 +90,146 @@ export function useTransactionStore() {
         }
       } else if (transactionToAdd.value.type === 'expense') {
         transactionToAdd.value.total = transactionToAdd.value.cost;
+        
+        // === TRAZABILIDAD: Log de gasto relacionado ===
+        relatedEntities.push({
+          type: 'expense',
+          id: transactionToAdd.value.uuid,
+          relationship: 'generates_expense'
+        });
+
         await expensesStore.addExpense(transactionToAdd.value.uuid);
-        // Llama a la acción para agregar el gasto desde el store
         expensesStore.resetExpenseToAdd();
       }
 
-      // Crear la transacción en Firestore
-      await createTransaction(transactionToAdd.value);
-      console.log('Transaction added successfully');
+      // === TRAZABILIDAD: Log de creación de transacción ===
+      traceId = await logTransactionOperation(
+        'create',
+        transactionToAdd.value.uuid,
+        transactionToAdd.value,
+        {
+          reason: 'user_transaction_creation',
+          severity: transactionToAdd.value.total > 10000 ? 'high' : 'medium',
+          tags: [
+            'transaction_creation',
+            `transaction_${transactionToAdd.value.type}`,
+            `payment_${transactionToAdd.value.account}`,
+            transactionToAdd.value.total > 10000 ? 'high_value' : 'standard_value'
+          ],
+          relatedEntities,
+          component: 'TransactionStore.addTransaction'
+        }
+      );
 
+      // Crear la transacción en Firestore (eliminar duplicación)
       await createTransaction(transactionToAdd.value);
-      console.log('Transaction added successfully');
+      console.log('✅ Transaction added successfully with traceId:', traceId);
+
+      // === TRAZABILIDAD: Finalizar operación compleja ===
+      await operationChain.finish({
+        reason: 'transaction_creation_completed',
+        metadata: {
+          transactionId: transactionToAdd.value.uuid,
+          transactionType: transactionToAdd.value.type,
+          totalValue: transactionToAdd.value.total,
+          itemsCount: transactionToAdd.value.items?.length || 0
+        }
+      });
+
       status.value = 'success';
 
-
     } catch (error) {
-      console.error('Error adding transaction: ', error);
+      console.error('❌ Error adding transaction:', error);
+      
+      // === TRAZABILIDAD: Log de error ===
+      if (traceId) {
+        await logTransactionOperation(
+          'error',
+          transactionToAdd.value.uuid || 'unknown',
+          { error: error.message },
+          {
+            reason: 'transaction_creation_failed',
+            severity: 'critical',
+            tags: ['transaction_error', 'creation_failure'],
+            component: 'TransactionStore.addTransaction'
+          }
+        );
+      }
+      
+      status.value = 'error';
+      throw error;
     }
   };
 
   const getTransactions = async () => {
     try {
+      // === TRAZABILIDAD: Log de acceso a datos ===
+      await logTransactionOperation(
+        'read',
+        'all_transactions',
+        { action: 'fetch_all_transactions' },
+        {
+          reason: 'data_access_all_transactions',
+          severity: 'low',
+          tags: ['data_read', 'transaction_list'],
+          component: 'TransactionStore.getTransactions'
+        }
+      );
+
       transactionsInStore.value = await getAllTransactions();
+      console.log('✅ Transactions fetched with traceability');
 
     } catch (error) {
-      console.error('Error fetching transactions: ', error);
+      console.error('❌ Error fetching transactions:', error);
+      
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'all_transactions',
+        { error: error.message },
+        {
+          reason: 'fetch_transactions_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure'],
+          component: 'TransactionStore.getTransactions'
+        }
+      );
     }
   };
 
   const getTransactionsToday = async () => {
     try {
+      // === TRAZABILIDAD: Log de acceso a datos del día ===
+      await logTransactionOperation(
+        'read',
+        'today_transactions',
+        { action: 'fetch_today_transactions', date: new Date().toISOString().split('T')[0] },
+        {
+          reason: 'data_access_today_transactions',
+          severity: 'low',
+          tags: ['data_read', 'transaction_list', 'daily_data'],
+          component: 'TransactionStore.getTransactionsToday'
+        }
+      );
+
       transactionsInStore.value = await getTransactionsTodayCmps();
+      console.log('✅ Today transactions fetched with traceability');
+
     } catch (error) {
-      console.error('Error fetching transactions: ', error);
+      console.error('❌ Error fetching today transactions:', error);
+      
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'today_transactions',
+        { error: error.message },
+        {
+          reason: 'fetch_today_transactions_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'daily_data'],
+          component: 'TransactionStore.getTransactionsToday'
+        }
+      );
     }
   }
 
@@ -136,13 +273,50 @@ export function useTransactionStore() {
 
   const modifyTransaction = async (transactionId, updatedData) => {
     try {
+      // Obtener estado anterior
+      const previousTransaction = transactionsInStore.value.find(t => t.uuid === transactionId);
+      
+      // === TRAZABILIDAD: Log de modificación ===
+      const traceId = await logTransactionOperation(
+        'update',
+        transactionId,
+        updatedData,
+        {
+          reason: 'user_transaction_modification',
+          severity: 'medium',
+          tags: ['transaction_update', 'data_modification'],
+          component: 'TransactionStore.modifyTransaction',
+          previousState: previousTransaction
+        }
+      );
+
       await updateTransaction(transactionId, updatedData);
-      const index = transactions.value.findIndex(t => t.id === transactionId);
+      
+      // Actualizar estado local
+      const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
       if (index !== -1) {
-        transactions.value[index] = { ...transactions.value[index], ...updatedData };
+        transactionsInStore.value[index] = { ...transactionsInStore.value[index], ...updatedData };
       }
+
+      console.log('✅ Transaction modified with traceId:', traceId);
+
     } catch (error) {
-      console.error('Error updating transaction: ', error);
+      console.error('❌ Error updating transaction:', error);
+      
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        transactionId,
+        { error: error.message },
+        {
+          reason: 'transaction_modification_failed',
+          severity: 'high',
+          tags: ['transaction_error', 'update_failure'],
+          component: 'TransactionStore.modifyTransaction'
+        }
+      );
+      
+      throw error;
     }
   };
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
+  <div class="w-full mx-auto p-6 bg-white rounded-lg shadow-lg">
     <!-- Botón toggle resumen -->
     <Suspense>
       <template #default>

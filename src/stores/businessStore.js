@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { collection, doc, getDoc, setDoc, query, where, getDocs, updateDoc, addDoc } from 'firebase/firestore'
 import { db } from '@/firebaseInit'
 import { v4 as uuidv4 } from 'uuid'
+import { useTraceability } from '@/composables/useTraceability'
 
 export const useBusinessStore = defineStore('business', {
   state: () => ({
@@ -42,6 +43,22 @@ export const useBusinessStore = defineStore('business', {
 
       try {
         console.log('🔄 Cargando negocio:', businessId)
+        
+        // === TRAZABILIDAD: Inicializar sistema ===
+        const { logBusinessOperation } = useTraceability()
+
+        // === TRAZABILIDAD: Log de acceso a negocio ===
+        const traceId = await logBusinessOperation(
+          'read',
+          businessId,
+          { action: 'load_business', userRole: userBusiness?.rol },
+          {
+            reason: 'business_data_access',
+            severity: 'medium',
+            tags: ['business_load', 'data_access'],
+            component: 'BusinessStore.loadBusiness'
+          }
+        )
 
         // Cargar datos completos del negocio desde Firestore
         const businessDocRef = doc(db, 'businesses', businessId)
@@ -67,15 +84,49 @@ export const useBusinessStore = defineStore('business', {
         // Cargar empleados del negocio
         await this.loadEmployees(businessId)
 
+        // === TRAZABILIDAD: Log de carga exitosa ===
+        await logBusinessOperation(
+          'read',
+          businessId,
+          businessData,
+          {
+            reason: 'business_load_completed',
+            severity: 'low',
+            tags: ['business_load', 'success'],
+            component: 'BusinessStore.loadBusiness',
+            metadata: {
+              businessName: businessData.nombre,
+              userRole: this.currentUserRole,
+              employeeCount: this.employees.length
+            }
+          }
+        )
+
         console.log('✅ Negocio cargado:', businessData.nombre)
         console.log('👤 Rol del usuario:', this.currentUserRole)
         console.log('🔑 Permisos:', Object.keys(this.currentUserPermissions).length)
+        console.log('📊 TraceId:', traceId)
 
         return businessData
 
       } catch (error) {
         console.error('❌ Error al cargar negocio:', error)
         this.error = `Error al cargar negocio: ${error.message}`
+        
+        // === TRAZABILIDAD: Log de error ===
+        const { logBusinessOperation } = useTraceability()
+        await logBusinessOperation(
+          'error',
+          businessId,
+          { error: error.message },
+          {
+            reason: 'business_load_failed',
+            severity: 'high',
+            tags: ['business_load', 'error', 'fetch_failure'],
+            component: 'BusinessStore.loadBusiness'
+          }
+        )
+        
         throw error
       } finally {
         this.isLoading = false
@@ -84,12 +135,29 @@ export const useBusinessStore = defineStore('business', {
 
     // ✅ NUEVO: Limpiar datos del negocio actual
     clearCurrentBusiness() {
+      // === TRAZABILIDAD: Log de limpieza ===
+      const { logBusinessOperation } = useTraceability()
+      
+      if (this.business) {
+        logBusinessOperation(
+          'update',
+          this.business.id,
+          { action: 'clear_business_data' },
+          {
+            reason: 'business_data_cleanup',
+            severity: 'low',
+            tags: ['business_cleanup', 'session_end'],
+            component: 'BusinessStore.clearCurrentBusiness'
+          }
+        )
+      }
+
       this.business = null
       this.employees = []
       this.currentUserRole = null
       this.currentUserPermissions = {}
       this.error = null
-      console.log('🧹 Datos del negocio actual limpiados')
+      console.log('🧹 Datos del negocio actual limpiados con trazabilidad')
     },
 
     async createBusiness(businessData) {
@@ -97,7 +165,26 @@ export const useBusinessStore = defineStore('business', {
       this.error = null
 
       try {
-        // Generar ID único para el negocio
+        // === TRAZABILIDAD: Inicializar sistema ===
+        const { logBusinessOperation } = useTraceability()
+
+        // === TRAZABILIDAD: Log de creación de negocio ===
+        const traceId = await logBusinessOperation(
+          'create',
+          businessData.id,
+          businessData,
+          {
+            reason: 'new_business_creation',
+            severity: 'high',
+            tags: ['business_creation', 'new_business'],
+            component: 'BusinessStore.createBusiness',
+            metadata: {
+              businessName: businessData.nombre,
+              businessType: businessData.tipo,
+              ownerId: businessData.gerenteId
+            }
+          }
+        )
 
         const business = {
           id: businessData.id,

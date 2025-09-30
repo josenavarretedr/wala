@@ -171,6 +171,14 @@ const routes = [
         name: 'CashClosureAll',
         component: () => import('@/views/cashClosureApp/MonthlyCashCalendarWrapper.vue'),
         meta: { permission: 'verArqueos', title: 'Histórico de Arqueos' }
+      },
+
+      // Ruta para testing del sistema de trazabilidad (solo para desarrollo)
+      {
+        path: 'testing/traceability',
+        name: 'TraceabilityTesting',
+        component: () => import('@/views/TraceabilityTesting.vue'),
+        meta: { role: 'gerente', title: 'Testing de Trazabilidad' }
       }
     ]
   },
