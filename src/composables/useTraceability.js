@@ -1,5 +1,6 @@
 // composables/useTraceability.js - Composable principal para el sistema de trazabilidad
 import { traceability } from '@/utils/traceabilityCore';
+import { generateSecureUUID } from '@/utils/generateUUID';
 import { useUserStore } from '@/stores/useUserStore';
 import { useBusinessStore } from '@/stores/businessStore';
 import { useRoute } from 'vue-router';
@@ -175,7 +176,7 @@ export const useTraceability = () => {
    * @returns {Object} Objeto con métodos para añadir pasos
    */
   const startOperationChain = (operationName) => {
-    const chainId = traceability.generateSecureUUID();
+    const chainId = generateSecureUUID();
     lastTraceId.value = chainId;
 
     return {
@@ -212,7 +213,7 @@ export const useTraceability = () => {
    * @returns {Promise<Object>} Resultado de la transacción
    */
   const logTransaction = async (transactionName, operations = []) => {
-    const transactionId = traceability.generateSecureUUID();
+    const transactionId = generateSecureUUID();
     const results = [];
 
     try {

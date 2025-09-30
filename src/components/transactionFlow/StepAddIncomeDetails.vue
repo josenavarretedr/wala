@@ -1,12 +1,10 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30 py-8 px-4 sm:px-6 lg:px-8"
-  >
+  <div class="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
     <div class="max-w-2xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-12">
         <h1
-          class="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4"
+          class="text-4xl sm:text-5xl lg:text-6xl font-bold bg-clip-text text-blue-600 mb-4"
         >
           Agregar Productos
         </h1>
@@ -53,6 +51,34 @@
                   Producto Seleccionado
                 </label>
                 <div class="relative">
+                  <div
+                    v-if="
+                      transactionStore.itemToAddInTransaction.value
+                        .oldOrNewProduct
+                    "
+                    class="absolute -top-3 -right-3 px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg z-10"
+                    :class="{
+                      'bg-blue-600 text-white':
+                        transactionStore.itemToAddInTransaction.value
+                          .oldOrNewProduct === 'old',
+                      'bg-green-600 text-white':
+                        transactionStore.itemToAddInTransaction.value
+                          .oldOrNewProduct === 'new',
+                      'bg-gray-400 text-white':
+                        !transactionStore.itemToAddInTransaction.value
+                          .oldOrNewProduct,
+                    }"
+                  >
+                    {{
+                      transactionStore.itemToAddInTransaction.value
+                        .oldOrNewProduct === "old"
+                        ? "Existente"
+                        : transactionStore.itemToAddInTransaction.value
+                            .oldOrNewProduct === "new"
+                        ? "Nuevo"
+                        : "Sin seleccionar"
+                    }}
+                  </div>
                   <input
                     v-model="
                       transactionStore.itemToAddInTransaction.value.description
@@ -73,7 +99,6 @@
                   </button>
                 </div>
               </div>
-
               <!-- Quantity and Unit -->
               <div>
                 <label class="block text-xl font-bold text-gray-900 mb-4">
@@ -86,21 +111,24 @@
                     <span class="text-2xl font-bold text-blue-600">Q</span>
                   </div>
                   <div class="col-span-6">
-                    <input
-                      v-model="
-                        transactionStore.itemToAddInTransaction.value.quantity
-                      "
-                      type="number"
-                      placeholder="0"
-                      class="w-full px-6 py-5 bg-gray-100 border-2 border-gray-200 rounded-2xl text-2xl text-center text-gray-700 placeholder-gray-500 font-bold focus:border-blue-500 focus:bg-white transition-all duration-200"
-                    />
+                    <input v-model="
+                    transactionStore.itemToAddInTransaction.value.quantity "
+                    type="number" placeholder="0" min:="0" class="w-full px-6
+                    py-5 bg-gray-100 border-2 border-gray-200 rounded-2xl
+                    text-2xl text-center text-gray-700 placeholder-gray-500
+                    font-bold focus:border-blue-500 focus:bg-white
+                    transition-all duration-200" />
                   </div>
                   <div class="col-span-4">
                     <select
                       v-model="
                         transactionStore.itemToAddInTransaction.value.unit
                       "
-                      class="w-full px-4 py-5 bg-gray-100 border-2 border-gray-200 rounded-2xl text-lg font-bold text-gray-700 focus:border-blue-500 focus:bg-white transition-all duration-200"
+                      :disabled="
+                        transactionStore.itemToAddInTransaction.value
+                          .oldOrNewProduct === 'old'
+                      "
+                      class="w-full px-4 py-5 bg-gray-100 border-2 border-gray-200 rounded-2xl text-lg font-bold text-gray-700 focus:border-blue-500 focus:bg-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <option value="uni">uni</option>
                       <option value="docena">doc</option>
@@ -157,7 +185,7 @@
                     !transactionStore.itemToAddInTransaction.value.price ||
                     !transactionStore.itemToAddInTransaction.value.unit
                   "
-                  class="w-full py-6 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+                  class="w-full py-6 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/40 disabled:opacity-50 disabled:shadow-none disabled:hover:bg-blue-600 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
                 >
                   <KeyframePlus class="w-8 h-8" />
                   Agregar Producto
@@ -186,7 +214,7 @@
               <div
                 v-for="item in transactionStore.transactionToAdd.value.items"
                 :key="item.uuid"
-                class="bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-2xl p-6 flex items-center justify-between gap-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 border border-gray-100"
+                class="bg-gradient-to-r from-gray-50 to-blue-50/30 rounded-2xl p-6 flex items-center justify-between gap-4 border border-gray-100"
               >
                 <div class="flex-1 min-w-0">
                   <div class="text-lg font-bold text-gray-900 truncate mb-2">
@@ -242,7 +270,6 @@ import { BinMinusIn, FastArrowRight, KeyframePlus, Xmark } from "@iconoir/vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 
 const transactionStore = useTransactionStore();
 </script>
@@ -264,20 +291,6 @@ select:focus {
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #3b82f6, #8b5cf6);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #2563eb, #7c3aed);
 }
 
 /* Prevent zoom on iOS inputs */

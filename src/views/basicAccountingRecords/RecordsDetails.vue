@@ -1,42 +1,67 @@
 <template>
-  <div class="w-full max-w-lg mx-auto p-6 my-6 bg-white rounded-lg shadow-lg">
-    <div class="flex items-end mt-3 mb-4">
-      <router-link to="/dashboard" class="ml-auto text-x">
-        <Xmark class="cursor-pointer text-red-500 w-10 h-10"></Xmark>
-      </router-link>
-    </div>
-
-    <Suspense>
-      <template #default>
-        <SummaryOfRegister></SummaryOfRegister>
-      </template>
-      <template #fallback>
-        <!-- Mensaje de carga centrado con estilo -->
-        <div class="text-center text-lg font-semibold text-gray-600 mt-4">
-          Cargando detalles...
+  <div class="bg-gray-50 py-4 px-4">
+    <div class="max-w-sm mx-auto">
+      <!-- Header -->
+      <div class="mb-4">
+        <div class="flex justify-between items-center mb-1">
+          <h1 class="text-3xl font-bold text-gray-900">
+            Detalles del Registro
+          </h1>
+          <router-link
+            :to="
+              currentBusinessId
+                ? {
+                    name: 'BusinessDashboard',
+                    params: { businessId: currentBusinessId },
+                  }
+                : undefined
+            "
+            class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <Xmark class="w-6 h-6" />
+          </router-link>
         </div>
-      </template>
-    </Suspense>
+      </div>
 
-    <!-- ACtions Buttons -->
-    <div class="flex justify-between mt-6">
-      <button
-        @click="saludar"
-        :disabled="isDisabled"
-        class="px-4 py-2 bg-gray-300 text-gray-600 rounded-lg disabled:opacity-50 flex items-center"
+      <!-- Content Card -->
+      <div
+        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4"
       >
-        <Edit />
-        <span class="ml-2">Edtar</span>
-      </button>
+        <Suspense>
+          <template #default>
+            <SummaryOfRegister />
+          </template>
+          <template #fallback>
+            <div class="text-center py-6">
+              <div
+                class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2 animate-spin"
+              ></div>
+              <p class="text-sm text-gray-500">Cargando detalles...</p>
+            </div>
+          </template>
+        </Suspense>
+      </div>
 
-      <button
-        @click="deleteRegister()"
-        :disabled="isDisabled"
-        class="px-4 py-2 border border-red-500 text-red-500 rounded-lg flex items-center disabled:opacity-50 hover:bg-red-500 hover:text-white"
-      >
-        <Trash />
-        <span class="ml-2">Eliminar</span>
-      </button>
+      <!-- Actions -->
+      <div class="flex gap-4 mt-6">
+        <button
+          @click="saludar"
+          :disabled="isDisabled"
+          class="flex-1 py-4 bg-gray-100 text-gray-700 text-lg font-bold rounded-2xl border-2 border-gray-200 hover:bg-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
+        >
+          <Edit class="w-5 h-5" />
+          Editar
+        </button>
+
+        <button
+          @click="deleteRegister()"
+          :disabled="isDisabled"
+          class="flex-1 py-4 bg-red-600 text-white text-lg font-bold rounded-2xl shadow-2xl shadow-red-500/30 hover:bg-red-700 hover:shadow-red-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+        >
+          <Trash class="w-5 h-5" />
+          Eliminar
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -61,6 +86,8 @@ const router = useRouter();
 const transactionStore = useTransactionStore();
 const cashClosureStore = useCashClosureStore();
 
+const currentBusinessId = computed(() => route.params.businessId || null);
+
 async function deleteRegister() {
   try {
     // console.log(route.params.registerId);
@@ -70,4 +97,70 @@ async function deleteRegister() {
     console.error("Error adding transaction: ", error);
   }
 }
+function saludar() {
+  console.log("Saludar function called");
+}
 </script>
+
+<style scoped>
+.transition-colors {
+  transition: all 0.2s ease;
+}
+
+button:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Mobile-first optimizations */
+@media (max-width: 375px) {
+  .max-w-sm {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .py-4 {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  .text-3xl {
+    font-size: 1.75rem;
+  }
+}
+
+/* Enhanced shadow effects */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Subtle card elevation */
+.bg-white {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* Button press effect */
+button:active {
+  transform: translateY(1px);
+}
+
+/* Typography improvements */
+.font-bold {
+  letter-spacing: -0.025em;
+}
+
+.font-semibold {
+  letter-spacing: -0.01em;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+</style>

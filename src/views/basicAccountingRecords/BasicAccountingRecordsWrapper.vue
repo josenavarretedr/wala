@@ -29,17 +29,19 @@ const finalizarRegistro = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4">
-    <div class="max-w-3xl mx-auto bg-white shadow-xl rounded-xl p-6 space-y-6">
+  <div class="bg-gray-50 py-6 px-4">
+    <div
+      class="max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-8 space-y-8"
+    >
       <!-- Paso actual -->
       <component :is="CurrentStepComponent" />
 
       <!-- Navegación -->
-      <div class="flex justify-between items-center mt-10">
+      <div class="flex justify-between items-center mt-10 gap-4">
         <button
           @click="flow.prevStep"
           :disabled="flow.isFirstStep"
-          class="bg-gray-300 text-gray-700 px-5 py-2 rounded disabled:opacity-50"
+          class="flex-1 py-4 bg-gray-100 text-gray-700 text-lg font-bold rounded-2xl border-2 border-gray-200 hover:bg-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
         >
           Atrás
         </button>
@@ -47,7 +49,7 @@ const finalizarRegistro = async () => {
         <button
           v-if="flow.isLastStep"
           @click="finalizarRegistro"
-          class="bg-green-600 text-white font-semibold px-6 py-2 rounded hover:bg-green-700 transition"
+          class="flex-1 py-5 bg-green-600 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-green-500/30 hover:bg-green-700 hover:shadow-green-500/40 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
         >
           Finalizar y Registrar
         </button>
@@ -55,7 +57,7 @@ const finalizarRegistro = async () => {
         <button
           v-else
           @click="flow.nextStep"
-          class="bg-blue-600 text-white font-semibold px-6 py-2 rounded hover:bg-blue-700 transition"
+          class="flex-1 py-5 bg-blue-600 text-white text-xl font-bold rounded-2xl shadow-2xl shadow-blue-500/30 hover:bg-blue-700 hover:shadow-blue-500/40 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
         >
           Siguiente
         </button>

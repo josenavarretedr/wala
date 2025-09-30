@@ -1,114 +1,105 @@
 <template>
   <div>
-    <h1 class="title">Detalle de registro</h1>
-    <div class="summary-container">
-      <div
-        class="text-white items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-4xl text-center w-full"
-        :class="
-          oneTransactionData.type === 'income' ? 'bg-cyan-600' : 'bg-orange-500'
-        "
-      >
-        <span> S/. {{ oneTransactionData.total }} </span>
-      </div>
-      <div class="flex justify-between summary-item">
-        <div
-          v-if="oneTransactionData.type === 'income'"
-          class="flex flex-col bg-white text-blue-500 border border-blue-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
-        >
-          <GraphUp class="w-6 h-6" />
+    <!-- Total Amount -->
+    <div
+      class="text-white items-center px-4 py-6 rounded-lg shadow-sm text-center mb-4"
+      :class="
+        oneTransactionData.type === 'income' ? 'bg-blue-600' : 'bg-red-600'
+      "
+    >
+      <span class="text-3xl font-bold">S/ {{ oneTransactionData.total }}</span>
+    </div>
 
-          <span class="text-xl mt-4">Venta</span>
-        </div>
-
-        <div
-          v-else
-          class="flex flex-col items-center bg-white text-red-500 border border-red-500 align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
-        >
-          <DatabaseExport class="w-6 h-6" />
-
-          <span class="text-xl mt-4">Salió</span>
-        </div>
-
-        <div
-          v-if="oneTransactionData.account === 'cash'"
-          class="flex flex-col bg-white text-green-500 border border-green-500 items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
-        >
-          <Coins class="w-6 h-6" />
-
-          <span class="text-xl mt-4">Efectivo</span>
-        </div>
-
-        <div
-          v-else
-          class="flex flex-col items-center bg-white text-purple-500 border border-purple-500 align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform w-5/12"
-        >
-          <SmartphoneDevice class="w-6 h-6" />
-
-          <span class="text-xl mt-4">Yape/Plin</span>
-        </div>
-      </div>
-
+    <!-- Type and Account Info -->
+    <div class="flex gap-3 mb-4">
       <div
         v-if="oneTransactionData.type === 'income'"
-        class="mt-6 border-t-4 border-dashed border-gray-300 pt-4 summary-item"
+        class="flex flex-col bg-white text-blue-600 border border-blue-200 items-center px-4 py-3 rounded-lg shadow-sm flex-1"
       >
-        <div v-if="oneTransactionData.items">
-          <h2 class="text-xl font-semibold mb-4">Lista de productos:</h2>
-          <table class="min-w-full text-left bg-white">
-            <thead>
-              <tr>
-                <th class="py-2">Producto</th>
-                <th class="py-2">Q</th>
-                <th class="py-2">Precio uni</th>
-                <th class="py-2 text-right">Precio Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="item in oneTransactionData.items"
-                :key="item.uuid"
-                class="border-b"
-              >
-                <td class="py-2 text-left">{{ item.description }}</td>
-                <td class="py-2 text-left">{{ item.quantity }}</td>
-                <td class="py-2 text-left">S/{{ item.price }}</td>
-                <td class="py-2 text-right">
-                  S/{{ item.price * item.quantity }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <GraphUp class="w-5 h-5 mb-2" />
+        <span class="text-sm font-medium">Venta</span>
+      </div>
 
-        <div
-          v-else
-          class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
-          :class="
-            oneTransactionData.type === 'income'
-              ? 'text-cyan-600 border-cyan-600'
-              : 'text-orange-500 border-orange-500'
-          "
-        >
-          <p>
-            No hay productos en esta venta
-            <br />
+      <div
+        v-else
+        class="flex flex-col items-center bg-white text-red-600 border border-red-200 px-4 py-3 rounded-lg shadow-sm flex-1"
+      >
+        <DatabaseExport class="w-5 h-5 mb-2" />
+        <span class="text-sm font-medium">Gasto</span>
+      </div>
 
-            {{ oneTransactionData.description }}
-          </p>
+      <div
+        v-if="oneTransactionData.account === 'cash'"
+        class="flex flex-col bg-white text-green-600 border border-green-200 items-center px-4 py-3 rounded-lg shadow-sm flex-1"
+      >
+        <Coins class="w-5 h-5 mb-2" />
+        <span class="text-sm font-medium">Efectivo</span>
+      </div>
+
+      <div
+        v-else
+        class="flex flex-col items-center bg-white text-purple-600 border border-purple-200 px-4 py-3 rounded-lg shadow-sm flex-1"
+      >
+        <SmartphoneDevice class="w-5 h-5 mb-2" />
+        <span class="text-sm font-medium">Digital</span>
+      </div>
+    </div>
+
+    <!-- Products List for Income -->
+    <div
+      v-if="oneTransactionData.type === 'income'"
+      class="border-t border-gray-200 pt-4"
+    >
+      <div
+        v-if="oneTransactionData.items && oneTransactionData.items.length > 0"
+      >
+        <h3 class="text-lg font-bold text-gray-900 mb-3">Productos:</h3>
+        <div class="space-y-2">
+          <div
+            v-for="item in oneTransactionData.items"
+            :key="item.uuid"
+            class="py-2 border-b border-gray-100 last:border-b-0"
+          >
+            <div class="flex justify-between items-start">
+              <div class="flex-1 min-w-0 pr-3">
+                <h4 class="font-semibold text-gray-900 text-sm truncate">
+                  {{ item.description }}
+                </h4>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  {{ item.quantity }} {{ item.unit || "uni" }} × S/
+                  {{ item.price.toFixed(2) }}
+                </p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold text-gray-900 text-sm">
+                  S/ {{ (item.price * item.quantity).toFixed(2) }}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div
         v-else
-        class="bg-white border items-center align-middle px-5 py-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform text-xl text-center w-full"
-        :class="
-          oneTransactionData.type === 'income'
-            ? 'text-cyan-600 border-cyan-600'
-            : 'text-orange-500 border-orange-500'
-        "
+        class="bg-gray-50 border border-gray-200 px-4 py-3 rounded-lg text-center"
       >
-        {{ oneTransactionData.description }}
+        <p class="text-sm text-gray-600">
+          No hay productos en esta venta
+          <br />
+          <span class="font-medium">{{ oneTransactionData.description }}</span>
+        </p>
       </div>
+    </div>
+
+    <!-- Description for Expenses -->
+    <div
+      v-else
+      class="bg-gray-50 border border-gray-200 px-4 py-3 rounded-lg text-center"
+    >
+      <p class="text-sm text-gray-700 font-medium">
+        {{ oneTransactionData.description }}
+      </p>
     </div>
   </div>
 </template>
@@ -138,38 +129,38 @@ await getOneTransactionDataByIDCmp();
 </script>
 
 <style scoped>
-.title {
-  font-size: 2rem;
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-.summary-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.icon {
-  font-size: 2rem;
-  margin-right: 1rem;
-}
-
-.text {
-  font-size: 1.5rem;
-  font-weight: bold;
-}
-
-@media (min-width: 768px) {
-  .summary-container {
-    flex-direction: row;
-    flex-wrap: wrap;
+/* Mobile-first optimizations */
+@media (max-width: 375px) {
+  .text-3xl {
+    font-size: 1.75rem;
   }
 
-  .summary-item {
-    flex: 1 1 calc(50% - 2rem);
-    margin: 1rem;
+  .flex {
+    gap: 0.5rem;
   }
+
+  .px-4 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Typography improvements */
+.font-bold {
+  letter-spacing: -0.025em;
+}
+
+.font-semibold {
+  letter-spacing: -0.01em;
+}
+
+/* Smooth line height for better readability */
+.text-sm {
+  line-height: 1.25;
+}
+
+/* Subtle card elevation */
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 </style>

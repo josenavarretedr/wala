@@ -523,7 +523,7 @@ export class TraceabilityEngine {
     if (!operationData.newState) return null;
 
     const business = operationData.newState;
-    
+
     return {
       businessAnalysis: {
         operationType: operationData.operation || 'unknown',
@@ -552,7 +552,7 @@ export class TraceabilityEngine {
     const requiredFields = ['nombre', 'tipoNegocio', 'descripcion'];
     const presentFields = requiredFields.filter(field => business[field]);
     const completionRate = presentFields.length / requiredFields.length;
-    
+
     if (completionRate >= 0.8) return 'complete';
     if (completionRate >= 0.5) return 'partial';
     return 'minimal';
@@ -578,7 +578,7 @@ export class TraceabilityEngine {
     const hasCompleteInfo = business.nombre && business.tipoNegocio && business.descripcion;
     const hasContactInfo = business.telefono || business.direccion;
     const hasBranding = business.logo;
-    
+
     if (hasCompleteInfo && hasContactInfo && hasBranding) return 'mature';
     if (hasCompleteInfo && (hasContactInfo || hasBranding)) return 'developing';
     if (hasCompleteInfo) return 'basic';
@@ -615,18 +615,21 @@ export class TraceabilityEngine {
       // Completar metadatos técnicos
       traceEntry.technical.processingTime = Date.now() - traceEntry.technical.processingStartTime;
 
+      // Sanitizar datos antes de persistir
+      const sanitizedEntry = this.sanitizeForFirestore(traceEntry);
+
       if (this.isOnline) {
         // Añadir al buffer para batch processing
-        this.operationBuffer.push(traceEntry);
+        this.operationBuffer.push(sanitizedEntry);
 
         // Flush si buffer está lleno o es operación crítica
         if (this.operationBuffer.length >= this.bufferSize ||
-          traceEntry.metadata.severity === 'critical') {
+          sanitizedEntry.metadata.severity === 'critical') {
           await this.flushBuffer();
         }
       } else {
         // Guardar en localStorage si está offline
-        this.saveToLocalStorage(traceEntry);
+        this.saveToLocalStorage(sanitizedEntry);
       }
 
       return traceEntry.traceId;
@@ -652,7 +655,9 @@ export class TraceabilityEngine {
 
       batchToProcess.forEach(traceEntry => {
         const docRef = doc(collection(db, 'traceability_logs'));
-        batch.set(docRef, traceEntry);
+        // Sanitizar datos antes de enviar a Firestore
+        const sanitizedEntry = this.sanitizeForFirestore(traceEntry);
+        batch.set(docRef, sanitizedEntry);
       });
 
       await batch.commit();
@@ -702,6 +707,49 @@ export class TraceabilityEngine {
     } catch (error) {
       console.error('❌ Failed to save to localStorage:', error);
     }
+  }
+
+  /**
+   * Sanitiza un objeto para Firestore removiendo valores undefined
+   * @param {Object} obj - Objeto a sanitizar
+   * @returns {Object} Objeto sanitizado
+   */
+  sanitizeForFirestore(obj) {
+    if (obj === null || obj === undefined) {
+      return null;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.sanitizeForFirestore(item)).filter(item => item !== undefined);
+    }
+
+    if (typeof obj === 'object') {
+      const sanitized = {};
+
+      for (const [key, value] of Object.entries(obj)) {
+        // Eliminar valores undefined
+        if (value === undefined) {
+          continue;
+        }
+
+        // Convertir null a valor por defecto según el tipo esperado
+        if (value === null) {
+          sanitized[key] = null;
+        } else if (typeof value === 'object') {
+          // Recursivamente sanitizar objetos anidados
+          const sanitizedValue = this.sanitizeForFirestore(value);
+          if (sanitizedValue !== undefined) {
+            sanitized[key] = sanitizedValue;
+          }
+        } else {
+          sanitized[key] = value;
+        }
+      }
+
+      return sanitized;
+    }
+
+    return obj;
   }
 
   /**

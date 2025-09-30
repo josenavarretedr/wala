@@ -176,6 +176,7 @@ const BUSINESS_PERMISSIONS = {
     verIngresos: true,
     verEgresos: true,
     crearMovimientos: true,
+    verRecords: true,
     editarMovimientos: true,
     verReportes: true,
     gestionarEmpleados: true,

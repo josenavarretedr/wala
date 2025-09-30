@@ -34,6 +34,10 @@ export const useUserStore = defineStore('user', {
       return state.currentBusiness?.permissions || {};
     },
 
+    hasPermission: (state) => (permission) => {
+      return state.currentBusiness?.permissions[permission] === true
+    },
+
     // Obtener negocio principal (por defecto)
     primaryBusiness: (state) => {
       return state.userBusinesses.find(b => b.esPrincipal) || state.userBusinesses[0];

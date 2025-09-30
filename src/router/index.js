@@ -150,7 +150,7 @@ const routes = [
         path: 'records/:registerId',
         name: 'DetailsRecords',
         component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
-        meta: { permission: 'verRegistros', title: 'Detalle de Registro' }
+        meta: { permission: 'verReportes', title: 'Detalle de Registro' }
       },
 
       // Rutas de arqueo de caja
@@ -305,7 +305,11 @@ router.beforeEach(async (to, from, next) => {
 
     // Verificar permisos específicos usando BusinessStore
     if (to.meta.permission) {
-      const hasPermission = businessStore.hasPermission(to.meta.permission)
+
+      console.log('🔍 Verificando permiso:', to.meta.permission)
+      console.log('📋 Permisos actuales:', userStore.currentBusiness?.permissions)
+
+      const hasPermission = false || userStore.hasPermission(to.meta.permission)
       if (!hasPermission) {
         console.log('❌ Sin permisos para:', to.meta.permission)
         return next(`/business/${businessId}/dashboard`)
