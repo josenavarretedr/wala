@@ -31,7 +31,14 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       };
     },
     isFirstStep: state => state.currentStep === 0,
-    isLastStep: state => state.currentStep === state.steps.length - 1
+    isLastStep: state => {
+      // Si estamos en el primer paso y hay solo 1 paso, no puede ser el último
+      if (state.currentStep === 0 && state.steps.length <= 1) {
+        return false;
+      }
+      // Para ser el último paso, debe cumplir las condiciones normales
+      return state.currentStep === state.steps.length - 1 && state.steps.length > 1;
+    }
   },
   actions: {
     async nextStep() {
@@ -97,7 +104,7 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push({ label: 'Detalles egreso', component: StepAddExpenseDetails });
         this.steps.push({ label: 'Preview egreso', component: StepAddExpensePreview });
       } else if (transactionType === 'transfer') {
-        // Para transferencias, no necesitamos el paso de cuenta porque se manejan ambas en los detalles
+        // Aquí podrías definir pasos específicos para transferencias si es necesario
         this.steps.push({ label: 'Detalles transferencia', component: StepTransferDetails });
         this.steps.push({ label: 'Preview transferencia', component: StepTransferPreview });
       }

@@ -56,7 +56,7 @@ import { useFlowClose } from "@/composables/useCloseBtn";
 // Importación dinámica de componentes
 import IncomeDetails from "@/components/HistorialRecords/Details/IncomeDetails.vue";
 import ExpenseDetails from "@/components/HistorialRecords/Details/ExpenseDetails.vue";
-import ChangeDetails from "@/components/HistorialRecords/Details/ChangeDetails.vue";
+import TransferDetails from "@/components/HistorialRecords/Details/TransferDetails.vue";
 
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 
@@ -79,7 +79,7 @@ const dynamicComponent = ref(null);
 const componentMap = {
   income: IncomeDetails,
   expense: ExpenseDetails,
-  change: ChangeDetails,
+  transfer: TransferDetails,
 };
 
 // Configuración del botón cerrar
