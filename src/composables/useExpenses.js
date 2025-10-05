@@ -1,3 +1,5 @@
+// src/composables/useExpenses.js
+
 import { getFirestore, collection, setDoc, query, where, doc, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 import { ensureBusinessId } from "@/composables/useBusinessUtils";

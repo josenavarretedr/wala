@@ -16,7 +16,7 @@
     >
       <!-- Total destacado -->
       <div
-        v-if="transactionStore.transactionToAdd.value.items.length > 0"
+        v-if="transactionData.items && transactionData.items.length > 0"
         class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 text-center"
       >
         <div class="text-3xl font-bold mb-1">
@@ -27,7 +27,7 @@
 
       <!-- Información de tipo y cuenta -->
       <div
-        v-if="transactionStore.transactionToAdd.value.items.length > 0"
+        v-if="transactionData.items && transactionData.items.length > 0"
         class="p-4 border-b border-gray-100"
       >
         <div class="grid grid-cols-2 gap-3">
@@ -57,7 +57,7 @@
 
       <!-- Lista de productos -->
       <div
-        v-if="transactionStore.transactionToAdd.value.items.length > 0"
+        v-if="transactionData.items && transactionData.items.length > 0"
         class="p-4"
       >
         <h3
@@ -69,7 +69,7 @@
 
         <div class="space-y-3">
           <div
-            v-for="item in transactionStore.transactionToAdd.value.items"
+            v-for="item in transactionData.items"
             :key="item.uuid"
             class="bg-gray-50 rounded-xl p-4"
           >
@@ -96,12 +96,8 @@
         <div class="mt-4 pt-4 border-t border-gray-200">
           <div class="flex justify-between items-center">
             <div class="text-gray-600">
-              {{ transactionStore.transactionToAdd.value.items.length }}
-              producto{{
-                transactionStore.transactionToAdd.value.items.length !== 1
-                  ? "s"
-                  : ""
-              }}
+              {{ transactionData.items.length }}
+              producto{{ transactionData.items.length !== 1 ? "s" : "" }}
             </div>
             <div class="text-xl font-bold text-blue-600">
               S/ {{ getTotal().toFixed(2) }}
@@ -126,7 +122,7 @@
 
     <!-- Nota informativa -->
     <div
-      v-if="transactionStore.transactionToAdd.value.items.length > 0"
+      v-if="transactionData.items && transactionData.items.length > 0"
       class="bg-blue-50 rounded-xl p-4 border border-blue-200"
     >
       <div class="flex items-start gap-3">
@@ -136,9 +132,9 @@
           <ShieldQuestion class="w-3 h-3 text-white" />
         </div>
         <div>
-          <div class="font-medium text-blue-800 mb-1">Confirma los datos</div>
+          <div class="font-medium text-blue-800 mb-1">Registro de ventas</div>
           <div class="text-sm text-blue-700">
-            Revisa que toda la información sea correcta antes de continuar
+            Este registro está guardado en tu historial de transacciones
           </div>
         </div>
       </div>
@@ -155,18 +151,28 @@ import {
   Coins,
   SmartphoneDevice,
 } from "@iconoir/vue";
-import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
-const transactionStore = useTransactionStore();
+const props = defineProps({
+  transactionData: {
+    type: Object,
+    required: true,
+  },
+});
 
 const getTotal = () => {
-  return transactionStore.transactionToAdd.value.items.reduce((sum, item) => {
-    return sum + item.price * item.quantity;
+  if (
+    !props.transactionData.items ||
+    !Array.isArray(props.transactionData.items)
+  ) {
+    return 0;
+  }
+  return props.transactionData.items.reduce((sum, item) => {
+    return sum + (item.price || 0) * (item.quantity || 0);
   }, 0);
 };
 
 const getTypeLabel = computed(() => {
-  const type = transactionStore.transactionToAdd.value.type;
+  const type = props.transactionData.type;
   const labels = {
     income: "Ingreso",
     expense: "Egreso",
@@ -176,7 +182,7 @@ const getTypeLabel = computed(() => {
 });
 
 const getAccountLabel = computed(() => {
-  const account = transactionStore.transactionToAdd.value.account;
+  const account = props.transactionData.account;
   const labels = {
     cash: "Efectivo",
     bank: "Yape/Plin",
@@ -185,7 +191,7 @@ const getAccountLabel = computed(() => {
 });
 
 const getAccountIcon = computed(() => {
-  const account = transactionStore.transactionToAdd.value.account;
+  const account = props.transactionData.account;
   return account === "cash" ? Coins : SmartphoneDevice;
 });
 
@@ -199,14 +205,3 @@ const formatDate = (date) => {
   }).format(date);
 };
 </script>
-
-<style scoped>
-/* Prevent zoom on iOS */
-@media screen and (max-width: 480px) {
-  input,
-  select,
-  textarea {
-    font-size: 16px;
-  }
-}
-</style>

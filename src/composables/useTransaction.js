@@ -1,3 +1,5 @@
+// src/composables/useTransaction.js
+
 import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
@@ -105,15 +107,17 @@ export function useTransaccion() {
   const deleteTransactionByID = async (transactionID) => {
     try {
       const businessId = ensureBusinessId();
+      console.log('Deleting transaction:', transactionID, 'from business:', businessId);
 
-      const transactionRef = doc(db, `business/${businessId}/transactions`, transactionID);
+      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
       await deleteDoc(transactionRef);
+
+      console.log('Transaction deleted successfully from Firebase');
     }
     catch (error) {
-      console.error('Error fetching transactions: ', error);
+      console.error('Error deleting transaction: ', error);
       throw error;
     }
-
   }
 
   return {

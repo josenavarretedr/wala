@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 max-w-2xl mx-auto mb-20">
     <MicroApps
       :business-id="businessId"
       @navigate-to-app="handleNavigateToApp"
@@ -14,12 +14,6 @@
       </template>
     </Suspense>
 
-    <div
-      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
-    >
-      <MainBtns />
-    </div>
-
     <Suspense>
       <template #default>
         <ListRecordByDay :transactions="[]" />
@@ -28,6 +22,11 @@
         <Loader />
       </template>
     </Suspense>
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
+    >
+      <MainBtns />
+    </div>
   </div>
 </template>
 

@@ -1,80 +1,67 @@
 <template>
-  <div class="bg-gray-50 py-4 px-4">
-    <div class="max-w-sm mx-auto">
-      <!-- Header -->
-      <div class="mb-4">
-        <div class="flex justify-between items-center mb-1">
-          <h1 class="text-3xl font-bold text-gray-900">
-            Detalles del Registro
-          </h1>
-          <router-link
-            :to="
-              currentBusinessId
-                ? {
-                    name: 'BusinessDashboard',
-                    params: { businessId: currentBusinessId },
-                  }
-                : undefined
-            "
-            class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <Xmark class="w-6 h-6" />
-          </router-link>
-        </div>
-      </div>
+  <div
+    class="space-y-4 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
+  >
+    <!-- HEADER -->
+    <div class="flex justify-end items-center gap-3 mb-3">
+      <CloseBtn v-bind="closeBtnConfig" />
+    </div>
 
-      <!-- Content Card -->
-      <div
-        class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-4"
+    <!-- Content Card -->
+    <div>
+      <Suspense>
+        <template #default>
+          <component
+            :is="dynamicComponent"
+            v-if="transactionData"
+            :transactionData="transactionData"
+          />
+          <div v-else class="text-center py-6">
+            <p class="text-sm text-gray-500">No se encontró la transacción</p>
+          </div>
+        </template>
+        <template #fallback>
+          <div class="text-center py-6">
+            <div
+              class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2 animate-spin"
+            ></div>
+            <p class="text-sm text-gray-500">Cargando detalles...</p>
+          </div>
+        </template>
+      </Suspense>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-4 mt-6">
+      <button
+        @click="deleteRegister()"
+        :disabled="isDisabled"
+        class="flex-1 py-4 bg-red-600 text-white text-lg font-bold rounded-2xl shadow-2xl shadow-red-500/30 hover:bg-red-700 hover:shadow-red-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
       >
-        <Suspense>
-          <template #default>
-            <SummaryOfRegister />
-          </template>
-          <template #fallback>
-            <div class="text-center py-6">
-              <div
-                class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2 animate-spin"
-              ></div>
-              <p class="text-sm text-gray-500">Cargando detalles...</p>
-            </div>
-          </template>
-        </Suspense>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex gap-4 mt-6">
-        <button
-          @click="saludar"
-          :disabled="isDisabled"
-          class="flex-1 py-4 bg-gray-100 text-gray-700 text-lg font-bold rounded-2xl border-2 border-gray-200 hover:bg-gray-200 hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3 shadow-lg hover:shadow-xl"
-        >
-          <Edit class="w-5 h-5" />
-          Editar
-        </button>
-
-        <button
-          @click="deleteRegister()"
-          :disabled="isDisabled"
-          class="flex-1 py-4 bg-red-600 text-white text-lg font-bold rounded-2xl shadow-2xl shadow-red-500/30 hover:bg-red-700 hover:shadow-red-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
-        >
-          <Trash class="w-5 h-5" />
-          Eliminar
-        </button>
-      </div>
+        <Trash class="w-5 h-5" />
+        Eliminar
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import SummaryOfRegister from "@/components/HistorialRecords/SummaryOfRegister.vue";
+import { computed, ref, onMounted } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useCashClosureStore } from "@/stores/cashClosureStore";
 import { Edit, Trash, Xmark } from "@iconoir/vue";
 import { useRoute, useRouter } from "vue-router";
+import { useFlowClose } from "@/composables/useCloseBtn";
+
+// Importación dinámica de componentes
+import IncomeDetails from "@/components/HistorialRecords/Details/IncomeDetails.vue";
+import ExpenseDetails from "@/components/HistorialRecords/Details/ExpenseDetails.vue";
+import ChangeDetails from "@/components/HistorialRecords/Details/ChangeDetails.vue";
+
+import CloseBtn from "@/components/ui/CloseBtn.vue";
 
 import { useCashEventStore } from "@/stores/cashEventStore";
+
 const cashEventStore = useCashEventStore();
 const dayClosure = cashEventStore.hasClosureForToday;
 
@@ -82,21 +69,67 @@ const isDisabled = computed(() => dayClosure.value);
 
 const route = useRoute();
 const router = useRouter();
+const { navigateToDashboard } = useFlowClose();
 
 const transactionStore = useTransactionStore();
-const cashClosureStore = useCashClosureStore();
+const transactionData = ref(null);
+const dynamicComponent = ref(null);
 
-const currentBusinessId = computed(() => route.params.businessId || null);
+// Mapeo de tipos de transacción a componentes
+const componentMap = {
+  income: IncomeDetails,
+  expense: ExpenseDetails,
+  change: ChangeDetails,
+};
+
+// Configuración del botón cerrar
+const closeBtnConfig = computed(() => ({
+  // Agregar configuración si es necesaria
+}));
+
+onMounted(async () => {
+  try {
+    // Obtener los datos de la transacción por ID
+    const transaccionAConsulta = transactionStore.getOneTransactionDataByID(
+      route.params.registerId
+    );
+
+    if (transaccionAConsulta && transaccionAConsulta.length > 0) {
+      transactionData.value = transaccionAConsulta[0]; // getOneTransactionDataByID retorna un array
+
+      // Determinar el componente dinámico basado en el tipo de transacción
+      if (
+        transactionData.value.type &&
+        componentMap[transactionData.value.type]
+      ) {
+        dynamicComponent.value = componentMap[transactionData.value.type];
+      } else {
+        console.warn(
+          `Tipo de transacción no reconocido: ${transactionData.value.type}`
+        );
+        // Componente por defecto si el tipo no es reconocido
+        dynamicComponent.value = IncomeDetails;
+      }
+    } else {
+      console.error(
+        "No se encontró la transacción con ID:",
+        route.params.registerId
+      );
+    }
+  } catch (error) {
+    console.error("Error al obtener la transacción:", error);
+  }
+});
 
 async function deleteRegister() {
   try {
-    // console.log(route.params.registerId);
     await transactionStore.deleteOneTransactionByID(route.params.registerId);
-    router.push("/");
+    navigateToDashboard();
   } catch (error) {
-    console.error("Error adding transaction: ", error);
+    console.error("Error eliminando transacción: ", error);
   }
 }
+
 function saludar() {
   console.log("Saludar function called");
 }

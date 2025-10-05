@@ -1,56 +1,168 @@
 <template>
-  <div>
-    <h1 class="text-3xl font-bold mb-6 text-center">
-      ¿Ingresó o salió dinero del negocio?
-    </h1>
+  <div class="space-y-6">
+    <!-- Título mejorado -->
+    <div class="text-center space-y-2">
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
+        ¿Qué tipo de movimiento realizaste?
+      </h1>
+      <p class="text-sm text-gray-500 max-w-md mx-auto">
+        Selecciona el tipo de transacción que corresponda a tu operación
+      </p>
+    </div>
+
+    <!-- Opciones de transacción -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <!-- Opción Ingresó -->
+      <div class="relative group">
+        <button
+          @click="handleSelectedType('income')"
+          :class="[
+            'w-full p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-4 shadow-sm hover:shadow-md',
+            transactionStore.transactionToAdd.value.type === 'income'
+              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25'
+              : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200',
+          ]"
+        >
+          <div class="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+            <GraphUp
+              :class="[
+                'w-8 h-8 transition-colors duration-200',
+                transactionStore.transactionToAdd.value.type === 'income'
+                  ? 'text-white'
+                  : 'text-blue-500',
+              ]"
+            />
+          </div>
+          <div class="text-center">
+            <span class="text-lg font-semibold block">Ingresó</span>
+            <span class="text-xs opacity-80">Dinero que entra</span>
+          </div>
+        </button>
+
+        <!-- Tooltip de ayuda -->
+        <div
+          class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
+        >
+          <div class="text-center">
+            <strong>Ejemplos:</strong> Ventas, cobros, ingresos por servicios
+          </div>
+        </div>
+      </div>
+
+      <!-- Opción Salió -->
+      <div class="relative group">
+        <button
+          @click="handleSelectedType('expense')"
+          :class="[
+            'w-full p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-4 shadow-sm hover:shadow-md',
+            transactionStore.transactionToAdd.value.type === 'expense'
+              ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-red-500/25'
+              : 'bg-white text-gray-600 hover:bg-red-50 hover:text-red-600 border border-gray-200 hover:border-red-200',
+          ]"
+        >
+          <div class="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+            <DatabaseExport
+              :class="[
+                'w-8 h-8 transition-colors duration-200',
+                transactionStore.transactionToAdd.value.type === 'expense'
+                  ? 'text-white'
+                  : 'text-red-500',
+              ]"
+            />
+          </div>
+          <div class="text-center">
+            <span class="text-lg font-semibold block">Salió</span>
+            <span class="text-xs opacity-80">Dinero que sale</span>
+          </div>
+        </button>
+
+        <!-- Tooltip de ayuda -->
+        <div
+          class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
+        >
+          <div class="text-center">
+            <strong>Ejemplos:</strong> Compras, gastos, pagos a proveedores
+          </div>
+        </div>
+      </div>
+
+      <!-- Opción Cambio -->
+      <div class="relative group">
+        <button
+          @click="handleSelectedType('change')"
+          :class="[
+            'w-full p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-4 shadow-sm hover:shadow-md',
+            transactionStore.transactionToAdd.value.type === 'change'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-500/25'
+              : 'bg-white text-gray-600 hover:bg-green-50 hover:text-green-600 border border-gray-200 hover:border-green-200',
+          ]"
+        >
+          <div class="p-3 rounded-full bg-white/20 backdrop-blur-sm">
+            <CoinsSwap
+              :class="[
+                'w-8 h-8 transition-colors duration-200',
+                transactionStore.transactionToAdd.value.type === 'change'
+                  ? 'text-white'
+                  : 'text-green-500',
+              ]"
+            />
+          </div>
+          <div class="text-center">
+            <span class="text-lg font-semibold block">Cambio</span>
+            <span class="text-xs opacity-80">Entre cuentas</span>
+          </div>
+        </button>
+
+        <!-- Tooltip de ayuda -->
+        <div
+          class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
+        >
+          <div class="text-center">
+            <strong>Ejemplos:</strong> Transferencias entre caja y banco
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Indicador de selección -->
     <div
-      class="flex flex-col space-y-6 md:flex-row md:space-x-6 md:space-y-0 justify-center"
+      v-if="transactionStore.transactionToAdd.value.type"
+      class="text-center"
     >
-      <button
-        @click="handleSelectedType('income')"
-        :class="{
-          'bg-blue-500 text-white':
-            transactionStore.transactionToAdd.value.type === 'income',
-          'bg-white text-blue-500 border border-blue-500':
-            transactionStore.transactionToAdd.value.type !== 'income',
-        }"
-        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
+      <div
+        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-600"
       >
-        <GraphUp class="w-12 h-12" />
-
-        <span class="text-2xl mt-4">Ingresó</span>
-      </button>
-      <button
-        @click="handleSelectedType('expense')"
-        :class="{
-          'bg-red-500 text-white':
-            transactionStore.transactionToAdd.value.type === 'expense',
-          'bg-white text-red-500 border border-red-500':
-            transactionStore.transactionToAdd.value.type !== 'expense',
-        }"
-        class="flex flex-col items-center align-middle px-10 py-8 rounded-lg shadow-lg transform hover:scale-105 transition-transform"
-      >
-        <DatabaseExport class="w-12 h-12" />
-
-        <span class="text-2xl mt-4">Salió</span>
-      </button>
+        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+        Tipo seleccionado:
+        <span class="font-medium capitalize">
+          {{ getTypeLabel(transactionStore.transactionToAdd.value.type) }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { GraphUp, DatabaseExport } from "@iconoir/vue"; // Importar iconos de Iconoir
+import { GraphUp, DatabaseExport, CoinsSwap } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
-const flow = useTransactionFlowStore();
 
+const flow = useTransactionFlowStore();
 const transactionStore = useTransactionStore();
 
 const handleSelectedType = (type) => {
   transactionStore.modifyTransactionToAddType(type);
   flow.defineDynamicSteps(type);
   flow.nextStep();
+};
+
+const getTypeLabel = (type) => {
+  const labels = {
+    income: "Ingresó",
+    expense: "Salió",
+    change: "Cambio",
+  };
+  return labels[type] || type;
 };
 </script>
 

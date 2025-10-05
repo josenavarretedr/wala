@@ -34,10 +34,11 @@ const closeBtnConfig = {
 
 <template>
   <div
-    class="space-y-6 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-8"
+    id="basicAccountingRecordsWrapper"
+    class="space-y-4 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
   >
-    <!-- AQUI VA EL NUEVO COMPONENTE -->
-    <div class="flex justify-end items-center gap-3 mb-4">
+    <!-- HEADER -->
+    <div class="flex justify-end items-center gap-3 mb-3">
       <ProgressIndicator v-bind="progressProps" />
 
       <CloseBtn v-bind="closeBtnConfig" />
@@ -46,7 +47,7 @@ const closeBtnConfig = {
     <component :is="CurrentStepComponent" />
 
     <div
-      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
+      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
     >
       <NavigationBtnBARB :finalizarRegistro="finalizarRegistro" />
     </div>

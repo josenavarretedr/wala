@@ -11,7 +11,7 @@ import "@algolia/autocomplete-theme-classic";
 
 const emit = defineEmits(["update:productToAdd"]);
 
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
@@ -131,10 +131,27 @@ onMounted(() => {
       ];
     },
   });
+
+  // Agregar el event listener para manejar clics en los resultados
+  document.addEventListener("click", handleResultClick);
 });
 
-// Agregar un event listener para manejar clics en los resultados
-document.addEventListener("click", (e) => {
+// Limpiar el event listener cuando el componente se desmonte
+onUnmounted(() => {
+  document.removeEventListener("click", handleResultClick);
+});
+
+// Función helper para limpiar el input del autocomplete
+function clearAutocompleteInput() {
+  const autocompleteInput = document.querySelector("#autocomplete input");
+  if (autocompleteInput) {
+    autocompleteInput.value = "";
+    autocompleteInput.dispatchEvent(new Event("input"));
+  }
+}
+
+// Función para manejar clics en los resultados
+function handleResultClick(e) {
   let target = e.target;
   while (target && !target.classList.contains("resultsDiv")) {
     target = target.parentElement;
@@ -155,10 +172,7 @@ document.addEventListener("click", (e) => {
         unit: "uni",
       });
 
-      document.querySelector("#autocomplete input").value = "";
-      document
-        .querySelector("#autocomplete input")
-        .dispatchEvent(new Event("input"));
+      clearAutocompleteInput();
     } else {
       // Manejar producto existente
       const selectedProduct = inventoryStore.allItemsInInventory.value.find(
@@ -173,17 +187,14 @@ document.addEventListener("click", (e) => {
           unit: selectedProduct.unit || "uni",
         });
 
-        document.querySelector("#autocomplete input").value = "";
-        document
-          .querySelector("#autocomplete input")
-          .dispatchEvent(new Event("input"));
+        clearAutocompleteInput();
       } else {
         console.error("Selected product not found");
       }
       console.log("Selected product: ", target.id);
     }
   }
-});
+}
 </script>
 
 <style scoped>

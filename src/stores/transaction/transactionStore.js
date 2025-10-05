@@ -47,21 +47,21 @@ export function useTransactionStore() {
 
   const addTransaction = async () => {
     let traceId = null;
-    
+
     try {
       // Asignar un UUID para la transacción
       transactionToAdd.value.uuid = uuidv4();
 
       // === TRAZABILIDAD: Iniciar operación compleja ===
       const operationChain = startOperationChain('add_transaction');
-      
+
       // Preparar datos para trazabilidad
       const relatedEntities = [];
-      
+
       if (transactionToAdd.value.type === 'income') {
         // Procesar transacción de ingreso:
         transactionToAdd.value.total = getTransactionToAddTotal();
-        
+
         // === TRAZABILIDAD: Log de items relacionados ===
         for (const item of transactionToAdd.value.items) {
           relatedEntities.push({
@@ -71,7 +71,7 @@ export function useTransactionStore() {
             impact: 'high'
           });
         }
-        
+
         // Procesar cada ítem y registrar los stockLogs con trazabilidad
         for (const item of transactionToAdd.value.items) {
           // === TRAZABILIDAD: Log antes de crear stock log ===
@@ -90,7 +90,7 @@ export function useTransactionStore() {
         }
       } else if (transactionToAdd.value.type === 'expense') {
         transactionToAdd.value.total = transactionToAdd.value.cost;
-        
+
         // === TRAZABILIDAD: Log de gasto relacionado ===
         relatedEntities.push({
           type: 'expense',
@@ -140,7 +140,7 @@ export function useTransactionStore() {
 
     } catch (error) {
       console.error('❌ Error adding transaction:', error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       if (traceId) {
         await logTransactionOperation(
@@ -155,7 +155,7 @@ export function useTransactionStore() {
           }
         );
       }
-      
+
       status.value = 'error';
       throw error;
     }
@@ -181,7 +181,7 @@ export function useTransactionStore() {
 
     } catch (error) {
       console.error('❌ Error fetching transactions:', error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       await logTransactionOperation(
         'error',
@@ -217,7 +217,7 @@ export function useTransactionStore() {
 
     } catch (error) {
       console.error('❌ Error fetching today transactions:', error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       await logTransactionOperation(
         'error',
@@ -275,7 +275,7 @@ export function useTransactionStore() {
     try {
       // Obtener estado anterior
       const previousTransaction = transactionsInStore.value.find(t => t.uuid === transactionId);
-      
+
       // === TRAZABILIDAD: Log de modificación ===
       const traceId = await logTransactionOperation(
         'update',
@@ -291,7 +291,7 @@ export function useTransactionStore() {
       );
 
       await updateTransaction(transactionId, updatedData);
-      
+
       // Actualizar estado local
       const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
       if (index !== -1) {
@@ -302,7 +302,7 @@ export function useTransactionStore() {
 
     } catch (error) {
       console.error('❌ Error updating transaction:', error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       await logTransactionOperation(
         'error',
@@ -315,7 +315,7 @@ export function useTransactionStore() {
           component: 'TransactionStore.modifyTransaction'
         }
       );
-      
+
       throw error;
     }
   };
@@ -405,20 +405,50 @@ export function useTransactionStore() {
 
   const deleteOneTransactionByID = async (transactionID) => {
     try {
-      const transactionDataById = getOneTransactionDataByID(transactionID);
-      if (transactionDataById[0].type === 'income') {
-        if (transactionDataById[0].items) {
-          await deleteStockLog(transactionDataById);
-        }
-      } else {
-        await expensesStore.deleteExpenseByTransactionRefStore(transactionID);
+      // Obtener la transacción antes de eliminarla para trazabilidad
+      const transactionToDelete = transactionsInStore.value.find(t => t.uuid === transactionID);
+
+      if (!transactionToDelete) {
+        throw new Error(`Transaction with ID ${transactionID} not found in store`);
       }
+
+      // === TRAZABILIDAD: Log de eliminación ===
+      const traceId = await logTransactionOperation(
+        'delete',
+        transactionID,
+        transactionToDelete,
+        {
+          reason: 'user_transaction_deletion',
+          severity: 'high',
+          tags: ['transaction_delete', 'data_removal'],
+          component: 'TransactionStore.deleteOneTransactionByID'
+        }
+      );
+
+      // Eliminar de Firebase
       await deleteTransactionByID(transactionID);
-      console.log('Transaction deleted successfully in FIRESTORE');
+      console.log('✅ Transaction deleted successfully in FIRESTORE with traceId:', traceId);
+
+      // Actualizar el store local
       await getTransactions();
 
     } catch (error) {
-      console.error('Error adding transaction: ', error);
+      console.error('❌ Error deleting transaction: ', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        transactionID,
+        { error: error.message },
+        {
+          reason: 'transaction_deletion_failed',
+          severity: 'critical',
+          tags: ['transaction_error', 'deletion_failure'],
+          component: 'TransactionStore.deleteOneTransactionByID'
+        }
+      );
+
+      throw error;
     }
   };
 
