@@ -9,6 +9,7 @@ import { useTraceability } from '@/composables/useTraceability';
 import { v4 as uuidv4 } from "uuid";
 
 import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
+import { fromJSON } from 'postcss';
 const expensesStore = useExpensesStore(); // Usa el store
 
 
@@ -25,7 +26,12 @@ const transactionToAdd = ref({
   itemsAndStockLogs: [],
   // Campos para transacciones de egreso:
   description: null,
-  cost: null,
+  category: null,
+  subcategory: null,
+  amount: null,
+  // Campos para transfers:
+  fromAccount: null,
+  toAccount: null,
 });
 
 const itemToAddInTransaction = ref({
@@ -60,7 +66,7 @@ export function useTransactionStore() {
 
       if (transactionToAdd.value.type === 'income') {
         // Procesar transacción de ingreso:
-        transactionToAdd.value.total = getTransactionToAddTotal();
+        transactionToAdd.value.amount = getTransactionToAddTotal();
 
         // === TRAZABILIDAD: Log de items relacionados ===
         for (const item of transactionToAdd.value.items) {
@@ -89,7 +95,7 @@ export function useTransactionStore() {
           transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
         }
       } else if (transactionToAdd.value.type === 'expense') {
-        transactionToAdd.value.total = transactionToAdd.value.cost;
+        transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
 
         // === TRAZABILIDAD: Log de gasto relacionado ===
         relatedEntities.push({
@@ -98,7 +104,6 @@ export function useTransactionStore() {
           relationship: 'generates_expense'
         });
 
-        await expensesStore.addExpense(transactionToAdd.value.uuid);
         expensesStore.resetExpenseToAdd();
       }
 
@@ -109,12 +114,12 @@ export function useTransactionStore() {
         transactionToAdd.value,
         {
           reason: 'user_transaction_creation',
-          severity: transactionToAdd.value.total > 10000 ? 'high' : 'medium',
+          severity: transactionToAdd.value.amount > 10000 ? 'high' : 'medium',
           tags: [
             'transaction_creation',
             `transaction_${transactionToAdd.value.type}`,
             `payment_${transactionToAdd.value.account}`,
-            transactionToAdd.value.total > 10000 ? 'high_value' : 'standard_value'
+            transactionToAdd.value.amount > 10000 ? 'high_value' : 'standard_value'
           ],
           relatedEntities,
           component: 'TransactionStore.addTransaction'
@@ -261,7 +266,11 @@ export function useTransactionStore() {
       items: [],
       itemsAndStockLogs: [],
       description: null,
-      cost: null,
+      category: null,
+      subcategory: null,
+      amount: null,
+      fromAccount: null,
+      toAccount: null,
 
     };
 
@@ -385,6 +394,15 @@ export function useTransactionStore() {
     };
   }
 
+  const setExpenseDescription = (description) => { transactionToAdd.value.description = description; };
+  const setExpenseAmount = (amount) => { transactionToAdd.value.amount = Number(amount) || 0; };
+  const setExpenseCategory = (category) => { transactionToAdd.value.category = category; }; // 'materials'|'labor'|'overhead'
+  const setExpenseSubcategory = (subcategory) => { transactionToAdd.value.subcategory = subcategory; }; // 'office'|'travel'|'utilities' etc.
+
+  // Funciones para manejar transferencias
+  const setTransferFromAccount = (fromAccount) => { transactionToAdd.value.fromAccount = fromAccount; };
+  const setTransferToAccount = (toAccount) => { transactionToAdd.value.toAccount = toAccount; };
+
   const addItemToTransaction = () => {
     transactionToAdd.value.items.push({ ...itemToAddInTransaction.value });
     itemToAddInTransaction.value = {
@@ -498,6 +516,11 @@ export function useTransactionStore() {
     modifyItemToAddInTransaction,
     resetItemToAddInTransaction,
     addItemToTransaction,
+    setExpenseDescription,
+    setExpenseAmount,
+    setExpenseCategory,
+    setTransferFromAccount,
+    setTransferToAccount,
     removeItemToTransaction,
     getSteps,
     totalSteps,

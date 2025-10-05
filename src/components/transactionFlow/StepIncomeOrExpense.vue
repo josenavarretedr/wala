@@ -89,10 +89,10 @@
       <!-- Opción Cambio -->
       <div class="relative group">
         <button
-          @click="handleSelectedType('change')"
+          @click="handleSelectedType('transfer')"
           :class="[
             'w-full p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-4 shadow-sm hover:shadow-md',
-            transactionStore.transactionToAdd.value.type === 'change'
+            transactionStore.transactionToAdd.value.type === 'transfer'
               ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-500/25'
               : 'bg-white text-gray-600 hover:bg-green-50 hover:text-green-600 border border-gray-200 hover:border-green-200',
           ]"
@@ -101,14 +101,14 @@
             <CoinsSwap
               :class="[
                 'w-8 h-8 transition-colors duration-200',
-                transactionStore.transactionToAdd.value.type === 'change'
+                transactionStore.transactionToAdd.value.type === 'transfer'
                   ? 'text-white'
                   : 'text-green-500',
               ]"
             />
           </div>
           <div class="text-center">
-            <span class="text-lg font-semibold block">Cambio</span>
+            <span class="text-lg font-semibold block">Transferencia</span>
             <span class="text-xs opacity-80">Entre cuentas</span>
           </div>
         </button>
@@ -160,7 +160,7 @@ const getTypeLabel = (type) => {
   const labels = {
     income: "Ingresó",
     expense: "Salió",
-    change: "Cambio",
+    transfer: "Transferencia",
   };
   return labels[type] || type;
 };

@@ -102,17 +102,34 @@ const isNextButtonEnabled = computed(() => {
 
     case "Detalles ingreso":
     case "Detalles egreso":
+    case "Detalles transferencia":
       // Para ingresos, verificar que haya items
       if (currentStepLabel === "Detalles ingreso") {
         return transactionData.items && transactionData.items.length > 0;
       }
-      // Para egresos, verificar que haya descripción y costo
+      // Para egresos, verificar que haya descripción, monto y categoría
       if (currentStepLabel === "Detalles egreso") {
         return (
           transactionData.description &&
-          transactionData.cost !== null &&
-          transactionData.cost !== undefined &&
-          transactionData.cost > 0
+          transactionData.description.trim() !== "" &&
+          transactionData.amount !== null &&
+          transactionData.amount !== undefined &&
+          transactionData.amount > 0 &&
+          transactionData.category !== null &&
+          transactionData.category !== undefined
+        );
+      }
+      // Para transferencias, verificar que haya cuentas origen, destino y monto
+      if (currentStepLabel === "Detalles transferencia") {
+        return (
+          transactionData.fromAccount !== null &&
+          transactionData.fromAccount !== undefined &&
+          transactionData.toAccount !== null &&
+          transactionData.toAccount !== undefined &&
+          transactionData.fromAccount !== transactionData.toAccount &&
+          transactionData.amount !== null &&
+          transactionData.amount !== undefined &&
+          transactionData.amount > 0
         );
       }
       return true;
@@ -139,7 +156,10 @@ const getValidationMessage = () => {
       return "Debes agregar al menos un producto";
 
     case "Detalles egreso":
-      return "Debes completar la descripción y el monto";
+      return "Completa la descripción, monto y categoría del gasto";
+
+    case "Detalles transferencia":
+      return "Selecciona cuentas origen, destino y monto de transferencia";
 
     default:
       return "Completa los campos requeridos";

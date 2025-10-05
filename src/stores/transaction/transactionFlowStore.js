@@ -11,6 +11,9 @@ import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePrev
 import StepAddExpensePreview from '@/components/transactionFlow/StepAddExpensePreview.vue';
 // import StepSummary from '@/components/transactionFlow/StepSummary.vue';
 
+import StepTransferDetails from '@/components/transactionFlow/StepTransferDetails.vue';
+import StepTransferPreview from '@/components/transactionFlow/StepTransferPreview.vue';
+
 export const useTransactionFlowStore = defineStore('transactionFlow', {
   state: () => ({
     currentStep: 0,
@@ -77,22 +80,26 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       // Reestablecer los pasos al estado inicial
       this.steps = [
         { label: 'Tipo de transacción', component: StepIncomeOrExpense },
-        { label: 'Cuenta', component: StepCashOrBank }
       ];
     },
     defineDynamicSteps(transactionType) {
       // Limpia pasos previos dinámicos
       this.steps = [
         { label: 'Tipo de transacción', component: StepIncomeOrExpense },
-        { label: 'Cuenta', component: StepCashOrBank }
       ];
 
       if (transactionType === 'income') {
+        this.steps.push({ label: 'Cuenta', component: StepCashOrBank });
         this.steps.push({ label: 'Detalles ingreso', component: StepAddIncomeDetails });
         this.steps.push({ label: 'Preview ingreso', component: StepAddIncomePreview });
       } else if (transactionType === 'expense') {
+        this.steps.push({ label: 'Cuenta', component: StepCashOrBank });
         this.steps.push({ label: 'Detalles egreso', component: StepAddExpenseDetails });
         this.steps.push({ label: 'Preview egreso', component: StepAddExpensePreview });
+      } else if (transactionType === 'transfer') {
+        // Para transferencias, no necesitamos el paso de cuenta porque se manejan ambas en los detalles
+        this.steps.push({ label: 'Detalles transferencia', component: StepTransferDetails });
+        this.steps.push({ label: 'Preview transferencia', component: StepTransferPreview });
       }
 
       // this.steps.push({ label: 'Resumen', component: StepSummary });

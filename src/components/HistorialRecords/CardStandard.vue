@@ -53,7 +53,7 @@
           ]"
         >
           {{ record.type === "income" ? "+" : "-" }}S/
-          {{ formatAmount(record.total) }}
+          {{ formatAmount(record.amount) }}
         </div>
 
         <!-- Botón de detalles -->

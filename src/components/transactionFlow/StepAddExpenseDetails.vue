@@ -36,10 +36,10 @@
 
       <!-- Campo de costo -->
       <div class="space-y-3">
-        <label class="text-lg font-semibold text-gray-800">Costo (S/)</label>
+        <label class="text-lg font-semibold text-gray-800">Monto (S/)</label>
         <div class="relative">
           <input
-            v-model.number="cost"
+            v-model.number="amount"
             @keyup.enter="addExpenseHandler"
             type="number"
             step="0.01"
@@ -64,11 +64,30 @@
         <!-- Costos de materiales -->
         <div class="relative group">
           <button
-            @click="selectExpenseCategory('Costos de materiales')"
-            class="w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md bg-white text-gray-600 hover:bg-orange-50 hover:text-orange-600 border border-gray-200 hover:border-orange-200"
+            @click="selectExpenseCategory('materials')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md border',
+              selectedCategory === 'materials'
+                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-orange-500/25 border-orange-500'
+                : 'bg-white text-gray-600 hover:bg-orange-50 hover:text-orange-600 border-gray-200 hover:border-orange-200',
+            ]"
           >
-            <div class="p-3 rounded-full bg-orange-100">
-              <Package class="w-6 h-6 text-orange-500" />
+            <div
+              :class="[
+                'p-3 rounded-full transition-colors duration-200',
+                selectedCategory === 'materials'
+                  ? 'bg-white/20'
+                  : 'bg-orange-100',
+              ]"
+            >
+              <Package
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  selectedCategory === 'materials'
+                    ? 'text-white'
+                    : 'text-orange-500',
+                ]"
+              />
             </div>
             <div class="text-center">
               <span class="text-sm font-semibold block"
@@ -92,11 +111,28 @@
         <!-- Costos de personal -->
         <div class="relative group">
           <button
-            @click="selectExpenseCategory('Costos de personal')"
-            class="w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md bg-white text-gray-600 hover:bg-green-50 hover:text-green-600 border border-gray-200 hover:border-green-200"
+            @click="selectExpenseCategory('labor')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md border',
+              selectedCategory === 'labor'
+                ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-green-500/25 border-green-500'
+                : 'bg-white text-gray-600 hover:bg-green-50 hover:text-green-600 border-gray-200 hover:border-green-200',
+            ]"
           >
-            <div class="p-3 rounded-full bg-green-100">
-              <User class="w-6 h-6 text-green-500" />
+            <div
+              :class="[
+                'p-3 rounded-full transition-colors duration-200',
+                selectedCategory === 'labor' ? 'bg-white/20' : 'bg-green-100',
+              ]"
+            >
+              <User
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  selectedCategory === 'labor'
+                    ? 'text-white'
+                    : 'text-green-500',
+                ]"
+              />
             </div>
             <div class="text-center">
               <span class="text-sm font-semibold block"
@@ -119,15 +155,32 @@
         <!-- Gastos indirectos -->
         <div class="relative group">
           <button
-            @click="selectExpenseCategory('Gastos indirectos')"
-            class="w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-gray-200 hover:border-blue-200"
+            @click="selectExpenseCategory('overhead')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center gap-3 shadow-sm hover:shadow-md border',
+              selectedCategory === 'overhead'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-blue-500/25 border-blue-500'
+                : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border-gray-200 hover:border-blue-200',
+            ]"
           >
-            <div class="p-3 rounded-full bg-blue-100">
-              <Settings class="w-6 h-6 text-blue-500" />
+            <div
+              :class="[
+                'p-3 rounded-full transition-colors duration-200',
+                selectedCategory === 'overhead' ? 'bg-white/20' : 'bg-blue-100',
+              ]"
+            >
+              <Settings
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  selectedCategory === 'overhead'
+                    ? 'text-white'
+                    : 'text-blue-500',
+                ]"
+              />
             </div>
             <div class="text-center">
               <span class="text-sm font-semibold block">Gastos indirectos</span>
-              <span class="text-xs opacity-80">Servicios y </span>
+              <span class="text-xs opacity-80">Servicios y overhead</span>
             </div>
           </button>
 
@@ -144,37 +197,69 @@
       </div>
     </div>
 
-    <!-- Botón de continuar -->
-    <!-- <button
-      @click="addExpenseHandler"
-      :disabled="!description || !cost || cost <= 0"
-      class="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
-    >
-      <FastArrowRight class="w-5 h-5" />
-      Continuar
-    </button> -->
-
-    <!-- Preview del gasto -->
-    <!-- <div
-      v-if="description && cost > 0"
-      class="bg-red-50 rounded-xl p-4 border border-red-200"
-    >
-      <div class="flex items-center gap-3">
+    <!-- Indicador de progreso del formulario -->
+    <div v-if="description || amount || selectedCategory" class="space-y-3">
+      <h3 class="text-sm font-semibold text-gray-600">
+        Progreso del formulario:
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <!-- Descripción -->
         <div
-          class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center"
+          :class="[
+            'p-3 rounded-lg border flex items-center gap-2 text-sm',
+            description && description.trim() !== ''
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-gray-50 border-gray-200 text-gray-500',
+          ]"
         >
-          <DatabaseExport class="w-5 h-5 text-white" />
+          <div
+            :class="[
+              'w-2 h-2 rounded-full',
+              description && description.trim() !== ''
+                ? 'bg-green-500'
+                : 'bg-gray-300',
+            ]"
+          ></div>
+          <span>Descripción</span>
         </div>
-        <div class="flex-1">
-          <div class="font-semibold text-red-800 mb-1">
-            {{ description }}
-          </div>
-          <div class="text-sm text-red-700">
-            Gasto: S/ {{ cost.toFixed(2) }}
-          </div>
+
+        <!-- Monto -->
+        <div
+          :class="[
+            'p-3 rounded-lg border flex items-center gap-2 text-sm',
+            amount && amount > 0
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-gray-50 border-gray-200 text-gray-500',
+          ]"
+        >
+          <div
+            :class="[
+              'w-2 h-2 rounded-full',
+              amount && amount > 0 ? 'bg-green-500' : 'bg-gray-300',
+            ]"
+          ></div>
+          <span>Monto</span>
+        </div>
+
+        <!-- Categoría -->
+        <div
+          :class="[
+            'p-3 rounded-lg border flex items-center gap-2 text-sm',
+            selectedCategory
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-gray-50 border-gray-200 text-gray-500',
+          ]"
+        >
+          <div
+            :class="[
+              'w-2 h-2 rounded-full',
+              selectedCategory ? 'bg-green-500' : 'bg-gray-300',
+            ]"
+          ></div>
+          <span>Categoría</span>
         </div>
       </div>
-    </div> -->
+    </div>
   </div>
 </template>
 
@@ -190,31 +275,65 @@ import {
   Settings,
   User,
 } from "@iconoir/vue";
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 
+// Variables reactivas locales
 const description = ref("");
-const cost = ref(null);
+const amount = ref(null);
+const selectedCategory = ref(null);
 
 const expensesStore = useExpensesStore();
 const transactionStore = useTransactionStore();
 const flow = useTransactionFlowStore();
 
+// Observar cambios y actualizar los stores correspondientes
+watch(description, (newDescription) => {
+  transactionStore.setExpenseDescription(newDescription);
+  expensesStore.modifyExpenseToAddDescription(newDescription);
+});
+
+watch(amount, (newAmount) => {
+  transactionStore.setExpenseAmount(newAmount);
+  expensesStore.modifyExpenseToAddCost(newAmount);
+});
+
+watch(selectedCategory, (newCategory) => {
+  transactionStore.setExpenseCategory(newCategory);
+});
+
+//   Función para seleccionar categoría
 const selectExpenseCategory = (category) => {
-  description.value = category;
+  selectedCategory.value = category;
 };
 
+// Función para obtener la etiqueta de la categoría
+const getCategoryLabel = (category) => {
+  const labels = {
+    materials: "Costos de materiales",
+    labor: "Costos de personal",
+    overhead: "Gastos indirectos",
+  };
+  return labels[category] || category;
+};
+
+// Computed para verificar si todos los campos están completos
+const isFormValid = computed(() => {
+  return (
+    description.value &&
+    description.value.trim() !== "" &&
+    amount.value &&
+    amount.value > 0 &&
+    selectedCategory.value
+  );
+});
+
+// Handler para procesar el gasto (ya no es necesario pues se maneja desde NavigationBtnBARB)
 const addExpenseHandler = async () => {
-  if (!description.value || !cost.value || cost.value <= 0) {
+  if (!isFormValid.value) {
     return;
   }
 
-  transactionStore.modifyTransactionExpenseDescriptionAndCost(
-    description.value,
-    cost.value
-  );
-
-  expensesStore.modifyExpenseToAddDescription(description.value);
-  expensesStore.modifyExpenseToAddCost(cost.value);
+  // Configurar la cuenta en el expensesStore
   expensesStore.modifyExpenseToAddAccount(
     transactionStore.transactionToAdd.value.account
   );

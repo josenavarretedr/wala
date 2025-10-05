@@ -152,13 +152,13 @@ const saldoInicial = computed(() => {
 const totalIngresos = computed(() => {
   return transactions.value
     .filter((tx) => tx.type === "income")
-    .reduce((sum, tx) => sum + (tx.total || 0), 0);
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 });
 
 const totalEgresos = computed(() => {
   return transactions.value
     .filter((tx) => tx.type === "expense")
-    .reduce((sum, tx) => sum + (tx.total || 0), 0);
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 });
 
 const saldoActual = computed(() => {
