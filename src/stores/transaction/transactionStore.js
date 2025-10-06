@@ -348,6 +348,12 @@ export function useTransactionStore() {
   }
 
   const getTransactionToAddTotal = () => {
+    // Si no hay items o el array está vacío, devolver el amount o 0
+    if (!transactionToAdd.value.items || transactionToAdd.value.items.length === 0) {
+      return transactionToAdd.value.amount || 0;
+    }
+
+    // Calcular total basado en items
     return transactionToAdd.value.items.reduce((sum, item) => {
       return sum + item.price * item.quantity;
     }, 0);

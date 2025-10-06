@@ -3,7 +3,6 @@ import { computed } from "vue";
 
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import { useBusinessStore } from "@/stores/businessStore";
 import {
   getProgressIndicatorProps,
   FLOW_TYPES,

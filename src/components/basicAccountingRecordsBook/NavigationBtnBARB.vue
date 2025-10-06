@@ -25,7 +25,13 @@
       <button
         v-if="flow.isLastStep"
         @click="finalizarRegistro"
-        class="w-full py-3 px-4 sm:py-4 sm:px-6 bg-gradient-to-r from-green-600 to-green-700 text-white text-base sm:text-lg font-semibold rounded-xl shadow-lg shadow-green-500/25 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/35 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm"
+        :disabled="flow.transactionLoading"
+        :class="[
+          'w-full py-3 px-4 sm:py-4 sm:px-6 bg-gradient-to-r from-green-600 to-green-700 text-white text-base sm:text-lg font-semibold rounded-xl shadow-lg shadow-green-500/25 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/35 transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
+          flow.transactionLoading
+            ? 'opacity-70 cursor-not-allowed'
+            : 'opacity-100 cursor-pointer',
+        ]"
       >
         <Check class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
         <span class="font-bold tracking-wide text-sm sm:text-base"
@@ -167,13 +173,20 @@ const getValidationMessage = () => {
 };
 
 const finalizarRegistro = async () => {
+  // Lógica para finalizar el registro de la transacción
+
+  flow.transactionLoading = true;
+
   await transactionStore.addTransaction();
 
   let businessId = businessStore.getBusinessId;
   // Verifica si la operación fue exitosa (puedes definir un status si lo deseas)
+
   flow.resetFlow();
   // TODO: Resetear el store tambien del transactionStore
   transactionStore.resetTransactionToAdd();
+
+  flow.transactionLoading = false;
   router.push({
     name: "BusinessDashboard",
     params: { businessId },

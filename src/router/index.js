@@ -153,6 +153,12 @@ const routes = [
         meta: { permission: 'verReportes', title: 'Detalle de Registro' }
       },
 
+      {
+        path: 'accounts-balance',
+        name: 'AccountBalanceApp',
+        component: () => import('@/views/AccountsBalanceApp/AccountBalanceAppWrapper.vue'),
+      },
+
       // Rutas de arqueo de caja
       {
         path: 'cash-closure',

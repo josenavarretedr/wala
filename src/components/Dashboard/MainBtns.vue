@@ -5,7 +5,9 @@
   >
     <Suspense>
       <template #default>
-        <ClashClosureBtn class="flex-1 max-w-xs sm:max-w-sm"></ClashClosureBtn>
+        <AccountBalanceBtn
+          class="flex-1 max-w-xs sm:max-w-sm"
+        ></AccountBalanceBtn>
       </template>
       <template #fallback>
         <div class="flex-1 max-w-xs sm:max-w-sm">
@@ -30,6 +32,7 @@
 <script setup>
 import NewRecordBtn from "@/components/basicAccountingRecordsBook/NewRecordBtn.vue";
 import ClashClosureBtn from "@/components/cashClosureApp/ClashClosureBtn.vue";
+import AccountBalanceBtn from "../AccountsBalanceApp/AccountBalanceBtn.vue";
 
 function finalizarRegistro() {
   // Lógica para finalizar y registrar

@@ -27,11 +27,11 @@
     </router-link>
 
     <!-- Tooltip informativo -->
-    <div
+    <!-- <div
       class="absolute z-20 w-56 sm:w-64 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-xl shadow-gray-900/25 opacity-0 group-hover:opacity-100 transition-all duration-300 -top-16 sm:-top-20 left-1/2 transform -translate-x-1/2 border border-gray-700/50 backdrop-blur-sm pointer-events-none"
-    >
-      <!-- Flecha del tooltip -->
-      <div
+    > -->
+    <!-- Flecha del tooltip -->
+    <!-- <div
         class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"
       ></div>
 
@@ -68,8 +68,8 @@
             {{ streak }} día{{ streak !== 1 ? "s" : "" }}
           </div>
         </div>
-      </div>
-    </div>
+      </div> -->
+    <!-- </div> -->
   </div>
 </template>
 

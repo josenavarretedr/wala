@@ -32,7 +32,7 @@
         </div>
 
         <p class="text-lg text-gray-600 mb-4">
-          Saldo esperadoasssssss:
+          Saldo esperado:
           <strong>S/ {{ cashEventStore.expectedCashBalance }}</strong>
         </p>
 

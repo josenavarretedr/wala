@@ -22,6 +22,7 @@
         <Loader />
       </template>
     </Suspense>
+
     <div
       class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
     >
@@ -50,21 +51,11 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore(); // ✅ NUEVO: Usar BusinessStore
 
-// Estado reactivo
-const metricsLoading = ref(true);
-
-const metrics = ref({
-  monthlyIncome: 0,
-  monthlyExpenses: 0,
-  netBalance: 0,
-  totalTransactions: 0,
-  incomeChange: 0,
-  expensesChange: 0,
-  balanceChange: 0,
-  transactionsChange: 0,
-});
-
 // ✅ ARQUITECTURA COHERENTE: Computed properties usando la nueva estructura
+
+const metrics = ref(null);
+const metricsLoading = ref(false);
+
 // BusinessStore: datos completos del negocio
 const businessId = computed(
   () => route.params.businessId || userStore.currentBusiness?.businessId

@@ -21,7 +21,9 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       { label: 'Tipo de transacción', component: StepIncomeOrExpense },
       { label: 'Cuenta', component: StepCashOrBank },
       // El paso 3 y 4 serán definidos dinámicamente
-    ]
+    ],
+    transactionLoading: false,
+    transactionError: null,
   }),
   getters: {
     currentStepConfig(state) {
@@ -42,6 +44,9 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
   },
   actions: {
     async nextStep() {
+
+      this.transactionLoading = true;
+
       // Obtener el step actual por su label
       const currentStepConfig = this.steps[this.currentStep];
 
@@ -62,11 +67,15 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           if (items && items.length > 0) {
             await inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(items);
             console.log('✅ Inventario procesado exitosamente');
+            this.transactionLoading = false;
           } else {
             console.warn('⚠️ No hay items para procesar en el inventario');
+            this.transactionLoading = false;
           }
         } catch (error) {
           console.error('❌ Error procesando inventario:', error);
+          this.transactionLoading = false;
+          this.transactionError = error;
           throw error; // Re-lanzar el error para que el componente lo maneje
         }
       }

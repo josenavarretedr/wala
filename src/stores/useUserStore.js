@@ -232,6 +232,7 @@ export const useUserStore = defineStore('user', {
     },
 
     // ✅ NUEVO: Cambiar negocio activo
+    // TODO tengo que hacer que tambien borre las trasnacciones en el store para que no se mezclen al cambiar de negocio
     switchBusiness(businessId) {
       const business = this.userBusinesses.find(b => b.businessId === businessId)
       if (business) {

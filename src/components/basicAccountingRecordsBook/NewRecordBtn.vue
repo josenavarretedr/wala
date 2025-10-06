@@ -57,22 +57,13 @@
 
         <div class="text-center">
           <div class="flex items-center justify-center gap-2 mb-2">
-            <div class="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
-            <span class="font-medium text-orange-200">Día cerrado</span>
+            <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+            <span class="font-medium text-yellow-200">Apertura requerida</span>
           </div>
           <p class="text-gray-300 text-xs mb-3">
-            El registro estará disponible en el próximo día hábil
+            Para poder iniciar el registro deberá primero aperturar registrando
+            los saldos iniciales
           </p>
-          <div class="bg-gray-700/50 rounded-lg p-2 border border-gray-600/30">
-            <strong class="block text-xs text-gray-400 mb-1"
-              >Tiempo restante:</strong
-            >
-            <div
-              class="font-mono text-lg font-bold text-blue-300 tracking-wider"
-            >
-              {{ countdown }}
-            </div>
-          </div>
         </div>
       </div>
     </template>
@@ -84,12 +75,21 @@ import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { DatabaseScriptPlus } from "@iconoir/vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
 
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
+
+const transactionStore = useTransactionStore();
+
+// Computed para verificar si existe una transacción de tipo "opening"
+const hasOpeningTransaction = computed(() => {
+  return transactionStore.transactionsInStore.value.some(
+    (transaction) => transaction.type === "opening"
+  );
+});
+
 const cashEventStore = useCashEventStore();
 
 // Computed para determinar si el botón está deshabilitado
-const isDisabled = computed(
-  () => cashEventStore.hasClosureForToday?.value || false
-);
+const isDisabled = computed(() => !hasOpeningTransaction.value);
 
 // Estado del contador
 const countdown = ref("00:00:00");
