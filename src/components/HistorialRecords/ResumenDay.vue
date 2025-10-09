@@ -7,21 +7,8 @@
       @click="showResume = !showResume"
       class="cursor-pointer transition-all duration-200 hover:bg-gray-50 -m-2 p-4 rounded-lg"
     >
-      <!-- Estado inicial - solo título -->
-      <div v-if="!showResume" class="text-center mb-4">
-        <p class="text-sm text-gray-500 mb-1">Resumen Financiero de Hoy</p>
-        <div class="flex items-center justify-center gap-2 mb-2">
-          <div class="w-3 h-3 bg-gray-300 rounded-full animate-pulse"></div>
-          <p class="text-2xl sm:text-3xl font-bold text-gray-400">• • • • •</p>
-          <div class="w-3 h-3 bg-gray-300 rounded-full animate-pulse"></div>
-        </div>
-        <p class="text-xs text-gray-400">
-          Haz clic para ver los detalles financieros
-        </p>
-      </div>
-
       <!-- Estado expandido - información sensible visible -->
-      <div v-else class="text-center mb-4">
+      <div v-if="showResume" class="text-center mb-4">
         <p class="text-sm text-gray-500 mb-1">Saldo actual</p>
         <p class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
           S/ {{ saldoActual.toFixed(2) }}

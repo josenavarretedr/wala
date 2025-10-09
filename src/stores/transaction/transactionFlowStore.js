@@ -78,6 +78,9 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           this.transactionError = error;
           throw error; // Re-lanzar el error para que el componente lo maneje
         }
+      } else {
+        // Si no es un step de detalles de ingreso/egreso, resetear el loading
+        this.transactionLoading = false;
       }
 
       // Avanzar al siguiente step

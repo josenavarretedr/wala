@@ -13,6 +13,18 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   const transactions = ref([]);
   const openingTransaction = ref(null);
 
+  // ===== ESTADO DE DATOS DE FLUJO (STEPS) =====
+  const stepsData = ref({
+    lastClosureData: null,
+    openingData: null,
+    expectedCashBalance: 0,
+    expectedBankBalance: 0,
+    selectedCashOption: null,
+    realCashBalance: 0,
+    selectedBankOption: null,
+    realBankBalance: 0,
+  });
+
   // ===== SETTERS PARA CONFIGURAR DATOS =====
 
   /**
@@ -33,6 +45,37 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    */
   const setOpening = (opening) => {
     openingTransaction.value = opening;
+  };
+
+  // ===== GESTIÓN DE DATOS DE FLUJO (STEPS) =====
+
+  /**
+   * Actualiza los datos recopilados de los steps
+   * @param {string} stepLabel - Etiqueta del step
+   * @param {Object} data - Datos a actualizar
+   */
+  const updateStepData = (stepLabel, data) => {
+    stepsData.value = {
+      ...stepsData.value,
+      ...data,
+    };
+    console.log(`📝 [accountsBalanceStore] Datos actualizados para ${stepLabel}:`, data);
+  };
+
+  /**
+   * Resetea todos los datos de steps al estado inicial
+   */
+  const resetStepsData = () => {
+    stepsData.value = {
+      lastClosureData: null,
+      openingData: null,
+      expectedCashBalance: 0,
+      expectedBankBalance: 0,
+      selectedCashOption: null,
+      realCashBalance: 0,
+      selectedBankOption: null,
+      realBankBalance: 0,
+    };
   };
 
   // ===== CÁLCULOS DE INGRESOS =====
@@ -450,6 +493,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   const reset = () => {
     transactions.value = [];
     openingTransaction.value = null;
+    resetStepsData();
   };
 
   /**
@@ -524,16 +568,223 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     hasActivity: hasActivity.value,
   }));
 
+  // ===== FUNCIONES DE APERTURA Y CIERRE =====
+
+  /**
+   * Construye la transacción de apertura con los datos proporcionados
+   * @param {Object} params - Parámetros de la apertura
+   * @param {number} params.expectedCashBalance - Balance esperado de efectivo
+   * @param {number} params.expectedBankBalance - Balance esperado de banco
+   * @param {number} params.realCashBalance - Balance real de efectivo
+   * @param {number} params.realBankBalance - Balance real de banco
+   * @param {string} params.lastClosureUuid - UUID del último cierre (opcional)
+   * @param {Function} params.generateUUID - Función para generar UUIDs
+   * @returns {Object} Transacción de apertura
+   */
+  const buildOpeningTransaction = ({
+    expectedCashBalance,
+    expectedBankBalance,
+    realCashBalance,
+    realBankBalance,
+    lastClosureUuid = null,
+    generateUUID,
+  }) => {
+    const cashDiff = calculateDifference(realCashBalance, expectedCashBalance);
+    const bankDiff = calculateDifference(realBankBalance, expectedBankBalance);
+
+    return {
+      uuid: generateUUID(),
+      type: 'opening',
+      description: 'Apertura de caja',
+      expectedCashBalance,
+      expectedBankBalance,
+      realCashBalance,
+      realBankBalance,
+      // Campos compatibles con CardOpening.vue
+      totalCash: realCashBalance,
+      totalBank: realBankBalance,
+      cashAmount: realCashBalance,
+      bankAmount: realBankBalance,
+      cashDifference: cashDiff,
+      bankDifference: bankDiff,
+      lastClosureReference: lastClosureUuid,
+      items: [],
+      itemsAndStockLogs: [],
+      amount: 0,
+    };
+  };
+
+  /**
+   * Construye transacciones de ajuste para apertura si hay diferencias
+   * @param {Object} params - Parámetros de los ajustes
+   * @param {number} params.cashDifference - Diferencia en efectivo
+   * @param {number} params.bankDifference - Diferencia en banco
+   * @param {Function} params.generateUUID - Función para generar UUIDs
+   * @returns {Array} Array de transacciones de ajuste
+   */
+  const buildOpeningAdjustments = ({
+    cashDifference,
+    bankDifference,
+    generateUUID,
+  }) => {
+    const adjustments = [];
+
+    // Ajuste de efectivo
+    if (isSignificantDifference(cashDifference)) {
+      adjustments.push({
+        uuid: generateUUID(),
+        type: cashDifference > 0 ? 'income' : 'expense',
+        account: 'cash',
+        description: `Ajuste de apertura - Efectivo (${cashDifference > 0 ? 'Sobrante' : 'Faltante'
+          })`,
+        amount: Math.abs(cashDifference),
+        category: 'adjustment',
+        subcategory: 'opening_adjustment',
+        isSystemGenerated: true,
+        items: [],
+        itemsAndStockLogs: [],
+      });
+    }
+
+    // Ajuste de banco
+    if (isSignificantDifference(bankDifference)) {
+      adjustments.push({
+        uuid: generateUUID(),
+        type: bankDifference > 0 ? 'income' : 'expense',
+        account: 'bank',
+        description: `Ajuste de apertura - Yape/Plin (${bankDifference > 0 ? 'Sobrante' : 'Faltante'
+          })`,
+        amount: Math.abs(bankDifference),
+        category: 'adjustment',
+        subcategory: 'opening_adjustment',
+        isSystemGenerated: true,
+        items: [],
+        itemsAndStockLogs: [],
+      });
+    }
+
+    return adjustments;
+  };
+
+  /**
+   * Construye la transacción de cierre con los datos proporcionados
+   * @param {Object} params - Parámetros del cierre
+   * @param {string} params.openingUuid - UUID de la apertura del día
+   * @param {number} params.realCashBalance - Balance real de efectivo
+   * @param {number} params.realBankBalance - Balance real de banco
+   * @param {Function} params.generateUUID - Función para generar UUIDs
+   * @returns {Object} Transacción de cierre
+   */
+  const buildClosureTransaction = ({
+    openingUuid,
+    realCashBalance,
+    realBankBalance,
+    generateUUID,
+  }) => {
+    const summary = financialSummary.value;
+    const cashDiff = calculateDifference(realCashBalance, summary.expectedFinalCash);
+    const bankDiff = calculateDifference(realBankBalance, summary.expectedFinalBank);
+
+    return {
+      uuid: generateUUID(),
+      type: 'closure',
+      description: 'Cierre de caja',
+      // Datos de apertura de referencia
+      openingReference: openingUuid,
+      initialCashBalance: summary.saldoInicialCash,
+      initialBankBalance: summary.saldoInicialBank,
+      // Movimientos del día (desde el store)
+      totalIngresos: summary.totalIngresos,
+      totalEgresos: summary.totalEgresos,
+      ingresosCash: summary.ingresosCash,
+      ingresosBank: summary.ingresosBank,
+      egresosCash: summary.egresosCash,
+      egresosBank: summary.egresosBank,
+      // Balances esperados vs reales
+      expectedCashBalance: summary.expectedFinalCash,
+      expectedBankBalance: summary.expectedFinalBank,
+      realCashBalance,
+      realBankBalance,
+      // Campos compatibles con CardClosure.vue
+      cashAmount: realCashBalance,
+      bankAmount: realBankBalance,
+      // Diferencias
+      cashDifference: cashDiff,
+      bankDifference: bankDiff,
+      // Campos requeridos
+      items: [],
+      itemsAndStockLogs: [],
+      amount: 0,
+    };
+  };
+
+  /**
+   * Construye transacciones de ajuste para cierre si hay diferencias
+   * @param {Object} params - Parámetros de los ajustes
+   * @param {number} params.cashDifference - Diferencia en efectivo
+   * @param {number} params.bankDifference - Diferencia en banco
+   * @param {Function} params.generateUUID - Función para generar UUIDs
+   * @returns {Array} Array de transacciones de ajuste
+   */
+  const buildClosureAdjustments = ({
+    cashDifference,
+    bankDifference,
+    generateUUID,
+  }) => {
+    const adjustments = [];
+
+    // Ajuste de efectivo
+    if (isSignificantDifference(cashDifference)) {
+      adjustments.push({
+        uuid: generateUUID(),
+        type: cashDifference > 0 ? 'income' : 'expense',
+        account: 'cash',
+        description: `Ajuste de cierre - Efectivo (${cashDifference > 0 ? 'Sobrante' : 'Faltante'
+          })`,
+        amount: Math.abs(cashDifference),
+        category: 'adjustment',
+        subcategory: 'closure_adjustment',
+        isSystemGenerated: true,
+        items: [],
+        itemsAndStockLogs: [],
+      });
+    }
+
+    // Ajuste de banco
+    if (isSignificantDifference(bankDifference)) {
+      adjustments.push({
+        uuid: generateUUID(),
+        type: bankDifference > 0 ? 'income' : 'expense',
+        account: 'bank',
+        description: `Ajuste de cierre - Digital (${bankDifference > 0 ? 'Sobrante' : 'Faltante'
+          })`,
+        amount: Math.abs(bankDifference),
+        category: 'adjustment',
+        subcategory: 'closure_adjustment',
+        isSystemGenerated: true,
+        items: [],
+        itemsAndStockLogs: [],
+      });
+    }
+
+    return adjustments;
+  };
+
   return {
     // Estado
     transactions,
     openingTransaction,
+    stepsData,
 
     // Setters
     setTransactions,
     setOpening,
     reset,
     updateTransactions,
+
+    // Gestión de datos de flujo (steps)
+    updateStepData,
+    resetStepsData,
 
     // Cálculos de ingresos
     totalIngresos,
@@ -596,5 +847,11 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
     // Resumen completo
     financialSummary,
+
+    // Funciones de apertura y cierre
+    buildOpeningTransaction,
+    buildOpeningAdjustments,
+    buildClosureTransaction,
+    buildClosureAdjustments,
   };
 });

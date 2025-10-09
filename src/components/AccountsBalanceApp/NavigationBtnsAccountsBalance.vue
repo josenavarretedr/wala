@@ -89,13 +89,16 @@
 
 <script setup>
 import { ArrowLeft, ArrowRight, Check } from "@iconoir/vue";
-import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
 import { computed } from "vue";
+import { generateUUID } from "@/utils/generateUUID";
 
-const flow = useTransactionFlowStore();
+const flow = useAccountsBalanceFlowStore();
+const accountsBalanceStore = useAccountsBalanceStore();
 const businessStore = useBusinessStore();
 const transactionStore = useTransactionStore();
 const router = useRouter();
@@ -104,84 +107,35 @@ const router = useRouter();
 const isNextButtonEnabled = computed(() => {
   const currentStepConfig = flow.currentStepConfig;
   const currentStepLabel = currentStepConfig?.label;
-  const transactionData = transactionStore.transactionToAdd.value;
+  const stepsData = flow.stepsData;
 
-  // Debug: remover después de confirmar que funciona
   console.log("=== DEBUG isNextButtonEnabled ===");
   console.log("currentStepLabel:", currentStepLabel);
-  console.log("transactionData:", transactionData);
 
   let result = false;
 
   switch (currentStepLabel) {
-    case "Tipo de transacción":
-      // Verificar que se haya seleccionado un tipo
-      result =
-        transactionData.type !== null && transactionData.type !== undefined;
-      break;
-
-    case "Cuenta":
-      // Verificar que se haya seleccionado una cuenta
-      result =
-        transactionData.account !== null &&
-        transactionData.account !== undefined;
-      break;
-
-    case "Detalles ingreso":
-    case "Detalles egreso":
-    case "Detalles transferencia":
-      // Para ingresos, verificar que haya items
-      if (currentStepLabel === "Detalles ingreso") {
-        result = transactionData.items && transactionData.items.length > 0;
-      }
-      // Para egresos, verificar que haya descripción, monto y categoría
-      else if (currentStepLabel === "Detalles egreso") {
-        result =
-          transactionData.description &&
-          transactionData.description.trim() !== "" &&
-          transactionData.amount !== null &&
-          transactionData.amount !== undefined &&
-          transactionData.amount > 0 &&
-          transactionData.category !== null &&
-          transactionData.category !== undefined;
-      }
-      // Para transferencias, verificar que haya cuenta origen, destino y monto
-      else if (currentStepLabel === "Detalles transferencia") {
-        result =
-          transactionData.fromAccount &&
-          transactionData.toAccount &&
-          transactionData.amount !== null &&
-          transactionData.amount !== undefined &&
-          transactionData.amount > 0 &&
-          transactionData.fromAccount !== transactionData.toAccount;
-      } else {
-        result = true;
-      }
-      break;
-
-    case "Preview ingreso":
-      // Para preview de ingresos, siempre permitir finalizar
+    case "Referencia anterior":
+      // Siempre permitir avanzar desde la referencia
       result = true;
       break;
 
-    case "Preview egreso":
-      // Para preview de egresos, siempre permitir finalizar
-      result = true;
+    case "Cash Balance":
+      // Verificar que se haya seleccionado una opción de efectivo
+      result = stepsData.selectedCashOption !== null;
       break;
 
-    case "Preview transferencia":
-      // Para preview de transferencias, siempre permitir finalizar
-      result = true;
+    case "Bank Balance":
+      // Verificar que se haya seleccionado una opción de banco
+      result = stepsData.selectedBankOption !== null;
       break;
 
     default:
-      // Para otros pasos, habilitar por defecto
       result = true;
       break;
   }
 
   console.log("isNextButtonEnabled result:", result);
-  console.log("flow.transactionLoading:", flow.transactionLoading);
   console.log("===========================");
 
   return result;
@@ -193,47 +147,159 @@ const getValidationMessage = () => {
   const currentStepLabel = currentStepConfig?.label;
 
   switch (currentStepLabel) {
-    case "Tipo de transacción":
-      return "Debes seleccionar un tipo de transacción";
+    case "Cash Balance":
+      return "Debes seleccionar una opción para el efectivo";
 
-    case "Cuenta":
-      return "Debes seleccionar un método de pago";
-
-    case "Detalles ingreso":
-      return "Debes agregar al menos un producto";
-
-    case "Detalles egreso":
-      return "Completa la descripción, monto y categoría del gasto";
-
-    case "Detalles transferencia":
-      return "Completa cuenta origen, destino y monto de transferencia";
-
-    case "Preview transferencia":
-      return "Los datos de la transferencia están incompletos";
+    case "Bank Balance":
+      return "Debes seleccionar una opción para el banco/digital";
 
     default:
       return "Completa los campos requeridos";
   }
 };
 
+// Determinar si estamos en modo opening o close
+const isOpeningMode = computed(() => {
+  return !transactionStore.transactionsInStore.value.some(
+    (transaction) => transaction.type === "opening"
+  );
+});
+
 const finalizarRegistro = async () => {
-  // Lógica para finalizar el registro de la transacción
+  try {
+    flow.accountBalanceLoading = true;
+    console.log("🔄 Iniciando finalización de registro...");
 
-  flow.transactionLoading = true;
+    const stepsData = flow.stepsData;
 
-  await transactionStore.addTransaction();
+    // Determinar los valores finales para cash
+    const realCashBalance =
+      stepsData.selectedCashOption === "expected"
+        ? stepsData.expectedCashBalance
+        : stepsData.realCashBalance;
 
-  let businessId = businessStore.getBusinessId;
-  // Verifica si la operación fue exitosa (puedes definir un status si lo deseas)
+    // Determinar los valores finales para bank
+    const realBankBalance =
+      stepsData.selectedBankOption === "expected"
+        ? stepsData.expectedBankBalance
+        : stepsData.realBankBalance;
 
-  flow.resetFlow();
-  // TODO: Resetear el store tambien del transactionStore
-  transactionStore.resetTransactionToAdd();
+    if (isOpeningMode.value) {
+      // ========== MODO APERTURA ==========
+      console.log("📂 Modo: APERTURA");
 
-  flow.transactionLoading = false;
-  router.push({
-    name: "BusinessDashboard",
-    params: { businessId },
-  });
+      // Construir transacción de apertura
+      const openingTransaction = accountsBalanceStore.buildOpeningTransaction({
+        expectedCashBalance: stepsData.expectedCashBalance,
+        expectedBankBalance: stepsData.expectedBankBalance,
+        realCashBalance,
+        realBankBalance,
+        lastClosureUuid: stepsData.lastClosureData?.uuid || null,
+        generateUUID,
+      });
+
+      console.log("✅ Transacción de apertura construida:", openingTransaction);
+
+      // Guardar transacción de apertura
+      transactionStore.transactionToAdd.value = openingTransaction;
+      await transactionStore.addTransaction();
+      console.log("✅ Transacción de apertura guardada en Firebase");
+
+      // Calcular diferencias
+      const cashDiff = accountsBalanceStore.calculateDifference(
+        realCashBalance,
+        stepsData.expectedCashBalance
+      );
+      const bankDiff = accountsBalanceStore.calculateDifference(
+        realBankBalance,
+        stepsData.expectedBankBalance
+      );
+
+      // Construir ajustes si hay diferencias
+      const adjustments = accountsBalanceStore.buildOpeningAdjustments({
+        cashDifference: cashDiff,
+        bankDifference: bankDiff,
+        generateUUID,
+      });
+
+      console.log(`📝 Ajustes de apertura construidos: ${adjustments.length}`);
+
+      // Guardar cada ajuste
+      for (const adjustment of adjustments) {
+        transactionStore.transactionToAdd.value = adjustment;
+        await transactionStore.addTransaction();
+        console.log(
+          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`
+        );
+      }
+
+      console.log("✅ Apertura completada exitosamente");
+    } else {
+      // ========== MODO CIERRE ==========
+      console.log("🔒 Modo: CIERRE");
+
+      // Obtener la apertura del día
+      const openingData = stepsData.openingData;
+      if (!openingData) {
+        throw new Error("No se encontró la apertura del día");
+      }
+
+      // Construir transacción de cierre
+      const closureTransaction = accountsBalanceStore.buildClosureTransaction({
+        openingUuid: openingData.uuid,
+        realCashBalance,
+        realBankBalance,
+        generateUUID,
+      });
+
+      console.log("✅ Transacción de cierre construida:", closureTransaction);
+
+      // Guardar transacción de cierre
+      transactionStore.transactionToAdd.value = closureTransaction;
+      await transactionStore.addTransaction();
+      console.log("✅ Transacción de cierre guardada en Firebase");
+
+      // Construir ajustes si hay diferencias
+      const adjustments = accountsBalanceStore.buildClosureAdjustments({
+        cashDifference: closureTransaction.cashDifference,
+        bankDifference: closureTransaction.bankDifference,
+        generateUUID,
+      });
+
+      console.log(`📝 Ajustes de cierre construidos: ${adjustments.length}`);
+
+      // Guardar cada ajuste
+      for (const adjustment of adjustments) {
+        transactionStore.transactionToAdd.value = adjustment;
+        await transactionStore.addTransaction();
+        console.log(
+          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`
+        );
+      }
+
+      console.log("✅ Cierre completado exitosamente");
+    }
+
+    // Resetear el flujo y limpiar datos
+    flow.resetFlow();
+    transactionStore.resetTransactionToAdd();
+    accountsBalanceStore.reset();
+
+    // Redirigir al dashboard
+    const businessId = businessStore.getBusinessId;
+    flow.accountBalanceLoading = false;
+    router.push({
+      name: "BusinessDashboard",
+      params: { businessId },
+    });
+  } catch (error) {
+    console.error("❌ Error en finalizarRegistro:", error);
+    alert(
+      `Error al ${
+        isOpeningMode.value ? "abrir" : "cerrar"
+      } la caja. Por favor, intenta nuevamente.`
+    );
+    flow.accountBalanceLoading = false;
+  }
 };
 </script>

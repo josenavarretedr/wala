@@ -79,7 +79,7 @@
           <div class="text-sm text-gray-600 mb-2">
             Total final:
             <span class="font-semibold text-gray-800"
-              >S/ {{ formatAmount(totalFinal) }}</span
+              >/ {{ formatAmount(record.realCashBalance) || 0 }}</span
             >
           </div>
         </div>
@@ -93,7 +93,7 @@
               <p class="text-xs font-medium text-emerald-800">Efectivo final</p>
             </div>
             <p class="text-lg font-bold text-emerald-700 tabular-nums">
-              S/ {{ formatAmount(record.totalCash || 0) }}
+              S/ {{ formatAmount(record.realCashBalance || 0) }}
             </p>
           </div>
 
@@ -104,7 +104,7 @@
               <p class="text-xs font-medium text-purple-800">Digital final</p>
             </div>
             <p class="text-lg font-bold text-purple-700 tabular-nums">
-              S/ {{ formatAmount(record.totalBank || 0) }}
+              S/ {{ formatAmount(record.realBankBalance || 0) }}
             </p>
           </div>
         </div>
@@ -137,8 +137,8 @@ const toggleOpen = () => {
 
 // Computeds para manejar los datos
 const totalFinal = computed(() => {
-  const cash = props.record.totalCash || 0;
-  const bank = props.record.totalBank || 0;
+  const cash = props.record.realCashBalance || 0;
+  const bank = props.record.realBankBalance || 0;
   return cash + bank;
 });
 

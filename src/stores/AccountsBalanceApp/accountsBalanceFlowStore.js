@@ -3,8 +3,9 @@ import { defineStore } from 'pinia';
 import StepLastReference from '@/components/AccountsBalanceApp/StepLastReference.vue';
 import StepCashBalance from '@/components/AccountsBalanceApp/StepCashBalance.vue';
 import StepBankBalance from '@/components/AccountsBalanceApp/StepBankBalance.vue';
+import { useAccountsBalanceStore } from './accountsBalanceStore';
 
-export const useAccountBalanceFlowStore = defineStore('accountBalanceFlow', {
+export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
   state: () => ({
     currentStep: 0,
     steps: [
@@ -31,6 +32,11 @@ export const useAccountBalanceFlowStore = defineStore('accountBalanceFlow', {
       }
       // Para ser el último paso, debe cumplir las condiciones normales
       return state.currentStep === state.steps.length - 1 && state.steps.length > 1;
+    },
+    // Getter para acceder a los stepsData desde el accountsBalanceStore
+    stepsData() {
+      const accountsBalanceStore = useAccountsBalanceStore();
+      return accountsBalanceStore.stepsData;
     }
   },
   actions: {
@@ -57,11 +63,20 @@ export const useAccountBalanceFlowStore = defineStore('accountBalanceFlow', {
     },
     resetFlow() {
       this.currentStep = 0;
-      // Reestablecer los pasos al estado inicial
+      // Reestablecer los pasos al estado inicial (TODOS los 3 pasos)
       this.steps = [
         { label: 'Referencia anterior', component: StepLastReference },
         { label: 'Cash Balance', component: StepCashBalance },
+        { label: 'Bank Balance', component: StepBankBalance },
       ];
+      // Resetear los datos en el accountsBalanceStore
+      const accountsBalanceStore = useAccountsBalanceStore();
+      accountsBalanceStore.resetStepsData();
+    },
+    // Actualizar datos de un step específico (delega al accountsBalanceStore)
+    updateStepData(stepLabel, data) {
+      const accountsBalanceStore = useAccountsBalanceStore();
+      accountsBalanceStore.updateStepData(stepLabel, data);
     },
     // defineDynamicSteps(accountType) {
     //   // Limpia pasos previos dinámicos

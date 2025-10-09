@@ -8,18 +8,14 @@
 
       <CloseBtn v-bind="closeBtnConfig" />
     </div>
-    <!-- Renderiza AccountBalanceAppOpen si no hay transacción de apertura -->
-    <AccountBalanceAppOpen
-      v-if="!isLoading && !hasOpeningTransaction"
-      @opening-created="onOpeningCreated"
-    />
 
-    <!-- Renderiza AccountBalanceAppClose si ya hay transacción de apertura -->
-    <AccountBalanceAppClose v-else-if="!isLoading && hasOpeningTransaction" />
+    <!-- Paso actual -->
+    <component :is="CurrentStepComponent" />
 
-    <!-- Loading state -->
-    <div v-else class="flex justify-center items-center py-8">
-      <div class="text-gray-500">Cargando...</div>
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
+    >
+      <NavigationBtnsAccountsBalance :finalizarRegistro="finalizarRegistro" />
     </div>
   </div>
 </template>
@@ -28,7 +24,8 @@
 import { computed, onMounted, ref } from "vue";
 import AccountBalanceAppOpen from "@/components/AccountsBalanceApp/AccountBalanceAppOpen.vue";
 import AccountBalanceAppClose from "@/components/AccountsBalanceApp/AccountBalanceAppClose.vue";
-import { useAccountBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountBalanceFlowStore.js";
+import NavigationBtnsAccountsBalance from "@/components/AccountsBalanceApp/NavigationBtnsAccountsBalance.vue";
+import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore.js";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 import CloseBtn from "@/components/ui/CloseBtn.vue";
@@ -39,11 +36,13 @@ import {
 } from "@/composables/useProgressIndicator";
 
 const transactionStore = useTransactionStore();
-const flow = useAccountBalanceFlowStore();
+const flow = useAccountsBalanceFlowStore();
 // Props para el ProgressIndicator usando el composable
 const progressProps = computed(() =>
   getProgressIndicatorProps(flow, FLOW_TYPES.TRANSACTION)
 );
+
+const CurrentStepComponent = computed(() => flow.currentStepConfig.component);
 
 // Estado local para evitar el bucle infinito
 const hasOpeningTransaction = ref(false);
