@@ -58,11 +58,12 @@
         <div class="text-center">
           <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-            <span class="font-medium text-yellow-200">Apertura requerida</span>
+            <span class="font-medium text-yellow-200">{{
+              messageTooltip.title
+            }}</span>
           </div>
           <p class="text-gray-300 text-xs mb-3">
-            Para poder iniciar el registro deberá primero aperturar registrando
-            los saldos iniciales
+            {{ messageTooltip.detail }}
           </p>
         </div>
       </div>
@@ -86,10 +87,45 @@ const hasOpeningTransaction = computed(() => {
   );
 });
 
+const hasClosureTransaction = computed(() => {
+  return transactionStore.transactionsInStore.value.some(
+    (transaction) => transaction.type === "closure"
+  );
+});
+
+const hasBothTransactions = computed(() => {
+  return hasOpeningTransaction.value && hasClosureTransaction.value;
+});
+
 const cashEventStore = useCashEventStore();
 
 // Computed para determinar si el botón está deshabilitado
-const isDisabled = computed(() => !hasOpeningTransaction.value);
+const isDisabled = computed(() => {
+  if (hasBothTransactions.value) {
+    return true;
+  } else {
+    return !hasOpeningTransaction.value;
+  }
+});
+
+const messageTooltip = computed(() => {
+  if (hasBothTransactions.value) {
+    const remainingTime = countdown.value;
+    const title = "Ya realizaste tu cierre";
+    const detail = `Puedes eliminar tu último cierre o esperar ${remainingTime} para aperturar de nuevo.`;
+    return {
+      title,
+      detail,
+    };
+  } else {
+    const title = "Apertura requerida";
+    const detail = "Para poder iniciar el registro deberá primero aperturar.";
+    return {
+      title,
+      detail,
+    };
+  }
+});
 
 // Estado del contador
 const countdown = ref("00:00:00");
