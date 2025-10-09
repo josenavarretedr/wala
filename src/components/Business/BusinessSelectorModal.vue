@@ -125,10 +125,12 @@ import { computed } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const router = useRouter();
 const userStore = useUserStore();
 const businessStore = useBusinessStore();
+const transactionStore = useTransactionStore();
 
 // Emits
 const emit = defineEmits(["close"]);
@@ -147,6 +149,8 @@ const selectBusiness = async (business) => {
     if (switched) {
       // Cargar datos del negocio
       await businessStore.loadBusiness(business.businessId);
+
+      transactionStore.resetTransactionInStore();
 
       // Redirigir al dashboard del nuevo negocio
       router.push(`/business/${business.businessId}/dashboard`);

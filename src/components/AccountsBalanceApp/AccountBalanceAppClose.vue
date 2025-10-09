@@ -447,10 +447,12 @@ import {
 } from "@iconoir/vue";
 import { ref, computed, nextTick, onMounted } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { generateUUID } from "@/utils/generateUUID";
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 
 const transactionStore = useTransactionStore();
+const accountsBalanceStore = useAccountsBalanceStore();
 
 // Estados reactivos
 const openingData = ref(null);
@@ -465,90 +467,54 @@ const currentBusinessId = computed(() => {
   return ensureBusinessId();
 });
 
-// Transacciones del día (después de la apertura)
-const dayTransactions = computed(() => {
-  if (!openingData.value) return [];
+// Configurar el store de balance cuando tengamos datos
+const setupBalanceStore = () => {
+  if (!openingData.value) return;
 
   const openingTime = openingData.value.createdAt?.seconds || 0;
 
-  return transactionStore.transactionsInStore.value.filter((tx) => {
-    const txTime = tx.createdAt?.seconds || 0;
-    return (
-      txTime > openingTime &&
-      ["income", "expense"].includes(tx.type) &&
-      !tx.isSystemGenerated
-    ); // Excluir ajustes automáticos
-  });
-});
+  // Filtrar solo transacciones después de la apertura (excluyendo ajustes automáticos)
+  const dayTransactions = transactionStore.transactionsInStore.value.filter(
+    (tx) => {
+      const txTime = tx.createdAt?.seconds || 0;
+      return (
+        txTime > openingTime &&
+        ["income", "expense"].includes(tx.type) &&
+        !tx.isSystemGenerated
+      );
+    }
+  );
 
-// Cálculos de ingresos y egresos
-// Solo contar ventas reales (category: "sell"), no ajustes de apertura
-const totalIngresos = computed(() => {
-  return dayTransactions.value
-    .filter((tx) => tx.type === "income" && tx.category !== "adjustment")
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
+  // Configurar el store con las transacciones del día y la apertura
+  accountsBalanceStore.setTransactions(dayTransactions);
+  accountsBalanceStore.setOpening(openingData.value);
+};
 
-// Excluir ajustes automáticos de los egresos
-const totalEgresos = computed(() => {
-  return dayTransactions.value
-    .filter((tx) => tx.type === "expense" && tx.category !== "adjustment")
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
+// Usar los cálculos del store de balance en lugar de computed locales
+const totalIngresos = computed(() => accountsBalanceStore.totalIngresos);
+const totalEgresos = computed(() => accountsBalanceStore.totalEgresos);
+const ingresosCash = computed(() => accountsBalanceStore.ingresosCash);
+const ingresosBank = computed(() => accountsBalanceStore.ingresosBank);
+const egresosCash = computed(() => accountsBalanceStore.egresosCash);
+const egresosBank = computed(() => accountsBalanceStore.egresosBank);
+const expectedFinalCash = computed(
+  () => accountsBalanceStore.expectedFinalCash
+);
+const expectedFinalBank = computed(
+  () => accountsBalanceStore.expectedFinalBank
+);
 
-const ingresosCash = computed(() => {
-  return dayTransactions.value
-    .filter((tx) => tx.category === "sell" && tx.account === "cash")
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
-
-const ingresosBank = computed(() => {
-  return dayTransactions.value
-    .filter((tx) => tx.category === "sell" && tx.account === "bank")
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
-
-const egresosCash = computed(() => {
-  return dayTransactions.value
-    .filter(
-      (tx) =>
-        tx.type === "expense" &&
-        tx.category !== "adjustment" &&
-        tx.account === "cash"
-    )
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
-
-const egresosBank = computed(() => {
-  return dayTransactions.value
-    .filter(
-      (tx) =>
-        tx.type === "expense" &&
-        tx.category !== "adjustment" &&
-        tx.account === "bank"
-    )
-    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
-});
-
-// Balances finales esperados
-const expectedFinalCash = computed(() => {
-  const initial = openingData.value?.realCashBalance || 0;
-  return initial + ingresosCash.value - egresosCash.value;
-});
-
-const expectedFinalBank = computed(() => {
-  const initial = openingData.value?.realBankBalance || 0;
-  return initial + ingresosBank.value - egresosBank.value;
-});
-
-// Diferencias calculadas
+// Diferencias calculadas usando las utilidades del store
 const cashDifference = computed(() => {
   if (selectedCashOption.value === null) return 0;
   const real =
     selectedCashOption.value === "expected"
       ? expectedFinalCash.value
       : realFinalCash.value;
-  return real - expectedFinalCash.value;
+  return accountsBalanceStore.calculateDifference(
+    real,
+    expectedFinalCash.value
+  );
 });
 
 const bankDifference = computed(() => {
@@ -557,14 +523,17 @@ const bankDifference = computed(() => {
     selectedBankOption.value === "expected"
       ? expectedFinalBank.value
       : realFinalBank.value;
-  return real - expectedFinalBank.value;
+  return accountsBalanceStore.calculateDifference(
+    real,
+    expectedFinalBank.value
+  );
 });
 
-// Verificar si hay diferencias
+// Verificar si hay diferencias usando la utilidad del store
 const hasDifferences = computed(() => {
   return (
-    Math.abs(cashDifference.value) > 0.01 ||
-    Math.abs(bankDifference.value) > 0.01
+    accountsBalanceStore.isSignificantDifference(cashDifference.value) ||
+    accountsBalanceStore.isSignificantDifference(bankDifference.value)
   );
 });
 
@@ -581,8 +550,10 @@ onMounted(async () => {
 // Buscar la apertura del día
 const findTodayOpening = async () => {
   try {
-    // Cargar todas las transacciones del día
-    await transactionStore.getTransactionsToday();
+    // Solo cargar las transacciones del día si no hay transacciones en el store
+    if (transactionStore.transactionsInStore.value.length === 0) {
+      await transactionStore.getTransactionsToday();
+    }
 
     // Buscar la transacción de apertura del día
     const opening = transactionStore.transactionsInStore.value.find(
@@ -592,6 +563,9 @@ const findTodayOpening = async () => {
     if (opening) {
       openingData.value = opening;
       console.log("📊 Apertura del día encontrada:", opening);
+
+      // Configurar el store de balance una vez que tenemos la apertura
+      setupBalanceStore();
     } else {
       console.warn("⚠️ No se encontró apertura del día");
     }
@@ -657,6 +631,9 @@ const performClosure = async () => {
   try {
     console.log("🔒 Iniciando cierre de caja...");
 
+    // Usar el resumen financiero del store para crear la transacción de cierre
+    const financialSummary = accountsBalanceStore.financialSummary;
+
     // Crear transacción de cierre principal
     const closureTransaction = {
       uuid: generateUUID(),
@@ -664,25 +641,25 @@ const performClosure = async () => {
       description: "Cierre de caja",
       // Datos de apertura de referencia
       openingReference: openingData.value.uuid,
-      initialCashBalance: openingData.value.realCashBalance || 0,
-      initialBankBalance: openingData.value.realBankBalance || 0,
-      // Movimientos del día
-      totalIngresos: totalIngresos.value,
-      totalEgresos: totalEgresos.value,
-      ingresosCash: ingresosCash.value,
-      ingresosBank: ingresosBank.value,
-      egresosCash: egresosCash.value,
-      egresosBank: egresosBank.value,
+      initialCashBalance: financialSummary.saldoInicialCash,
+      initialBankBalance: financialSummary.saldoInicialBank,
+      // Movimientos del día (desde el store)
+      totalIngresos: financialSummary.totalIngresos,
+      totalEgresos: financialSummary.totalEgresos,
+      ingresosCash: financialSummary.ingresosCash,
+      ingresosBank: financialSummary.ingresosBank,
+      egresosCash: financialSummary.egresosCash,
+      egresosBank: financialSummary.egresosBank,
       // Balances esperados vs reales
-      expectedCashBalance: expectedFinalCash.value,
-      expectedBankBalance: expectedFinalBank.value,
+      expectedCashBalance: financialSummary.expectedFinalCash,
+      expectedBankBalance: financialSummary.expectedFinalBank,
       realCashBalance:
         selectedCashOption.value === "expected"
-          ? expectedFinalCash.value
+          ? financialSummary.expectedFinalCash
           : realFinalCash.value,
       realBankBalance:
         selectedBankOption.value === "expected"
-          ? expectedFinalBank.value
+          ? financialSummary.expectedFinalBank
           : realFinalBank.value,
       // Diferencias
       cashDifference: cashDifference.value,
@@ -712,11 +689,11 @@ const performClosure = async () => {
   }
 };
 
-// Crear transacciones de ajuste para el cierre
+// Crear transacciones de ajuste para el cierre usando las utilidades del store
 const createClosureAdjustmentTransactions = async () => {
   try {
     // Ajuste de efectivo
-    if (Math.abs(cashDifference.value) > 0.01) {
+    if (accountsBalanceStore.isSignificantDifference(cashDifference.value)) {
       const cashAdjustment = {
         uuid: generateUUID(),
         type: cashDifference.value > 0 ? "income" : "expense",
@@ -741,7 +718,7 @@ const createClosureAdjustmentTransactions = async () => {
     }
 
     // Ajuste de banco
-    if (Math.abs(bankDifference.value) > 0.01) {
+    if (accountsBalanceStore.isSignificantDifference(bankDifference.value)) {
       const bankAdjustment = {
         uuid: generateUUID(),
         type: bankDifference.value > 0 ? "income" : "expense",

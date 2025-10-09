@@ -35,7 +35,8 @@ export const FLOW_TYPES = {
   TRANSACTION: 'transaction',
   CASH: 'cash',
   INVENTORY: 'inventory',
-  BUSINESS: 'business'
+  BUSINESS: 'business',
+  ACCOUNT_BALANCE: 'account_balance'
 };
 
 /**
@@ -65,6 +66,12 @@ export const FLOW_COLORS = {
     inactiveColor: 'bg-gray-200',
     counterBgColor: 'bg-orange-50',
     counterTextColor: 'text-orange-600'
+  },
+  [FLOW_TYPES.ACCOUNT_BALANCE]: {
+    activeColor: 'bg-teal-500',
+    inactiveColor: 'bg-gray-200',
+    counterBgColor: 'bg-teal-50',
+    counterTextColor: 'text-teal-600'
   }
 };
 

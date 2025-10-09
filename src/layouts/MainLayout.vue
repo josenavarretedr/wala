@@ -1,150 +1,55 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- Overlay para mobile y desktop cuando sidebar está abierto -->
+  <div
+    class="min-h-screen bg-gray-50 lg:flex"
+    :class="{ 'sidebar-open': sidebarOpen }"
+  >
+    <!-- Overlay solo < lg -->
     <div
       v-if="sidebarOpen"
       @click="sidebarOpen = false"
-      class="fixed inset-0 z-30 bg-black bg-opacity-50 transition-opacity"
+      class="fixed inset-0 z-50 bg-black/50 transition-opacity lg:hidden"
+      style="z-index: 9998"
     ></div>
 
-    <!-- Sidebar -->
+    <!-- ASIDE < lg: drawer fullscreen -->
     <aside
-      :class="[
-        'fixed inset-y-0 left-0 z-40 w-64 transform transition-transform duration-300 ease-in-out',
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full',
-        'bg-white shadow-xl border-r border-gray-200',
-      ]"
+      class="fixed inset-y-0 left-0 z-50 w-full max-w-[18rem] sm:max-w-[20rem] bg-white shadow-2xl transform transition-transform duration-300 overflow-y-auto lg:hidden"
+      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      style="z-index: 9999"
+      role="dialog"
+      aria-modal="true"
     >
-      <!-- Información del negocio actual -->
-      <div class="px-6 py-4 border-b border-gray-200 bg-blue-50">
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center"
-          >
-            <span class="text-blue-600 font-bold">
-              {{ currentBusiness?.businessName?.charAt(0) || "N" }}
-            </span>
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-gray-900 truncate">
-              {{ currentBusiness?.businessName || "Sin negocio" }}
-              <!-- </p>
-            <p class="text-xs text-gray-500 truncate">
-              {{ currentUserRole === "gerente" ? "👑 Gerente" : "👤 Empleado" }}
-            </p> -->
-            </p>
-          </div>
-
-          <!-- Botón cerrar sidebar (mobile y desktop) -->
-          <button
-            @click="sidebarOpen = false"
-            class="text-blue-600 hover:text-blue-800 transition-colors p-1 hover:bg-blue-200 rounded"
-          >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <!-- Selector de negocio (si tiene múltiples) -->
-        <button
-          v-if="userStore.userBusinesses.length > 0"
-          @click="showBusinessSelector = true"
-          class="mt-3 w-full text-left px-3 py-2 text-xs text-blue-600 bg-white rounded-lg border border-blue-200 hover:bg-blue-50 transition-colors"
-        >
-          🔄 Cambiar negocio
-        </button>
-      </div>
-
-      <!-- Navegación principal -->
-      <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-        <!-- Dashboard -->
-        <SidebarSection title="🏠 Principal" :items="mainItems" />
-
-        <!-- Mostrar el menú solo si hay datos cargados -->
-        <template v-if="currentBusiness && userStore.userBusinesses.length > 0">
-          <!-- Sección: Transacciones -->
-          <!-- <SidebarSection
-            v-if="filteredTransactionItems.length > 0"
-            title="💰 Transacciones"
-            :items="filteredTransactionItems"
-          /> -->
-
-          <!-- Sección: Reportes -->
-          <!-- <SidebarSection
-            v-if="filteredReportItems.length > 0"
-            title="📊 Reportes"
-            :items="filteredReportItems"
-          /> -->
-
-          <!-- Sección: Administración (solo gerentes) -->
-          <SidebarSection
-            v-if="filteredAdminItems.length > 0"
-            title="⚙️ Administración"
-            :items="filteredAdminItems"
-          />
-        </template>
-
-        <!-- Loading state -->
-        <div v-else-if="userStore.isLoading" class="px-3 py-4 text-center">
-          <div class="text-sm text-gray-500">Cargando menú...</div>
-        </div>
-
-        <!-- No business state -->
-        <div v-else class="px-3 py-4 text-center">
-          <div class="text-sm text-gray-500">No hay negocio seleccionado</div>
-        </div>
-
-        <!-- Sección: Cuenta -->
-        <SidebarSection title="👤Mi Cuenta" :items="accountItems" />
-      </nav>
-
-      <!-- Footer del sidebar -->
-      <div class="border-t border-gray-200 p-4">
-        <button
-          @click="handleLogout"
-          class="w-full flex items-center justify-center space-x-2 px-4 py-3 text-gray-600 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-200"
-          title="Cerrar sesión"
-        >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-            />
-          </svg>
-          <span class="text-sm font-medium">Cerrar sesión</span>
-        </button>
-      </div>
+      <SidebarContent
+        :current-business="currentBusiness"
+        :main-items="mainItems"
+        :admin-items="filteredAdminItems"
+        :account-items="accountItems"
+        :show-business-selector="userStore.userBusinesses.length > 0"
+        @close="sidebarOpen = false"
+        @logout="handleLogout"
+        @toggle-business-selector="showBusinessSelector = true"
+      />
     </aside>
 
-    <!-- Contenido principal -->
-    <div
-      :class="[
-        'flex flex-col min-h-screen transition-all duration-300',
-        sidebarOpen ? 'lg:ml-64' : 'ml-0',
-      ]"
+    <!-- ASIDE ≥ lg: columna izquierda que empuja el contenido -->
+    <aside
+      class="hidden lg:flex lg:flex-col lg:relative bg-white border-r border-gray-200 transition-[width] duration-300 overflow-hidden"
+      :class="sidebarOpen ? 'lg:w-72' : 'lg:w-0'"
     >
+      <SidebarContent
+        :current-business="currentBusiness"
+        :main-items="mainItems"
+        :admin-items="filteredAdminItems"
+        :account-items="accountItems"
+        :show-business-selector="userStore.userBusinesses.length > 0"
+        @logout="handleLogout"
+        @toggle-business-selector="showBusinessSelector = true"
+      />
+    </aside>
+    <!-- CONTENIDO -->
+    <div class="min-h-screen flex-1 flex flex-col">
       <Header @toggle-sidebar="sidebarOpen = !sidebarOpen" />
-
-      <!-- Área de contenido -->
-      <main class="flex-1 p-6">
+      <main class="flex-1 p-4 md:p-6">
         <router-view />
       </main>
     </div>
@@ -157,11 +62,22 @@
   </div>
 </template>
 
+<style scoped>
+/* Ajustar elementos fijos cuando el sidebar está abierto en desktop */
+:global(.sidebar-open .fixed) {
+  @screen lg {
+    left: 18rem;
+    transition: left 0.3s ease-in-out;
+  }
+}
+</style>
+
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import Header from "@/components/LayoutCmpts/Header.vue";
-
 import { useRouter, useRoute } from "vue-router";
+import Header from "@/components/LayoutCmpts/Header.vue";
+import SidebarContent from "@/components/layout/SidebarContent.vue";
+
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
@@ -178,27 +94,23 @@ const userStore = useUserStore();
 const businessStore = useBusinessStore(); // ✅ BusinessStore para datos completos del negocio
 
 // Estado reactivo
-const sidebarOpen = ref(true); // Iniciar abierto por defecto
+const sidebarOpen = ref(true);
 const showBusinessSelector = ref(false);
 
-// Función para manejar el tamaño de pantalla
+// Regla: < 1024 (lg) => cerrado; ≥ 1024 => abierto
 const handleResize = () => {
-  if (window.innerWidth < 1024) {
-    // menor que lg
-    sidebarOpen.value = false;
-  } else {
-    sidebarOpen.value = true;
-  }
+  if (window.innerWidth < 1024) sidebarOpen.value = false;
+  else sidebarOpen.value = true;
 };
 
-// Inicializar el estado del sidebar basado en el tamaño de pantalla
 onMounted(() => {
   handleResize();
   window.addEventListener("resize", handleResize);
 });
+onUnmounted(() => window.removeEventListener("resize", handleResize));
 
-onUnmounted(() => {
-  window.removeEventListener("resize", handleResize);
+router.afterEach(() => {
+  if (window.innerWidth < 1024) sidebarOpen.value = false;
 });
 
 // ✅ ARQUITECTURA COHERENTE: Computed properties usando la nueva estructura
@@ -392,9 +304,4 @@ const hasAccess = (item) => {
 
   return true;
 };
-
-// Cerrar sidebar en cambio de ruta (mobile)
-router.afterEach(() => {
-  sidebarOpen.value = false;
-});
 </script>

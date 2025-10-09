@@ -1,72 +1,127 @@
 <template>
   <div
-    class="bg-white shadow-md rounded-lg p-4 md:p-6 flex flex-col text-purple-600 hover:shadow-lg transition-shadow"
+    class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-gray-200"
   >
-    <!-- Encabezado -->
-    <div
-      class="flex items-center justify-between mb-2 cursor-pointer"
-      @click="toggleOpen"
-    >
-      <!-- Izquierda: ícono + texto (texto oculto en móvil) -->
-      <div class="flex items-center gap-3">
+    <!-- Header con información principal -->
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <!-- Lado izquierdo: Badge y título -->
+      <div class="flex items-center gap-2 flex-1 min-w-0">
+        <!-- Badge de cierre -->
+        <div
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-red-50 text-red-700 border border-red-200"
+        >
+          <Safe class="w-3 h-3" />
+          <span class="hidden sm:inline">Cierre</span>
+        </div>
+
+        <!-- Total final -->
+        <div class="text-sm text-gray-600 hidden sm:block">
+          Total final:
+          <span class="font-semibold text-gray-800"
+            >S/ {{ formatAmount(totalFinal) }}</span
+          >
+        </div>
+      </div>
+
+      <!-- Lado derecho: Botón de detalles y expansión -->
+      <div class="flex items-center gap-2 shrink-0">
+        <!-- Botón de detalles -->
         <router-link
           :to="{
             name: 'CashClosureDetails',
             params: { cashClosureId: record.eventUuid || record.uuid },
           }"
-          class="text-purple-600 hover:text-purple-800 w-6 h-6"
+          class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-colors duration-200"
+          title="Ver detalles"
         >
-          <InfoCircle class="w-6 h-6 cursor-pointer" />
+          <InfoCircle class="w-4 h-4" />
         </router-link>
-        <Safe class="w-6 h-6 md:w-7 md:h-7" />
-        <h3 class="hidden md:block text-xl font-bold ml-0">Cierre</h3>
-      </div>
 
-      <!-- Derecha: ícono de expansión -->
-      <div class="flex items-center gap-2">
-        <ArrowDown
-          :class="[
-            'w-6 h-6 md:w-5 md:h-5 transform transition-transform duration-300',
-            isOpen ? 'rotate-180' : 'rotate-0',
-          ]"
-        />
+        <!-- Botón de expansión -->
+        <button
+          @click="toggleOpen"
+          class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-colors duration-200"
+          title="Ver detalles"
+        >
+          <ArrowDown
+            :class="[
+              'w-4 h-4 transform transition-transform duration-300',
+              isOpen ? 'rotate-180' : 'rotate-0',
+            ]"
+          />
+        </button>
       </div>
+    </div>
+
+    <!-- Fecha -->
+    <div class="flex items-center gap-1.5 text-xs text-gray-500 mb-3">
+      <svg
+        class="w-3 h-3 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="truncate">{{ formatedDate(record.createdAt) }}</span>
     </div>
 
     <!-- Contenido expandible -->
     <Transition name="fade-scale">
-      <div v-if="isOpen" class="mt-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            class="flex flex-col items-start border border-green-500 rounded-lg p-4 bg-green-50 w-full"
-          >
-            <p class="text-sm text-gray-500 mb-1">Efectivo final</p>
-            <p class="text-2xl font-bold text-green-700">
-              S/. {{ record.totalCash ?? 0 }}
+      <div v-if="isOpen" class="pt-2 border-t border-gray-100 space-y-3">
+        <!-- Resumen en móvil -->
+        <div class="sm:hidden">
+          <div class="text-sm text-gray-600 mb-2">
+            Total final:
+            <span class="font-semibold text-gray-800"
+              >S/ {{ formatAmount(totalFinal) }}</span
+            >
+          </div>
+        </div>
+
+        <!-- Grid de balances -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Efectivo -->
+          <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+            <div class="flex items-center gap-1 mb-1">
+              <Coins class="w-3 h-3 text-emerald-600" />
+              <p class="text-xs font-medium text-emerald-800">Efectivo final</p>
+            </div>
+            <p class="text-lg font-bold text-emerald-700 tabular-nums">
+              S/ {{ formatAmount(record.totalCash || 0) }}
             </p>
           </div>
 
-          <div
-            class="flex flex-col items-start border border-purple-500 rounded-lg p-4 bg-purple-50 w-full"
-          >
-            <p class="text-sm text-gray-500 mb-1">Banco final</p>
-            <p class="text-2xl font-bold text-purple-700">
-              S/. {{ record.totalBank ?? 0 }}
+          <!-- Banco/Digital -->
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div class="flex items-center gap-1 mb-1">
+              <SmartphoneDevice class="w-3 h-3 text-purple-600" />
+              <p class="text-xs font-medium text-purple-800">Digital final</p>
+            </div>
+            <p class="text-lg font-bold text-purple-700 tabular-nums">
+              S/ {{ formatAmount(record.totalBank || 0) }}
             </p>
           </div>
         </div>
       </div>
     </Transition>
-    <!-- Fecha -->
-    <div class="text-xs text-gray-400 mt-4 italic">
-      {{ formatedDate(record.createdAt) }}
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { Safe, ArrowDown, InfoCircle } from "@iconoir/vue";
+import { ref, computed } from "vue";
+import {
+  Safe,
+  ArrowDown,
+  InfoCircle,
+  Coins,
+  SmartphoneDevice,
+} from "@iconoir/vue";
 
 const props = defineProps({
   record: {
@@ -79,6 +134,18 @@ const isOpen = ref(false);
 const toggleOpen = () => {
   isOpen.value = !isOpen.value;
 };
+
+// Computeds para manejar los datos
+const totalFinal = computed(() => {
+  const cash = props.record.totalCash || 0;
+  const bank = props.record.totalBank || 0;
+  return cash + bank;
+});
+
+function formatAmount(amount) {
+  if (typeof amount !== "number" || isNaN(amount)) return "0.00";
+  return amount.toFixed(2);
+}
 
 function formatedDate(date) {
   if (!date) return "-";
@@ -95,6 +162,7 @@ function formatedDate(date) {
 </script>
 
 <style scoped>
+/* Animación de expansión */
 .fade-scale-enter-active,
 .fade-scale-leave-active {
   transition: all 0.25s ease;
@@ -103,5 +171,57 @@ function formatedDate(date) {
 .fade-scale-leave-to {
   opacity: 0;
   transform: scale(0.98);
+}
+
+/* Números tabulares para mejor alineación */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Transiciones suaves */
+.transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Hover effects para touch devices */
+@media (hover: hover) {
+  .hover\:shadow-md:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+}
+
+/* Estabilidad de layout */
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive adjustments mejorados */
+@media (max-width: 640px) {
+  /* Asegurar que los badges no se compriman demasiado */
+  .inline-flex.gap-1 {
+    min-width: fit-content;
+  }
+
+  /* Mejor espaciado en móvil */
+  .space-y-3 > * + * {
+    margin-top: 0.75rem;
+  }
+}
+
+/* Asegurar que las cifras no se deformen */
+@media (max-width: 480px) {
+  .tabular-nums {
+    font-size: 0.9rem;
+    line-height: 1.25rem;
+  }
 }
 </style>

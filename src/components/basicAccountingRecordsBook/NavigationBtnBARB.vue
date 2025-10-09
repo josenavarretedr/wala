@@ -125,19 +125,6 @@ const isNextButtonEnabled = computed(() => {
           transactionData.category !== undefined
         );
       }
-      // Para transferencias, verificar que haya cuentas origen, destino y monto
-      if (currentStepLabel === "Detalles transferencia") {
-        return (
-          transactionData.fromAccount !== null &&
-          transactionData.fromAccount !== undefined &&
-          transactionData.toAccount !== null &&
-          transactionData.toAccount !== undefined &&
-          transactionData.fromAccount !== transactionData.toAccount &&
-          transactionData.amount !== null &&
-          transactionData.amount !== undefined &&
-          transactionData.amount > 0
-        );
-      }
       return true;
 
     default:

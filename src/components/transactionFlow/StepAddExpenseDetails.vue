@@ -43,6 +43,7 @@
             @keyup.enter="addExpenseHandler"
             type="number"
             step="0.01"
+            :max="maxAmount"
             placeholder="0.00"
             class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-center font-medium text-gray-700 focus:border-red-500 focus:outline-none transition-colors"
           />
@@ -50,7 +51,19 @@
             class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"
           ></div>
         </div>
-        <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
+        <div class="flex flex-col gap-1">
+          <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
+          <p v-if="maxAmount > 0" class="text-xs text-blue-600 font-medium">
+            💰 Saldo disponible en {{ selectedAccountLabel }}: S/
+            {{ maxAmount.toFixed(2) }}
+          </p>
+          <p
+            v-else-if="transactionStore.transactionToAdd.value.account"
+            class="text-xs text-amber-600 font-medium"
+          >
+            ⚠️ No hay saldo suficiente en {{ selectedAccountLabel }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -275,7 +288,7 @@ import {
   Settings,
   User,
 } from "@iconoir/vue";
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 
 // Variables reactivas locales
 const description = ref("");
@@ -286,15 +299,113 @@ const expensesStore = useExpensesStore();
 const transactionStore = useTransactionStore();
 const flow = useTransactionFlowStore();
 
+// Cargar transacciones del día al montar el componente
+onMounted(async () => {
+  await transactionStore.getTransactionsToday();
+});
+
+// Computed para obtener las transacciones del día
+const transactions = computed(
+  () => transactionStore.transactionsInStore.value || []
+);
+
+// Buscar la apertura del día
+const opening = computed(() =>
+  transactions.value.find((tx) => tx.type === "opening")
+);
+
+// Calcular saldo inicial por cuenta
+const saldoInicialCash = computed(() => {
+  if (!opening.value) return 0;
+  return opening.value.realCashBalance || 0;
+});
+
+const saldoInicialBank = computed(() => {
+  if (!opening.value) return 0;
+  return opening.value.realBankBalance || 0;
+});
+
+// Calcular movimientos del día por cuenta
+const movimientosCash = computed(() => {
+  const ingresos = transactions.value
+    .filter(
+      (tx) =>
+        tx.type === "income" &&
+        tx.account === "cash" &&
+        tx.category !== "adjustment"
+    )
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+  const egresos = transactions.value
+    .filter(
+      (tx) =>
+        tx.type === "expense" &&
+        tx.account === "cash" &&
+        tx.category !== "adjustment"
+    )
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+  return ingresos - egresos;
+});
+
+const movimientosBank = computed(() => {
+  const ingresos = transactions.value
+    .filter(
+      (tx) =>
+        tx.type === "income" &&
+        tx.account === "bank" &&
+        tx.category !== "adjustment"
+    )
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+  const egresos = transactions.value
+    .filter(
+      (tx) =>
+        tx.type === "expense" &&
+        tx.account === "bank" &&
+        tx.category !== "adjustment"
+    )
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+  return ingresos - egresos;
+});
+
+// Calcular balance esperado por cuenta
+const expectedFinalCash = computed(() => {
+  return saldoInicialCash.value + movimientosCash.value;
+});
+
+const expectedFinalBank = computed(() => {
+  return saldoInicialBank.value + movimientosBank.value;
+});
+
+// Calcular el monto máximo disponible basado en la cuenta seleccionada
+const maxAmount = computed(() => {
+  const selectedAccount = transactionStore.transactionToAdd.value.account;
+
+  if (selectedAccount === "cash") {
+    return Math.max(0, expectedFinalCash.value);
+  } else if (selectedAccount === "bank") {
+    return Math.max(0, expectedFinalBank.value);
+  }
+
+  return 0; // Si no hay cuenta seleccionada
+});
+
+// Etiqueta de la cuenta seleccionada
+const selectedAccountLabel = computed(() => {
+  const selectedAccount = transactionStore.transactionToAdd.value.account;
+  const labels = {
+    cash: "efectivo",
+    bank: "digital/banco",
+  };
+  return labels[selectedAccount] || "cuenta";
+});
+
 // Observar cambios y actualizar los stores correspondientes
 watch(description, (newDescription) => {
   transactionStore.setExpenseDescription(newDescription);
   expensesStore.modifyExpenseToAddDescription(newDescription);
-});
-
-watch(amount, (newAmount) => {
-  transactionStore.setExpenseAmount(newAmount);
-  expensesStore.modifyExpenseToAddCost(newAmount);
 });
 
 watch(selectedCategory, (newCategory) => {
@@ -323,8 +434,19 @@ const isFormValid = computed(() => {
     description.value.trim() !== "" &&
     amount.value &&
     amount.value > 0 &&
+    amount.value <= maxAmount.value && // No puede exceder el saldo disponible
     selectedCategory.value
   );
+});
+
+// Validar que el monto no exceda el máximo disponible
+watch(amount, (newAmount) => {
+  if (newAmount && newAmount > maxAmount.value) {
+    // Limitar automáticamente al máximo disponible
+    amount.value = maxAmount.value;
+  }
+  transactionStore.setExpenseAmount(amount.value);
+  expensesStore.modifyExpenseToAddCost(amount.value);
 });
 
 // Handler para procesar el gasto (ya no es necesario pues se maneja desde NavigationBtnBARB)

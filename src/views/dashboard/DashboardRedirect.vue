@@ -44,6 +44,7 @@ import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 import Loader from "@/components/ui/Loader.vue";
 import MainBtns from "../../components/Dashboard/MainBtns.vue";
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
+import { Cash } from "@iconoir/vue";
 
 const route = useRoute();
 const router = useRouter();

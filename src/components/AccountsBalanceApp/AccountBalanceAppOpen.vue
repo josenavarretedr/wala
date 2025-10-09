@@ -358,12 +358,13 @@
 
 <script setup>
 import { Coins, SmartphoneDevice, Safe, Xmark, Cash } from "@iconoir/vue";
-import { ref, computed, nextTick, onMounted } from "vue";
+import { ref, computed, nextTick, onMounted, defineEmits } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { generateUUID } from "@/utils/generateUUID";
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 
 const transactionStore = useTransactionStore();
+const emit = defineEmits(["opening-created"]);
 
 // Estados reactivos
 const lastClosureData = ref(null);
@@ -421,14 +422,17 @@ const currentBusinessId = computed(() => {
 
 // Inicialización
 onMounted(async () => {
+  // Solo buscar el último cierre, las transacciones ya fueron cargadas por el componente padre
   await findLastClosure();
 });
 
 // Buscar el último cierre
 const findLastClosure = async () => {
   try {
-    // Cargar todas las transacciones para buscar el último cierre
-    await transactionStore.getTransactions();
+    // Solo cargar todas las transacciones si no hay transacciones en el store
+    if (transactionStore.transactionsInStore.value.length === 0) {
+      await transactionStore.getTransactions();
+    }
 
     // Filtrar transacciones de tipo "closure" y ordenar por fecha
     const closureTransactions = transactionStore.transactionsInStore.value
@@ -557,6 +561,10 @@ const performOpening = async () => {
     }
 
     openingData.value = openingTransaction;
+
+    // Emitir evento al componente padre para que actualice su estado
+    emit("opening-created");
+
     console.log("✅ Apertura completada exitosamente");
   } catch (error) {
     console.error("❌ Error en la apertura:", error);

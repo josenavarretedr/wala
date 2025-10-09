@@ -90,76 +90,25 @@
           <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
             <div class="flex items-center gap-1 mb-1">
               <Coins class="w-3 h-3 text-emerald-600" />
-              <p class="text-xs font-medium text-emerald-800">Efectivo</p>
+              <p class="text-xs font-medium text-emerald-800">
+                Efectivo inicial
+              </p>
             </div>
             <p class="text-lg font-bold text-emerald-700 tabular-nums">
               S/ {{ formatAmount(record.realCashBalance || 0) }}
             </p>
-            <div
-              v-if="record.expectedCashBalance !== undefined"
-              class="text-xs text-gray-500 mt-1"
-            >
-              Esperado: S/ {{ formatAmount(record.expectedCashBalance || 0) }}
-            </div>
-            <div
-              v-if="hasCashDifference"
-              class="text-xs mt-1"
-              :class="cashDifferenceClass"
-            >
-              {{ cashDifferenceText }}
-            </div>
           </div>
 
           <!-- Banco/Digital -->
           <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
             <div class="flex items-center gap-1 mb-1">
               <SmartphoneDevice class="w-3 h-3 text-purple-600" />
-              <p class="text-xs font-medium text-purple-800">Digital</p>
+              <p class="text-xs font-medium text-purple-800">Digital inicial</p>
             </div>
             <p class="text-lg font-bold text-purple-700 tabular-nums">
               S/ {{ formatAmount(record.realBankBalance || 0) }}
             </p>
-            <div
-              v-if="record.expectedBankBalance !== undefined"
-              class="text-xs text-gray-500 mt-1"
-            >
-              Esperado: S/ {{ formatAmount(record.expectedBankBalance || 0) }}
-            </div>
-            <div
-              v-if="hasBankDifference"
-              class="text-xs mt-1"
-              :class="bankDifferenceClass"
-            >
-              {{ bankDifferenceText }}
-            </div>
           </div>
-        </div>
-
-        <!-- Información adicional si hay diferencias -->
-        <div
-          v-if="hasDifferences"
-          class="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
-        >
-          <div class="flex items-center gap-1 mb-1">
-            <svg
-              class="w-3 h-3 text-yellow-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
-            <p class="text-xs font-medium text-yellow-800">Ajustes aplicados</p>
-          </div>
-          <p class="text-xs text-yellow-700">
-            Se detectaron diferencias y se crearon transacciones de ajuste
-            automáticamente.
-          </p>
         </div>
       </div>
     </Transition>

@@ -101,7 +101,12 @@ const dataOrdenada = computed(() => {
   const opening = all.find((tx) => tx.type === "opening");
 
   const middle = all
-    .filter((tx) => tx.type !== "closure" && tx.type !== "opening")
+    .filter(
+      (tx) =>
+        tx.type !== "closure" &&
+        tx.type !== "opening" &&
+        tx.category !== "adjustment"
+    )
     .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 
   const result = [];

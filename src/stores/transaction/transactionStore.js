@@ -28,7 +28,7 @@ const transactionToAdd = ref({
   description: null,
   category: null,
   subcategory: null,
-  amount: null,
+  amount: 0,
   // Campos para transfers:
   fromAccount: null,
   toAccount: null,
@@ -400,6 +400,10 @@ export function useTransactionStore() {
     };
   }
 
+  const resetTransactionInStore = () => {
+    transactionsInStore.value = [];
+  }
+
   const setExpenseDescription = (description) => { transactionToAdd.value.description = description; };
   const setExpenseAmount = (amount) => { transactionToAdd.value.amount = Number(amount) || 0; };
   const setExpenseCategory = (category) => { transactionToAdd.value.category = category; }; // 'materials'|'labor'|'overhead'
@@ -510,6 +514,7 @@ export function useTransactionStore() {
     getAllBankTransactionsInStore,
     deleteOneTransactionByID,
     resetTransactionToAdd,
+    resetTransactionInStore,
     modifyTransaction,
     modifyTransactionToAddType,
     modifyTransactionExpenseDescriptionAndCost,
