@@ -58,9 +58,7 @@
         <div class="text-center">
           <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-            <span class="font-medium text-yellow-200">{{
-              messageTooltip.title
-            }}</span>
+            <span class="font-medium text-yellow-200">Para registrar</span>
           </div>
           <p class="text-gray-300 text-xs mb-3">
             {{ messageTooltip.detail }}
@@ -97,8 +95,6 @@ const hasBothTransactions = computed(() => {
   return hasOpeningTransaction.value && hasClosureTransaction.value;
 });
 
-const cashEventStore = useCashEventStore();
-
 // Computed para determinar si el botón está deshabilitado
 const isDisabled = computed(() => {
   if (hasBothTransactions.value) {
@@ -111,15 +107,15 @@ const isDisabled = computed(() => {
 const messageTooltip = computed(() => {
   if (hasBothTransactions.value) {
     const remainingTime = countdown.value;
-    const title = "Ya realizaste tu cierre";
-    const detail = `Puedes eliminar tu último cierre o esperar ${remainingTime} para aperturar de nuevo.`;
+    const title = "Para registrar:";
+    const detail = `Eliminar tu último cierre o esperar ${remainingTime} para aperturar de nuevo.`;
     return {
       title,
       detail,
     };
   } else {
     const title = "Apertura requerida";
-    const detail = "Para poder iniciar el registro deberá primero aperturar.";
+    const detail = "Debes aperturar.";
     return {
       title,
       detail,

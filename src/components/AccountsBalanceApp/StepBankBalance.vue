@@ -3,7 +3,7 @@
     <!-- Loading state -->
     <div
       v-if="isLoading"
-      class="bg-purple-50 border border-purple-200 rounded-lg p-4"
+      class="bg-purple-50 border border-purple-200 rounded-lg p-6"
     >
       <div class="flex items-center justify-center gap-2">
         <div
@@ -14,147 +14,183 @@
     </div>
 
     <!-- Sección banco/digital -->
-    <div v-else class="bg-purple-50 border border-purple-200 rounded-lg p-4">
-      <div class="flex items-center gap-2 mb-4">
-        <SmartphoneDevice class="w-5 h-5 text-purple-600" />
-        <h4 class="text-lg font-semibold text-purple-800">
-          {{ isOpeningMode ? "Yape / Plin Inicial" : "Digital Final" }}
-        </h4>
-      </div>
-
-      <!-- Información del balance esperado -->
-      <div class="mb-4">
-        <p class="text-sm text-gray-600 mb-2">
-          {{
-            isOpeningMode
-              ? "Balance esperado (del cierre anterior):"
-              : "Balance esperado (calculado):"
-          }}
-        </p>
-
-        <!-- Desglose para modo cierre -->
+    <div
+      v-else
+      class="bg-white border-2 border-purple-200 rounded-xl p-6 shadow-sm"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
         <div
-          v-if="!isOpeningMode && openingData"
-          class="text-sm text-gray-600 space-y-1 mb-2"
+          class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center"
         >
-          <div>
-            • Inicial: S/
-            {{ (openingData.realBankBalance || 0).toFixed(2) }}
-          </div>
-          <div>
-            • Ventas digital: +S/
-            {{ accountsBalanceStore.ingresosBank.toFixed(2) }}
-          </div>
-          <div>
-            • Gastos digital: -S/
-            {{ accountsBalanceStore.egresosBank.toFixed(2) }}
-          </div>
+          <SmartphoneDevice class="w-6 h-6 text-purple-600" />
         </div>
-
-        <p class="text-lg font-bold text-purple-700 tabular-nums">
-          S/ {{ expectedBankBalance.toFixed(2) }}
-        </p>
+        <div>
+          <h4 class="text-lg font-bold text-gray-900">
+            {{
+              isOpeningMode
+                ? "Digital Inicial (Yape/Plin)"
+                : "Digital Final (Yape/Plin)"
+            }}
+          </h4>
+          <p class="text-xs text-gray-500">
+            {{
+              isOpeningMode
+                ? "Saldo en billeteras digitales"
+                : "Conteo de cierre digital"
+            }}
+          </p>
+        </div>
       </div>
 
-      <!-- Formulario de selección -->
-      <div class="space-y-3">
-        <!-- Estado inicial: sin selección -->
-        <template v-if="selectedBankOption === null">
-          <button
-            @click="selectBankOption('expected')"
-            :disabled="isDisabled"
-            class="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 text-lg font-semibold py-3 px-4 rounded-lg border border-purple-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      <!-- Información contextual colapsable -->
+      <div
+        v-if="!isOpeningMode && openingData"
+        class="mb-4 bg-purple-50 border border-purple-200 rounded-lg p-3"
+      >
+        <button
+          @click="showBreakdown = !showBreakdown"
+          class="w-full flex items-center justify-between text-left"
+        >
+          <span class="text-xs font-medium text-purple-800">
+            Ver desglose del cálculo
+          </span>
+          <component
+            :is="showBreakdown ? 'svg' : 'svg'"
+            class="w-4 h-4 text-purple-600 transition-transform"
+            :class="{ 'rotate-180': showBreakdown }"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            ✓ Correcto: S/ {{ expectedBankBalance.toFixed(2) }}
-          </button>
-
-          <div class="space-y-2">
-            <label
-              for="real-bank-input"
-              class="block text-sm font-medium text-gray-700"
-            >
-              Tengo una cantidad diferente:
-            </label>
-            <input
-              id="real-bank-input"
-              type="number"
-              inputmode="decimal"
-              pattern="[0-9]*"
-              step="0.01"
-              :disabled="isDisabled"
-              v-model.number="realBankBalance"
-              @blur="onBlurBankInput"
-              class="w-full px-4 py-3 text-lg text-center border-2 border-purple-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 tabular-nums"
-              placeholder="0.00"
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
             />
-          </div>
-        </template>
+          </component>
+        </button>
 
-        <!-- Opción "expected" seleccionada -->
-        <template v-else-if="selectedBankOption === 'expected'">
-          <div class="relative">
-            <button
-              class="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 transition-colors"
-              @click="clearBankSelection"
-              :disabled="isDisabled"
-            >
-              <Xmark class="w-4 h-4" />
-            </button>
+        <Transition name="expand">
+          <div
+            v-if="showBreakdown"
+            class="mt-3 space-y-2 text-xs text-gray-700"
+          >
+            <div class="flex justify-between">
+              <span>Digital inicial:</span>
+              <span class="font-semibold tabular-nums">
+                S/ {{ (openingData.realBankBalance || 0).toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-green-700">
+              <span>+ Ventas digitales:</span>
+              <span class="font-semibold tabular-nums">
+                S/ {{ accountsBalanceStore.ingresosBank.toFixed(2) }}
+              </span>
+            </div>
+            <div class="flex justify-between text-red-700">
+              <span>- Gastos digitales:</span>
+              <span class="font-semibold tabular-nums">
+                S/ {{ accountsBalanceStore.egresosBank.toFixed(2) }}
+              </span>
+            </div>
             <div
-              class="bg-purple-200 text-purple-800 text-lg font-semibold py-3 px-4 rounded-lg border border-purple-300"
+              class="pt-2 border-t border-purple-300 flex justify-between font-bold"
             >
-              ✓ Correcto: S/ {{ expectedBankBalance.toFixed(2) }}
+              <span>Balance esperado:</span>
+              <span class="tabular-nums text-purple-700">
+                S/ {{ expectedBankBalance.toFixed(2) }}
+              </span>
             </div>
           </div>
-        </template>
+        </Transition>
+      </div>
 
-        <!-- Opción "custom" seleccionada -->
-        <template v-else-if="selectedBankOption === 'custom'">
-          <div class="relative space-y-2">
-            <button
-              class="absolute top-0 right-0 text-red-500 hover:text-red-700 p-1 rounded-md hover:bg-red-50 transition-colors z-10"
-              @click="clearBankSelection"
-              :disabled="isDisabled"
+      <!-- Información para modo apertura -->
+      <div
+        v-if="isOpeningMode"
+        class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-3"
+      >
+        <p class="text-xs text-blue-800">
+          <span class="font-semibold">Balance del cierre anterior:</span>
+          <span class="ml-1 tabular-nums"
+            >S/ {{ expectedBankBalance.toFixed(2) }}</span
+          >
+        </p>
+      </div>
+
+      <!-- Input principal -->
+      <div class="space-y-3">
+        <label for="bank-balance-input" class="block">
+          <span class="text-sm font-semibold text-gray-700 mb-2 block">
+            {{
+              isOpeningMode
+                ? "¿Cuánto tienes en Yape/Plin ahora?"
+                : "¿Cuánto digital cuentas?"
+            }}
+          </span>
+
+          <div class="relative">
+            <span
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-gray-400"
             >
-              <Xmark class="w-4 h-4" />
-            </button>
-            <label
-              for="real-bank-input-selected"
-              class="block text-sm font-medium text-gray-700"
-            >
-              {{
-                isOpeningMode
-                  ? "Cantidad personalizada:"
-                  : "Cantidad final real:"
-              }}
-            </label>
+              S/
+            </span>
             <input
-              id="real-bank-input-selected"
+              id="bank-balance-input"
+              ref="bankInput"
               type="number"
               inputmode="decimal"
-              pattern="[0-9]*"
               step="0.01"
               :disabled="isDisabled"
               v-model.number="realBankBalance"
-              @blur="onBlurBankInput"
-              class="w-full px-4 py-3 text-lg text-center border-2 border-purple-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:opacity-50 tabular-nums"
+              @input="handleInputChange"
+              @focus="handleFocus"
+              class="w-full pl-14 pr-4 py-4 text-3xl font-bold text-center border-2 rounded-xl shadow-sm transition-all duration-200 tabular-nums"
+              :class="inputClasses"
               placeholder="0.00"
             />
           </div>
-        </template>
+        </label>
 
-        <!-- Mostrar diferencia si existe -->
-        <div
-          v-if="bankDifference !== 0"
-          class="text-sm font-medium p-2 rounded-md"
-          :class="{
-            'text-red-700 bg-red-50 border border-red-200': bankDifference < 0,
-            'text-green-700 bg-green-50 border border-green-200':
-              bankDifference > 0,
-          }"
-        >
-          {{ bankDifference > 0 ? "Sobrante" : "Faltante" }}: S/
-          {{ Math.abs(bankDifference).toFixed(2) }}
+        <!-- Indicador de estado -->
+        <div class="flex items-center justify-center gap-2 min-h-[2rem]">
+          <Transition name="fade" mode="out-in">
+            <!-- Valor correcto - sin diferencia -->
+            <div
+              v-if="bankDifference === 0"
+              class="flex items-center gap-2 text-sm font-medium text-purple-600"
+            >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>Todo cuadra</span>
+            </div>
+
+            <!-- Hay diferencia -->
+            <div
+              v-else-if="hasUserInput && bankDifference !== 0"
+              class="flex items-center gap-2 text-sm font-medium"
+              :class="bankDifference > 0 ? 'text-green-700' : 'text-red-700'"
+            >
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <span>
+                {{ bankDifference > 0 ? "Sobrante" : "Faltante" }}: S/
+                {{ Math.abs(bankDifference).toFixed(2) }}
+              </span>
+            </div>
+          </Transition>
         </div>
       </div>
     </div>
@@ -162,8 +198,8 @@
 </template>
 
 <script setup>
-import { SmartphoneDevice, Xmark } from "@iconoir/vue";
-import { ref, computed, onMounted, nextTick, watch } from "vue";
+import { SmartphoneDevice } from "@iconoir/vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
@@ -176,8 +212,10 @@ const flowStore = useAccountsBalanceFlowStore();
 const isLoading = ref(true);
 const lastClosureData = ref(null);
 const openingData = ref(null);
-const selectedBankOption = ref(null);
 const realBankBalance = ref(0);
+const hasUserInput = ref(false);
+const showBreakdown = ref(false);
+const bankInput = ref(null);
 
 // Determinar el modo (opening o close)
 const isOpeningMode = computed(() => {
@@ -188,14 +226,12 @@ const isOpeningMode = computed(() => {
 
 // Verificar si está deshabilitado
 const isDisabled = computed(() => {
-  // En modo opening: deshabilitar si ya existe openingData
   if (isOpeningMode.value) {
     const hasOpening = transactionStore.transactionsInStore.value.some(
       (t) => t.type === "opening"
     );
     return hasOpening;
   }
-  // En modo close: deshabilitar si ya existe closureData
   return transactionStore.transactionsInStore.value.some(
     (t) => t.type === "closure"
   );
@@ -204,25 +240,47 @@ const isDisabled = computed(() => {
 // Balance esperado según el modo
 const expectedBankBalance = computed(() => {
   if (isOpeningMode.value) {
-    // Modo opening: usar el balance del último cierre
     return lastClosureData.value?.bankAmount || 0;
   } else {
-    // Modo close: usar el balance calculado del store
     return accountsBalanceStore.expectedFinalBank;
   }
 });
 
 // Diferencia calculada
 const bankDifference = computed(() => {
-  if (selectedBankOption.value === null) return 0;
-  const real =
-    selectedBankOption.value === "expected"
-      ? expectedBankBalance.value
-      : realBankBalance.value;
+  if (!hasUserInput.value) return 0;
   return accountsBalanceStore.calculateDifference(
-    real,
+    realBankBalance.value,
     expectedBankBalance.value
   );
+});
+
+// Clases dinámicas para el input
+const inputClasses = computed(() => {
+  if (isDisabled.value) {
+    return "border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed";
+  }
+
+  if (!hasUserInput.value) {
+    return "border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-200";
+  }
+
+  if (bankDifference.value === 0) {
+    return "border-purple-500 bg-purple-50 text-purple-700 ring-2 ring-purple-200";
+  }
+
+  if (bankDifference.value > 0) {
+    return "border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200";
+  }
+
+  return "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200";
+});
+
+// Determinar la opción seleccionada para compatibilidad con el flujo existente
+const selectedBankOption = computed(() => {
+  if (!hasUserInput.value) return null;
+  if (bankDifference.value === 0) return "expected";
+  return "custom";
 });
 
 // Observar cambios y actualizar el flowStore
@@ -239,29 +297,13 @@ watch(
 );
 
 // Manejadores
-const selectBankOption = (option) => {
-  if (isDisabled.value) return;
-  selectedBankOption.value = option;
-  if (option === "expected") {
-    realBankBalance.value = expectedBankBalance.value;
-  }
+const handleInputChange = () => {
+  hasUserInput.value = true;
 };
 
-const clearBankSelection = () => {
-  if (isDisabled.value) return;
-  selectedBankOption.value = null;
-  realBankBalance.value = 0;
-};
-
-const onBlurBankInput = (e) => {
-  if (isDisabled.value) return;
-  nextTick(() => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value)) {
-      selectedBankOption.value = "custom";
-      realBankBalance.value = value;
-    }
-  });
+const handleFocus = (e) => {
+  // Seleccionar todo el texto al hacer foco para facilitar la edición
+  e.target.select();
 };
 
 // Buscar el último cierre (solo para modo opening)
@@ -300,10 +342,8 @@ const findOpeningToday = () => {
 // Configurar el accountsBalanceStore
 const setupBalanceStore = () => {
   if (isOpeningMode.value) {
-    // En modo opening, no hay transacciones del día todavía
     accountsBalanceStore.setTransactions([]);
   } else {
-    // En modo close, configurar con transacciones del día
     if (openingData.value) {
       const openingTime = openingData.value.createdAt?.seconds || 0;
       const dayTransactions = transactionStore.transactionsInStore.value.filter(
@@ -327,15 +367,15 @@ onMounted(async () => {
     }
 
     if (isOpeningMode.value) {
-      // Modo opening: buscar último cierre
       await findLastClosure();
     } else {
-      // Modo close: buscar apertura del día
       findOpeningToday();
     }
 
-    // Configurar el store de balance
     setupBalanceStore();
+
+    // Establecer el valor esperado como valor inicial
+    realBankBalance.value = expectedBankBalance.value;
   } catch (error) {
     console.error("Error en inicialización de StepBankBalance:", error);
   } finally {
@@ -355,43 +395,82 @@ onMounted(async () => {
 .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
-/* Hover effects */
-@media (hover: hover) {
-  .hover\:bg-purple-200:hover {
-    background-color: rgb(221 214 254);
-  }
-
-  .hover\:bg-red-50:hover {
-    background-color: rgb(254 242 242);
-  }
-
-  .hover\:text-red-700:hover {
-    color: rgb(185 28 28);
-  }
+/* Animación de expansión para desglose y diferencias */
+.expand-enter-active,
+.expand-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-/* Focus states */
+.expand-enter-from,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  transform: translateY(-10px);
+}
+
+.expand-enter-to,
+.expand-leave-from {
+  opacity: 1;
+  max-height: 500px;
+  transform: translateY(0);
+}
+
+/* Animación fade para indicadores de estado */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Rotación para el icono de expansión */
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Estilos del input */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Focus states mejorados */
 input:focus {
-  transform: none;
-  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
+  outline: none;
 }
 
 input:focus:not(:disabled) {
-  border-color: rgb(147 51 234);
-  outline: none;
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.1);
 }
 
 /* Estados disabled */
 input:disabled {
-  background-color: rgb(249 250 251);
   cursor: not-allowed;
 }
 
 button:disabled {
-  transform: none !important;
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Mejora de accesibilidad */
@@ -401,28 +480,24 @@ input:focus-visible {
   outline-offset: 2px;
 }
 
-/* Estilos para badges de diferencia */
-.bg-red-50 {
-  background-color: rgb(254 242 242);
+/* Animación de spinner */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.bg-green-50 {
-  background-color: rgb(240 253 244);
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
-.border-red-200 {
-  border-color: rgb(254 202 202);
-}
-
-.border-green-200 {
-  border-color: rgb(187 247 208);
-}
-
-.text-red-700 {
-  color: rgb(185 28 28);
-}
-
-.text-green-700 {
-  color: rgb(21 128 61);
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  input[type="number"] {
+    font-size: 1.875rem; /* 30px */
+  }
 }
 </style>

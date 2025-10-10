@@ -33,23 +33,25 @@
       </div>
 
       <!-- Toggle section -->
-      <div
-        class="flex items-center justify-center gap-3 pt-2 border-t border-gray-100"
-      >
+      <div class="flex items-center justify-center gap-3 pt-2border-gray-100">
         <div
-          class="w-6 h-6 bg-blue-50 rounded-lg flex items-center justify-center"
+          class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"
         >
           <component
             :is="showResume ? EyeClosed : Eye"
             class="w-3 h-3 text-blue-600"
           />
         </div>
-        <div class="text-center">
-          <h3 class="text-sm font-medium text-gray-700">
-            {{
-              showResume ? "Ocultar información" : "Ver información financiera"
-            }}
+
+        <div>
+          <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+            Resumen día
           </h3>
+          <p class="text-xs sm:text-sm text-gray-500">
+            {{
+              showRecords ? "Ocultar información" : "Ver información financiera"
+            }}
+          </p>
         </div>
       </div>
     </div>
@@ -142,7 +144,7 @@
         <!-- Tarjeta de ajustes por arqueo (separada) -->
         <div
           class="bg-amber-50 border border-amber-200 rounded-lg p-4"
-          v-if="totalAjustesCierre !== 0"
+          v-if="totalAjustesCierre && totalAjustesCierre !== 0"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -180,7 +182,7 @@
               <p class="text-xs text-amber-600">Ajuste neto</p>
               <p class="text-lg font-bold text-amber-800">
                 {{ totalAjustesCierre >= 0 ? "+" : "" }}S/
-                {{ totalAjustesCierre.toFixed(2) }}
+                {{ (totalAjustesCierre || 0).toFixed(2) }}
               </p>
             </div>
           </div>

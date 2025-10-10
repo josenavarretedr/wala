@@ -25,10 +25,10 @@
       <button
         v-if="flow.isLastStep"
         @click="finalizarRegistro"
-        :disabled="!isNextButtonEnabled"
+        :disabled="!isNextButtonEnabled2"
         :class="[
           'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
-          flow.transactionLoading || !isNextButtonEnabled
+          flow.transactionLoading || !isNextButtonEnabled2
             ? 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 shadow-gray-400/15 cursor-not-allowed opacity-70'
             : 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-green-500/25 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/35 hover:scale-[1.02] active:scale-[0.98] opacity-100 cursor-pointer',
         ]"
@@ -42,10 +42,10 @@
       <button
         v-else
         @click="flow.nextStep"
-        :disabled="!isNextButtonEnabled"
+        :disabled="!isNextButtonEnabled2"
         :class="[
           'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
-          isNextButtonEnabled
+          isNextButtonEnabled2
             ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/25 hover:from-blue-700 hover:to-blue-800 hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
             : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 shadow-gray-400/15 cursor-not-allowed',
         ]"
@@ -58,7 +58,7 @@
 
       <!-- Tooltip de ayuda cuando el botón está deshabilitado -->
       <div
-        v-if="!isNextButtonEnabled && !flow.isLastStep"
+        v-if="!isNextButtonEnabled2 && !flow.isLastStep"
         class="absolute z-20 w-56 px-3 py-2 text-xs text-white bg-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
       >
         <div class="text-center">
@@ -140,6 +140,8 @@ const isNextButtonEnabled = computed(() => {
 
   return result;
 });
+
+const isNextButtonEnabled2 = true;
 
 // Función para obtener el mensaje de validación apropiado
 const getValidationMessage = () => {

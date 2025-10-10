@@ -43,6 +43,8 @@
               :record="record"
               class="transition-all duration-200 hover:shadow-md"
             />
+            <br />
+            <CardViewAllRecords />
           </template>
 
           <template v-else>
@@ -88,6 +90,7 @@ import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
 import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
+import CardViewAllRecords from "@/components/HistorialRecords/CardViewAllRecords.vue";
 
 // Estado del toggle
 const showRecords = ref(false);
@@ -115,7 +118,8 @@ const dataOrdenada = computed(() => {
   result.push(...middle);
   if (opening) result.push(opening);
 
-  return result;
+  const primerosCuatro = result.slice(0, 4);
+  return primerosCuatro;
 });
 
 /**

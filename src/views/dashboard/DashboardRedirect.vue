@@ -32,11 +32,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, transformVNodeArgs } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 // Imports de componentes
 import MicroApps from "@/components/Dashboard/MicroApps.vue";
@@ -51,6 +52,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore(); // ✅ NUEVO: Usar BusinessStore
+const transactionsStore = useTransactionStore();
 
 // ✅ ARQUITECTURA COHERENTE: Computed properties usando la nueva estructura
 
@@ -126,6 +128,8 @@ onMounted(async () => {
   if (!userStore.userBusinesses || userStore.userBusinesses.length === 0) {
     await userStore.loadUserBusinesses(authStore.user?.uid);
   }
+
+  // await transactionsStore.getTransactionsToday();
 
   loadDashboardData();
 });

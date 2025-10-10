@@ -16,6 +16,22 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
     ],
     accountBalanceLoading: false,
     accountBalanceError: null,
+    // Estado para almacenar los datos de cada paso
+    stepsData: {
+      // Datos del paso "Referencia anterior"
+      lastClosureData: null,
+      openingData: null,
+
+      // Datos del paso "Cash Balance"
+      selectedCashOption: null,
+      realCashBalance: 0,
+      expectedCashBalance: 0,
+
+      // Datos del paso "Bank Balance"
+      selectedBankOption: null,
+      realBankBalance: 0,
+      expectedBankBalance: 0,
+    }
   }),
   getters: {
     currentStepConfig(state) {
@@ -32,11 +48,6 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
       }
       // Para ser el último paso, debe cumplir las condiciones normales
       return state.currentStep === state.steps.length - 1 && state.steps.length > 1;
-    },
-    // Getter para acceder a los stepsData desde el accountsBalanceStore
-    stepsData() {
-      const accountsBalanceStore = useAccountsBalanceStore();
-      return accountsBalanceStore.stepsData;
     }
   },
   actions: {
@@ -69,14 +80,27 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
         { label: 'Cash Balance', component: StepCashBalance },
         { label: 'Bank Balance', component: StepBankBalance },
       ];
-      // Resetear los datos en el accountsBalanceStore
-      const accountsBalanceStore = useAccountsBalanceStore();
-      accountsBalanceStore.resetStepsData();
+      // Resetear los datos de los pasos
+      this.resetStepsData();
     },
-    // Actualizar datos de un step específico (delega al accountsBalanceStore)
+    // Resetear los datos de los pasos
+    resetStepsData() {
+      this.stepsData = {
+        lastClosureData: null,
+        openingData: null,
+        selectedCashOption: null,
+        realCashBalance: 0,
+        expectedCashBalance: 0,
+        selectedBankOption: null,
+        realBankBalance: 0,
+        expectedBankBalance: 0,
+      };
+    },
+    // Actualizar datos de un step específico
     updateStepData(stepLabel, data) {
-      const accountsBalanceStore = useAccountsBalanceStore();
-      accountsBalanceStore.updateStepData(stepLabel, data);
+      // Actualizar los datos del paso correspondiente
+      Object.assign(this.stepsData, data);
+      console.log(`📝 Datos del paso "${stepLabel}" actualizados:`, this.stepsData);
     },
     // defineDynamicSteps(accountType) {
     //   // Limpia pasos previos dinámicos
