@@ -118,7 +118,7 @@ const dataOrdenada = computed(() => {
   result.push(...middle);
   if (opening) result.push(opening);
 
-  const primerosCuatro = result.slice(0, 4);
+  const primerosCuatro = result.slice(0, 3);
   return primerosCuatro;
 });
 

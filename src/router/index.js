@@ -152,6 +152,12 @@ const routes = [
         component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
         meta: { permission: 'verReportes', title: 'Detalle de Registro' }
       },
+      {
+        path: 'records/all',
+        name: 'AllRecords',
+        component: () => import('@/views/basicAccountingRecords/AllRecordsWrapper.vue'),
+        meta: { permission: 'verReportes', title: 'Todos los Registros' }
+      },
 
       {
         path: 'accounts-balance',

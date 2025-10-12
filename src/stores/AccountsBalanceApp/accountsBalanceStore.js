@@ -341,7 +341,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    */
   const saldoActualCash = computed(() => {
     return saldoInicialCash.value + ingresosCash.value - egresosCash.value +
-      efectoTransferenciasEnCash.value + ajustesAperturaCash.value + ajustesCierreCash.value;
+      efectoTransferenciasEnCash.value + ajustesCierreCash.value;
   });
 
   /**
@@ -349,7 +349,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    */
   const saldoActualBank = computed(() => {
     return saldoInicialBank.value + ingresosBank.value - egresosBank.value +
-      efectoTransferenciasEnBank.value + ajustesAperturaBank.value + ajustesCierreBank.value;
+      efectoTransferenciasEnBank.value + ajustesCierreBank.value;
   });
 
   /**

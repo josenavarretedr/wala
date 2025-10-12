@@ -1,6 +1,12 @@
 <template>
   <router-link
     class="block bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-gray-200 hover:bg-gray-50 cursor-pointer"
+    :to="{
+      name: 'AllRecords',
+      params: {
+        businessId: currentBusinessId.value,
+      },
+    }"
   >
     <div class="border-gray-100">
       <div class="flex items-center gap-1 text-sm text-blue-500">
@@ -24,7 +30,14 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { ArrowRight } from "@iconoir/vue";
+
+import { ensureBusinessId } from "@/composables/useBusinessUtils";
+// Business ID para la redirección
+const currentBusinessId = computed(() => {
+  return ensureBusinessId();
+});
 
 // Icono de historial usando SVG inline
 const HistoryIcon = {
