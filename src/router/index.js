@@ -2,6 +2,7 @@ import { createWebHistory, createRouter } from "vue-router"
 import { useAuthStore } from "@/stores/authStore"
 import { useUserStore } from "@/stores/useUserStore"
 import { useBusinessStore } from "@/stores/businessStore"
+import { useAppLoader } from "@/composables/useAppLoader"
 
 // Layouts
 import DefaultLayout from "@/layouts/DefaultLayout.vue"
@@ -249,9 +250,23 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const userStore = useUserStore()
   const businessStore = useBusinessStore()
+  const loader = useAppLoader()
 
   console.log('🔄 Navegando a:', to.path)
   console.log('🔑 Usuario actual:', authStore.user?.email || 'No autenticado')
+
+  // 🔄 Si es la primera navegación (from.name === undefined) y va a una ruta de negocio
+  const isInitialNavigation = !from.name
+  const isBusinessRoute = to.params.businessId && to.meta.requiresAuth
+
+  console.log('📊 isInitialNavigation:', isInitialNavigation)
+  console.log('📊 isBusinessRoute:', isBusinessRoute)
+
+  // Mostrar loader en la primera carga si va a cargar un negocio
+  if (isInitialNavigation && isBusinessRoute) {
+    console.log('📍 Router: Mostrando loader (navegación inicial a negocio)')
+    loader.show()
+  }
 
   // ✅ CRÍTICO: Inicializar autenticación antes de aplicar guards
   if (!authStore.user) {
@@ -261,6 +276,7 @@ router.beforeEach(async (to, from, next) => {
   // Rutas que requieren autenticación
   if (to.meta.requiresAuth && !authStore.user) {
     console.log('❌ Acceso denegado - Se requiere autenticación')
+    loader.hide() // Ocultar loader si hay error
     return next('/auth/login')
   }
 
@@ -303,16 +319,45 @@ router.beforeEach(async (to, from, next) => {
 
     // ✅ ARQUITECTURA COHERENTE: UserStore gestiona currentBusiness, BusinessStore carga datos completos
 
+    // SIEMPRE mostrar loader si vamos a cargar datos del negocio
+    const needsToLoadBusiness = businessStore.business?.id !== businessId
+    const needsToSetBusiness = userStore.currentBusiness?.businessId !== businessId
+
+    console.log('🔍 needsToLoadBusiness:', needsToLoadBusiness, '(businessStore.business?.id:', businessStore.business?.id, 'vs', businessId, ')')
+    console.log('🔍 needsToSetBusiness:', needsToSetBusiness, '(userStore.currentBusiness?.businessId:', userStore.currentBusiness?.businessId, 'vs', businessId, ')')
+
+    if (needsToLoadBusiness || needsToSetBusiness) {
+      if (!loader.isVisible.value) {
+        console.log('📍 Router: Mostrando loader (va a cargar negocio)')
+        loader.show()
+      } else {
+        console.log('⚠️ Loader ya está visible, no se muestra de nuevo')
+      }
+    } else {
+      console.log('ℹ️ No necesita cargar nada, negocio ya está listo')
+    }
+
     // Establecer el negocio activo en UserStore si no lo está
-    if (userStore.currentBusiness?.businessId !== businessId) {
+    if (needsToSetBusiness) {
       console.log('🔄 Estableciendo negocio activo en UserStore:', businessId)
       await userStore.setCurrentBusiness(businessId)
+      console.log('✅ Negocio activo establecido')
     }
 
     // Cargar datos completos del negocio en BusinessStore si no está cargado
-    if (businessStore.business?.id !== businessId) {
+    if (needsToLoadBusiness) {
       console.log('🔄 Cargando datos completos del negocio en BusinessStore:', businessId)
+
       await businessStore.loadBusiness(businessId, userBusiness)
+      console.log('✅ Datos del negocio cargados')
+
+      // Ocultar loader con animación (garantiza tiempo mínimo)
+      console.log('📍 Router: Llamando hide()')
+      loader.hide()
+    } else if (loader.isVisible.value) {
+      // Si el negocio ya estaba cargado pero el loader está visible, ocultarlo
+      console.log('📍 Router: Negocio ya cargado, ocultando loader')
+      loader.hide()
     }
 
     // Verificar permisos específicos usando BusinessStore

@@ -22,7 +22,8 @@ const initApp = async () => {
   console.log('🚀 Inicializando Walla...');
 
   try {
-    // Intentar restaurar sesión (ahora incluye validación con Firebase)
+    // Restaurar la sesión silenciosamente (sin loader)
+    // El loader se mostrará cuando el router cargue el negocio
     const sessionRestored = await authStore.restoreSession();
 
     if (sessionRestored) {
@@ -30,6 +31,7 @@ const initApp = async () => {
     } else {
       console.log('ℹ️ No hay sesión válida previa');
     }
+
   } catch (error) {
     console.error('❌ Error al inicializar:', error);
   } finally {
@@ -40,3 +42,4 @@ const initApp = async () => {
 };
 
 initApp();
+
