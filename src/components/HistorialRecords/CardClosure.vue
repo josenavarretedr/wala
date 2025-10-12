@@ -28,8 +28,8 @@
         <!-- Botón de detalles -->
         <router-link
           :to="{
-            name: 'CashClosureDetails',
-            params: { cashClosureId: record.eventUuid || record.uuid },
+            name: 'DetailsRecords',
+            params: { registerId: record.uuid },
           }"
           class="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-md transition-colors duration-200"
           title="Ver detalles"

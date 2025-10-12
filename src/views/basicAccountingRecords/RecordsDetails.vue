@@ -57,18 +57,33 @@ import { useFlowClose } from "@/composables/useCloseBtn";
 import IncomeDetails from "@/components/HistorialRecords/Details/IncomeDetails.vue";
 import ExpenseDetails from "@/components/HistorialRecords/Details/ExpenseDetails.vue";
 import TransferDetails from "@/components/HistorialRecords/Details/TransferDetails.vue";
+import AccountsBalanceDetails from "@/components/HistorialRecords/Details/AccountsBalanceDetails.vue";
 
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 
 import { useCashEventStore } from "@/stores/cashEventStore";
 
 const cashEventStore = useCashEventStore();
-const dayClosure = cashEventStore.hasClosureForToday;
 
-const isDisabled = computed(() => dayClosure.value);
+const hasClosureToday = computed(() => {
+  return transactionStore.hasClosureToday();
+});
+
+const isDisabled = computed(() => {
+  // Deshabilitar si es apertura o cierre
+  if (transactionData.value) {
+    if (transactionData.value.type === "opening") {
+      return true;
+    }
+    if (transactionData.value.type === "closure") {
+      return false;
+    }
+  }
+  // Deshabilitar si ya hay cierre hoy (para otros tipos de transacción)
+  return hasClosureToday.value;
+});
 
 const route = useRoute();
-const router = useRouter();
 const { navigateToDashboard } = useFlowClose();
 
 const transactionStore = useTransactionStore();
@@ -80,6 +95,8 @@ const componentMap = {
   income: IncomeDetails,
   expense: ExpenseDetails,
   transfer: TransferDetails,
+  opening: AccountsBalanceDetails,
+  closure: AccountsBalanceDetails,
 };
 
 // Configuración del botón cerrar
@@ -102,6 +119,9 @@ onMounted(async () => {
         transactionData.value.type &&
         componentMap[transactionData.value.type]
       ) {
+        console.log(
+          `Cargando componente para tipo: ${transactionData.value.type}`
+        );
         dynamicComponent.value = componentMap[transactionData.value.type];
       } else {
         console.warn(

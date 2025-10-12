@@ -497,6 +497,26 @@ export function useTransactionStore() {
 
   const hasCajaDiaria = computed(() => getSteps()[0] === "CajaDiaria");
 
+  // Función helper para verificar si una transacción es de hoy
+  const isTransactionFromToday = (transaction) => {
+    if (!transaction.createdAt) return false;
+
+    const today = new Date();
+    const transactionDate = transaction.createdAt.toDate ? transaction.createdAt.toDate() : new Date(transaction.createdAt);
+
+    return (
+      transactionDate.getDate() === today.getDate() &&
+      transactionDate.getMonth() === today.getMonth() &&
+      transactionDate.getFullYear() === today.getFullYear()
+    );
+  };
+
+  // Función para verificar si hay un cierre hoy
+  const hasClosureToday = () => {
+    return transactionsInStore.value.some(
+      (transaction) => transaction.type === "closure" && isTransactionFromToday(transaction)
+    );
+  };
 
   return {
     transactionsInStore,
@@ -535,6 +555,8 @@ export function useTransactionStore() {
     removeItemToTransaction,
     getSteps,
     totalSteps,
-    hasCajaDiaria
+    hasCajaDiaria,
+    hasClosureToday,
+    isTransactionFromToday
   };
 }

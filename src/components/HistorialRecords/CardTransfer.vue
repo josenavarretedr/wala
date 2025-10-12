@@ -1,35 +1,34 @@
 <template>
   <div
-    class="bg-white rounded-xl shadow-sm border border-gray-100 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-gray-200"
+    class="bg-white rounded-xl shadow-sm border border-purple-200 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-purple-300"
   >
     <!-- Header con información principal -->
     <div class="flex items-center justify-between gap-3 mb-3">
-      <!-- Lado izquierdo: Badge de transferencia -->
+      <!-- Lado izquierdo: Badges -->
       <div class="flex items-center gap-2 flex-1 min-w-0">
-        <!-- Badge de tipo de transacción -->
+        <!-- Badge de transferencia -->
         <div
-          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-indigo-50 text-indigo-700 border border-indigo-200"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-purple-50 text-purple-700 border border-purple-200"
         >
           <Repeat class="w-3 h-3" />
           <span class="hidden sm:inline">Transferencia</span>
         </div>
 
-        <!-- Badge de flujo de cuentas -->
+        <!-- Flujo de cuentas -->
         <div
-          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-blue-50 text-blue-700 border border-blue-200"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-gray-50 text-gray-700 border border-gray-200"
         >
           <component :is="getFromAccountIcon" class="w-3 h-3" />
-          <ArrowRight class="w-2 h-2" />
+          <ArrowRight class="w-3 h-3 text-purple-500" />
           <component :is="getToAccountIcon" class="w-3 h-3" />
-          <span class="hidden sm:inline">{{ getAccountsLabel }}</span>
         </div>
       </div>
 
-      <!-- Lado derecho: Monto -->
+      <!-- Lado derecho: Monto y botón -->
       <div class="flex items-center gap-2 shrink-0">
         <!-- Monto -->
         <div
-          class="text-base sm:text-lg font-bold tabular-nums text-indigo-600"
+          class="text-base sm:text-lg font-bold tabular-nums text-purple-600"
         >
           S/ {{ formatAmount(record.amount) }}
         </div>

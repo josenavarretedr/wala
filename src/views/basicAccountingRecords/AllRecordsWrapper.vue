@@ -13,6 +13,7 @@
             Historial completo de transacciones
           </p>
         </div>
+        <CloseBtn v-bind="closeBtnConfig" />
       </div>
 
       <!-- Filtro de período -->
@@ -97,6 +98,8 @@ import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
 import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
+import CloseBtn from "@/components/ui/CloseBtn.vue";
+import { ensureBusinessId } from "@/composables/useBusinessUtils";
 
 const transactionStore = useTransactionStore();
 const selectedFilter = ref("all");

@@ -43,8 +43,8 @@
               :record="record"
               class="transition-all duration-200 hover:shadow-md"
             />
+            <CardViewAllRecords v-if="dataOrdenada.length >= 10" />
             <br />
-            <CardViewAllRecords />
           </template>
 
           <template v-else>
@@ -118,7 +118,7 @@ const dataOrdenada = computed(() => {
   result.push(...middle);
   if (opening) result.push(opening);
 
-  const primerosCuatro = result.slice(0, 3);
+  const primerosCuatro = result.slice(0, 10);
   return primerosCuatro;
 });
 
