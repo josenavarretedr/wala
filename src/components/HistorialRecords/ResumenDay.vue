@@ -218,15 +218,9 @@ const opening = computed(() => accountsBalanceStore.openingTransaction);
 const saldoInicial = computed(() => accountsBalanceStore.saldoInicial);
 const totalIngresos = computed(() => accountsBalanceStore.totalIngresos);
 const totalEgresos = computed(() => accountsBalanceStore.totalEgresos);
-const ingresosCash = computed(() => accountsBalanceStore.ingresosCash);
-const ingresosBank = computed(() => accountsBalanceStore.ingresosBank);
-const egresosCash = computed(() => accountsBalanceStore.egresosCash);
-const egresosBank = computed(() => accountsBalanceStore.egresosBank);
-const ajustesCash = computed(() => accountsBalanceStore.ajustesCierreCash);
-const ajustesBank = computed(() => accountsBalanceStore.ajustesCierreBank);
-const totalAjustesCierre = computed(
-  () => accountsBalanceStore.totalAjustesCierre
-);
+const totalAjustesCierre = computed(() => {
+  return accountsBalanceStore.totalAjustesCierre;
+});
 const resultadoOperacional = computed(
   () => accountsBalanceStore.resultadoOperacional
 );

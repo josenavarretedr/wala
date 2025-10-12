@@ -36,109 +36,109 @@
         >Producto Seleccionado</label
       >
       <div class="relative">
-        <!-- Badge de estado -->
-        <div
-          v-if="transactionStore.itemToAddInTransaction.value.oldOrNewProduct"
-          class="absolute -top-2 -right-2 px-2 py-1 rounded-lg text-xs font-medium shadow-sm z-10"
-          :class="{
-            'bg-blue-50 text-blue-700 border border-blue-200':
+        <!-- Badge de estado con transición -->
+        <Transition name="badge">
+          <div
+            v-if="transactionStore.itemToAddInTransaction.value.oldOrNewProduct"
+            class="absolute -top-2 -right-2 px-2 py-1 rounded-lg text-xs font-medium shadow-sm z-10"
+            :class="{
+              'bg-blue-50 text-blue-700 border border-blue-200':
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct === 'old',
+              'bg-green-50 text-green-700 border border-green-200':
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct === 'new',
+            }"
+          >
+            {{
               transactionStore.itemToAddInTransaction.value.oldOrNewProduct ===
-              'old',
-            'bg-green-50 text-green-700 border border-green-200':
-              transactionStore.itemToAddInTransaction.value.oldOrNewProduct ===
-              'new',
-          }"
-        >
-          {{
-            transactionStore.itemToAddInTransaction.value.oldOrNewProduct ===
-            "old"
-              ? "Existente"
-              : "Nuevo"
-          }}
-        </div>
+              "old"
+                ? "Existente"
+                : "Nuevo"
+            }}
+          </div>
+        </Transition>
 
         <input
           v-model="transactionStore.itemToAddInTransaction.value.description"
           type="text"
           disabled
           placeholder="Selecciona un producto arriba"
-          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500"
+          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 transition-all duration-200"
         />
 
-        <button
-          v-if="transactionStore.itemToAddInTransaction.value.description"
-          @click="transactionStore.resetItemToAddInTransaction()"
-          class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-        >
-          <Xmark class="w-4 h-4" />
-        </button>
+        <Transition name="fade-scale">
+          <button
+            v-if="transactionStore.itemToAddInTransaction.value.description"
+            @click="transactionStore.resetItemToAddInTransaction()"
+            class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+          >
+            <Xmark class="w-4 h-4" />
+          </button>
+        </Transition>
       </div>
     </div>
+    <Transition name="slide-fade">
+      <div v-if="transactionStore.itemToAddInTransaction.value.description">
+        <!-- Cantidad, Unidad y Precio - Layout optimizado -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Cantidad -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Cantidad</label>
+            <div class="relative">
+              <input
+                v-model="transactionStore.itemToAddInTransaction.value.quantity"
+                type="number"
+                placeholder="0"
+                min="0"
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-blue-500 focus:outline-none transition-colors"
+              />
+              <div
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"
+              ></div>
+            </div>
+          </div>
 
-    <!-- Cantidad, Unidad y Precio - Layout optimizado -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <!-- Cantidad -->
-      <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700">Cantidad</label>
-        <div class="relative">
-          <input
-            v-model="transactionStore.itemToAddInTransaction.value.quantity"
-            type="number"
-            placeholder="0"
-            min="0"
-            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-blue-500 focus:outline-none transition-colors"
-          />
-          <div
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"
-          ></div>
+          <!-- Unidad -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Unidad</label>
+            <select
+              v-model="transactionStore.itemToAddInTransaction.value.unit"
+              :disabled="
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct === 'old'
+              "
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50 disabled:bg-gray-50"
+            >
+              <option value="uni">Unidad</option>
+              <option value="kg">Kilogramo</option>
+              <option value="g">Gramo</option>
+              <option value="lt">Litro</option>
+              <option value="ml">Mililitro</option>
+              <option value="m">Metro</option>
+              <option value="cm">Porción</option>
+            </select>
+          </div>
+
+          <!-- Precio -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
+            <div class="relative">
+              <input
+                v-model="transactionStore.itemToAddInTransaction.value.price"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
+              />
+              <div
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
+              ></div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Unidad -->
-      <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700">Unidad</label>
-        <select
-          v-model="transactionStore.itemToAddInTransaction.value.unit"
-          :disabled="
-            transactionStore.itemToAddInTransaction.value.oldOrNewProduct ===
-            'old'
-          "
-          class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50 disabled:bg-gray-50"
-        >
-          <option value="uni">Unidad</option>
-          <option value="docena">Docena</option>
-          <option value="kg">Kilogramo</option>
-          <option value="g">Gramo</option>
-          <option value="lt">Litro</option>
-          <option value="ml">Mililitro</option>
-          <option value="m">Metro</option>
-          <option value="cm">Centímetro</option>
-          <option value="pza">Pieza</option>
-          <option value="caja">Caja</option>
-          <option value="pack">Pack</option>
-          <option value="rollo">Rollo</option>
-          <option value="botella">Botella</option>
-          <option value="bolsa">Bolsa</option>
-        </select>
-      </div>
-
-      <!-- Precio -->
-      <div class="space-y-2">
-        <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
-        <div class="relative">
-          <input
-            v-model="transactionStore.itemToAddInTransaction.value.price"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
-          />
-          <div
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
-          ></div>
-        </div>
-      </div>
-    </div>
+    </Transition>
 
     <!-- Botón Agregar -->
     <button
@@ -159,80 +159,92 @@
     <div class="space-y-4">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-800">Productos Agregados</h3>
-        <div
-          v-if="transactionStore.transactionToAdd.value.items.length > 0"
-          class="text-sm text-gray-500"
-        >
-          {{ transactionStore.transactionToAdd.value.items.length }} producto{{
-            transactionStore.transactionToAdd.value.items.length !== 1
-              ? "s"
-              : ""
-          }}
-        </div>
-      </div>
-
-      <!-- Lista de items -->
-      <div
-        v-if="transactionStore.transactionToAdd.value.items.length > 0"
-        class="space-y-3"
-      >
-        <div
-          v-for="item in transactionStore.transactionToAdd.value.items"
-          :key="item.uuid"
-          class="bg-gray-50 rounded-xl p-4 flex items-center gap-3"
-        >
-          <div class="flex-1 min-w-0">
-            <div class="font-semibold text-gray-900 truncate mb-1">
-              {{ item.description }}
-            </div>
-            <div class="text-sm text-gray-600">
-              {{ item.quantity }} {{ item.unit || "uni" }} × S/ {{ item.price }}
-            </div>
-          </div>
-
-          <div class="text-right">
-            <div class="text-lg font-bold text-blue-600">
-              S/ {{ (item.quantity * item.price).toFixed(2) }}
-            </div>
-          </div>
-
-          <button
-            @click="transactionStore.removeItemToTransaction(item.uuid)"
-            class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+        <Transition name="fade-scale">
+          <div
+            v-if="transactionStore.transactionToAdd.value.items.length > 0"
+            class="text-sm text-gray-500"
           >
-            <Xmark class="w-4 h-4" />
-          </button>
-        </div>
-
-        <!-- Total -->
-        <div class="bg-blue-50 rounded-xl p-4 border border-blue-200">
-          <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-800">Total</span>
-            <span class="text-xl font-bold text-blue-600">
-              S/
-              {{
-                transactionStore.transactionToAdd.value.items
-                  .reduce(
-                    (total, item) => total + item.quantity * item.price,
-                    0
-                  )
-                  .toFixed(2)
-              }}
-            </span>
+            {{ transactionStore.transactionToAdd.value.items.length }}
+            producto{{
+              transactionStore.transactionToAdd.value.items.length !== 1
+                ? "s"
+                : ""
+            }}
           </div>
-        </div>
+        </Transition>
       </div>
 
-      <!-- Estado vacío -->
-      <div v-else class="text-center py-8">
-        <div
-          class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4"
+      <!-- Lista de items con TransitionGroup -->
+      <TransitionGroup name="list" tag="div" class="space-y-3">
+        <template
+          v-if="transactionStore.transactionToAdd.value.items.length > 0"
         >
-          <KeyframePlus class="w-6 h-6 text-gray-400" />
+          <div
+            v-for="item in transactionStore.transactionToAdd.value.items"
+            :key="item.uuid"
+            class="bg-gray-50 rounded-xl p-4 flex items-center gap-3"
+          >
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-gray-900 truncate mb-1">
+                {{ item.description }}
+              </div>
+              <div class="text-sm text-gray-600">
+                {{ item.quantity }} {{ item.unit || "uni" }} × S/
+                {{ item.price }}
+              </div>
+            </div>
+
+            <div class="text-right">
+              <div class="text-lg font-bold text-blue-600">
+                S/ {{ (item.quantity * item.price).toFixed(2) }}
+              </div>
+            </div>
+
+            <button
+              @click="transactionStore.removeItemToTransaction(item.uuid)"
+              class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Xmark class="w-4 h-4" />
+            </button>
+          </div>
+
+          <!-- Total con key único -->
+          <div
+            key="total"
+            class="bg-blue-50 rounded-xl p-4 border border-blue-200"
+          >
+            <div class="flex justify-between items-center">
+              <span class="font-semibold text-gray-800">Total</span>
+              <span class="text-xl font-bold text-blue-600">
+                S/
+                {{
+                  transactionStore.transactionToAdd.value.items
+                    .reduce(
+                      (total, item) => total + item.quantity * item.price,
+                      0
+                    )
+                    .toFixed(2)
+                }}
+              </span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Estado vacío con key único -->
+        <div v-else key="empty-state" class="text-center py-8">
+          <div
+            class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4"
+          >
+            <KeyframePlus class="w-6 h-6 text-gray-400" />
+          </div>
+          <h3 class="font-semibold text-gray-600 mb-1">
+            No hay productos agregados
+          </h3>
+          <p class="text-sm text-gray-500">
+            Empieza buscando un producto arriba.
+          </p>
         </div>
-        <h3 class="font-semibold text-gray-600 mb-1">No hay productos</h3>
-        <p class="text-sm text-gray-500">Los productos aparecerán aquí</p>
-      </div>
+      </TransitionGroup>
     </div>
   </div>
 </template>
@@ -264,5 +276,141 @@ const transactionStore = useTransactionStore();
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* ===== TRANSICIONES SUTILES ===== */
+
+/* Transición Badge (aparece/desaparece con escala) */
+.badge-enter-active,
+.badge-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.badge-enter-from {
+  opacity: 0;
+  transform: scale(0.8) translateY(4px);
+}
+
+.badge-leave-to {
+  opacity: 0;
+  transform: scale(0.8) translateY(-4px);
+}
+
+/* Transición Fade + Scale (botón X, contador) */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.2s ease;
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.85);
+}
+
+/* Transición Slide + Fade (sección de cantidad/precio) */
+.slide-fade-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-12px);
+}
+
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+/* TransitionGroup para lista de productos */
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateX(-20px) scale(0.95);
+}
+
+.list-leave-to {
+  opacity: 0;
+  transform: translateX(20px) scale(0.95);
+}
+
+/* Asegurar que los elementos que salen no afecten el layout */
+.list-leave-active {
+  position: absolute;
+  width: 100%;
+}
+
+/* Animación suave para el total cuando cambia */
+.text-xl {
+  transition: all 0.2s ease;
+}
+
+/* Hover effects mejorados */
+button:not(:disabled) {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+/* Focus states mejorados */
+input:focus,
+select:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Animación sutil de los indicadores de color */
+.bg-blue-500,
+.bg-green-500 {
+  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Transición suave para inputs disabled */
+input:disabled,
+select:disabled {
+  transition: all 0.3s ease;
+}
+
+/* Mejora visual al agregar producto (feedback) */
+@keyframes success-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Aplicar animación al agregar (opcional, requiere clase dinámica) */
+.item-added {
+  animation: success-pulse 0.6s ease-out;
 }
 </style>

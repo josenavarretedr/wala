@@ -283,7 +283,20 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Total de ajustes de cierre solamente
    */
   const totalAjustesCierre = computed(() => {
-    return ajustesCierreCash.value + ajustesCierreBank.value;
+    console.log("=== CALCULO TOTAL AJUSTES CIERRE EN STORE ===");
+    console.log("Transacciones en store:", transactions.value.length);
+
+    // Debug: Filtrar transacciones con ajustes de cierre
+    const ajustesCierreTx = transactions.value.filter(tx =>
+      tx.subcategory === 'closure_adjustment'
+    );
+    console.log("Transacciones con closure_adjustment:", ajustesCierreTx);
+
+    console.log("Ajustes cierre Cash:", ajustesCierreCash.value);
+    console.log("Ajustes cierre Bank:", ajustesCierreBank.value);
+    const total = ajustesCierreCash.value + ajustesCierreBank.value;
+    console.log("Total calculado:", total);
+    return total;
   });
 
   // ===== SALDOS INICIALES =====

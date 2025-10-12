@@ -11,135 +11,74 @@ import "@algolia/autocomplete-theme-classic";
 
 const emit = defineEmits(["update:productToAdd"]);
 
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 const inventoryStore = useInventoryStore();
 const transactionStore = useTransactionStore();
 
-// Función para obtener productos desde Firestore
+// ===== TAREA 1: PREINDEXAR INVENTARIO =====
+const index = ref([]);
+
+function normalize(s = "") {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+}
+
+function buildIndex(items) {
+  index.value = items.map((p) => ({
+    productId: p.uuid,
+    productDescription: p.description,
+    productDescription_lc: normalize(p.description || ""),
+    productPrice: p.price,
+    productUnit: p.unit || "uni",
+  }));
+}
+
+// Cargar inventario y construir índice inicial
 await inventoryStore.getItemsInInventory();
+buildIndex(inventoryStore.allItemsInInventory.value);
 
-// Función para obtener datos formateados para Algolia
-// Función helper para obtener la unidad del producto
-function getProductUnit(productId) {
-  const product = inventoryStore.allItemsInInventory.value.find(
-    (p) => p.uuid === productId
-  );
-  return product?.unit || "uni";
-}
+// Reconstruir índice cuando cambie el inventario
+watch(
+  () => inventoryStore.allItemsInInventory.value,
+  (val) => buildIndex(val),
+  { deep: true }
+);
 
+// Función legacy mantenida por compatibilidad (ahora solo retorna el índice)
 function getDataForAlgolia() {
-  if (inventoryStore.allItemsInInventory.value.length === 0) {
-    return [];
-  }
-
-  let dataForAlgolia = inventoryStore.allItemsInInventory.value.map(
-    (product) => {
-      return {
-        productId: product.uuid,
-        productDescription: product.description,
-        productPrice: product.price,
-        productUnit: product.unit || "uni",
-      };
-    }
-  );
-
-  return dataForAlgolia;
+  return index.value;
 }
 
-onMounted(() => {
-  // Inicializar el componente de autocompletado de Algolia
-  autocomplete({
-    container: "#autocomplete",
-    placeholder: "Buscar producto...",
-    getSources({ query }) {
-      return [
-        {
-          sourceId: "products",
-          getItems() {
-            // Filtrar productos por descripción
-            let dataFiltered = getDataForAlgolia().filter(
-              ({ productDescription }) =>
-                productDescription.toLowerCase().includes(query.toLowerCase())
-            );
+// ===== TAREA 3: DEBOUNCE DEL FILTRADO =====
+let _debounceTimer;
+function getItemsDebounced(query) {
+  const q = normalize(query || "");
 
-            return dataFiltered.length > 0
-              ? dataFiltered.slice(0, 5)
-              : [
-                  {
-                    productDescription: `Registrar nuevo producto: ${query}`,
-                    isNewProduct: true,
-                  },
-                ];
-          },
-          templates: {
-            item({ item, html }) {
-              if (item.isNewProduct) {
-                // Plantilla para nuevo producto
-                return html`
-                  <div
-                    class="py-3 px-4 flex items-center border-b border-gray-100 hover:bg-blue-50 transition-all duration-150 cursor-pointer active:bg-blue-100"
-                    id="new-product"
-                    class="resultsDiv"
-                  >
-                    <div class="flex flex-col">
-                      <span
-                        class="font-medium text-gray-900 text-base leading-tight"
-                        >${item.productDescription}</span
-                      >
-                    </div>
-                  </div>
-                `;
-              } else {
-                // Plantilla para producto existente
-                return html`
-                  <div
-                    class="py-3 px-4 flex items-center justify-between border-b border-gray-100 hover:bg-gray-50 transition-all duration-150 cursor-pointer active:bg-gray-100"
-                    id="${item.productId}"
-                    class="resultsDiv"
-                  >
-                    <div class="flex items-center justify-between w-full">
-                      <div class="min-w-0 flex-1">
-                        <span
-                          class="font-medium text-gray-900 text-base leading-tight truncate"
-                          >${item.productDescription}
-                        </span>
-                        <span class="text-sm text-gray-600 font-medium">
-                          •
-                        </span>
-                        <span class="text-sm text-gray-600 font-medium">
-                          ${item.productUnit || "uni"}</span
-                        >
-                      </div>
-                      <div class="ml-3 text-right flex-shrink-0">
-                        <span class="text-base font-semibold text-gray-700"
-                          >S/ ${item.productPrice?.toFixed(2) || "0.00"}</span
-                        >
-                      </div>
-                    </div>
-                  </div>
-                `;
-              }
-            },
-            noResults() {
-              return "No results.";
-            },
-          },
-        },
-      ];
-    },
+  return new Promise((resolve) => {
+    clearTimeout(_debounceTimer);
+    _debounceTimer = setTimeout(() => {
+      const dataFiltered = q
+        ? index.value.filter((i) => i.productDescription_lc.includes(q))
+        : index.value;
+
+      resolve(
+        dataFiltered.length
+          ? dataFiltered.slice(0, 5)
+          : [
+              {
+                productDescription: `Registrar nuevo producto: ${query}`,
+                isNewProduct: true,
+              },
+            ]
+      );
+    }, 120);
   });
-
-  // Agregar el event listener para manejar clics en los resultados
-  document.addEventListener("click", handleResultClick);
-});
-
-// Limpiar el event listener cuando el componente se desmonte
-onUnmounted(() => {
-  document.removeEventListener("click", handleResultClick);
-});
+}
 
 // Función helper para limpiar el input del autocomplete
 function clearAutocompleteInput() {
@@ -150,51 +89,127 @@ function clearAutocompleteInput() {
   }
 }
 
-// Función para manejar clics en los resultados
-function handleResultClick(e) {
-  let target = e.target;
-  while (target && !target.classList.contains("resultsDiv")) {
-    target = target.parentElement;
+// ===== TAREA 2: INICIALIZAR ALGOLIA CON onSelect Y SIN MODO DETACHED =====
+onMounted(() => {
+  autocomplete({
+    container: "#autocomplete",
+    placeholder: "Buscar producto...",
+    detachedMediaQuery: "none", // 👈 Fuerza inline en móviles
+    getSources({ query }) {
+      return [
+        {
+          sourceId: "products",
+          getItems() {
+            return getItemsDebounced(query);
+          },
+          onSelect({ item }) {
+            // Manejar nuevo producto
+            if (item.isNewProduct) {
+              const description = (item.productDescription || "")
+                .replace("Registrar nuevo producto: ", "")
+                .trim();
+
+              transactionStore.modifyItemToAddInTransaction({
+                description,
+                quantity: null,
+                price: null,
+                oldOrNewProduct: "new",
+                selectedProductUuid: null,
+                unit: "uni",
+              });
+
+              clearAutocompleteInput();
+              return;
+            }
+
+            // Manejar producto existente
+            const selected = inventoryStore.allItemsInInventory.value.find(
+              (p) => p.uuid === item.productId
+            );
+            if (selected) {
+              transactionStore.modifyItemToAddInTransaction({
+                description: selected.description,
+                price: selected.price,
+                oldOrNewProduct: "old",
+                selectedProductUuid: selected.uuid,
+                unit: selected.unit || "uni",
+              });
+              clearAutocompleteInput();
+            } else {
+              console.error(
+                "Producto seleccionado no encontrado:",
+                item.productId
+              );
+            }
+          },
+          // ===== TAREA 5: TEMPLATES LIMPIOS SIN IDS/CLASES INNECESARIAS =====
+          templates: {
+            item({ item, html }) {
+              if (item.isNewProduct) {
+                // Plantilla para nuevo producto
+                return html`
+                  <div
+                    class="py-3 px-4 flex items-center border-b border-gray-100 hover:bg-blue-50 transition-all duration-150 cursor-pointer active:bg-blue-100"
+                  >
+                    <div class="flex flex-col">
+                      <span
+                        class="font-medium text-gray-900 text-base leading-tight"
+                      >
+                        ${item.productDescription}
+                      </span>
+                    </div>
+                  </div>
+                `;
+              } else {
+                // Plantilla para producto existente
+                return html`
+                  <div
+                    class="py-3 px-4 flex items-center justify-between border-b border-gray-100 hover:bg-gray-50 transition-all duration-150 cursor-pointer active:bg-gray-100"
+                  >
+                    <div class="flex items-center justify-between w-full">
+                      <div class="min-w-0 flex-1">
+                        <span
+                          class="font-medium text-gray-900 text-base leading-tight truncate"
+                        >
+                          ${item.productDescription}
+                        </span>
+                        <span class="text-sm text-gray-600 font-medium">
+                          •
+                        </span>
+                        <span class="text-sm text-gray-600 font-medium">
+                          ${item.productUnit || "uni"}
+                        </span>
+                      </div>
+                      <div class="ml-3 text-right flex-shrink-0">
+                        <span class="text-base font-semibold text-gray-700">
+                          S/ ${item.productPrice?.toFixed(2) || "0.00"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }
+            },
+            noResults() {
+              return "No se encontraron resultados.";
+            },
+          },
+        },
+      ];
+    },
+  });
+
+  // ===== TAREA 4: ENDURECER INPUT MÓVIL =====
+  // Ajustes del input de Algolia para mejorar UX móvil
+  const autocompleteInput = document.querySelector("#autocomplete input");
+  if (autocompleteInput) {
+    autocompleteInput.setAttribute("inputmode", "search");
+    autocompleteInput.setAttribute("autocomplete", "off");
+    autocompleteInput.setAttribute("autocorrect", "off");
+    autocompleteInput.setAttribute("autocapitalize", "off");
+    autocompleteInput.setAttribute("spellcheck", "false");
   }
-  if (target) {
-    if (target.id === "new-product") {
-      // Manejar nuevo producto
-      const description = target.textContent
-        .trim()
-        .replace("Registrar nuevo producto: ", "");
-
-      transactionStore.modifyItemToAddInTransaction({
-        description,
-        quantity: null,
-        price: null,
-        oldOrNewProduct: "new",
-        selectedProductUuid: null,
-        unit: "uni",
-      });
-
-      clearAutocompleteInput();
-    } else {
-      // Manejar producto existente
-      const selectedProduct = inventoryStore.allItemsInInventory.value.find(
-        (product) => product.uuid === target.id
-      );
-      if (selectedProduct) {
-        transactionStore.modifyItemToAddInTransaction({
-          description: selectedProduct.description,
-          price: selectedProduct.price,
-          oldOrNewProduct: "old",
-          selectedProductUuid: selectedProduct.uuid,
-          unit: selectedProduct.unit || "uni",
-        });
-
-        clearAutocompleteInput();
-      } else {
-        console.error("Selected product not found");
-      }
-      console.log("Selected product: ", target.id);
-    }
-  }
-}
+});
 </script>
 
 <style scoped>

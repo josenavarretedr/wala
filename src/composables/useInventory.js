@@ -29,8 +29,9 @@ export function useInventory() {
       // const productRef = doc(db, 'business', businessId, 'products', item.uuid);
 
       const productRef = doc(collection(db, `businesses/${businessId}/products`), item.uuid);
+      const itemDescriptionNormalized = item.description.trim().toUpperCase();
       await setDoc(productRef, {
-        description: item.description,
+        description: itemDescriptionNormalized,
         price: item.price,
         cost: null,
         stock: item.quantity || 0,

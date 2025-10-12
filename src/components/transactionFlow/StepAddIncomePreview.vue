@@ -76,7 +76,7 @@
             <div class="flex justify-between items-start">
               <div class="flex-1 min-w-0 pr-3">
                 <div class="font-semibold text-gray-900 truncate mb-1">
-                  {{ item.description }}
+                  {{ item.description.trim().toUpperCase() }}
                 </div>
                 <div class="text-sm text-gray-600">
                   {{ item.quantity }} {{ item.unit || "uni" }} × S/
