@@ -48,9 +48,7 @@
             Resumen día
           </h3>
           <p class="text-xs sm:text-sm text-gray-500">
-            {{
-              showRecords ? "Ocultar información" : "Ver información financiera"
-            }}
+            {{ showRecords ? "Ocultar información" : "Mira cómo te fue hoy" }}
           </p>
         </div>
       </div>

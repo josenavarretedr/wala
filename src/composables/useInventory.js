@@ -1,3 +1,5 @@
+// useInventory.js
+
 import {
   getFirestore,
   collection,
@@ -165,10 +167,38 @@ export function useInventory() {
     }
   };
 
+  const getProductById = async (productId) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        console.warn('No se puede obtener producto sin businessId activo');
+        return null;
+      }
+
+      const productRef = doc(db, 'businesses', businessId, 'products', productId);
+      const productDoc = await getDoc(productRef);
+
+      if (!productDoc.exists()) {
+        console.warn(`Producto con ID ${productId} no encontrado`);
+        return null;
+      }
+
+      return {
+        uuid: productDoc.id,
+        ...productDoc.data(),
+      };
+    } catch (error) {
+      console.error("Error fetching product: ", error);
+      throw error;
+    }
+  };
+
   return {
     createItem,
     createStockLog,
     deleteStockLog,
     getAllItemsInInventory,
+    getProductById,
   };
 }

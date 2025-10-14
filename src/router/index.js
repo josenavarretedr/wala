@@ -192,7 +192,23 @@ const routes = [
         name: 'TraceabilityTesting',
         component: () => import('@/views/TraceabilityTesting.vue'),
         meta: { role: 'gerente', title: 'Testing de Trazabilidad' }
-      }
+      },
+      {
+        path: 'inventory',
+        name: 'InventoryDashboard',
+        component: () => import('@/views/Inventory/InventoryDashboard.vue')
+      },
+      {
+        path: 'inventory/product/:productId',
+        name: 'InventoryProductDetails',
+        component: () => import('@/views/Inventory/ProductDetails.vue')
+      },
+      // {
+      //   path: 'records/:registerId',
+      //   name: 'DetailsRecords',
+      //   component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
+      //   meta: { permission: 'verReportes', title: 'Detalle de Registro' }
+      // },
     ]
   },
 

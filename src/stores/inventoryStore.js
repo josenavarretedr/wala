@@ -1,3 +1,4 @@
+// inventoryStore.js
 import { ref } from "vue";
 import { useInventory } from "@/composables/useInventory";
 import { useTraceability } from "@/composables/useTraceability";
@@ -8,7 +9,7 @@ const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
 
 export function useInventoryStore() {
-  const { getAllItemsInInventory, createItem, createStockLog } = useInventory();
+  const { getAllItemsInInventory, createItem, createStockLog, getProductById } = useInventory();
   const { logInventoryOperation, logCreate, startOperationChain } = useTraceability();
 
   // Obtener los ítems en inventario
@@ -30,12 +31,12 @@ export function useInventoryStore() {
 
       const items = await getAllItemsInInventory(); // Esperar los datos
       allItemsInInventory.value = items; // Almacenar en la lista reactiva
-      
+
       console.log("✅ Items fetched successfully with traceability from useInventoryStore.js");
-      
+
     } catch (error) {
       console.error("❌ Error fetching items:", error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       await logInventoryOperation(
         'error',
@@ -54,7 +55,7 @@ export function useInventoryStore() {
 
   const addItemToInventoryFromArryOfItemsNewOrOld = async (itemsList) => {
     const operationChain = startOperationChain('bulk_add_inventory_items');
-    
+
     try {
       let addedItemsCount = 0;
       const relatedEntities = [];
@@ -71,7 +72,7 @@ export function useInventoryStore() {
 
           await createItem(item, 'ferrercard');
           addedItemsCount++;
-          
+
           relatedEntities.push({
             type: 'inventory',
             id: item.uuid || item.selectedProductUuid,
@@ -94,7 +95,7 @@ export function useInventoryStore() {
 
     } catch (error) {
       console.error('❌ Error in bulk inventory operation:', error);
-      
+
       // === TRAZABILIDAD: Log de error en operación bulk ===
       await operationChain.addStep('error', 'inventory', 'bulk_operation', {
         newState: { error: error.message },
@@ -102,7 +103,7 @@ export function useInventoryStore() {
         severity: 'high',
         tags: ['inventory_error', 'bulk_operation', 'creation_failure']
       });
-      
+
       throw error;
     }
   }
@@ -131,7 +132,7 @@ export function useInventoryStore() {
 
     } catch (error) {
       console.error('❌ Error adding stock log:', error);
-      
+
       // === TRAZABILIDAD: Log de error ===
       await logInventoryOperation(
         'error',
@@ -145,15 +146,58 @@ export function useInventoryStore() {
           component: 'InventoryStore.addStockLogInInventory'
         }
       );
-      
+
       throw error;
     }
   }
+
+  const getProductDetails = async (productId) => {
+    try {
+      // === TRAZABILIDAD: Log de acceso a detalles de producto ===
+      await logInventoryOperation(
+        'read',
+        productId,
+        { action: 'fetch_product_details' },
+        {},
+        {
+          reason: 'product_details_access',
+          severity: 'low',
+          tags: ['data_read', 'product_details'],
+          component: 'InventoryStore.getProductDetails'
+        }
+      );
+
+      const product = await getProductById(productId);
+
+      console.log("✅ Product details fetched successfully with traceability");
+      return product;
+
+    } catch (error) {
+      console.error("❌ Error fetching product details:", error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logInventoryOperation(
+        'error',
+        productId,
+        { error: error.message },
+        {},
+        {
+          reason: 'product_details_fetch_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'product_details'],
+          component: 'InventoryStore.getProductDetails'
+        }
+      );
+
+      throw error;
+    }
+  };
 
   return {
     allItemsInInventory,
     itemToAddToInventory,
     getItemsInInventory,
+    getProductDetails,
     addStockLogInInventory,
     addItemToInventoryFromArryOfItemsNewOrOld
   };
