@@ -14,7 +14,7 @@
  * @module AccountsBalance/testScheduledAutoClose
  */
 
-const { onRequest } = require('firebase-functions/v2/https');
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 const { v4: uuidv4 } = require('uuid');
@@ -48,7 +48,7 @@ const DEFAULT_TZ = 'America/Lima';
  * - results: Array con el resultado de cada negocio
  * - timestamp: ISO string
  */
-module.exports = onRequest(async (request, response) => {
+module.exports = functions.https.onRequest(async (request, response) => {
   try {
     console.log('🧪 TEST: scheduledAutoClose');
     console.log(`🕐 Started at: ${new Date().toISOString()}`);

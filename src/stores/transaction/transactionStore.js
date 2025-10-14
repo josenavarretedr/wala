@@ -5,6 +5,7 @@ import { ref, computed } from 'vue';
 import { useTransaccion } from '@/composables/useTransaction';
 import { useInventory } from '@/composables/useInventory';
 import { useTraceability } from '@/composables/useTraceability';
+import { round2, multiplyMoney, addMoney, parseMoneyFloat } from '@/utils/mathUtils';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -350,13 +351,14 @@ export function useTransactionStore() {
   const getTransactionToAddTotal = () => {
     // Si no hay items o el array está vacío, devolver el amount o 0
     if (!transactionToAdd.value.items || transactionToAdd.value.items.length === 0) {
-      return transactionToAdd.value.amount || 0;
+      return round2(transactionToAdd.value.amount || 0);
     }
 
     // Calcular total basado en items
-    return transactionToAdd.value.items.reduce((sum, item) => {
-      return sum + item.price * item.quantity;
+    const total = transactionToAdd.value.items.reduce((sum, item) => {
+      return addMoney(sum, multiplyMoney(item.price, item.quantity));
     }, 0);
+    return round2(total);
   }
 
   const modifyTransactionToAddAccount = (account) => {
@@ -405,7 +407,7 @@ export function useTransactionStore() {
   }
 
   const setExpenseDescription = (description) => { transactionToAdd.value.description = description; };
-  const setExpenseAmount = (amount) => { transactionToAdd.value.amount = Number(amount) || 0; };
+  const setExpenseAmount = (amount) => { transactionToAdd.value.amount = parseMoneyFloat(amount); };
   const setExpenseCategory = (category) => { transactionToAdd.value.category = category; }; // 'materials'|'labor'|'overhead'
   const setExpenseSubcategory = (subcategory) => { transactionToAdd.value.subcategory = subcategory; }; // 'office'|'travel'|'utilities' etc.
 

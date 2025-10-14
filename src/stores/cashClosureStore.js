@@ -9,6 +9,7 @@ import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from "uuid";
 import { useTransaccion } from '@/composables/useTransaction';
 import { useCashClosure } from '@/composables/useCashClosure';
+import { round2, addMoney, subtractMoney, parseMoneyFloat } from '@/utils/mathUtils';
 
 // 🔁 Estados reactivos
 const cashClosureForToday = ref(true);
@@ -61,9 +62,15 @@ export function useCashClosureStore() {
       transactionsToday.forEach(transaction => {
         const { account, type, total } = transaction;
         if (account === 'cash') {
-          expectedBalances.value.cash += type === 'income' ? total : -total;
+          expectedBalances.value.cash = addMoney(
+            expectedBalances.value.cash,
+            type === 'income' ? total : -total
+          );
         } else if (account === 'bank') {
-          expectedBalances.value.bank += type === 'income' ? total : -total;
+          expectedBalances.value.bank = addMoney(
+            expectedBalances.value.bank,
+            type === 'income' ? total : -total
+          );
         }
       });
 
@@ -78,7 +85,7 @@ export function useCashClosureStore() {
    * Establece el saldo real ingresado por el usuario y recalcula diferencias.
    */
   const setrealBalance = (account, amount) => {
-    realBalances.value[account] = parseFloat(amount);
+    realBalances.value[account] = parseMoneyFloat(amount);
     calculateDifferences();
   };
 
@@ -87,8 +94,10 @@ export function useCashClosureStore() {
    */
   const calculateDifferences = () => {
     ['cash', 'bank'].forEach(account => {
-      differences.value[account] =
-        (realBalances.value[account] ?? 0) - expectedBalances.value[account];
+      differences.value[account] = subtractMoney(
+        realBalances.value[account] ?? 0,
+        expectedBalances.value[account]
+      );
     });
   };
 
@@ -139,13 +148,14 @@ export function useCashClosureStore() {
    * Crea una transacción de ajuste si hay diferencia de saldo.
    */
   const createAdjustmentTransaction = async (accountName, difference) => {
+    const absValue = round2(Math.abs(difference));
     const adjustmentTransaction = {
       uuid: uuidv4(),
       type: difference > 0 ? 'income' : 'expense',
       account: accountName,
       description: `Ajuste de cierre de caja - ${difference > 0 ? 'Sobrante' : 'Faltante'}`,
-      cost: Math.abs(difference),
-      total: Math.abs(difference),
+      cost: absValue,
+      total: absValue,
       createdAt: new Date(),
     };
     await createTransaction(adjustmentTransaction);

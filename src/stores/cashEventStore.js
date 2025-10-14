@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from "uuid";
 import { useTransaccion } from '@/composables/useTransaction';
 import { useCashEvent } from '@/composables/useCashEvent';
+import { round2, addMoney, subtractMoney, parseMoneyFloat } from '@/utils/mathUtils';
 
 const cashEventsForToday = ref([]);
 const allCashEvents = ref([]);
@@ -43,8 +44,8 @@ export function useCashEventStore() {
       const transactionsToday = await getTransactionsTodayCmps();
       const opening = transactionsToday.find((tx) => tx.type === "opening");
       if (opening) {
-        saldoInicial.value.cash = opening.totalCash || 0;
-        saldoInicial.value.bank = opening.totalBank || 0;
+        saldoInicial.value.cash = round2(opening.totalCash || 0);
+        saldoInicial.value.bank = round2(opening.totalBank || 0);
       } else {
         saldoInicial.value.cash = 0;
         saldoInicial.value.bank = 0;
@@ -80,13 +81,19 @@ export function useCashEventStore() {
       transactionsToday.forEach(transaction => {
         const { account, type, total } = transaction;
         if (account === 'cash') {
-          expectedBalances.value.cash += type === 'income' ? total : -total;
+          expectedBalances.value.cash = addMoney(
+            expectedBalances.value.cash,
+            type === 'income' ? total : -total
+          );
         } else if (account === 'bank') {
-          expectedBalances.value.bank += type === 'income' ? total : -total;
+          expectedBalances.value.bank = addMoney(
+            expectedBalances.value.bank,
+            type === 'income' ? total : -total
+          );
         }
       });
-      expectedBalances.value.cash += saldoInicial.value.cash;
-      expectedBalances.value.bank += saldoInicial.value.bank;
+      expectedBalances.value.cash = addMoney(expectedBalances.value.cash, saldoInicial.value.cash);
+      expectedBalances.value.bank = addMoney(expectedBalances.value.bank, saldoInicial.value.bank);
 
     } catch (error) {
       console.error('Error al calcular saldos esperados:', error);
@@ -96,14 +103,16 @@ export function useCashEventStore() {
   };
 
   const setRealBalance = (account, amount) => {
-    realBalances.value[account] = parseFloat(amount);
+    realBalances.value[account] = parseMoneyFloat(amount);
     calculateDifferences();
   };
 
   const calculateDifferences = () => {
     ['cash', 'bank'].forEach(account => {
-      differences.value[account] =
-        (realBalances.value[account] ?? 0) - expectedBalances.value[account];
+      differences.value[account] = subtractMoney(
+        realBalances.value[account] ?? 0,
+        expectedBalances.value[account]
+      );
     });
   };
 
@@ -166,13 +175,14 @@ export function useCashEventStore() {
   };
 
   const createAdjustmentTransaction = async (accountName, difference) => {
+    const absValue = round2(Math.abs(difference));
     const adjustmentTransaction = {
       uuid: uuidv4(),
       type: difference > 0 ? 'income' : 'expense',
       account: accountName,
       description: `Ajuste de cierre de caja - ${difference > 0 ? 'Sobrante' : 'Faltante'}`,
-      cost: Math.abs(difference),
-      total: Math.abs(difference),
+      cost: absValue,
+      total: absValue,
       createdAt: new Date(),
     };
     await createTransaction(adjustmentTransaction);

@@ -13,6 +13,7 @@
  */
 
 const { dateRangeForDay } = require('../Helpers/time');
+const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helpers/mathUtils');
 
 /**
  * Calcula los agregados financieros detallados de un día específico.
@@ -95,7 +96,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
   // Procesar cada transacción (equivalente a accountsBalanceStore)
   allTransactions.forEach(tx => {
     const txType = tx.type;
-    const amount = Number(tx.amount || 0);
+    const amount = parseMoneyNumber(tx.amount || 0);
     const account = tx.account;
     const category = tx.category;
     const subcategory = tx.subcategory;
@@ -115,14 +116,14 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === INGRESOS (excluyendo ajustes) ===
     if (txType === 'income' && category !== 'adjustment') {
       hasTxn = true;
-      totalIngresos += amount;
+      totalIngresos = addMoney(totalIngresos, amount);
 
       // Por cuenta (excluyendo ajustes de apertura)
       if (account === 'cash' && subcategory !== 'opening_adjustment') {
-        ingresosCash += amount;
+        ingresosCash = addMoney(ingresosCash, amount);
       }
       if (account === 'bank' && subcategory !== 'opening_adjustment') {
-        ingresosBank += amount;
+        ingresosBank = addMoney(ingresosBank, amount);
       }
 
       console.log(`  💰 Income: ${amount} [${account}] (${tx.id})`);
@@ -131,14 +132,14 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === EGRESOS (excluyendo ajustes) ===
     if (txType === 'expense' && category !== 'adjustment') {
       hasTxn = true;
-      totalEgresos += amount;
+      totalEgresos = addMoney(totalEgresos, amount);
 
       // Por cuenta
       if (account === 'cash') {
-        egresosCash += amount;
+        egresosCash = addMoney(egresosCash, amount);
       }
       if (account === 'bank') {
-        egresosBank += amount;
+        egresosBank = addMoney(egresosBank, amount);
       }
 
       console.log(`  💸 Expense: ${amount} [${account}] (${tx.id})`);
@@ -147,19 +148,19 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === TRANSFERENCIAS ===
     if (txType === 'transfer') {
       hasTxn = true;
-      totalTransferencias += amount;
+      totalTransferencias = addMoney(totalTransferencias, amount);
 
       if (tx.fromAccount === 'cash') {
-        transferenciasSalidaCash += amount;
+        transferenciasSalidaCash = addMoney(transferenciasSalidaCash, amount);
       }
       if (tx.toAccount === 'cash') {
-        transferenciasEntradaCash += amount;
+        transferenciasEntradaCash = addMoney(transferenciasEntradaCash, amount);
       }
       if (tx.fromAccount === 'bank') {
-        transferenciasSalidaBank += amount;
+        transferenciasSalidaBank = addMoney(transferenciasSalidaBank, amount);
       }
       if (tx.toAccount === 'bank') {
-        transferenciasEntradaBank += amount;
+        transferenciasEntradaBank = addMoney(transferenciasEntradaBank, amount);
       }
 
       console.log(`  🔄 Transfer: ${amount} (${tx.fromAccount} -> ${tx.toAccount}) (${tx.id})`);
@@ -168,12 +169,12 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === AJUSTES DE APERTURA ===
     if (subcategory === 'opening_adjustment') {
       if (txType === 'income') {
-        if (account === 'cash') ajustesAperturaCash += amount;
-        if (account === 'bank') ajustesAperturaBank += amount;
+        if (account === 'cash') ajustesAperturaCash = addMoney(ajustesAperturaCash, amount);
+        if (account === 'bank') ajustesAperturaBank = addMoney(ajustesAperturaBank, amount);
       }
       if (txType === 'expense') {
-        if (account === 'cash') ajustesAperturaCash -= amount;
-        if (account === 'bank') ajustesAperturaBank -= amount;
+        if (account === 'cash') ajustesAperturaCash = subtractMoney(ajustesAperturaCash, amount);
+        if (account === 'bank') ajustesAperturaBank = subtractMoney(ajustesAperturaBank, amount);
       }
       console.log(`  🔧 Opening adjustment: ${amount} [${account}] (${tx.id})`);
     }
@@ -181,51 +182,51 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === AJUSTES DE CIERRE ===
     if (subcategory === 'closure_adjustment') {
       if (txType === 'income') {
-        if (account === 'cash') ajustesCierreCash += amount;
-        if (account === 'bank') ajustesCierreBank += amount;
+        if (account === 'cash') ajustesCierreCash = addMoney(ajustesCierreCash, amount);
+        if (account === 'bank') ajustesCierreBank = addMoney(ajustesCierreBank, amount);
       }
       if (txType === 'expense') {
-        if (account === 'cash') ajustesCierreCash -= amount;
-        if (account === 'bank') ajustesCierreBank -= amount;
+        if (account === 'cash') ajustesCierreCash = subtractMoney(ajustesCierreCash, amount);
+        if (account === 'bank') ajustesCierreBank = subtractMoney(ajustesCierreBank, amount);
       }
       console.log(`  � Closure adjustment: ${amount} [${account}] (${tx.id})`);
     }
   });
 
   // ===== CALCULAR EFECTOS NETOS DE TRANSFERENCIAS =====
-  const efectoTransferenciasEnCash = transferenciasEntradaCash - transferenciasSalidaCash;
-  const efectoTransferenciasEnBank = transferenciasEntradaBank - transferenciasSalidaBank;
+  const efectoTransferenciasEnCash = subtractMoney(transferenciasEntradaCash, transferenciasSalidaCash);
+  const efectoTransferenciasEnBank = subtractMoney(transferenciasEntradaBank, transferenciasSalidaBank);
 
   // ===== CALCULAR TOTALES DE AJUSTES =====
-  const totalAjustesApertura = ajustesAperturaCash + ajustesAperturaBank;
-  const totalAjustesCierre = ajustesCierreCash + ajustesCierreBank;
-  const totalAjustes = totalAjustesApertura + totalAjustesCierre;
+  const totalAjustesApertura = addMoney(ajustesAperturaCash, ajustesAperturaBank);
+  const totalAjustesCierre = addMoney(ajustesCierreCash, ajustesCierreBank);
+  const totalAjustes = addMoney(totalAjustesApertura, totalAjustesCierre);
 
   // ===== CALCULAR SALDOS INICIALES =====
-  const saldoInicialCash = openingTransaction
+  const saldoInicialCash = round2(openingTransaction
     ? (openingTransaction.realCashBalance || openingTransaction.totalCash || 0)
-    : 0;
-  const saldoInicialBank = openingTransaction
+    : 0);
+  const saldoInicialBank = round2(openingTransaction
     ? (openingTransaction.realBankBalance || openingTransaction.totalBank || 0)
-    : 0;
-  const saldoInicial = saldoInicialCash + saldoInicialBank;
+    : 0);
+  const saldoInicial = addMoney(saldoInicialCash, saldoInicialBank);
 
   // ===== CALCULAR BALANCES ESPERADOS (sin ajustes de cierre) =====
-  const expectedFinalCash = saldoInicialCash + ingresosCash - egresosCash + efectoTransferenciasEnCash;
-  const expectedFinalBank = saldoInicialBank + ingresosBank - egresosBank + efectoTransferenciasEnBank;
-  const expectedFinalTotal = expectedFinalCash + expectedFinalBank;
+  const expectedFinalCash = addMoney(saldoInicialCash, ingresosCash, -egresosCash, efectoTransferenciasEnCash);
+  const expectedFinalBank = addMoney(saldoInicialBank, ingresosBank, -egresosBank, efectoTransferenciasEnBank);
+  const expectedFinalTotal = addMoney(expectedFinalCash, expectedFinalBank);
 
   // ===== CALCULAR SALDOS ACTUALES (con ajustes de cierre) =====
-  const saldoActualCash = expectedFinalCash + ajustesCierreCash;
-  const saldoActualBank = expectedFinalBank + ajustesCierreBank;
-  const saldoActual = saldoActualCash + saldoActualBank;
+  const saldoActualCash = addMoney(expectedFinalCash, ajustesCierreCash);
+  const saldoActualBank = addMoney(expectedFinalBank, ajustesCierreBank);
+  const saldoActual = addMoney(saldoActualCash, saldoActualBank);
 
   // ===== CALCULAR RESULTADOS OPERACIONALES =====
-  const resultadoOperacional = totalIngresos - totalEgresos;
-  const resultadoOperacionalCash = ingresosCash - egresosCash;
-  const resultadoOperacionalBank = ingresosBank - egresosBank;
-  const flujoNetoCash = resultadoOperacionalCash + efectoTransferenciasEnCash;
-  const flujoNetoBank = resultadoOperacionalBank + efectoTransferenciasEnBank;
+  const resultadoOperacional = subtractMoney(totalIngresos, totalEgresos);
+  const resultadoOperacionalCash = subtractMoney(ingresosCash, egresosCash);
+  const resultadoOperacionalBank = subtractMoney(ingresosBank, egresosBank);
+  const flujoNetoCash = addMoney(resultadoOperacionalCash, efectoTransferenciasEnCash);
+  const flujoNetoBank = addMoney(resultadoOperacionalBank, efectoTransferenciasEnBank);
 
   // ===== ESTRUCTURA DE RETORNO (equivalente a accountsBalanceStore) =====
   const aggregates = {

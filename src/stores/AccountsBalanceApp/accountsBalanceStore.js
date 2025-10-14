@@ -2,6 +2,7 @@
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { round2, addMoney, subtractMoney, sumTransactions } from '@/utils/mathUtils';
 
 /**
  * Store para cálculos financieros y balance de cuentas
@@ -43,35 +44,35 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Total de ingresos reales (ventas), excluyendo ajustes
    */
   const totalIngresos = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
+    );
   });
 
   /**
    * Ingresos por efectivo, excluyendo ajustes de apertura
    */
   const ingresosCash = computed(() => {
-    return transactions.value
-      .filter(tx =>
+    return sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.account === 'cash' &&
         tx.subcategory !== 'opening_adjustment'
       )
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    );
   });
 
   /**
    * Ingresos por banco/digital, excluyendo ajustes de apertura
    */
   const ingresosBank = computed(() => {
-    return transactions.value
-      .filter(tx =>
+    return sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.account === 'bank' &&
         tx.subcategory !== 'opening_adjustment'
       )
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    );
   });
 
   // ===== CÁLCULOS DE EGRESOS =====
@@ -80,35 +81,35 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Total de egresos operativos, excluyendo ajustes
    */
   const totalEgresos = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
+    );
   });
 
   /**
    * Egresos por efectivo, excluyendo ajustes
    */
   const egresosCash = computed(() => {
-    return transactions.value
-      .filter(tx =>
+    return sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&
         tx.account === 'cash'
       )
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    );
   });
 
   /**
    * Egresos por banco/digital, excluyendo ajustes
    */
   const egresosBank = computed(() => {
-    return transactions.value
-      .filter(tx =>
+    return sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&
         tx.account === 'bank'
       )
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    );
   });
 
   // ===== CÁLCULOS DE TRANSFERENCIAS =====
@@ -117,59 +118,59 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Transferencias que SALEN de efectivo (cash -> bank)
    */
   const transferenciasSalidaCash = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'cash')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'transfer' && tx.fromAccount === 'cash')
+    );
   });
 
   /**
    * Transferencias que ENTRAN a efectivo (bank -> cash)
    */
   const transferenciasEntradaCash = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'transfer' && tx.toAccount === 'cash')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'transfer' && tx.toAccount === 'cash')
+    );
   });
 
   /**
    * Transferencias que SALEN de banco (bank -> cash)
    */
   const transferenciasSalidaBank = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'bank')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'transfer' && tx.fromAccount === 'bank')
+    );
   });
 
   /**
    * Transferencias que ENTRAN a banco (cash -> bank)
    */
   const transferenciasEntradaBank = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'transfer' && tx.toAccount === 'bank')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'transfer' && tx.toAccount === 'bank')
+    );
   });
 
   /**
    * Efecto neto de transferencias en efectivo (entradas - salidas)
    */
   const efectoTransferenciasEnCash = computed(() => {
-    return transferenciasEntradaCash.value - transferenciasSalidaCash.value;
+    return subtractMoney(transferenciasEntradaCash.value, transferenciasSalidaCash.value);
   });
 
   /**
    * Efecto neto de transferencias en banco (entradas - salidas)
    */
   const efectoTransferenciasEnBank = computed(() => {
-    return transferenciasEntradaBank.value - transferenciasSalidaBank.value;
+    return subtractMoney(transferenciasEntradaBank.value, transferenciasSalidaBank.value);
   });
 
   /**
    * Total de transferencias realizadas (sin considerar dirección)
    */
   const totalTransferencias = computed(() => {
-    return transactions.value
-      .filter(tx => tx.type === 'transfer')
-      .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+    return sumTransactions(
+      transactions.value.filter(tx => tx.type === 'transfer')
+    );
   });
 
   // ===== CÁLCULOS DE AJUSTES =====
@@ -178,107 +179,111 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Ajustes por apertura - efectivo
    */
   const ajustesAperturaCash = computed(() => {
-    const ingresosAjuste = transactions.value
-      .filter(tx =>
+    const ingresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.subcategory === 'opening_adjustment' &&
         tx.account === 'cash'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    const egresosAjuste = transactions.value
-      .filter(tx =>
+    const egresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.subcategory === 'opening_adjustment' &&
         tx.account === 'cash'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    return ingresosAjuste - egresosAjuste;
+    return subtractMoney(ingresosAjuste, egresosAjuste);
   });
 
   /**
    * Ajustes por apertura - banco
    */
   const ajustesAperturaBank = computed(() => {
-    const ingresosAjuste = transactions.value
-      .filter(tx =>
+    const ingresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.subcategory === 'opening_adjustment' &&
         tx.account === 'bank'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    const egresosAjuste = transactions.value
-      .filter(tx =>
+    const egresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.subcategory === 'opening_adjustment' &&
         tx.account === 'bank'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    return ingresosAjuste - egresosAjuste;
+    return subtractMoney(ingresosAjuste, egresosAjuste);
   });
 
   /**
    * Ajustes por cierre - efectivo
    */
   const ajustesCierreCash = computed(() => {
-    const ingresosAjuste = transactions.value
-      .filter(tx =>
+    const ingresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.subcategory === 'closure_adjustment' &&
         tx.account === 'cash'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    const egresosAjuste = transactions.value
-      .filter(tx =>
+    const egresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.subcategory === 'closure_adjustment' &&
         tx.account === 'cash'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    return ingresosAjuste - egresosAjuste;
+    return subtractMoney(ingresosAjuste, egresosAjuste);
   });
 
   /**
    * Ajustes por cierre - banco
    */
   const ajustesCierreBank = computed(() => {
-    const ingresosAjuste = transactions.value
-      .filter(tx =>
+    const ingresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.subcategory === 'closure_adjustment' &&
         tx.account === 'bank'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    const egresosAjuste = transactions.value
-      .filter(tx =>
+    const egresosAjuste = sumTransactions(
+      transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.subcategory === 'closure_adjustment' &&
         tx.account === 'bank'
       )
-      .reduce((s, tx) => s + (tx.amount || 0), 0);
+    );
 
-    return ingresosAjuste - egresosAjuste;
+    return subtractMoney(ingresosAjuste, egresosAjuste);
   });
 
   /**
    * Total de ajustes (apertura + cierre)
    */
   const totalAjustes = computed(() => {
-    return ajustesAperturaCash.value + ajustesAperturaBank.value +
-      ajustesCierreCash.value + ajustesCierreBank.value;
+    return addMoney(
+      ajustesAperturaCash.value,
+      ajustesAperturaBank.value,
+      ajustesCierreCash.value,
+      ajustesCierreBank.value
+    );
   });
 
   /**
    * Total de ajustes de apertura solamente
    */
   const totalAjustesApertura = computed(() => {
-    return ajustesAperturaCash.value + ajustesAperturaBank.value;
+    return addMoney(ajustesAperturaCash.value, ajustesAperturaBank.value);
   });
 
   /**
@@ -296,7 +301,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
     console.log("Ajustes cierre Cash:", ajustesCierreCash.value);
     console.log("Ajustes cierre Bank:", ajustesCierreBank.value);
-    const total = ajustesCierreCash.value + ajustesCierreBank.value;
+    const total = addMoney(ajustesCierreCash.value, ajustesCierreBank.value);
     console.log("Total calculado:", total);
     return total;
   });
@@ -307,23 +312,23 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Saldo inicial de efectivo según apertura
    */
   const saldoInicialCash = computed(() => {
-    return openingTransaction.value?.realCashBalance ||
-      openingTransaction.value?.totalCash || 0;
+    return round2(openingTransaction.value?.realCashBalance ||
+      openingTransaction.value?.totalCash || 0);
   });
 
   /**
    * Saldo inicial de banco según apertura
    */
   const saldoInicialBank = computed(() => {
-    return openingTransaction.value?.realBankBalance ||
-      openingTransaction.value?.totalBank || 0;
+    return round2(openingTransaction.value?.realBankBalance ||
+      openingTransaction.value?.totalBank || 0);
   });
 
   /**
    * Saldo inicial total
    */
   const saldoInicial = computed(() => {
-    return saldoInicialCash.value + saldoInicialBank.value;
+    return addMoney(saldoInicialCash.value, saldoInicialBank.value);
   });
 
   // ===== BALANCES ESPERADOS/PROYECTADOS =====
@@ -332,21 +337,31 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Balance esperado de efectivo (saldo inicial + movimientos operativos + transferencias)
    */
   const expectedFinalCash = computed(() => {
-    return saldoInicialCash.value + ingresosCash.value - egresosCash.value + efectoTransferenciasEnCash.value;
+    return addMoney(
+      saldoInicialCash.value,
+      ingresosCash.value,
+      -egresosCash.value,
+      efectoTransferenciasEnCash.value
+    );
   });
 
   /**
    * Balance esperado de banco (saldo inicial + movimientos operativos + transferencias)
    */
   const expectedFinalBank = computed(() => {
-    return saldoInicialBank.value + ingresosBank.value - egresosBank.value + efectoTransferenciasEnBank.value;
+    return addMoney(
+      saldoInicialBank.value,
+      ingresosBank.value,
+      -egresosBank.value,
+      efectoTransferenciasEnBank.value
+    );
   });
 
   /**
    * Balance total esperado
    */
   const expectedFinalTotal = computed(() => {
-    return expectedFinalCash.value + expectedFinalBank.value;
+    return addMoney(expectedFinalCash.value, expectedFinalBank.value);
   });
 
   // ===== BALANCES ACTUALES/REALES =====
@@ -355,23 +370,33 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Saldo actual de efectivo (incluye transferencias y ajustes)
    */
   const saldoActualCash = computed(() => {
-    return saldoInicialCash.value + ingresosCash.value - egresosCash.value +
-      efectoTransferenciasEnCash.value + ajustesCierreCash.value;
+    return addMoney(
+      saldoInicialCash.value,
+      ingresosCash.value,
+      -egresosCash.value,
+      efectoTransferenciasEnCash.value,
+      ajustesCierreCash.value
+    );
   });
 
   /**
    * Saldo actual de banco (incluye transferencias y ajustes)
    */
   const saldoActualBank = computed(() => {
-    return saldoInicialBank.value + ingresosBank.value - egresosBank.value +
-      efectoTransferenciasEnBank.value + ajustesCierreBank.value;
+    return addMoney(
+      saldoInicialBank.value,
+      ingresosBank.value,
+      -egresosBank.value,
+      efectoTransferenciasEnBank.value,
+      ajustesCierreBank.value
+    );
   });
 
   /**
    * Saldo actual total
    */
   const saldoActual = computed(() => {
-    return saldoActualCash.value + saldoActualBank.value;
+    return addMoney(saldoActualCash.value, saldoActualBank.value);
   });
 
   // ===== RESULTADOS OPERACIONALES =====
@@ -381,21 +406,21 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Este es el KPI principal del negocio
    */
   const resultadoOperacional = computed(() => {
-    return totalIngresos.value - totalEgresos.value;
+    return subtractMoney(totalIngresos.value, totalEgresos.value);
   });
 
   /**
    * Resultado operacional por efectivo (SIN transferencias)
    */
   const resultadoOperacionalCash = computed(() => {
-    return ingresosCash.value - egresosCash.value;
+    return subtractMoney(ingresosCash.value, egresosCash.value);
   });
 
   /**
    * Resultado operacional por banco (SIN transferencias)
    */
   const resultadoOperacionalBank = computed(() => {
-    return ingresosBank.value - egresosBank.value;
+    return subtractMoney(ingresosBank.value, egresosBank.value);
   });
 
   /**

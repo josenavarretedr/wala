@@ -2,93 +2,71 @@
 
 /**
  * @file onTransactionWrite.js
- * @description Trigger automático que se ejecuta cuando se crea, actualiza o elimina una transacción.
- * Actualiza el resumen diario (dailySummary) con los agregados financieros del día.
+ * @description Trigger que actualiza dailySummary cuando se crea, actualiza o elimina una transacción.
  * 
  * Infraestructura consistente con:
- * - useTransaction.js (composable)
- * - transactionStore.js (store)
- * - accountsBalanceStore.js (cálculos financieros)
+ * - transactionStore.js (estructura de transacciones)
+ * - accountsBalanceStore.js (cálculos financieros completos)
  * 
  * @module AccountsBalance/onTransactionWrite
  */
 
-// Firebase Functions v2
-const { onDocumentWritten } = require('firebase-functions/v2/firestore');
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 
-const admin = require('firebase-admin');
-
-// Inicializar Firebase Admin si no está inicializado
 if (!admin.apps.length) {
   admin.initializeApp();
 }
 
 const db = admin.firestore();
-
 const { dayFromTimestamp } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
 
 const DEFAULT_TZ = 'America/Lima';
 
 /**
- * Trigger que recalcula el resumen diario cuando cambia una transacción
- * 
- * Flujo:
- * 1. Detecta cambios en cualquier transacción (create/update/delete)
- * 2. Obtiene la timezone del negocio
- * 3. Calcula agregados del día (ingresos, egresos, flags de apertura/cierre)
- * 4. Actualiza el documento dailySummary con los nuevos datos
- * 
- * Similar a como transactionStore.addTransaction() maneja las transacciones
+ * Trigger que se ejecuta cuando se escribe (create/update/delete) una transacción.
+ * Recalcula todos los agregados financieros del día y actualiza el dailySummary.
  */
-module.exports = onDocumentWritten(
-  'businesses/{businessId}/transactions/{txId}',
-  async (event) => {
-    const { businessId, txId } = event.params;
+module.exports = functions.firestore
+  .document('businesses/{businessId}/transactions/{txId}')
+  .onWrite(async (change, context) => {
+    const { businessId, txId } = context.params;
 
     console.log(`📝 Transaction write detected: ${txId} in business ${businessId}`);
 
-    // Usa after si existe; si se borró, usa before (para recalcular el día)
-    const doc = event.data.after.exists ? event.data.after.data() : (event.data.before.exists ? event.data.before.data() : null);
+    // Obtener documento (after si existe, before si fue eliminado)
+    const doc = change.after.exists ? change.after.data() : (change.before.exists ? change.before.data() : null);
 
     if (!doc) {
       console.log('⚠️  No document data found, skipping');
       return null;
     }
 
-    // Validar que tenga createdAt (consistente con useTransaction.createTransaction)
     if (!doc.createdAt) {
       console.warn(`⚠️  Transaction ${txId} missing createdAt, skipping aggregation`);
       return null;
     }
 
-    // Resolver timezone del negocio (default Lima)
+    // Obtener timezone del negocio
     const businessDoc = await db.doc(`businesses/${businessId}`).get();
     const tz = (businessDoc.exists && businessDoc.data().timezone) || DEFAULT_TZ;
 
-    // Determinar el día de la transacción
     const day = dayFromTimestamp(doc.createdAt, tz);
     console.log(`📅 Processing day: ${day} (tz: ${tz})`);
 
-    // Calcular agregados del día
+    // Calcular agregados completos (estructura de accountsBalanceStore)
     const agg = await getDayAggregates(db, businessId, day, tz);
 
-    console.log(`📊 Day aggregates:`, {
-      hasOpening: agg.hasOpening,
-      hasClosure: agg.hasClosure,
-      hasTxn: agg.hasTxn,
-      totals: agg.totals,
-      operational: agg.operational
-    });
+    console.log(`📊 Day aggregates calculated`);
 
-    // Actualizar resumen diario con ESTRUCTURA COMPLETA (accountsBalanceStore)
+    // Actualizar dailySummary con estructura completa
     await upsertDailySummary(db, businessId, day, {
-      ...agg, // Toda la estructura completa
+      ...agg,
       lastUpdated: FieldValue.serverTimestamp()
     });
 
-    console.log(`✅ Daily summary updated for ${day} with complete financial data`);
+    console.log(`✅ Daily summary updated for ${day}`);
     return null;
-  }
-);
+  });

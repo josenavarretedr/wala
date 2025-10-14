@@ -104,17 +104,6 @@
           </div>
         </form>
       </div>
-
-      <!-- Demo credentials -->
-      <div
-        class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center"
-      >
-        <div class="text-sm text-yellow-800">
-          <strong>🧪 Cuenta demo:</strong><br />
-          Email: demo@walla.app<br />
-          Contraseña: Demo123!
-        </div>
-      </div>
     </div>
   </div>
 </template>

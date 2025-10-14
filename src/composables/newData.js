@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import { parseMoneyFloat } from '@/utils/mathUtils';
 
 const newDataFn = (data) => {
   return data.map((item) => {
@@ -13,9 +14,9 @@ const newDataFn = (data) => {
         itemUni: item.uni,
         itemName: item.details,
         brand: item.brand,
-        quantity: parseFloat(item.quantity),
+        quantity: parseMoneyFloat(item.quantity),
         category: item.category,
-        price: parseFloat(item.mount),
+        price: parseMoneyFloat(item.mount),
       }
 
     };

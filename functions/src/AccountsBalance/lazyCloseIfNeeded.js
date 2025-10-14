@@ -13,8 +13,8 @@
  * @module AccountsBalance/lazyCloseIfNeeded
  */
 
-// Firebase Functions v2
-const { onCall, HttpsError } = require('firebase-functions/v2/https');
+// Firebase Functions v1
+const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { v4: uuidv4 } = require('uuid');
 
@@ -43,19 +43,20 @@ const DEFAULT_TZ = 'America/Lima';
  * 5. Actualiza dailySummary
  * 6. Rompe la racha de días consecutivos
  * 
- * @param {Object} request.data - { businessId: string }
+ * @param {Object} data - { businessId: string }
+ * @param {Object} context - Firebase auth context
  * @returns {Object} { closed: boolean, mode?: string, day?: string, reason?: string }
  */
-module.exports = onCall(async (request) => {
+module.exports = functions.https.onCall(async (data, context) => {
   // === VALIDACIÓN DE AUTENTICACIÓN ===
-  if (!request.auth || !request.auth.uid) {
-    throw new HttpsError('unauthenticated', 'Autenticación requerida');
+  if (!context.auth || !context.auth.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Autenticación requerida');
   }
 
   // === VALIDACIÓN DE PARÁMETROS ===
-  const businessId = request.data && request.data.businessId;
+  const businessId = data && data.businessId;
   if (!businessId) {
-    throw new HttpsError('invalid-argument', 'businessId es requerido');
+    throw new functions.https.HttpsError('invalid-argument', 'businessId es requerido');
   }
 
   console.log(`🔍 Lazy close check for business: ${businessId}`);
@@ -64,7 +65,7 @@ module.exports = onCall(async (request) => {
   const businessDoc = await db.doc(`businesses/${businessId}`).get();
 
   if (!businessDoc.exists) {
-    throw new HttpsError('not-found', `Negocio ${businessId} no encontrado`);
+    throw new functions.https.HttpsError('not-found', `Negocio ${businessId} no encontrado`);
   }
 
   const businessData = businessDoc.data();
