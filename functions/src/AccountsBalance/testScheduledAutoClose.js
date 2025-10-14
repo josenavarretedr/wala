@@ -1,8 +1,23 @@
 /* eslint-disable */
 
+/**
+ * @file testScheduledAutoClose.js
+ * @description Función HTTP para testing del cierre automático programado.
+ * Simula el comportamiento del scheduler que cierra días abiertos automáticamente.
+ * 
+ * Infraestructura consistente con:
+ * - useTransaction.js (creación de transacciones)
+ * - transactionStore.js (estructura de datos)
+ * - useCashClosure.js (lógica de cierre)
+ * - accountsBalanceStore.js (cálculos financieros)
+ * 
+ * @module AccountsBalance/testScheduledAutoClose
+ */
+
 const { onRequest } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { FieldValue } = require('firebase-admin/firestore'); // ✅ Importación directa
+const { FieldValue } = require('firebase-admin/firestore');
+const { v4: uuidv4 } = require('uuid');
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -16,34 +31,57 @@ const { breakStreak, incStreakIfConsecutive } = require('./sharedStreak');
 
 const DEFAULT_TZ = 'America/Lima';
 
+/**
+ * Función de testing para el cierre automático programado.
+ * Procesa todos los negocios (o uno específico) y cierra días pendientes.
+ * 
+ * Casos de uso:
+ * 1. Día abierto sin cierre → Crea cierre automático
+ * 2. Día completo (apertura + transacciones + cierre) → Incrementa racha
+ * 3. Día sin apertura o sin actividad → No hace nada
+ * 
+ * Query params:
+ * - businessId (opcional): Procesar solo un negocio específico
+ * 
+ * Response:
+ * - success: boolean
+ * - results: Array con el resultado de cada negocio
+ * - timestamp: ISO string
+ */
 module.exports = onRequest(async (request, response) => {
   try {
     console.log('🧪 TEST: scheduledAutoClose');
+    console.log(`🕐 Started at: ${new Date().toISOString()}`);
 
     // Permite pasar un businessId específico para testing
     const testBusinessId = request.query.businessId;
 
     let businesses;
     if (testBusinessId) {
+      console.log(`🎯 Testing single business: ${testBusinessId}`);
       const doc = await db.doc(`businesses/${testBusinessId}`).get();
+
       if (!doc.exists) {
+        console.error(`❌ Business ${testBusinessId} not found`);
         return response.status(404).json({
           success: false,
           error: `Negocio ${testBusinessId} no encontrado`
         });
       }
+
       businesses = { docs: [doc], size: 1 };
-      console.log(`🎯 Probando solo negocio: ${testBusinessId}`);
     } else {
-      businesses = await db.collection('businesses').get(); // ✅ Removido .select()
-      console.log(`📊 Probando ${businesses.size} negocios`);
+      console.log(`📊 Testing all businesses`);
+      businesses = await db.collection('businesses').get();
+      console.log(`📊 Found ${businesses.size} businesses`);
     }
 
     const results = [];
 
+    // Procesar cada negocio
     for (const b of businesses.docs) {
       if (!b.exists) {
-        console.log('⚠️ Documento no existe, saltando...');
+        console.log('⚠️  Document does not exist, skipping...');
         continue;
       }
 
@@ -51,77 +89,152 @@ module.exports = onRequest(async (request, response) => {
       const businessData = b.data();
       const tz = (businessData && businessData.timezone) || DEFAULT_TZ;
 
-      console.log(`\n🏪 Negocio: ${businessId}`);
+      console.log(`\n${'='.repeat(60)}`);
+      console.log(`🏪 Business: ${businessId}`);
+      console.log(`🌍 Timezone: ${tz}`);
 
+      // === CALCULAR DÍA ANTERIOR ===
       const day = yesterdayStr(tz);
-      console.log(`📅 Día: ${day}`);
+      console.log(`📅 Processing day: ${day}`);
 
+      // === OBTENER AGREGADOS DEL DÍA ===
       const agg = await getDayAggregates(db, businessId, day, tz);
-      console.log(`📊 Agregados:`, JSON.stringify(agg, null, 2));
-
-      await upsertDailySummary(db, businessId, day, {
+      console.log(`📊 Aggregates:`, {
         hasOpening: agg.hasOpening,
-        hasTxn: agg.hasTxn,
         hasClosure: agg.hasClosure,
-        totals: agg.totals
+        hasTxn: agg.hasTxn,
+        totals: agg.totals,
+        operational: agg.operational
+      });
+
+      // Actualizar resumen diario con estructura completa
+      await upsertDailySummary(db, businessId, day, {
+        ...agg // Estructura completa de accountsBalanceStore
       });
 
       let action = 'none';
+      let transactionId = null;
 
+      // === CASO 1: DÍA ABIERTO SIN CIERRE ===
       if (agg.hasOpening && !agg.hasClosure) {
-        console.log(`⚠️  ABIERTO sin cierre - Creando cierre automático`);
+        console.log(`⚠️  OPEN without closure - Creating automatic closure`);
 
-        const txRef = db.collection(`businesses/${businessId}/transactions`).doc();
-        await txRef.set({
-          uuid: txRef.id,
+        // Generar UUID para la transacción (consistente con useTransaction)
+        const closureUuid = uuidv4();
+        const closureRef = db.collection(`businesses/${businessId}/transactions`).doc(closureUuid);
+
+        // Estructura de transacción consistente con transactionStore
+        const closureTransaction = {
+          uuid: closureUuid,
           type: 'closure',
-          description: 'Cierre automático (copiloto TEST)',
+          description: 'Cierre automático (scheduled)',
           source: 'copilot',
-          copilotMode: 'test',
+          copilotMode: 'scheduled',
+          account: 'cash', // Default account
           amount: 0,
-          createdAt: FieldValue.serverTimestamp() // ✅ Usando FieldValue
-        });
+          // Metadata para trazabilidad
+          metadata: {
+            day: day,
+            triggerType: 'scheduled_auto_close',
+            autoGenerated: true,
+            testMode: true,
+            aggregates: {
+              totalIncome: agg.totals.income,
+              totalExpense: agg.totals.expense,
+              netResult: agg.totals.net
+            }
+          },
+          createdAt: FieldValue.serverTimestamp()
+        };
 
+        // Crear transacción de cierre
+        await closureRef.set(closureTransaction);
+        transactionId = closureUuid;
+        console.log(`✅ Closure created: ${closureUuid}`);
+
+        // Actualizar resumen diario con info de cierre (merge sobre datos existentes)
         await upsertDailySummary(db, businessId, day, {
           hasClosure: true,
           isAutoClosed: true,
-          closureId: txRef.id,
-          completedAt: FieldValue.serverTimestamp() // ✅ Usando FieldValue
+          closureId: closureUuid,
+          autoCloseReason: 'test',
+          completedAt: FieldValue.serverTimestamp()
         });
+        console.log(`✅ Daily summary updated with closure info`);
 
+        // Romper racha
         await breakStreak(db, businessId);
         action = 'auto-closed';
-        console.log(`✅ Cierre creado: ${txRef.id}`);
+        console.log(`📉 Streak broken`);
 
-      } else if (agg.hasOpening && agg.hasTxn && agg.hasClosure) {
-        console.log(`✨ Día completo - Incrementando racha`);
+      }
+      // === CASO 2: DÍA COMPLETO ===
+      else if (agg.hasOpening && agg.hasTxn && agg.hasClosure) {
+        console.log(`✨ Complete day - Incrementing streak`);
         await incStreakIfConsecutive(db, businessId, day, tz);
         action = 'streak-increased';
-      } else {
-        console.log(`ℹ️  Sin acción necesaria`);
+        console.log(`📈 Streak incremented`);
+      }
+      // === CASO 3: SIN ACCIÓN NECESARIA ===
+      else {
+        console.log(`ℹ️  No action needed`);
+
+        if (!agg.hasOpening) {
+          console.log(`   - No opening found`);
+        }
+        if (!agg.hasTxn) {
+          console.log(`   - No transactions found`);
+        }
       }
 
+      // Guardar resultado
       results.push({
         businessId,
         day,
+        timezone: tz,
         action,
-        aggregates: agg
+        transactionId,
+        aggregates: {
+          hasOpening: agg.hasOpening,
+          hasClosure: agg.hasClosure,
+          hasTransactions: agg.hasTxn,
+          totals: agg.totals
+        },
+        timestamp: new Date().toISOString()
       });
     }
 
-    console.log('\n✅ TEST completado');
+    console.log(`\n${'='.repeat(60)}`);
+    console.log('✅ TEST completed successfully');
+    console.log(`📊 Processed ${results.length} businesses`);
+    console.log(`🕐 Finished at: ${new Date().toISOString()}`);
+
+    // Resumen de acciones
+    const summary = {
+      total: results.length,
+      autoClosed: results.filter(r => r.action === 'auto-closed').length,
+      streakIncreased: results.filter(r => r.action === 'streak-increased').length,
+      noAction: results.filter(r => r.action === 'none').length
+    };
+
+    console.log('📈 Summary:', summary);
+
     response.json({
       success: true,
+      summary,
       results,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('❌ Error:', error);
+    console.error('Stack:', error.stack);
+
     response.status(500).json({
       success: false,
       error: error.message,
-      stack: error.stack
+      stack: error.stack,
+      timestamp: new Date().toISOString()
     });
   }
 });
