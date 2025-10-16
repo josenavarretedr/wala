@@ -212,6 +212,11 @@ const routes = [
         path: 'inventory/product/:productId/remove-stock',
         name: 'RemoveStock',
         component: () => import('@/views/Inventory/RemoveStock.vue')
+      },
+      {
+        path: 'inventory/product/:productId/count',
+        name: 'InventoryCount',
+        component: () => import('@/views/Inventory/InventoryCount.vue')
       }
       // {
       //   path: 'records/:registerId',

@@ -193,12 +193,116 @@ export function useInventoryStore() {
     }
   };
 
+  const saveInventoryCount = async (countData) => {
+    const operationChain = startOperationChain('inventory_count_adjustment');
+
+    try {
+      const { productId, productData, physicalStock, digitalStock, difference } = countData;
+
+      // Validaciones estrictas
+      if (!productId) {
+        throw new Error('productId es requerido');
+      }
+
+      if (physicalStock === null || physicalStock === undefined) {
+        throw new Error('physicalStock no puede ser null o undefined');
+      }
+
+      if (digitalStock === null || digitalStock === undefined) {
+        throw new Error('digitalStock no puede ser null o undefined');
+      }
+
+      // Validar difference (puede ser 0, positivo o negativo)
+      if (difference === null || difference === undefined) {
+        throw new Error('difference no puede ser null o undefined');
+      }
+
+      console.log('💾 Datos de conteo validados:', {
+        productId,
+        physicalStock,
+        digitalStock,
+        difference,
+        hasDifference: difference !== 0
+      });
+
+      // === TRAZABILIDAD: Iniciar cadena de operación ===
+      const operationType = difference === 0 ? 'verification' : 'adjustment';
+      await operationChain.addStep('update', 'inventory', productId, {
+        oldState: { stock: digitalStock },
+        newState: { stock: physicalStock },
+        reason: difference === 0 ? 'inventory_count_verification' : 'inventory_count_adjustment',
+        severity: difference === 0 ? 'low' : 'high',
+        tags: ['inventory_count', operationType, 'physical_verification'],
+        metadata: {
+          difference,
+          adjustmentType: difference > 0 ? 'surplus' : difference < 0 ? 'shortage' : 'verified',
+          verificationDate: new Date().toISOString()
+        }
+      });
+
+      // Crear el stock log de tipo 'count'
+      const stockLogData = {
+        uuid: productId,
+        quantity: Math.abs(difference), // Valor absoluto de la diferencia
+        cost: productData?.cost || null,
+        price: productData?.price || null,
+        physicalStock: Number(physicalStock),
+        digitalStock: Number(digitalStock),
+        difference: Number(difference),
+        adjustmentType: difference > 0 ? 'surplus' : difference < 0 ? 'shortage' : 'verified'
+      };
+
+      console.log('📦 StockLog a crear:', stockLogData);
+
+      // Guardar el stock log
+      await createStockLog(stockLogData, 'count');
+
+      // === TRAZABILIDAD: Finalizar operación ===
+      await operationChain.finish({
+        reason: 'inventory_count_completed',
+        metadata: {
+          productId,
+          productDescription: productData?.description,
+          previousStock: digitalStock,
+          newStock: physicalStock,
+          adjustment: difference,
+          adjustmentType: difference > 0 ? 'surplus' : 'shortage',
+          relatedEntities: [
+            { type: 'inventory', id: productId, relationship: 'stock_adjusted' }
+          ]
+        }
+      });
+
+      console.log('✅ Inventory count saved successfully:', {
+        productId,
+        adjustment: difference,
+        newStock: physicalStock
+      });
+
+      return { success: true, adjustment: difference };
+
+    } catch (error) {
+      console.error('❌ Error saving inventory count:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await operationChain.addStep('error', 'inventory', 'count_operation', {
+        newState: { error: error.message },
+        reason: 'inventory_count_failed',
+        severity: 'high',
+        tags: ['inventory_error', 'count_failure', 'adjustment_error']
+      });
+
+      throw error;
+    }
+  };
+
   return {
     allItemsInInventory,
     itemToAddToInventory,
     getItemsInInventory,
     getProductDetails,
     addStockLogInInventory,
-    addItemToInventoryFromArryOfItemsNewOrOld
+    addItemToInventoryFromArryOfItemsNewOrOld,
+    saveInventoryCount
   };
 }

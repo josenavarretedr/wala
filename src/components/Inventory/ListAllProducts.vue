@@ -135,7 +135,7 @@
                       d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
                     ></path>
                   </svg>
-                  Stock: {{ product.quantity || 0 }} {{ product.unit || "uni" }}
+                  Stock: {{ product.stock || 0 }} {{ product.unit || "uni" }}
                 </span>
               </div>
             </div>
@@ -201,7 +201,7 @@ function buildIndex(items) {
     description: p.description,
     description_lc: normalize(p.description || ""),
     price: p.price,
-    quantity: p.quantity,
+    stock: p.stock,
     unit: p.unit || "uni",
   }));
 }

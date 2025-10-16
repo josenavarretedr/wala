@@ -67,7 +67,8 @@
 
         <!-- Stock logs list -->
         <div v-else class="space-y-3 sm:space-y-4">
-          <CardStandarMove
+          <component
+            :is="getCardComponent(log)"
             v-for="(log, index) in sortedStockLogs"
             :key="log.uuid || index"
             :log="log"
@@ -84,6 +85,7 @@
 import { computed, ref } from "vue";
 import { Eye, EyeClosed } from "@iconoir/vue";
 import CardStandarMove from "./CardStandarMove.vue";
+import CardInventoryCount from "./CardInventoryCount.vue";
 
 // Estado del toggle
 const showRecords = ref(false);
@@ -99,6 +101,14 @@ const props = defineProps({
     default: "uni",
   },
 });
+
+// Methods: Determinar qué componente usar según el tipo de log
+const getCardComponent = (log) => {
+  if (log.type === "count") {
+    return CardInventoryCount;
+  }
+  return CardStandarMove;
+};
 
 // Computed: Sorted Stock Logs
 const sortedStockLogs = computed(() => {

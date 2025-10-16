@@ -81,6 +81,22 @@ export function useInventory() {
         stockLog.transactionId = item.transactionId;
       }
 
+      // Para conteos de inventario, agregar campos adicionales
+      if (typeStockLog === 'count') {
+        if (item.physicalStock !== undefined && item.physicalStock !== null) {
+          stockLog.physicalStock = Number(item.physicalStock);
+        }
+        if (item.digitalStock !== undefined && item.digitalStock !== null) {
+          stockLog.digitalStock = Number(item.digitalStock);
+        }
+        if (item.difference !== undefined && item.difference !== null) {
+          stockLog.difference = Number(item.difference);
+        }
+        if (item.adjustmentType) {
+          stockLog.adjustmentType = item.adjustmentType;
+        }
+      }
+
       const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
 
       await updateDoc(productRef, {
@@ -95,7 +111,13 @@ export function useInventory() {
         quantity: item.quantity,
         cost: stockLog.cost,
         price: stockLog.price,
-        transactionId: stockLog.transactionId
+        transactionId: stockLog.transactionId,
+        ...(typeStockLog === 'count' && {
+          physicalStock: stockLog.physicalStock,
+          digitalStock: stockLog.digitalStock,
+          difference: stockLog.difference,
+          adjustmentType: stockLog.adjustmentType
+        })
       });
 
       return stockLog.uuid;
@@ -170,17 +192,43 @@ export function useInventory() {
         }
       }
 
+      // Manejo especial para conteo de inventario (type: 'count')
+      if (stockLog.type === 'count') {
+        // Para conteos, el stock se establece directamente al valor físico contado
+        if (stockLog.physicalStock === undefined || stockLog.physicalStock === null) {
+          console.error('❌ Error: physicalStock es undefined o null', stockLog);
+          throw new Error('physicalStock no puede ser undefined o null en un conteo de inventario');
+        }
+
+        newStock = Number(stockLog.physicalStock);
+        console.log(`📊 Ajuste por conteo de inventario:`, {
+          stockAnterior: itemData.stock,
+          stockFisico: newStock,
+          diferencia: stockLog.difference,
+          tipoAjuste: stockLog.adjustmentType
+        });
+      }
+
+      // Validar que newStock no sea null o undefined antes de actualizar
+      if (newStock === null || newStock === undefined) {
+        console.error('❌ Error: newStock es null o undefined', {
+          type: stockLog.type,
+          stockLog
+        });
+        throw new Error(`No se pudo calcular el nuevo stock para el tipo: ${stockLog.type}`);
+      }
+
       // Actualizar stock (siempre)
-      updateData.stock = newStock;
+      updateData.stock = Number(newStock);
 
       await updateDoc(productRef, updateData);
-      console.log('Stock updated successfully');
+      console.log('✅ Stock updated successfully:', newStock);
 
       if (updateData.cost !== undefined) {
         console.log(`✅ Stock y costo actualizados: ${newStock} unidades, S/ ${updateData.cost}`);
       }
     } catch (error) {
-      console.error('Error updating stock: ', error);
+      console.error('❌ Error updating stock: ', error);
       throw error;
     }
   };

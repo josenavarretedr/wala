@@ -54,7 +54,14 @@ import { Plus, Minus, ClipboardCheck } from "@iconoir/vue";
  */
 const handleInventoryAction = () => {
   console.log("🔶 INVENTARIO: Iniciando conteo de inventario físico");
-  // TODO: Implementar lógica de inventario
+  // Navegar a InventoryCount con los parámetros actuales
+  router.push({
+    name: "InventoryCount",
+    params: {
+      businessId: route.params.businessId,
+      productId: route.params.productId,
+    },
+  });
 };
 
 const route = useRoute();
