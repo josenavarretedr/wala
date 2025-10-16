@@ -36,7 +36,9 @@ export const FLOW_TYPES = {
   CASH: 'cash',
   INVENTORY: 'inventory',
   BUSINESS: 'business',
-  ACCOUNT_BALANCE: 'account_balance'
+  ACCOUNT_BALANCE: 'account_balance',
+  REMOVE_STOCK: 'remove_stock',
+  ADD_STOCK: 'add_stock'
 };
 
 /**
@@ -72,6 +74,18 @@ export const FLOW_COLORS = {
     inactiveColor: 'bg-gray-200',
     counterBgColor: 'bg-teal-50',
     counterTextColor: 'text-teal-600'
+  },
+  [FLOW_TYPES.REMOVE_STOCK]: {
+    activeColor: 'bg-red-500',
+    inactiveColor: 'bg-gray-200',
+    counterBgColor: 'bg-red-50',
+    counterTextColor: 'text-red-600'
+  },
+  [FLOW_TYPES.ADD_STOCK]: {
+    activeColor: 'bg-green-500',
+    inactiveColor: 'bg-gray-200',
+    counterBgColor: 'bg-green-50',
+    counterTextColor: 'text-green-600'
   }
 };
 

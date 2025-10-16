@@ -48,7 +48,7 @@ export function useInventory() {
     }
   };
 
-  const createStockLog = async (item) => {
+  const createStockLog = async (item, typeStockLog = 'sell') => {
     try {
       const businessId = ensureBusinessId();
 
@@ -60,8 +60,26 @@ export function useInventory() {
       const stockLog = {
         uuid: uuidv4(),
         quantity: item.quantity,
-        type: 'sell',
+        type: typeStockLog,
       };
+
+      // Siempre registrar cost y price para todos los movimientos
+      // Esto permite tener histórico completo y análisis de rentabilidad
+
+      // Registrar cost (costo del producto)
+      if (item.cost !== undefined && item.cost !== null) {
+        stockLog.cost = Number(item.cost);
+      }
+
+      // Registrar price (precio de venta/transacción)
+      if (item.price !== undefined && item.price !== null) {
+        stockLog.price = Number(item.price);
+      }
+
+      // Agregar referencia a la transacción si existe
+      if (item.transactionId) {
+        stockLog.transactionId = item.transactionId;
+      }
 
       const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
 
@@ -71,7 +89,15 @@ export function useInventory() {
 
       await updateStock(productRef, stockLog);
 
-      console.log('Stock log created successfully');
+      console.log('✅ Stock log created successfully:', {
+        uuid: stockLog.uuid,
+        type: typeStockLog,
+        quantity: item.quantity,
+        cost: stockLog.cost,
+        price: stockLog.price,
+        transactionId: stockLog.transactionId
+      });
+
       return stockLog.uuid;
 
     } catch (error) {
@@ -126,8 +152,9 @@ export function useInventory() {
       const itemData = itemDoc.data();
 
       let newStock = null;
+      const updateData = {};
 
-      if (stockLog.type === 'sell') {
+      if (stockLog.type === 'sell' || stockLog.type === 'waste') {
         if (stockLog.quantity > itemData.stock) return;
 
         newStock = Math.max(itemData.stock - stockLog.quantity, 0);
@@ -135,10 +162,23 @@ export function useInventory() {
 
       if (stockLog.type === 'buy' || stockLog.type === 'return') {
         newStock = itemData.stock + stockLog.quantity;
+
+        // Si es una compra y viene un nuevo costo, actualizarlo
+        if (stockLog.type === 'buy' && stockLog.cost !== undefined && stockLog.cost !== null) {
+          updateData.cost = Number(stockLog.cost);
+          console.log(`💰 Actualizando costo del producto a: S/ ${stockLog.cost}`);
+        }
       }
 
-      await updateDoc(productRef, { stock: newStock });
+      // Actualizar stock (siempre)
+      updateData.stock = newStock;
+
+      await updateDoc(productRef, updateData);
       console.log('Stock updated successfully');
+
+      if (updateData.cost !== undefined) {
+        console.log(`✅ Stock y costo actualizados: ${newStock} unidades, S/ ${updateData.cost}`);
+      }
     } catch (error) {
       console.error('Error updating stock: ', error);
       throw error;

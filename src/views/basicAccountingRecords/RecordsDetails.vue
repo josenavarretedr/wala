@@ -52,6 +52,9 @@ import { useCashClosureStore } from "@/stores/cashClosureStore";
 import { Edit, Trash, Xmark } from "@iconoir/vue";
 import { useRoute, useRouter } from "vue-router";
 import { useFlowClose } from "@/composables/useCloseBtn";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/firebaseInit";
+import { useBusinessStore } from "@/stores/businessStore";
 
 // Importación dinámica de componentes
 import IncomeDetails from "@/components/HistorialRecords/Details/IncomeDetails.vue";
@@ -64,6 +67,7 @@ import CloseBtn from "@/components/ui/CloseBtn.vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
 
 const cashEventStore = useCashEventStore();
+const businessStore = useBusinessStore();
 
 const hasClosureToday = computed(() => {
   return transactionStore.hasClosureToday();
@@ -106,10 +110,49 @@ const closeBtnConfig = computed(() => ({
 
 onMounted(async () => {
   try {
-    // Obtener los datos de la transacción por ID
-    const transaccionAConsulta = transactionStore.getOneTransactionDataByID(
-      route.params.registerId
-    );
+    const transactionId = route.params.registerId;
+    console.log("🔍 [RecordsDetails] Buscando transacción:", transactionId);
+
+    // Primero intentar obtener del store
+    let transaccionAConsulta =
+      transactionStore.getOneTransactionDataByID(transactionId);
+
+    // Si no está en el store, consultar Firestore directamente
+    if (!transaccionAConsulta || transaccionAConsulta.length === 0) {
+      console.log(
+        "⚠️ [RecordsDetails] No encontrada en store, consultando Firestore..."
+      );
+
+      const businessId = businessStore.business?.id;
+      if (!businessId) {
+        console.error("❌ No hay businessId disponible");
+        return;
+      }
+
+      const transactionRef = doc(
+        db,
+        `businesses/${businessId}/transactions`,
+        transactionId
+      );
+      const transactionSnap = await getDoc(transactionRef);
+
+      if (transactionSnap.exists()) {
+        const firestoreData = {
+          id: transactionSnap.id,
+          ...transactionSnap.data(),
+        };
+        console.log(
+          "✅ [RecordsDetails] Transacción encontrada en Firestore:",
+          firestoreData
+        );
+        transaccionAConsulta = [firestoreData]; // Envolver en array para mantener compatibilidad
+      } else {
+        console.error("❌ [RecordsDetails] Transacción no existe en Firestore");
+        return;
+      }
+    } else {
+      console.log("✅ [RecordsDetails] Transacción encontrada en store");
+    }
 
     if (transaccionAConsulta && transaccionAConsulta.length > 0) {
       transactionData.value = transaccionAConsulta[0]; // getOneTransactionDataByID retorna un array
@@ -131,10 +174,7 @@ onMounted(async () => {
         dynamicComponent.value = IncomeDetails;
       }
     } else {
-      console.error(
-        "No se encontró la transacción con ID:",
-        route.params.registerId
-      );
+      console.error("No se encontró la transacción con ID:", transactionId);
     }
   } catch (error) {
     console.error("Error al obtener la transacción:", error);

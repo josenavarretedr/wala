@@ -108,13 +108,13 @@ export function useInventoryStore() {
     }
   }
 
-  const addStockLogInInventory = async (stockLog) => {
+  const addStockLogInInventory = async (stockLog, typeStockLog = 'sell') => {
     try {
       // === TRAZABILIDAD: Log de creación de stock log ===
       const traceId = await logCreate(
         'stock_log',
         stockLog.logId || stockLog.uuid,
-        stockLog,
+        { ...stockLog, type: typeStockLog },
         {
           reason: 'stock_log_creation',
           severity: 'medium',
@@ -127,7 +127,7 @@ export function useInventoryStore() {
         }
       );
 
-      await createStockLog(stockLog);
+      await createStockLog(stockLog, typeStockLog);
       console.log('✅ Stock log added with traceId:', traceId);
 
     } catch (error) {

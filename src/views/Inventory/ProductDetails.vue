@@ -1,5 +1,7 @@
 <template>
-  <div class="product-details-wrapper">
+  <div
+    class="product-details-wrapper space-y-4 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
+  >
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <div
@@ -37,417 +39,61 @@
     </div>
 
     <!-- Product Details -->
-    <div v-else-if="product" class="product-content">
-      <!-- Header with Back Button -->
-      <div class="header-section">
-        <button @click="goBack" class="back-button">
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            ></path>
-          </svg>
-          <span>Volver</span>
-        </button>
-        <h1 class="page-title">Detalles del Producto</h1>
-      </div>
-
-      <!-- Stock Alert Card (Destacado) -->
-      <div class="stock-highlight-card" :class="stockStatusClass">
-        <div class="stock-icon">
-          <svg
-            v-if="stockStatus === 'high'"
-            class="w-12 h-12"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          <svg
-            v-else-if="stockStatus === 'medium'"
-            class="w-12 h-12"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            ></path>
-          </svg>
-          <svg
-            v-else
-            class="w-12 h-12"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-        </div>
-        <div class="stock-info">
-          <p class="stock-label">Stock Actual</p>
-          <p class="stock-value">
-            {{ product.stock || 0 }}
-            <span class="stock-unit">{{ product.unit || "uni" }}</span>
-          </p>
-          <p class="stock-status-text">{{ stockStatusText }}</p>
-        </div>
+    <div v-else-if="product" class="product-content pb-32 sm:pb-24">
+      <!-- HEADER -->
+      <div class="flex items-center gap-3 mb-6">
+        <BackBtn
+          :route-name="'InventoryDashboard'"
+          :route-params="{ businessId: route.params.businessId }"
+          :use-back="!route.params.businessId"
+          tooltip-text="Volver al inventario"
+        />
       </div>
 
       <!-- Product Information Cards -->
-      <div class="info-cards-grid">
-        <!-- Description Card -->
-        <div class="info-card">
-          <div class="info-card-header">
-            <svg
-              class="w-5 h-5 text-blue-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              ></path>
-            </svg>
-            <h3 class="info-card-title">Descripción</h3>
-          </div>
-          <p class="info-card-value">{{ product.description }}</p>
-        </div>
+      <ProductInformation
+        :description="product.description"
+        :price="product.price"
+        :cost="product.cost"
+        :created-at="product.createdAt"
+        class="mb-4"
+      />
 
-        <!-- Price Card -->
-        <div class="info-card">
-          <div class="info-card-header">
-            <svg
-              class="w-5 h-5 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              ></path>
-            </svg>
-            <h3 class="info-card-title">Precio de Venta</h3>
-          </div>
-          <p class="info-card-value price-value">
-            ${{ formatPrice(product.price) }}
-          </p>
-        </div>
-
-        <!-- Cost Card -->
-        <div class="info-card">
-          <div class="info-card-header">
-            <svg
-              class="w-5 h-5 text-orange-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
-              ></path>
-            </svg>
-            <h3 class="info-card-title">Costo</h3>
-          </div>
-          <p class="info-card-value price-value" v-if="product.cost">
-            ${{ formatPrice(product.cost) }}
-          </p>
-          <p class="info-card-value text-gray-400" v-else>No registrado</p>
-        </div>
-
-        <!-- Margin Card (if cost exists) -->
-        <div class="info-card" v-if="product.cost && product.price">
-          <div class="info-card-header">
-            <svg
-              class="w-5 h-5 text-purple-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              ></path>
-            </svg>
-            <h3 class="info-card-title">Margen de Ganancia</h3>
-          </div>
-          <p class="info-card-value">
-            {{ calculateMarginPercentage }}%
-            <span class="text-sm text-gray-500 ml-2"
-              >(${{ calculateMarginAmount }})</span
-            >
-          </p>
-        </div>
-
-        <!-- Created Date Card -->
-        <div class="info-card">
-          <div class="info-card-header">
-            <svg
-              class="w-5 h-5 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-            <h3 class="info-card-title">Fecha de Registro</h3>
-          </div>
-          <p class="info-card-value text-sm">
-            {{ formatDate(product.createdAt) }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Stock History Section -->
-      <div class="stock-history-section">
-        <div class="section-header">
-          <h2 class="section-title">
-            <svg
-              class="w-6 h-6 inline-block mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              ></path>
-            </svg>
-            Historial de Movimientos
-          </h2>
-          <p class="section-subtitle">
-            Total de movimientos: {{ sortedStockLogs.length }}
-          </p>
-        </div>
-
-        <!-- No stock logs -->
-        <div
-          v-if="!sortedStockLogs || sortedStockLogs.length === 0"
-          class="empty-history"
-        >
-          <div class="text-gray-300 mb-4">
-            <svg
-              class="w-16 h-16 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              ></path>
-            </svg>
-          </div>
-          <p class="text-gray-500 text-center">
-            No hay movimientos registrados para este producto
-          </p>
-        </div>
-
-        <!-- Stock logs timeline -->
-        <div v-else class="stock-timeline">
-          <div
-            v-for="(log, index) in sortedStockLogs"
-            :key="log.uuid"
-            class="timeline-item"
-            :class="getStockLogClass(log.type)"
-          >
-            <div
-              class="timeline-marker"
-              :class="getStockLogMarkerClass(log.type)"
-            >
-              <svg
-                v-if="log.type === 'sell'"
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                ></path>
-              </svg>
-              <svg
-                v-else-if="log.type === 'buy'"
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 16l-4-4m0 0l4-4m-4 4h18"
-                ></path>
-              </svg>
-              <svg
-                v-else
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                ></path>
-              </svg>
-            </div>
-
-            <div class="timeline-content">
-              <div class="flex justify-between items-start mb-2">
-                <div>
-                  <span class="timeline-type">{{
-                    getStockLogTypeText(log.type)
-                  }}</span>
-                  <span class="timeline-date">{{
-                    formatDate(log.createdAt)
-                  }}</span>
-                </div>
-                <span
-                  class="timeline-quantity"
-                  :class="getQuantityClass(log.type)"
-                >
-                  {{ log.type === "sell" ? "-" : "+" }}{{ log.quantity }}
-                  {{ product.unit || "uni" }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Stock Alert Card (Destacado) -->
+      <ProductStockAlert :stock="product.stock" :unit="product.unit" />
 
       <!-- Statistics Summary -->
-      <div class="statistics-section" v-if="sortedStockLogs.length > 0">
-        <h3 class="statistics-title">Resumen de Movimientos</h3>
-        <div class="statistics-grid">
-          <div class="stat-card stat-sell">
-            <div class="stat-icon">
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"
-                ></path>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Ventas</p>
-              <p class="stat-value">
-                {{ totalSales }} {{ product.unit || "uni" }}
-              </p>
-            </div>
-          </div>
+      <ResumenMoves
+        :stock-log="product.stockLog"
+        :product-unit="product.unit || 'uni'"
+        class="mb-4"
+      />
 
-          <div class="stat-card stat-buy">
-            <div class="stat-icon">
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                ></path>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Compras</p>
-              <p class="stat-value">
-                {{ totalBuys }} {{ product.unit || "uni" }}
-              </p>
-            </div>
-          </div>
-
-          <div class="stat-card stat-return">
-            <div class="stat-icon">
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                ></path>
-              </svg>
-            </div>
-            <div class="stat-content">
-              <p class="stat-label">Total Devoluciones</p>
-              <p class="stat-value">
-                {{ totalReturns }} {{ product.unit || "uni" }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Stock History Section -->
+      <ProductMoves
+        :stock-log="product.stockLog"
+        :product-unit="product.unit || 'uni'"
+      />
+    </div>
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
+    >
+      <NavigationBtnProductDetails />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { ref, onMounted, watch, onActivated, nextTick } from "vue";
+import { useRoute, useRouter, onBeforeRouteUpdate } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
+import ProductMoves from "@/components/Inventory/ProductDetails/ProductMoves.vue";
+import ProductInformation from "@/components/Inventory/ProductDetails/ProductInformation.vue";
+import ProductStockAlert from "@/components/Inventory/ProductDetails/ProductStockAlert.vue";
+import ResumenMoves from "@/components/Inventory/ProductDetails/ResumenMoves.vue";
+import BackBtn from "@/components/ui/BackBtn.vue";
+
+import NavigationBtnProductDetails from "@/components/Inventory/ProductDetails/NavigationBtnProductDetails.vue";
 
 // Router
 const route = useRoute();
@@ -461,94 +107,15 @@ const product = ref(null);
 const loading = ref(true);
 const error = ref(null);
 
-// Computed: Stock Status
-const stockStatus = computed(() => {
-  const stock = product.value?.stock || 0;
-  // if (stock === 0) return "empty";
-  // if (stock <= 5) return "low";
-  // if (stock <= 20) return "medium";
-  return "empty";
-});
-
-const stockStatusText = computed(() => {
-  switch (stockStatus.value) {
-    case "empty":
-      return "Sin stock disponible";
-    case "low":
-      return "Stock bajo - Reabastecer pronto";
-    case "medium":
-      return "Stock moderado";
-    case "high":
-      return "Stock disponible";
-    default:
-      return "";
-  }
-});
-
-const stockStatusClass = computed(() => {
-  return {
-    "stock-empty": stockStatus.value === "empty",
-    "stock-low": stockStatus.value === "low",
-    "stock-medium": stockStatus.value === "medium",
-    "stock-high": stockStatus.value === "high",
-  };
-});
-
-// Computed: Sorted Stock Logs
-const sortedStockLogs = computed(() => {
-  if (!product.value?.stockLog) return [];
-  return [...product.value.stockLog].sort((a, b) => {
-    const dateA =
-      a.createdAt instanceof Date ? a.createdAt : new Date(a.createdAt);
-    const dateB =
-      b.createdAt instanceof Date ? b.createdAt : new Date(b.createdAt);
-    return dateB - dateA; // Más reciente primero
-  });
-});
-
-// Computed: Statistics
-const totalSales = computed(() => {
-  if (!product.value?.stockLog) return 0;
-  return product.value.stockLog
-    .filter((log) => log.type === "sell")
-    .reduce((sum, log) => sum + (log.quantity || 0), 0);
-});
-
-const totalBuys = computed(() => {
-  if (!product.value?.stockLog) return 0;
-  return product.value.stockLog
-    .filter((log) => log.type === "buy")
-    .reduce((sum, log) => sum + (log.quantity || 0), 0);
-});
-
-const totalReturns = computed(() => {
-  if (!product.value?.stockLog) return 0;
-  return product.value.stockLog
-    .filter((log) => log.type === "return")
-    .reduce((sum, log) => sum + (log.quantity || 0), 0);
-});
-
-// Computed: Margin calculations
-const calculateMarginAmount = computed(() => {
-  if (!product.value?.price || !product.value?.cost) return "0.00";
-  const margin = product.value.price - product.value.cost;
-  return margin.toFixed(2);
-});
-
-const calculateMarginPercentage = computed(() => {
-  if (!product.value?.price || !product.value?.cost) return "0.00";
-  const margin =
-    ((product.value.price - product.value.cost) / product.value.cost) * 100;
-  return margin.toFixed(2);
-});
-
 // Methods
 const loadProduct = async () => {
+  console.log("🔍 [ProductDetails] Iniciando loadProduct...");
   loading.value = true;
   error.value = null;
 
   try {
     const productId = route.params.productId;
+    console.log("🔍 [ProductDetails] ProductId:", productId);
 
     if (!productId) {
       error.value = "ID de producto no válido";
@@ -556,6 +123,18 @@ const loadProduct = async () => {
     }
 
     const productData = await getProductById(productId);
+    console.log("🔍 [ProductDetails] ProductData recibido:", productData);
+    console.log(
+      "🔍 [ProductDetails] StockLog count:",
+      productData?.stockLog?.length || 0
+    );
+
+    if (productData?.stockLog?.length > 0) {
+      console.log(
+        "🔍 [ProductDetails] Último stockLog:",
+        productData.stockLog[productData.stockLog.length - 1]
+      );
+    }
 
     if (!productData) {
       error.value = "Producto no encontrado";
@@ -571,82 +150,57 @@ const loadProduct = async () => {
   }
 };
 
-const goBack = () => {
-  const businessId = route.params.businessId;
-  if (businessId) {
-    router.push({
-      name: "InventoryDashboard",
-      params: { businessId },
-    });
-  } else {
-    router.back();
-  }
-};
-
-const formatPrice = (price) => {
-  if (!price && price !== 0) return "0.00";
-  return Number(price).toFixed(2);
-};
-
-const formatDate = (date) => {
-  if (!date) return "Fecha no disponible";
-
-  let dateObj;
-  if (date.toDate && typeof date.toDate === "function") {
-    dateObj = date.toDate();
-  } else if (date instanceof Date) {
-    dateObj = date;
-  } else {
-    dateObj = new Date(date);
-  }
-
-  if (isNaN(dateObj.getTime())) return "Fecha inválida";
-
-  const options = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  };
-  return dateObj.toLocaleDateString("es-ES", options);
-};
-
-const getStockLogClass = (type) => {
-  return {
-    "timeline-sell": type === "sell",
-    "timeline-buy": type === "buy",
-    "timeline-return": type === "return",
-  };
-};
-
-const getStockLogMarkerClass = (type) => {
-  return {
-    "marker-sell": type === "sell",
-    "marker-buy": type === "buy",
-    "marker-return": type === "return",
-  };
-};
-
-const getStockLogTypeText = (type) => {
-  const types = {
-    sell: "Venta",
-    buy: "Compra",
-    return: "Devolución",
-  };
-  return types[type] || type;
-};
-
-const getQuantityClass = (type) => {
-  return {
-    "text-red-600": type === "sell",
-    "text-green-600": type === "buy" || type === "return",
-  };
-};
-
 // Lifecycle
 onMounted(() => {
   loadProduct();
+});
+
+// Hook que se ejecuta cuando se navega a esta misma ruta (ej: volver de AddStock)
+onBeforeRouteUpdate((to, from) => {
+  // Si venimos de AddStock o RemoveStock, recargar
+  if (
+    from.name === "AddStock" ||
+    from.name === "RemoveStock" ||
+    from.name === "AddStockFlow" ||
+    from.name === "RemoveStockFlow"
+  ) {
+    nextTick(() => {
+      loadProduct();
+    });
+  }
+});
+
+// Watcher para recargar cuando cambia la ruta (por ejemplo, al volver de AddStock/RemoveStock)
+watch(
+  () => route.params.productId,
+  (newProductId, oldProductId) => {
+    if (newProductId && newProductId !== oldProductId) {
+      loadProduct();
+    }
+  }
+);
+
+// Watcher para detectar el query param 'refresh' que indica una actualización forzada
+watch(
+  () => route.query.refresh,
+  (newRefresh, oldRefresh) => {
+    console.log("👀 [ProductDetails] Watch refresh triggered:", {
+      newRefresh,
+      oldRefresh,
+    });
+    if (newRefresh && newRefresh !== oldRefresh) {
+      console.log("🔄 Refrescando producto por actualización de datos...");
+      loadProduct();
+    }
+  }
+);
+
+// También recargar cuando se activa el componente (navegación hacia atrás)
+onActivated(() => {
+  // Solo recargar si ya existe un producto (evita doble carga inicial)
+  if (product.value) {
+    loadProduct();
+  }
 });
 </script>
 
@@ -675,397 +229,12 @@ onMounted(() => {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
-/* Header Section */
-.header-section {
-  margin-bottom: 1.5rem;
-}
-
-.back-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.15s ease;
-  cursor: pointer;
-  margin-bottom: 1rem;
-}
-
-.back-button:hover {
-  background: #f9fafb;
-  color: #111827;
-}
-
+/* Page Title */
 .page-title {
   font-size: 1.5rem;
   font-weight: 600;
   color: #111827;
   margin: 0;
-}
-
-/* Stock Highlight Card */
-.stock-highlight-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease;
-}
-
-.stock-highlight-card:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.stock-highlight-card.stock-high {
-  border-left: 3px solid #10b981;
-}
-
-.stock-highlight-card.stock-medium {
-  border-left: 3px solid #f59e0b;
-}
-
-.stock-highlight-card.stock-low {
-  border-left: 3px solid #ef4444;
-}
-
-.stock-highlight-card.stock-empty {
-  border-left: 3px solid #9ca3af;
-}
-
-.stock-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.5rem;
-  background: #f9fafb;
-}
-
-.stock-highlight-card.stock-high .stock-icon {
-  color: #10b981;
-  background: #ecfdf5;
-}
-
-.stock-highlight-card.stock-medium .stock-icon {
-  color: #f59e0b;
-  background: #fffbeb;
-}
-
-.stock-highlight-card.stock-low .stock-icon {
-  color: #ef4444;
-  background: #fef2f2;
-}
-
-.stock-highlight-card.stock-empty .stock-icon {
-  color: #9ca3af;
-  background: #f3f4f6;
-}
-
-.stock-info {
-  flex: 1;
-}
-
-.stock-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
-}
-
-.stock-value {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #111827;
-  line-height: 1;
-  margin-bottom: 0.25rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.stock-unit {
-  font-size: 1rem;
-  color: #9ca3af;
-  font-weight: 400;
-  margin-left: 0.25rem;
-}
-
-.stock-status-text {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-}
-
-/* Info Cards Grid */
-.info-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.info-card {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.25rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.2s ease;
-}
-
-.info-card:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.info-card-header {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.info-card-title {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.info-card-value {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  word-break: break-word;
-}
-
-.price-value {
-  font-size: 1.25rem;
-  color: #111827;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Stock History Section */
-.stock-history-section {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.section-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 0.25rem;
-}
-
-.section-subtitle {
-  font-size: 0.875rem;
-  color: #9ca3af;
-}
-
-.empty-history {
-  padding: 2rem 1rem;
-  text-align: center;
-  color: #9ca3af;
-}
-
-/* Timeline */
-.stock-timeline {
-  position: relative;
-  padding-left: 2rem;
-}
-
-.stock-timeline::before {
-  content: "";
-  position: absolute;
-  left: 0.625rem;
-  top: 0.5rem;
-  bottom: 0.5rem;
-  width: 1px;
-  background: #e5e7eb;
-}
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 1.25rem;
-}
-
-.timeline-marker {
-  position: absolute;
-  left: -1.625rem;
-  top: 0.25rem;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.marker-sell {
-  background: #fef2f2;
-  color: #ef4444;
-}
-
-.marker-buy {
-  background: #ecfdf5;
-  color: #22c55e;
-}
-
-.marker-return {
-  background: #eff6ff;
-  color: #3b82f6;
-}
-
-.timeline-content {
-  background: #f9fafb;
-  border-radius: 0.5rem;
-  padding: 0.875rem;
-  margin-left: 0.75rem;
-  border-left: 2px solid #e5e7eb;
-  transition: all 0.15s ease;
-}
-
-.timeline-sell .timeline-content {
-  border-left-color: #fecaca;
-}
-
-.timeline-buy .timeline-content {
-  border-left-color: #bbf7d0;
-}
-
-.timeline-return .timeline-content {
-  border-left-color: #bfdbfe;
-}
-
-.timeline-content:hover {
-  background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.timeline-type {
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #111827;
-  margin-right: 0.5rem;
-}
-
-.timeline-date {
-  font-size: 0.8125rem;
-  color: #9ca3af;
-}
-
-.timeline-quantity {
-  font-size: 1rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Statistics Section */
-.statistics-section {
-  background: white;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.statistics-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 1rem;
-}
-
-.statistics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1rem;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 0.5rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  transition: all 0.15s ease;
-}
-
-.stat-card:hover {
-  background: white;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.stat-icon {
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stat-sell .stat-icon {
-  background: #fef2f2;
-  color: #ef4444;
-}
-
-.stat-buy .stat-icon {
-  background: #ecfdf5;
-  color: #22c55e;
-}
-
-.stat-return .stat-icon {
-  background: #eff6ff;
-  color: #3b82f6;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.25rem;
-}
-
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Animations */
@@ -1085,46 +254,8 @@ onMounted(() => {
     padding: 1rem;
   }
 
-  .stock-highlight-card {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1.25rem;
-    text-align: center;
-  }
-
-  .stock-value {
-    font-size: 1.75rem;
-  }
-
-  .info-cards-grid {
-    grid-template-columns: 1fr;
-  }
-
   .page-title {
     font-size: 1.25rem;
-  }
-
-  .statistics-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 480px) {
-  .stock-value {
-    font-size: 1.5rem;
-  }
-
-  .stock-unit {
-    font-size: 0.875rem;
-  }
-
-  .timeline-content {
-    margin-left: 0.5rem;
-  }
-
-  .stock-history-section,
-  .statistics-section {
-    padding: 1rem;
   }
 }
 </style>

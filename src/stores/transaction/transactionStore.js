@@ -90,7 +90,13 @@ export function useTransactionStore() {
             tags: ['stock_update', 'income_transaction']
           });
 
-          const stockLogUuid = await createStockLog(item);
+          // Agregar transactionId al item para registrarlo en el stockLog
+          const itemWithTransaction = {
+            ...item,
+            transactionId: transactionToAdd.value.uuid
+          };
+
+          const stockLogUuid = await createStockLog(itemWithTransaction);
           const itemUuid = item.uuid;
           const itemStockLog = { itemUuid, stockLogUuid };
           transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);

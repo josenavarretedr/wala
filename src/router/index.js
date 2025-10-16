@@ -203,6 +203,16 @@ const routes = [
         name: 'InventoryProductDetails',
         component: () => import('@/views/Inventory/ProductDetails.vue')
       },
+      {
+        path: 'inventory/product/:productId/add-stock',
+        name: 'AddStock',
+        component: () => import('@/views/Inventory/AddStock.vue')
+      },
+      {
+        path: 'inventory/product/:productId/remove-stock',
+        name: 'RemoveStock',
+        component: () => import('@/views/Inventory/RemoveStock.vue')
+      }
       // {
       //   path: 'records/:registerId',
       //   name: 'DetailsRecords',

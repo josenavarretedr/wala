@@ -55,6 +55,21 @@ export const FLOW_RESET_CONFIGS = {
     storeResets: ['resetBusinessState'], // Para futuro
     description: 'Resetea el flow de negocio'
   },
+  [FLOW_TYPES.ACCOUNT_BALANCE]: {
+    flowResets: ['resetFlow'],
+    storeResets: ['resetTransactionToAdd'],
+    description: 'Resetea el flow de balance de cuentas'
+  },
+  [FLOW_TYPES.REMOVE_STOCK]: {
+    flowResets: ['resetFlow'],
+    storeResets: ['resetTransactionToAdd'],
+    description: 'Resetea el flow de remoción de stock'
+  },
+  [FLOW_TYPES.ADD_STOCK]: {
+    flowResets: ['resetFlow'],
+    storeResets: ['resetTransactionToAdd'],
+    description: 'Resetea el flow de adición de stock'
+  },
   // Tipos adicionales específicos
   CASH_CLOSURE: {
     flowResets: ['resetFlow'],
