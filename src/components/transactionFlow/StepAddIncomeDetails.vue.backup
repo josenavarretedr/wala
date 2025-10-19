@@ -116,9 +116,7 @@
               >
                 📦 Stock disponible:
                 {{ transactionStore.itemToAddInTransaction.value.stock }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }}
+                {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }}
               </p>
               <p
                 v-else-if="
@@ -136,9 +134,7 @@
                 ⛔ La cantidad excede el stock disponible ({{
                   transactionStore.itemToAddInTransaction.value.stock
                 }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }})
+                {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }})
               </p>
             </div>
           </div>
@@ -160,7 +156,8 @@
               <option value="lt">Litro</option>
               <option value="ml">Mililitro</option>
               <option value="m">Metro</option>
-              <option value="cm">Porción</option>
+              <option value="cm">centímetro</option>
+              <option value="porcion">Porción</option>
             </select>
           </div>
 
@@ -183,35 +180,106 @@
         </div>
 
         <!-- Checkbox "Proceder de todos modos" - Solo si hay advertencia de stock -->
-        <div
-          v-if="hasStockWarning"
-          class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl"
-        >
-          <label class="flex items-start gap-3 cursor-pointer group">
-            <input
-              v-model="proceedAnyway"
-              type="checkbox"
-              class="mt-0.5 w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
-            />
-            <div class="flex-1">
-              <span
-                class="text-sm font-medium text-amber-900 group-hover:text-amber-950"
-              >
-                Vender igual
-              </span>
-              <p class="text-xs text-amber-700 mt-1">
-                Te quedan solo
-                {{ transactionStore.itemToAddInTransaction.value.stock }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }}
-                en stock. Si vendes
-                {{ transactionStore.itemToAddInTransaction.value.quantity }},
-                Wala ajustará automáticamente.
-              </p>
+        <Transition name="slide-fade">
+          <div
+            v-if="hasStockWarning"
+            class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl"
+          >
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <input
+                v-model="proceedAnyway"
+                type="checkbox"
+                class="mt-0.5 w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
+              />
+              <div class="flex-1">
+                <span class="text-sm font-medium text-amber-900 group-hover:text-amber-950">
+                  Proceder de todos modos
+                </span>
+                <p class="text-xs text-amber-700 mt-1">
+                  Acepto vender esta cantidad aunque exceda el stock disponible.
+                  Esto puede generar stock negativo.
+                </p>
+              </div>
+            </label>
+          </div>
+        </Transition>
+      </div>
+    </Transition>
+
+    <!-- Botón Agregar -->
+    <button
+      @click="transactionStore.addItemToTransaction()"
+      :disabled="!canAddProduct"
+      class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+    >
+      <KeyframePlus class="w-5 h-5" />
+      Agregar Producto
+    </button>
+
+          <!-- Unidad -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Unidad</label>
+            <select
+              v-model="transactionStore.itemToAddInTransaction.value.unit"
+              :disabled="
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct === 'old'
+              "
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50 disabled:bg-gray-50"
+            >
+              <option value="uni">Unidad</option>
+              <option value="kg">Kilogramo</option>
+              <option value="g">Gramo</option>
+              <option value="lt">Litro</option>
+              <option value="ml">Mililitro</option>
+              <option value="m">Metro</option>
+              <option value="cm">centímetro</option>
+              <option value="porcion">Porción</option>
+            </select>
+          </div>
+
+          <!-- Precio -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
+            <div class="relative">
+              <input
+                v-model="transactionStore.itemToAddInTransaction.value.price"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
+              />
+              <div
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
+              ></div>
             </div>
-          </label>
+          </div>
         </div>
+
+        <!-- Checkbox "Proceder de todos modos" - Solo si hay advertencia de stock -->
+        <Transition name="slide-fade">
+          <div
+            v-if="hasStockWarning"
+            class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl"
+          >
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <input
+                v-model="proceedAnyway"
+                type="checkbox"
+                class="mt-0.5 w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
+              />
+              <div class="flex-1">
+                <span class="text-sm font-medium text-amber-900 group-hover:text-amber-950">
+                  Proceder de todos modos
+                </span>
+                <p class="text-xs text-amber-700 mt-1">
+                  Acepto vender esta cantidad aunque exceda el stock disponible.
+                  Esto puede generar stock negativo.
+                </p>
+              </div>
+            </label>
+          </div>
+        </Transition>
       </div>
     </Transition>
 
@@ -253,11 +321,6 @@
             v-for="item in transactionStore.transactionToAdd.value.items"
             :key="item.uuid"
             class="bg-gray-50 rounded-xl p-4 flex items-center gap-3"
-            :class="{
-              'border-2 border-amber-300 bg-amber-50':
-                item.proceedAnyway &&
-                item.requestedQuantity > item.actualQuantity,
-            }"
           >
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-gray-900 truncate mb-1">
@@ -267,17 +330,6 @@
                 {{ item.quantity }} {{ item.unit || "uni" }} × S/
                 {{ item.price }}
               </div>
-              <!-- Advertencia de stock insuficiente -->
-              <!-- <div
-                v-if="
-                  item.proceedAnyway &&
-                  item.requestedQuantity > item.actualQuantity
-                "
-                class="mt-2 text-xs text-amber-700 font-medium"
-              >
-                ⚠️ Stock insuficiente: Se vendió {{ item.actualQuantity }} de
-                {{ item.requestedQuantity }} solicitadas
-              </div> -->
             </div>
 
             <div class="text-right">
@@ -373,7 +425,12 @@ const canAddProduct = computed(() => {
   const item = transactionStore.itemToAddInTransaction.value;
 
   // Validaciones básicas
-  if (!item.description || !item.quantity || !item.price || !item.unit) {
+  if (
+    !item.description ||
+    !item.quantity ||
+    !item.price ||
+    !item.unit
+  ) {
     return false;
   }
 
@@ -389,12 +446,7 @@ const canAddProduct = computed(() => {
  * Maneja el agregado del producto y resetea el estado
  */
 const handleAddProduct = () => {
-  // Pasar el flag proceedAnyway al item antes de agregarlo
-  transactionStore.itemToAddInTransaction.value.proceedAnyway =
-    proceedAnyway.value;
-
   transactionStore.addItemToTransaction();
-
   // Resetear el checkbox
   proceedAnyway.value = false;
 };

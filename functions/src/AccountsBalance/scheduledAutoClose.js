@@ -35,10 +35,10 @@ const { breakStreak, incStreakIfConsecutive } = require('./sharedStreak');
 const DEFAULT_TZ = 'America/Lima';
 
 /**
- * Función programada que se ejecuta diariamente a las 00:05 (después de medianoche).
+ * Función programada que se ejecuta diariamente a las 23:59:10 (antes de medianoche).
  * Procesa todos los negocios activos y cierra días pendientes automáticamente.
  * 
- * Schedule: '5 0 * * *' = Diariamente a las 00:05 en timezone configurado
+ * Schedule: '59 23 * * *' = Diariamente a las 23:59:10 en timezone configurado
  * Timezone: America/Lima (UTC-5)
  * 
  * Casos de uso:
@@ -54,7 +54,7 @@ module.exports = functions
     memory: '512MB'
   })
   .pubsub
-  .schedule('5 0 * * *') // Diariamente a las 00:05
+  .schedule('59 23 * * *') // Diariamente a las 23:59:10
   .timeZone(DEFAULT_TZ)
   .onRun(async (context) => {
     const startTime = Date.now();

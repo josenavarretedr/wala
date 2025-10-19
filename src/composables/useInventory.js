@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 const db = getFirestore(appFirebase);
 
 export function useInventory() {
-  const createItem = async (item) => {
+  const createItem = async (item, type = 'MERCH') => {
     try {
       const businessId = ensureBusinessId();
 
@@ -29,6 +29,11 @@ export function useInventory() {
       }
 
       // const productRef = doc(db, 'business', businessId, 'products', item.uuid);
+      let trackStock = false;
+
+      if (type === 'MERCH' || type === 'RAW_MATERIAL') {
+        trackStock = true;
+      }
 
       const productRef = doc(collection(db, `businesses/${businessId}/products`), item.uuid);
       const itemDescriptionNormalized = item.description.trim().toUpperCase();
@@ -39,6 +44,8 @@ export function useInventory() {
         stock: item.quantity || 0,
         createdAt: serverTimestamp(),
         unit: item.unit || 'uni',
+        type,
+        trackStock,
       });
       console.log('BusinessId', businessId);
       console.log("Item created successfully", item);
@@ -99,11 +106,36 @@ export function useInventory() {
 
       const productRef = doc(db, `businesses/${businessId}/products`, item.uuid);
 
+      // Verificar si el producto existe antes de actualizar
+      const productDoc = await getDoc(productRef);
+
+      if (!productDoc.exists()) {
+        console.error('❌ Error: El producto no existe en Firestore', {
+          productId: item.uuid,
+          businessId,
+          productDescription: item.description || 'N/A',
+          typeStockLog,
+          itemData: item
+        });
+        throw new Error(
+          `El producto "${item.description || item.uuid}" no existe en Firestore.\n` +
+          `ID: ${item.uuid}\n` +
+          `Business: ${businessId}\n\n` +
+          `Posibles causas:\n` +
+          `1. El producto fue marcado como "old" pero nunca fue creado\n` +
+          `2. El producto fue eliminado previamente\n` +
+          `3. Error en la sincronización de datos\n\n` +
+          `Solución: Verifica que el producto exista antes de crear stock logs, ` +
+          `o márcalo como "new" si es la primera vez que se usa.`
+        );
+      }
+
       await updateDoc(productRef, {
         stockLog: arrayUnion({ ...stockLog, createdAt: new Date() }),
       });
 
-      await updateStock(productRef, stockLog);
+      // Pasar quantityForStock si existe para ajustar el stock correctamente
+      await updateStock(productRef, stockLog, item.quantityForStock);
 
       console.log('✅ Stock log created successfully:', {
         uuid: stockLog.uuid,
@@ -168,7 +200,7 @@ export function useInventory() {
     }
   };
 
-  const updateStock = async (productRef, stockLog) => {
+  const updateStock = async (productRef, stockLog, quantityForStock = undefined) => {
     try {
       const itemDoc = await getDoc(productRef);
       const itemData = itemDoc.data();
@@ -177,9 +209,22 @@ export function useInventory() {
       const updateData = {};
 
       if (stockLog.type === 'sell' || stockLog.type === 'waste') {
-        if (stockLog.quantity > itemData.stock) return;
+        // Usar quantityForStock si está disponible (venta con stock insuficiente)
+        // De lo contrario, usar la cantidad del stockLog
+        const quantityToDeduct = quantityForStock !== undefined ? quantityForStock : stockLog.quantity;
 
-        newStock = Math.max(itemData.stock - stockLog.quantity, 0);
+        // Si la cantidad a deducir es mayor al stock, solo deducir lo disponible
+        if (quantityToDeduct > itemData.stock) {
+          newStock = 0; // Stock no puede ser negativo
+          console.log('⚠️ Cantidad a deducir mayor al stock disponible:', {
+            cantidadSolicitada: stockLog.quantity,
+            cantidadADeducir: quantityToDeduct,
+            stockDisponible: itemData.stock,
+            stockFinal: 0
+          });
+        } else {
+          newStock = itemData.stock - quantityToDeduct;
+        }
       }
 
       if (stockLog.type === 'buy' || stockLog.type === 'return') {
@@ -282,11 +327,76 @@ export function useInventory() {
     }
   };
 
+  const updateProduct = async (productId, updatedData) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        console.warn('No se puede actualizar producto sin businessId activo');
+        return null;
+      }
+
+      const productRef = doc(db, 'businesses', businessId, 'products', productId);
+
+      // Verificar si el producto existe
+      const productDoc = await getDoc(productRef);
+      if (!productDoc.exists()) {
+        throw new Error(`Producto con ID ${productId} no existe`);
+      }
+
+      // Preparar datos de actualización
+      const updatePayload = {};
+
+      // Normalizar descripción si existe
+      if (updatedData.description !== undefined) {
+        updatePayload.description = updatedData.description.trim().toUpperCase();
+      }
+
+      // Actualizar precio si existe
+      if (updatedData.price !== undefined && updatedData.price !== null) {
+        updatePayload.price = Number(updatedData.price);
+      }
+
+      // Actualizar costo si existe
+      if (updatedData.cost !== undefined && updatedData.cost !== null) {
+        updatePayload.cost = Number(updatedData.cost);
+      }
+
+      // Actualizar unidad si existe
+      if (updatedData.unit !== undefined) {
+        updatePayload.unit = updatedData.unit;
+      }
+
+      // Actualizar tipo si existe
+      if (updatedData.type !== undefined) {
+        updatePayload.type = updatedData.type;
+      }
+
+      // Actualizar trackStock si existe
+      if (updatedData.trackStock !== undefined) {
+        updatePayload.trackStock = Boolean(updatedData.trackStock);
+      }
+
+      // Agregar timestamp de actualización
+      updatePayload.updatedAt = serverTimestamp();
+
+      await updateDoc(productRef, updatePayload);
+
+      console.log('✅ Product updated successfully:', productId, updatePayload);
+      return { success: true, productId, updatedFields: updatePayload };
+
+    } catch (error) {
+      console.error('❌ Error updating product:', error);
+      throw error;
+    }
+  };
+
   return {
     createItem,
     createStockLog,
     deleteStockLog,
     getAllItemsInInventory,
     getProductById,
+    updateProduct,
   };
 }

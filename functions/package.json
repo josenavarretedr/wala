@@ -17,6 +17,7 @@
     "firebase-admin": "^11.11.1",
     "firebase-functions": "^4.9.0",
     "luxon": "^3.7.2",
+    "openai": "^6.3.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

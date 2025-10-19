@@ -3,8 +3,9 @@
   <div
     class="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4 max-w-4xl mx-auto bg-white p-2 sm:p-4 rounded-xl"
   >
-    <!-- Botón Inventario (Naranja) -->
+    <!-- Botón Inventario (Naranja) - Solo si trackStock es true -->
     <div
+      v-if="trackStock"
       class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
     >
       <button
@@ -16,8 +17,9 @@
       </button>
     </div>
 
-    <!-- Botón Ingreso (Azul) -->
+    <!-- Botón Ingreso (Azul) - Solo si trackStock es true -->
     <div
+      v-if="trackStock"
       class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
     >
       <button
@@ -29,13 +31,19 @@
       </button>
     </div>
 
-    <!-- Botón Egreso (Rojo) -->
+    <!-- Botón Egreso (Rojo) - Siempre visible -->
     <div
       class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
     >
       <button
         @click="handleEgresoAction"
-        class="w-full py-2 px-3 sm:py-2.5 sm:px-4 bg-white border border-red-600 text-red-600 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/20 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+        :disabled="trackStock && stock <= 0"
+        :class="[
+          'w-full py-2 px-3 sm:py-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all duration-200 transform flex items-center justify-center gap-2',
+          trackStock && stock <= 0
+            ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+            : 'bg-white border border-red-600 text-red-600 hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/20 hover:scale-[1.01] active:scale-[0.99]',
+        ]"
       >
         <Minus class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
         <span class="font-semibold tracking-wide">EGRESO</span>
@@ -47,6 +55,21 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { Plus, Minus, ClipboardCheck } from "@iconoir/vue";
+
+// Props
+const props = defineProps({
+  trackStock: {
+    type: Boolean,
+    default: false,
+  },
+  stock: {
+    type: Number,
+    default: 0,
+  },
+});
+
+const route = useRoute();
+const router = useRouter();
 
 /**
  * Maneja la acción de inventario
@@ -63,9 +86,6 @@ const handleInventoryAction = () => {
     },
   });
 };
-
-const route = useRoute();
-const router = useRouter();
 
 /**
  * Maneja la acción de ingreso

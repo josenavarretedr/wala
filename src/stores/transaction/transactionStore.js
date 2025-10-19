@@ -42,6 +42,9 @@ const itemToAddInTransaction = ref({
   oldOrNewProduct: null,
   selectedProductUuid: null,
   unit: null,
+  stock: null,
+  trackStock: false,
+  proceedAnyway: false, // Flag para indicar que se procedió con stock insuficiente
 });
 
 
@@ -93,8 +96,24 @@ export function useTransactionStore() {
           // Agregar transactionId al item para registrarlo en el stockLog
           const itemWithTransaction = {
             ...item,
-            transactionId: transactionToAdd.value.uuid
+            transactionId: transactionToAdd.value.uuid,
+            // IMPORTANTE: quantity siempre es la cantidad solicitada por el usuario
+            // El ajuste de stock se hace en updateStock() de useInventory
+            quantity: item.quantity,
+            // Pasar también la cantidad máxima disponible para el ajuste
+            quantityForStock: item.quantityForStock
           };
+
+          // Log de advertencia si se vendió con stock insuficiente
+          if (item.proceedAnyway && item.requestedQuantity > item.actualQuantity) {
+            console.warn('⚠️ Venta con stock insuficiente:', {
+              producto: item.description,
+              cantidadSolicitada: item.requestedQuantity,
+              cantidadRealDescontada: item.actualQuantity,
+              stockDisponible: item.stock,
+              mensaje: 'StockLog registrará la cantidad solicitada, pero el stock solo se reducirá según disponibilidad'
+            });
+          }
 
           const stockLogUuid = await createStockLog(itemWithTransaction);
           const itemUuid = item.uuid;
@@ -396,6 +415,8 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.oldOrNewProduct = product.oldOrNewProduct;
     itemToAddInTransaction.value.selectedProductUuid = product.selectedProductUuid;
     itemToAddInTransaction.value.unit = product.unit;
+    itemToAddInTransaction.value.stock = product.stock ?? null;
+    itemToAddInTransaction.value.trackStock = product.trackStock ?? false;
   }
 
   const resetItemToAddInTransaction = () => {
@@ -405,6 +426,10 @@ export function useTransactionStore() {
       price: null,
       oldOrNewProduct: null,
       selectedProductUuid: null,
+      unit: null,
+      stock: null,
+      trackStock: false,
+      proceedAnyway: false,
     };
   }
 
@@ -422,13 +447,45 @@ export function useTransactionStore() {
   const setTransferToAccount = (toAccount) => { transactionToAdd.value.toAccount = toAccount; };
 
   const addItemToTransaction = () => {
-    transactionToAdd.value.items.push({ ...itemToAddInTransaction.value });
+    const item = { ...itemToAddInTransaction.value };
+
+    // Si el producto tiene seguimiento de stock y se marcó "proceder de todos modos"
+    if (item.trackStock && item.proceedAnyway) {
+      const requestedQuantity = parseFloat(item.quantity) || 0;
+      const availableStock = parseFloat(item.stock) || 0;
+
+      // Calcular la cantidad real que se puede vender
+      const actualQuantity = Math.min(requestedQuantity, availableStock);
+
+      // Guardar la cantidad solicitada original y la cantidad real
+      item.requestedQuantity = requestedQuantity;
+      item.actualQuantity = actualQuantity;
+
+      // La cantidad que se registrará en el stock es la real
+      item.quantityForStock = actualQuantity;
+
+      console.log('📊 Agregando item con stock insuficiente:', {
+        descripcion: item.description,
+        cantidadSolicitada: requestedQuantity,
+        stockDisponible: availableStock,
+        cantidadReal: actualQuantity,
+        stockFinal: availableStock - actualQuantity
+      });
+    }
+
+    transactionToAdd.value.items.push(item);
+
+    // Resetear el item
     itemToAddInTransaction.value = {
       description: null,
       quantity: null,
       price: null,
       oldOrNewProduct: null,
       selectedProductUuid: null,
+      unit: null,
+      stock: null,
+      trackStock: false,
+      proceedAnyway: false,
     };
   }
 

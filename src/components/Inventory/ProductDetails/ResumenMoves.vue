@@ -67,9 +67,9 @@
               {{ totalSales }} {{ productUnit }}
             </p>
           </div>
-
           <!-- Total Compras -->
           <div
+            v-if="trackStock"
             class="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4"
           >
             <div class="flex items-center gap-2 mb-2">
@@ -102,7 +102,7 @@
           </div>
 
           <!-- Total Devoluciones -->
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+          <!-- <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
             <div class="flex items-center gap-2 mb-2">
               <div
                 class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0"
@@ -130,7 +130,7 @@
             >
               {{ totalReturns }} {{ productUnit }}
             </p>
-          </div>
+          </div> -->
         </div>
       </div>
     </Transition>
@@ -153,6 +153,10 @@ const props = defineProps({
   productUnit: {
     type: String,
     default: "uni",
+  },
+  trackStock: {
+    type: Boolean,
+    default: false,
   },
 });
 

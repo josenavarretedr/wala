@@ -56,16 +56,25 @@
         :price="product.price"
         :cost="product.cost"
         :created-at="product.createdAt"
+        :product-id="product.uuid"
+        :product-type="product.type"
+        :track-stock="product.trackStock"
+        :unit="product.unit"
         class="mb-4"
       />
 
       <!-- Stock Alert Card (Destacado) -->
-      <ProductStockAlert :stock="product.stock" :unit="product.unit" />
-
+      <ProductStockAlert
+        v-if="product.trackStock"
+        :stock="product.stock"
+        :unit="product.unit"
+      />
+      <!-- <ProductoNoStock v-else /> -->
       <!-- Statistics Summary -->
       <ResumenMoves
         :stock-log="product.stockLog"
         :product-unit="product.unit || 'uni'"
+        :track-stock="product?.trackStock ?? false"
         class="mb-4"
       />
 
@@ -73,12 +82,16 @@
       <ProductMoves
         :stock-log="product.stockLog"
         :product-unit="product.unit || 'uni'"
+        :track-stock="product?.trackStock ?? false"
       />
     </div>
     <div
       class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
     >
-      <NavigationBtnProductDetails />
+      <NavigationBtnProductDetails
+        :track-stock="product?.trackStock ?? false"
+        :stock="product?.stock ?? 0"
+      />
     </div>
   </div>
 </template>
@@ -90,6 +103,7 @@ import { useInventory } from "@/composables/useInventory";
 import ProductMoves from "@/components/Inventory/ProductDetails/ProductMoves.vue";
 import ProductInformation from "@/components/Inventory/ProductDetails/ProductInformation.vue";
 import ProductStockAlert from "@/components/Inventory/ProductDetails/ProductStockAlert.vue";
+import ProductoNoStock from "@/components/Inventory/ProductDetails/ProductoNoStock.vue";
 import ResumenMoves from "@/components/Inventory/ProductDetails/ResumenMoves.vue";
 import BackBtn from "@/components/ui/BackBtn.vue";
 

@@ -9,7 +9,7 @@ const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
 
 export function useInventoryStore() {
-  const { getAllItemsInInventory, createItem, createStockLog, getProductById } = useInventory();
+  const { getAllItemsInInventory, createItem, createStockLog, getProductById, updateProduct } = useInventory();
   const { logInventoryOperation, logCreate, startOperationChain } = useTraceability();
 
   // Obtener los ítems en inventario
@@ -61,6 +61,37 @@ export function useInventoryStore() {
       const relatedEntities = [];
 
       for (const item of itemsList) {
+        // Verificar si el producto "old" realmente existe
+        if (item.oldOrNewProduct === "old") {
+          const productId = item.uuid || item.selectedProductUuid;
+
+          // Buscar el producto en Firestore
+          const productExists = await getProductById(productId);
+
+          if (!productExists) {
+            // Si no existe, convertir a "new"
+            console.warn(
+              `⚠️ Producto ${productId} marcado como "old" pero no existe. ` +
+              `Convirtiendo a "new" automáticamente.`,
+              { description: item.description, productId }
+            );
+
+            item.oldOrNewProduct = "new";
+
+            // Log de trazabilidad para el cambio
+            await operationChain.addStep('update', 'inventory', productId, {
+              reason: 'auto_convert_old_to_new',
+              severity: 'medium',
+              tags: ['inventory_validation', 'auto_correction', 'data_integrity'],
+              previousState: { oldOrNewProduct: 'old' },
+              newState: { oldOrNewProduct: 'new' },
+              metadata: {
+                reason: 'Product marked as "old" but does not exist in Firestore'
+              }
+            });
+          }
+        }
+
         if (item.oldOrNewProduct === "new") {
           // === TRAZABILIDAD: Log de cada item nuevo ===
           await operationChain.addStep('create', 'inventory', item.uuid || item.selectedProductUuid, {
@@ -70,7 +101,7 @@ export function useInventoryStore() {
             tags: ['inventory_creation', 'new_product', 'bulk_operation']
           });
 
-          await createItem(item, 'ferrercard');
+          await createItem(item, 'MERCH'); // Asumimos tipo 'MERCH' para nuevos ítems
           addedItemsCount++;
 
           relatedEntities.push({
@@ -296,6 +327,54 @@ export function useInventoryStore() {
     }
   };
 
+  const updateProductDetails = async (productId, updatedData) => {
+    const operationChain = startOperationChain('product_update');
+
+    try {
+      // === TRAZABILIDAD: Log de actualización ===
+      await operationChain.addStep('update', 'inventory', productId, {
+        oldState: { ...updatedData }, // Se debería pasar el estado anterior
+        newState: updatedData,
+        reason: 'product_information_update',
+        severity: 'medium',
+        tags: ['product_update', 'inventory_management'],
+        metadata: {
+          updatedFields: Object.keys(updatedData)
+        }
+      });
+
+      const result = await updateProduct(productId, updatedData);
+
+      // === TRAZABILIDAD: Finalizar operación ===
+      await operationChain.finish({
+        reason: 'product_update_completed',
+        metadata: {
+          productId,
+          updatedFields: Object.keys(updatedData),
+          relatedEntities: [
+            { type: 'inventory', id: productId, relationship: 'updated' }
+          ]
+        }
+      });
+
+      console.log('✅ Product updated successfully with traceability');
+      return result;
+
+    } catch (error) {
+      console.error('❌ Error updating product:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await operationChain.addStep('error', 'inventory', productId, {
+        newState: { error: error.message },
+        reason: 'product_update_failed',
+        severity: 'high',
+        tags: ['product_error', 'update_failure']
+      });
+
+      throw error;
+    }
+  };
+
   return {
     allItemsInInventory,
     itemToAddToInventory,
@@ -303,6 +382,7 @@ export function useInventoryStore() {
     getProductDetails,
     addStockLogInInventory,
     addItemToInventoryFromArryOfItemsNewOrOld,
-    saveInventoryCount
+    saveInventoryCount,
+    updateProduct: updateProductDetails,
   };
 }

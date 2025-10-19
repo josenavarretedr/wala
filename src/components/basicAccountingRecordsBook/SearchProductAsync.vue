@@ -133,6 +133,8 @@ onMounted(() => {
                 oldOrNewProduct: "old",
                 selectedProductUuid: selected.uuid,
                 unit: selected.unit || "uni",
+                stock: selected.stock ?? 0,
+                trackStock: selected.trackStock ?? false,
               });
               clearAutocompleteInput();
             } else {
