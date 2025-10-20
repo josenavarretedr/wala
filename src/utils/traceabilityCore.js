@@ -654,8 +654,40 @@ export class TraceabilityEngine {
       const batch = writeBatch(db);
 
       batchToProcess.forEach(traceEntry => {
-        const docRef = doc(collection(db, 'traceability_logs'));
-        // Sanitizar datos antes de enviar a Firestore
+        // Obtener businessId del trace entry
+        const businessId = traceEntry.businessId || traceEntry.metadata?.businessId;
+
+        // CASO ESPECIAL: new_business_creation se guarda en ambos lugares
+        if (traceEntry.operation === 'create' && traceEntry.entityType === 'business') {
+          // 1. Guardar en colección global para auditoría
+          const globalDocRef = doc(collection(db, 'traceability_logs'));
+          batch.set(globalDocRef, this.sanitizeForFirestore({
+            ...traceEntry,
+            storageLocation: 'global',
+            auditReason: 'business_creation_audit'
+          }));
+
+          // 2. También guardar en el business si existe businessId
+          if (businessId) {
+            const businessDocRef = doc(collection(db, `businesses/${businessId}/traceability_logs`));
+            batch.set(businessDocRef, this.sanitizeForFirestore({
+              ...traceEntry,
+              storageLocation: 'business',
+              auditReason: 'business_creation_record'
+            }));
+          }
+
+          return; // Ya procesado
+        }
+
+        // CASO NORMAL: todas las demás operaciones solo en business
+        if (!businessId) {
+          console.warn('⚠️ Trace entry without businessId, skipping:', traceEntry.traceId);
+          return;
+        }
+
+        // Guardar en businesses/{businessId}/traceability_logs
+        const docRef = doc(collection(db, `businesses/${businessId}/traceability_logs`));
         const sanitizedEntry = this.sanitizeForFirestore(traceEntry);
         batch.set(docRef, sanitizedEntry);
       });
@@ -785,7 +817,39 @@ export class TraceabilityEngine {
       for (const key of keys) {
         try {
           const entry = JSON.parse(localStorage.getItem(key));
-          await addDoc(collection(db, 'traceability_logs'), entry);
+
+          // Obtener businessId del entry
+          const businessId = entry.businessId || entry.metadata?.businessId;
+
+          // CASO ESPECIAL: new_business_creation
+          if (entry.operation === 'create' && entry.entityType === 'business') {
+            // Guardar en colección global
+            await addDoc(collection(db, 'traceability_logs'), {
+              ...entry,
+              storageLocation: 'global',
+              auditReason: 'business_creation_audit_recovered'
+            });
+
+            // También en el business si existe
+            if (businessId) {
+              await addDoc(collection(db, `businesses/${businessId}/traceability_logs`), {
+                ...entry,
+                storageLocation: 'business',
+                auditReason: 'business_creation_record_recovered'
+              });
+            }
+
+            localStorage.removeItem(key);
+            continue;
+          }
+
+          // CASO NORMAL: solo en business
+          if (!businessId) {
+            console.warn('⚠️ Cannot recover entry without businessId:', key);
+            continue;
+          }
+
+          await addDoc(collection(db, `businesses/${businessId}/traceability_logs`), entry);
           localStorage.removeItem(key);
         } catch (error) {
           console.error(`❌ Failed to recover entry ${key}:`, error);

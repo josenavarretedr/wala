@@ -18,8 +18,8 @@ exports.onTransactionWrite = require('./src/AccountsBalance/onTransactionWrite')
 exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 
 // INVENTORY AI CLASSIFICATION
-exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');
-exports.classifyProduct = require('./src/Inventory/classifyProductCallable');
+// exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');
+// exports.classifyProduct = require('./src/Inventory/classifyProductCallable');
 
 
 

@@ -1,13 +1,101 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
   <head>
+    <!-- Básico -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WALA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WALA | Tu Copiloto para crecer</title>
+    <meta
+      name="description"
+      content="WALA es tu copiloto empresarial: organiza tus finanzas, controla inventario y toma mejores decisiones para hacer crecer tu negocio desde una sola app, simple y accesible para emprendedores en Latinoamérica."
+    />
+    <meta
+      name="keywords"
+      content="wala, copiloto empresarial, app para emprendedores, control de ingresos y gastos, flujo de caja, inventario, finanzas, negocios en Perú, inclusión financiera"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#fc7703" />
+
+    <!-- Favicons / PWA (sirve en dev y prod) -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/assets/favicon_io/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/assets/favicon_io/favicon-16x16.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="/assets/favicon_io/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="/assets/favicon_io/site.webmanifest" />
+
+    <!-- Open Graph -->
+    <meta
+      property="og:title"
+      content="WALA | Copiloto Empresarial para Emprendedores"
+    />
+    <meta
+      property="og:description"
+      content="Organiza, decide y crece. WALA integra finanzas, inventario y aprendizaje para ayudarte a manejar tu negocio sin complicaciones."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="WALA" />
+    <meta property="og:locale" content="es_PE" />
+    <meta property="og:image" content="/assets/og-image.jpg" />
+    <meta property="og:url" content="https://wala-lat.web.app/" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="WALA | Copiloto Empresarial para Emprendedores"
+    />
+    <meta
+      name="twitter:description"
+      content="Simplifica la gestión de tu negocio con WALA: flujo de caja, inventario y aprendizaje guiado."
+    />
+    <meta name="twitter:image" content="/assets/og-image.jpg" />
+    <meta name="twitter:creator" content="@wala_lat" />
+
+    <!-- JSON-LD (SoftwareApplication) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "WALA",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "category": "Freemium"
+        },
+        "description": "WALA es un copiloto empresarial que ayuda a emprendedores a organizar sus finanzas, controlar inventario y mejorar su negocio con acompañamiento guiado.",
+        "image": "/assets/og-image.jpg",
+        "url": "https://wala-lat.web.app/",
+        "publisher": {
+          "@type": "Organization",
+          "name": "WALA LAT",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "/assets/favicon_io/android-chrome-192x192.png"
+          }
+        },
+        "inLanguage": "es-PE",
+        "keywords": "copiloto empresarial, finanzas, gestión de negocio, inclusión financiera, app para emprendedores"
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
+    <!-- Vite mantiene esta línea en dev y la reemplaza en build -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

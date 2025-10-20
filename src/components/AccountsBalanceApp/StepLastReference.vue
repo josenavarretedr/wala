@@ -189,25 +189,23 @@ const formatDate = (timestamp) => {
 // Buscar el último cierre
 const findLastClosure = async () => {
   try {
-    // Solo cargar todas las transacciones si no hay transacciones en el store
-    if (transactionStore.transactionsInStore.value.length === 0) {
-      await transactionStore.getTransactions();
-    }
+    // Usar la nueva función para obtener las últimas transacciones de cierre
+    const closureTransactions = await transactionStore.getLastClosures(5);
 
-    // Filtrar transacciones de tipo "closure" y ordenar por fecha
-    const closureTransactions = transactionStore.transactionsInStore.value
-      .filter((t) => t.type === "closure")
-      .sort((a, b) => {
-        const dateA = a.createdAt?.seconds || 0;
-        const dateB = b.createdAt?.seconds || 0;
-        return dateB - dateA;
-      });
-
-    if (closureTransactions.length > 0) {
+    if (closureTransactions && closureTransactions.length > 0) {
+      // Tomar el primer elemento (el más reciente)
       lastClosureData.value = closureTransactions[0];
+      console.log("Último cierre encontrado:", lastClosureData.value);
+      console.log(
+        `Total de cierres encontrados: ${closureTransactions.length}`
+      );
+    } else {
+      console.log("No se encontraron transacciones de cierre.");
+      lastClosureData.value = null;
     }
   } catch (error) {
     console.error("Error buscando último cierre:", error);
+    lastClosureData.value = null;
   }
 };
 

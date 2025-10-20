@@ -120,11 +120,59 @@ export function useTransaccion() {
     }
   }
 
+  /**
+   * Obtiene las últimas transacciones de tipo "closure"
+   * @param {number} limit - Número máximo de transacciones a obtener (por defecto 5)
+   * @returns {Array} Array de transacciones de cierre ordenadas de más reciente a más antigua
+   */
+  const getLastClosureTransactions = async (limit = 5) => {
+    try {
+      const businessId = ensureBusinessId();
+      console.log('Buscando últimas transacciones de cierre para el negocio:', businessId);
+
+      // Obtener todas las transacciones
+      const transactionsSnapshot = await getDocs(
+        collection(db, 'businesses', businessId, 'transactions')
+      );
+
+      const closureTransactions = [];
+
+      // Filtrar solo las transacciones de tipo "closure"
+      transactionsSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.type === 'closure') {
+          closureTransactions.push({
+            id: doc.id,
+            ...data,
+          });
+        }
+      });
+
+      // Ordenar por fecha de creación (más reciente primero)
+      closureTransactions.sort((a, b) => {
+        const dateA = a.createdAt?.seconds || 0;
+        const dateB = b.createdAt?.seconds || 0;
+        return dateB - dateA;
+      });
+
+      // Limitar el número de resultados
+      const limitedResults = closureTransactions.slice(0, limit);
+
+      console.log(`Se encontraron ${closureTransactions.length} transacciones de cierre, retornando las últimas ${limitedResults.length}`);
+
+      return limitedResults;
+    } catch (error) {
+      console.error('Error obteniendo transacciones de cierre: ', error);
+      throw error;
+    }
+  };
+
   return {
     createTransaction,
     updateTransaction,
     deleteTransactionByID,
     getTransactionsTodayCmps,
     getAllTransactions,
+    getLastClosureTransactions,
   };
 }

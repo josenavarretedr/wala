@@ -51,7 +51,7 @@ const itemToAddInTransaction = ref({
 const currentStepOfAddTransaction = ref(0);
 
 export function useTransactionStore() {
-  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps } = useTransaccion();
+  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps, getLastClosureTransactions } = useTransaccion();
   const { createStockLog, deleteStockLog } = useInventory();
   const { logTransactionOperation, logInventoryOperation, startOperationChain } = useTraceability();
 
@@ -263,6 +263,51 @@ export function useTransactionStore() {
       );
     }
   }
+
+  /**
+   * Obtiene las últimas transacciones de tipo "closure" del negocio
+   * @param {number} limit - Número de transacciones a obtener (por defecto 5)
+   * @returns {Promise<Array>} Array de transacciones de cierre
+   */
+  const getLastClosures = async (limit = 5) => {
+    try {
+      // === TRAZABILIDAD: Log de acceso a datos ===
+      await logTransactionOperation(
+        'read',
+        'last_closure_transactions',
+        { action: 'fetch_last_closures', limit },
+        {
+          reason: 'data_access_last_closures',
+          severity: 'low',
+          tags: ['data_read', 'closure_list', 'historical_data'],
+          component: 'TransactionStore.getLastClosures'
+        }
+      );
+
+      const closures = await getLastClosureTransactions(limit);
+      console.log(`✅ Last ${closures.length} closure transactions fetched with traceability`);
+
+      return closures;
+
+    } catch (error) {
+      console.error('❌ Error fetching last closures:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'last_closure_transactions',
+        { error: error.message },
+        {
+          reason: 'fetch_last_closures_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'historical_data'],
+          component: 'TransactionStore.getLastClosures'
+        }
+      );
+
+      return [];
+    }
+  };
 
   const getOneTransactionDataByID = (transactionId) => {
     return transactionsInStore.value.filter(t => t.uuid === transactionId);
@@ -592,6 +637,7 @@ export function useTransactionStore() {
     addTransaction,
     getTransactions,
     getTransactionsToday,
+    getLastClosures,
     getOneTransactionDataByID,
     getAllIncomeTransactionsInStore,
     getAllExpenseTransactionsInStore,
