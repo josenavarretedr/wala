@@ -147,20 +147,25 @@ import {
 import { ref, computed, onMounted } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useDailySummary } from "@/composables/useDailySummary";
 
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 
+const { getTodayDailySummary, getYesterdayDailySummary } = useDailySummary();
 // Estados reactivos
 const isLoading = ref(true);
 const lastClosureData = ref(null);
 const openingData = ref(null);
 
+const yesterdaySummary = ref(null);
+const todaySummary = ref(null);
+
 // Determinar si hay apertura hoy (modo close) o no (modo opening)
-const hasOpeningToday = computed(() => {
-  return transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "opening"
-  );
+const hasOpeningToday = computed(async () => {
+  todaySummary.value = await getTodayDailySummary();
+  console.log("Resumen de hoy:", todaySummary.value);
+  return todaySummary.value.hasOpening;
 });
 
 // Usar el accountsBalanceStore para cálculos precisos
@@ -190,22 +195,10 @@ const formatDate = (timestamp) => {
 const findLastClosure = async () => {
   try {
     // Usar la nueva función para obtener las últimas transacciones de cierre
-    const closureTransactions = await transactionStore.getLastClosures(5);
-
-    if (closureTransactions && closureTransactions.length > 0) {
-      // Tomar el primer elemento (el más reciente)
-      lastClosureData.value = closureTransactions[0];
-      console.log("Último cierre encontrado:", lastClosureData.value);
-      console.log(
-        `Total de cierres encontrados: ${closureTransactions.length}`
-      );
-    } else {
-      console.log("No se encontraron transacciones de cierre.");
-      lastClosureData.value = null;
-    }
+    yesterdaySummary.value = await getYesterdayDailySummary();
+    console.log("Resumen de ayer:", yesterdaySummary.value);
   } catch (error) {
-    console.error("Error buscando último cierre:", error);
-    lastClosureData.value = null;
+    console.error("Error al obtener el último cierre:", error);
   }
 };
 

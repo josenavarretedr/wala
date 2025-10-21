@@ -16,6 +16,7 @@ const logger = require("firebase-functions/logger");
 exports.scheduledAutoClose = require('./src/AccountsBalance/scheduledAutoClose');
 exports.onTransactionWrite = require('./src/AccountsBalance/onTransactionWrite');
 exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
+exports.autoOpening = require('./src/AccountsBalance/autoOpening');
 
 // INVENTORY AI CLASSIFICATION
 // exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');

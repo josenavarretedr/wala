@@ -28,7 +28,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-const { yesterdayStr } = require('../Helpers/time');
+const { yesterdayStr, todayStr } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
 const { breakStreak, incStreakIfConsecutive } = require('./sharedStreak');
 
@@ -95,16 +95,32 @@ module.exports = functions
           console.log(`🌍 Timezone: ${tz}`);
 
           // Calcular día anterior
-          const day = yesterdayStr(tz);
+          const day = todayStr(tz);
           console.log(`📅 Checking day: ${day}`);
 
           // Obtener agregados del día
           const agg = await getDayAggregates(db, businessId, day, tz);
+
           console.log(`📊 Day status:`, {
             hasOpening: agg.hasOpening,
             hasClosure: agg.hasClosure,
             hasTxn: agg.hasTxn
           });
+
+          // === CASO 0: SIN DATOS PARA EL DÍA (sin apertura) ===
+          if (!agg.hasOpening) {
+            console.log(`ℹ️  No opening found for ${day} - No action needed`);
+            console.log('🔔 SE ACTIVA EL FLUJO CUANDO no hay opening');
+            results.noAction++;
+            results.details.push({
+              businessId,
+              businessName: businessData.name || businessId,
+              day,
+              action: 'no-opening'
+            });
+            results.processed++;
+            continue; // Saltar al siguiente negocio
+          }
 
           // Actualizar resumen diario base con estructura completa
           await upsertDailySummary(db, businessId, day, {
@@ -236,15 +252,6 @@ module.exports = functions
             results.streakIncreased++;
             action = 'streak-increased';
           }
-          // === CASO 3: SIN ACCIÓN NECESARIA ===
-          else {
-            console.log(`ℹ️  No action needed`);
-            if (!agg.hasOpening) console.log(`   - No opening found`);
-            if (!agg.hasTxn) console.log(`   - No transactions found`);
-            if (agg.hasClosure) console.log(`   - Already closed`);
-            results.noAction++;
-            action = 'no-action';
-          }
 
           results.processed++;
           results.details.push({
@@ -306,6 +313,16 @@ module.exports = functions
         console.log(`\n📈 Streak increased:`);
         results.details
           .filter(d => d.action === 'streak-increased')
+          .forEach(d => {
+            console.log(`   - ${d.businessName} (${d.day})`);
+          });
+      }
+
+      const noOpeningCount = results.details.filter(d => d.action === 'no-opening').length;
+      if (noOpeningCount > 0) {
+        console.log(`\n🔔 Days without opening:`);
+        results.details
+          .filter(d => d.action === 'no-opening')
           .forEach(d => {
             console.log(`   - ${d.businessName} (${d.day})`);
           });

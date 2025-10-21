@@ -56,6 +56,50 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
 
   console.log(`📝 Found ${txSnap.size} transactions for ${day}`);
 
+  // ===== VERIFICACIÓN TEMPRANA: NO HAY TRANSACCIONES =====
+  if (txSnap.empty) {
+    console.log(`⚠️  No transactions found for ${day} - returning empty state`);
+    return {
+      hasOpening: false,
+      hasClosure: false,
+      hasTxn: false,
+      openingData: null,
+      totals: {
+        income: 0,
+        expense: 0,
+        net: 0,
+        transfers: 0,
+        adjustments: 0
+      },
+      byAccount: {
+        cash: { income: 0, expense: 0, net: 0 },
+        bank: { income: 0, expense: 0, net: 0 }
+      },
+      transfers: {
+        cash: { in: 0, out: 0, net: 0 },
+        bank: { in: 0, out: 0, net: 0 },
+        total: 0
+      },
+      adjustments: {
+        opening: { cash: 0, bank: 0, total: 0 },
+        closure: { cash: 0, bank: 0, total: 0 },
+        total: 0
+      },
+      balances: {
+        initial: { cash: 0, bank: 0, total: 0 },
+        expected: { cash: 0, bank: 0, total: 0 },
+        actual: { cash: 0, bank: 0, total: 0 }
+      },
+      operational: {
+        result: 0,
+        resultCash: 0,
+        resultBank: 0,
+        flowCash: 0,
+        flowBank: 0
+      }
+    };
+  }
+
   // Convertir a array para facilitar procesamiento
   const allTransactions = [];
   txSnap.forEach(doc => {
