@@ -31,6 +31,7 @@ const db = admin.firestore();
 const { yesterdayStr } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
 const { breakStreak, incStreakIfConsecutive } = require('./sharedStreak');
+const { executeAutoOpening } = require('./autoOpening');
 
 const DEFAULT_TZ = 'America/Lima';
 
@@ -98,7 +99,39 @@ module.exports = functions
           const day = yesterdayStr(tz);
           console.log(`📅 Checking day: ${day}`);
 
-          // Obtener agregados del día
+          // === PASO PREVIO: Ejecutar auto-apertura si es necesaria ===
+          console.log(`\n🔍 PRE-CHECK: Attempting auto-opening for ${day}...`);
+          try {
+            const autoOpenResult = await executeAutoOpening({
+              businessId,
+              day,
+              timezone: tz
+            });
+
+            if (autoOpenResult.success) {
+              console.log(`✅ Auto-opening created: ${autoOpenResult.openingId}`);
+            } else if (autoOpenResult.data?.alreadyExists) {
+              console.log(`ℹ️  Opening already exists: ${autoOpenResult.openingId}`);
+            } else if (autoOpenResult.data?.noPreviousClosure) {
+              console.log(`⚠️  No previous closure found - cannot create auto-opening`);
+              console.log(`   Skipping this business (no baseline to work from)`);
+              results.noAction++;
+              results.processed++;
+              results.details.push({
+                businessId,
+                businessName: businessData.name || businessId,
+                day,
+                action: 'no-action-no-baseline',
+                reason: 'No previous closure found'
+              });
+              continue; // Saltar al siguiente negocio
+            }
+          } catch (autoOpenError) {
+            console.error(`❌ Error in auto-opening:`, autoOpenError.message);
+            console.log(`   Continuing with closure check anyway...`);
+          }
+
+          // Obtener agregados del día (después de intentar auto-apertura)
           const agg = await getDayAggregates(db, businessId, day, tz);
           console.log(`📊 Day status:`, {
             hasOpening: agg.hasOpening,
