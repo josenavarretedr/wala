@@ -86,8 +86,54 @@ export function useDailySummary() {
     }
   };
 
+  /**
+   * Obtiene el resumen de ayer
+   * @param {string} dayString - Fecha en formato 'yyyy-LL-dd'
+   * @returns {Promise<Object|null>} - Resumen del día o null si no existe
+   */
+  const getYesterdayDailySummary = async () => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        console.error('❌ businessId no disponible para getYesterdayDailySummary');
+        return null;
+      }
+
+      // Obtener la fecha de ayer
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const year = yesterday.getFullYear();
+      const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+      const day = String(yesterday.getDate()).padStart(2, '0');
+      const dayString = `${year}-${month}-${day}`;
+
+      // Referencia al documento dailySummary
+      const dailySummaryRef = doc(
+        db,
+        `businesses/${businessId}/dailySummaries/${dayString}`
+      );
+
+      const docSnap = await getDoc(dailySummaryRef);
+
+      if (!docSnap.exists()) {
+        console.log('ℹ️ No existe dailySummary para ayer:', dayString);
+        return null;
+      }
+
+      const data = docSnap.data();
+      console.log('✅ DailySummary de ayer cargado:', data);
+
+      return data;
+    } catch (error) {
+      console.error('❌ Error obteniendo dailySummary de ayer:', error);
+      return null;
+    }
+  };
+
   return {
     getTodayDailySummary,
     getDailySummary,
+    getYesterdayDailySummary,
   };
 }
