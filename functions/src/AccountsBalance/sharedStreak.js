@@ -1,4 +1,5 @@
 /* eslint-disable */
+// sharedStreak.js
 
 /**
  * @file sharedStreak.js

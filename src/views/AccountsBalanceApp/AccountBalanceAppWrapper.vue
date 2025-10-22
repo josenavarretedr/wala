@@ -22,8 +22,6 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
-import AccountBalanceAppOpen from "@/components/AccountsBalanceApp/AccountBalanceAppOpen.vue";
-import AccountBalanceAppClose from "@/components/AccountsBalanceApp/AccountBalanceAppClose.vue";
 import NavigationBtnsAccountsBalance from "@/components/AccountsBalanceApp/NavigationBtnsAccountsBalance.vue";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore.js";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";

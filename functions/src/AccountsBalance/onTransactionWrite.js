@@ -15,6 +15,9 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 
+
+
+
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -22,6 +25,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const { dayFromTimestamp } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
+const { updateStreakContextualizada } = require('../Streak/streakManager');
 
 const DEFAULT_TZ = 'America/Lima';
 
@@ -65,6 +69,17 @@ module.exports = functions.firestore
     await upsertDailySummary(db, businessId, day, {
       ...agg,
       lastUpdated: FieldValue.serverTimestamp()
+    });
+
+    // Actualizar racha contextualizada (pasar como objeto)
+    await updateStreakContextualizada({
+      db,
+      businessId,
+      day,
+      summary: agg, // Ya tenemos los agregados calculados
+      tz
+    }).catch(err => {
+      console.error('❌ Error updating streak:', err);
     });
 
     console.log(`✅ Daily summary updated for ${day}`);

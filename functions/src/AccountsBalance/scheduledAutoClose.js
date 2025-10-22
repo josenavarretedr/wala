@@ -1,4 +1,5 @@
 /* eslint-disable */
+// scheduledAutoClose.js
 
 /**
  * @file scheduledAutoClose.js
@@ -20,6 +21,7 @@ const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
 const { v4: uuidv4 } = require('uuid');
+
 
 // Inicializar Firebase Admin si no está inicializado
 if (!admin.apps.length) {
