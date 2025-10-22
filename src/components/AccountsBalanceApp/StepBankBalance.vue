@@ -147,6 +147,7 @@
               v-model.number="realBankBalance"
               @input="handleInputChange"
               @focus="handleFocus"
+              @keydown.enter="handleEnterKey"
               class="w-full pl-14 pr-4 py-4 text-3xl font-bold text-center border-2 rounded-xl shadow-sm transition-all duration-200 tabular-nums"
               :class="inputClasses"
               placeholder="0.00"
@@ -203,6 +204,9 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
+import { useDailySummary } from "@/composables/useDailySummary";
+
+const { getTodayDailySummary } = useDailySummary();
 
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
@@ -216,25 +220,19 @@ const realBankBalance = ref(0);
 const hasUserInput = ref(false);
 const showBreakdown = ref(false);
 const bankInput = ref(null);
+const dailySummary = ref(null);
 
 // Determinar el modo (opening o close)
 const isOpeningMode = computed(() => {
-  return !transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "opening"
-  );
+  return !dailySummary.value?.hasOpening;
 });
 
 // Verificar si está deshabilitado
 const isDisabled = computed(() => {
   if (isOpeningMode.value) {
-    const hasOpening = transactionStore.transactionsInStore.value.some(
-      (t) => t.type === "opening"
-    );
-    return hasOpening;
+    return dailySummary.value?.hasOpening || false;
   }
-  return transactionStore.transactionsInStore.value.some(
-    (t) => t.type === "closure"
-  );
+  return dailySummary.value?.hasClosure || false;
 });
 
 // Balance esperado según el modo
@@ -306,6 +304,14 @@ const handleFocus = (e) => {
   e.target.select();
 };
 
+const handleEnterKey = () => {
+  // Obtener el botón finalizar del DOM para activarlo (este es el último paso)
+  const btnNext = document.querySelector("#btn-next button");
+  if (btnNext && !btnNext.disabled) {
+    btnNext.click();
+  }
+};
+
 // Buscar el último cierre (solo para modo opening)
 const findLastClosure = async () => {
   try {
@@ -361,10 +367,8 @@ const setupBalanceStore = () => {
 // Inicialización
 onMounted(async () => {
   try {
-    // Cargar transacciones
-    if (transactionStore.transactionsInStore.value.length === 0) {
-      await transactionStore.getTransactionsToday();
-    }
+    // Cargar transacciones del día si no están cargadas
+    dailySummary.value = await getTodayDailySummary();
 
     if (isOpeningMode.value) {
       await findLastClosure();

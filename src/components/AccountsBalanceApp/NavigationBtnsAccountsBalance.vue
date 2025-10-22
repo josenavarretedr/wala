@@ -94,8 +94,13 @@ import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBal
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { generateUUID } from "@/utils/generateUUID";
+import { useDailySummary } from "@/composables/useDailySummary";
+import { useTransaccion } from "@/composables/useTransaction";
+
+const { getTodayDailySummary } = useDailySummary();
+const { getTransactionByID } = useTransaccion();
 
 const flow = useAccountsBalanceFlowStore();
 const accountsBalanceStore = useAccountsBalanceStore();
@@ -143,6 +148,10 @@ const isNextButtonEnabled = computed(() => {
 
 const isNextButtonEnabled2 = true;
 
+const dailySummary = ref(null);
+// Obtener la apertura del día
+const openingData = ref(null);
+
 // Función para obtener el mensaje de validación apropiado
 const getValidationMessage = () => {
   const currentStepConfig = flow.currentStepConfig;
@@ -162,15 +171,16 @@ const getValidationMessage = () => {
 
 // Determinar si estamos en modo opening o close
 const isOpeningMode = computed(() => {
-  return !transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "opening"
-  );
+  return dailySummary.value?.hasOpening ? false : true;
 });
 
 const finalizarRegistro = async () => {
   try {
     flow.accountBalanceLoading = true;
     console.log("🔄 Iniciando finalización de registro...");
+
+    // Asegurarse de tener el dailySummary actualizado
+    dailySummary.value = await getTodayDailySummary();
 
     const stepsData = flow.stepsData;
 
@@ -240,15 +250,16 @@ const finalizarRegistro = async () => {
       // ========== MODO CIERRE ==========
       console.log("🔒 Modo: CIERRE");
 
-      // Obtener la apertura del día
-      const openingData = stepsData.openingData;
-      if (!openingData) {
+      openingData.value = await getTransactionByID(
+        dailySummary.value.openingData.id
+      );
+      if (!openingData.value) {
         throw new Error("No se encontró la apertura del día");
       }
 
       // Construir transacción de cierre
       const closureTransaction = accountsBalanceStore.buildClosureTransaction({
-        openingUuid: openingData.uuid,
+        openingUuid: openingData.value.uuid,
         realCashBalance,
         realBankBalance,
         generateUUID,

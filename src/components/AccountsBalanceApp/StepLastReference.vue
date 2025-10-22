@@ -147,30 +147,34 @@ import {
 import { ref, computed, onMounted } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useDailySummary } from "@/composables/useDailySummary";
+import { useTransaccion } from "@/composables/useTransaction";
 
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
+const { getTodayDailySummary } = useDailySummary();
+const { getTransactionByID } = useTransaccion();
 
 // Estados reactivos
 const isLoading = ref(true);
 const lastClosureData = ref(null);
 const openingData = ref(null);
 
+const dailySummary = ref(null);
+
 // Determinar si hay apertura hoy (modo close) o no (modo opening)
 const hasOpeningToday = computed(() => {
-  return transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "opening"
-  );
+  return dailySummary.value?.hasOpening;
 });
 
 // Usar el accountsBalanceStore para cálculos precisos
 // Excluye ajustes automáticamente y maneja correctamente las categorías
 const totalIngresos = computed(() => {
-  return accountsBalanceStore.totalIngresos;
+  return dailySummary.value?.totals.income || 0;
 });
 
 const totalEgresos = computed(() => {
-  return accountsBalanceStore.totalEgresos;
+  return dailySummary.value?.totals.expense || 0;
 });
 
 // Función para formatear fechas
@@ -210,12 +214,15 @@ const findLastClosure = async () => {
 };
 
 // Buscar la apertura del día
-const findOpeningToday = () => {
-  const opening = transactionStore.transactionsInStore.value.find(
-    (t) => t.type === "opening"
-  );
-  if (opening) {
-    openingData.value = opening;
+const findOpeningToday = async () => {
+  if (dailySummary.value?.openingData.id) {
+    openingData.value = await getTransactionByID(
+      dailySummary.value.openingData.id
+    );
+    console.log("Apertura del día encontrada:", openingData.value);
+  } else {
+    console.log("No se encontró apertura del día.");
+    openingData.value = null;
   }
 };
 
@@ -223,14 +230,7 @@ const findOpeningToday = () => {
 onMounted(async () => {
   try {
     // Cargar transacciones del día si no están cargadas
-    if (transactionStore.transactionsInStore.value.length === 0) {
-      await transactionStore.getTransactionsToday();
-    }
-
-    // Configurar el accountsBalanceStore con las transacciones del día
-    accountsBalanceStore.setTransactions(
-      transactionStore.transactionsInStore.value
-    );
+    dailySummary.value = await getTodayDailySummary();
 
     // Buscar apertura del día
     findOpeningToday();

@@ -166,26 +166,6 @@ const routes = [
         component: () => import('@/views/AccountsBalanceApp/AccountBalanceAppWrapper.vue'),
       },
 
-      // Rutas de arqueo de caja
-      {
-        path: 'cash-closure',
-        name: 'CashClosureApp',
-        component: () => import('@/views/cashClosureApp/CashClosureApp.vue'),
-        meta: { permission: 'verArqueos', title: 'Arqueo de Caja' }
-      },
-      {
-        path: 'cash-closure/:cashClosureId',
-        name: 'CashClosureDetails',
-        component: () => import('@/views/cashClosureApp/CashClosureDetails.vue'),
-        meta: { permission: 'verArqueos', title: 'Detalle de Arqueo' }
-      },
-      {
-        path: 'cash-closure-all',
-        name: 'CashClosureAll',
-        component: () => import('@/views/cashClosureApp/MonthlyCashCalendarWrapper.vue'),
-        meta: { permission: 'verArqueos', title: 'Histórico de Arqueos' }
-      },
-
       // Ruta para testing del sistema de trazabilidad (solo para desarrollo)
       {
         path: 'testing/traceability',
@@ -222,13 +202,18 @@ const routes = [
         path: 'inventory/product/:productId/count',
         name: 'InventoryCount',
         component: () => import('@/views/Inventory/InventoryCount.vue')
-      }
+      },
       // {
       //   path: 'records/:registerId',
       //   name: 'DetailsRecords',
       //   component: () => import('@/views/basicAccountingRecords/RecordsDetails.vue'),
       //   meta: { permission: 'verReportes', title: 'Detalle de Registro' }
       // },
+      {
+        path: 'sales',
+        name: 'SalesView',
+        component: () => import('@/views/Sales/SalesView.vue'),
+      }
     ]
   },
 

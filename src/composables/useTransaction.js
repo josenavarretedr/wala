@@ -67,6 +67,27 @@ export function useTransaccion() {
     }
   };
 
+  const getTransactionByID = async (transactionID) => {
+    try {
+      const businessId = ensureBusinessId();
+      console.log('El id del negocio es, desde el useTransactions: ', businessId);
+      const transactionRef = doc(db, `businesses/${businessId}/transactions`, transactionID);
+      const docSnap = await getDoc(transactionRef);
+      if (docSnap.exists()) {
+        return {
+          id: docSnap.id,
+          ...docSnap.data()
+        };
+      } else {
+        console.log('No such document!');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error fetching transaction by ID: ', error);
+      throw error;
+    }
+  };
+
   const getTransactionsTodayCmps = async () => {
     const businessId = ensureBusinessId();
     console.log('El id del negocio es, desde el useTransactions: ', businessId);
@@ -101,6 +122,30 @@ export function useTransaccion() {
 
     console.log('Se obtuvieron las transacciones de hoy, desde cpmposbale: ', transactions);
 
+    return transactions;
+  };
+
+  const getTransactionsRange = async (startDate, endDate) => {
+    // Implementar función para obtener transacciones en un rango de fechas
+    const businessId = ensureBusinessId();
+    console.log('El id del negocio es, desde el useTransactions: ', businessId);
+
+    let transactions = [];
+
+    const q = query(
+      collection(db, `businesses/${businessId}/transactions`),
+      where("createdAt", ">=", startDate),
+      where("createdAt", "<=", endDate)
+    );
+
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      transactions.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+    console.log('Se obtuvieron las transacciones del rango de fechas: ', transactions);
     return transactions;
   };
 
@@ -172,7 +217,9 @@ export function useTransaccion() {
     updateTransaction,
     deleteTransactionByID,
     getTransactionsTodayCmps,
+    getTransactionsRange,
     getAllTransactions,
+    getTransactionByID,
     getLastClosureTransactions,
   };
 }
