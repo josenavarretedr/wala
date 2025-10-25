@@ -2,10 +2,10 @@
   <!-- Widget minimalista con click para abrir modal -->
   <div
     :class="[
-      'w-full h-full flex flex-col transition-shadow duration-200 cursor-pointer',
+      'w-full h-full transition-shadow duration-200 cursor-pointer',
       compact
-        ? 'p-3 sm:p-4'
-        : 'bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 hover:shadow-md',
+        ? 'p-3 sm:p-4 flex flex-col justify-center'
+        : 'bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 hover:shadow-md flex flex-col',
     ]"
     @click="showModal = true"
   >
@@ -13,11 +13,16 @@
     <div class="flex items-center justify-center gap-3 sm:gap-4">
       <!-- Icono de fuego -->
       <div class="relative">
+        <SnowFlake
+          v-if="!isStreakActiveToday"
+          class="w-6 h-6 sm:w-8 sm:h-8 text-gray-300"
+        />
         <FireFlame
+          v-else
           :class="[
             'transition-all duration-300',
             compact ? 'w-6 h-6 sm:w-8 sm:h-8' : 'w-8 h-8 sm:w-10 sm:h-10',
-            streakData?.current > 0
+            isStreakActiveToday
               ? 'text-red-500 animate-flame'
               : 'text-gray-300',
           ]"
@@ -25,7 +30,7 @@
 
         <!-- Pulso sutil cuando está activa -->
         <div
-          v-if="streakData?.current > 0"
+          v-if="isStreakActiveToday"
           class="absolute inset-0 rounded-full bg-red-400 opacity-20 animate-ping-slow"
         ></div>
       </div>
@@ -36,7 +41,7 @@
           :class="[
             'font-extrabold tabular-nums transition-all duration-300',
             compact ? 'text-2xl sm:text-3xl' : 'text-4xl sm:text-5xl',
-            streakData?.current > 0 ? 'text-red-500' : 'text-gray-300',
+            isStreakActiveToday ? 'text-red-500' : 'text-gray-300',
           ]"
         >
           {{ streakData?.current || 0 }}
@@ -187,7 +192,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseInit";
-import { FireFlame } from "@iconoir/vue";
+import { FireFlame, SnowFlake } from "@iconoir/vue";
 
 // Props
 const props = defineProps({
@@ -207,6 +212,40 @@ const showModal = ref(false);
 
 // Computed properties
 const businessId = computed(() => route.params.businessId);
+
+// Verificar si la racha está activa HOY (con transacciones hoy)
+const isStreakActiveToday = computed(() => {
+  if (!streakData.value || streakData.value.current === 0) {
+    return false;
+  }
+
+  // Si no hay lastActiveDay, la racha no está activa hoy
+  if (!streakData.value.lastActiveDay) {
+    return false;
+  }
+
+  // Obtener el día actual en formato yyyy-MM-dd
+  const today = new Date().toISOString().split("T")[0];
+
+  // Comparar lastActiveDay con hoy
+  // lastActiveDay puede venir como string directo o como timestamp de Firestore
+  let lastActiveDay;
+
+  if (typeof streakData.value.lastActiveDay === "string") {
+    lastActiveDay = streakData.value.lastActiveDay;
+  } else if (streakData.value.lastActiveDay?.toDate) {
+    // Es un Timestamp de Firestore
+    lastActiveDay = streakData.value.lastActiveDay
+      .toDate()
+      .toISOString()
+      .split("T")[0];
+  } else {
+    return false;
+  }
+
+  // La racha solo está "encendida" si hay actividad HOY
+  return lastActiveDay === today;
+});
 
 // Texto motivacional dinámico
 const motivationalText = computed(() => {

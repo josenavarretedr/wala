@@ -17,16 +17,22 @@
     </div>
 
     <!-- Valor -->
-    <p class="text-3xl font-bold text-blue-500 tabular-nums text-right">
-      {{ formattedTotal }}
-    </p>
+    <div class="flex-1 flex items-center justify-end">
+      <div v-if="isLoading" class="text-blue-500">
+        <SpinnerIcon size="lg" />
+      </div>
+      <p v-else class="text-3xl font-bold text-blue-500 tabular-nums">
+        {{ formattedTotal }}
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, computed } from "vue";
+import { defineProps, computed, ref, watch } from "vue";
 import { sumTransactions } from "@/utils/mathUtils";
 import { Cash } from "@iconoir/vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const props = defineProps({
   transactions: {
@@ -39,6 +45,8 @@ const props = defineProps({
   },
 });
 
+const isLoading = ref(true);
+
 const total = computed(() => sumTransactions(props.transactions));
 
 const formattedTotal = computed(() =>
@@ -47,6 +55,18 @@ const formattedTotal = computed(() =>
     currency: "PEN",
     maximumFractionDigits: 2,
   }).format(total.value)
+);
+
+// Simular carga cuando cambien las transacciones
+watch(
+  () => props.transactions,
+  () => {
+    isLoading.value = true;
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 300);
+  },
+  { immediate: true }
 );
 </script>
 

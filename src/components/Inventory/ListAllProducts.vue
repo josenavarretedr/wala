@@ -67,9 +67,9 @@
     <!-- Lista de productos -->
     <div class="products-list-section">
       <div v-if="loading" class="text-center py-8">
-        <div
-          class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-3 animate-spin"
-        ></div>
+        <div class="text-blue-500 mb-3">
+          <SpinnerIcon size="lg" />
+        </div>
         <p class="text-sm text-gray-500">Cargando productos...</p>
       </div>
 
@@ -109,58 +109,12 @@
       </div>
 
       <div v-else class="products-grid">
-        <div
+        <CardProduct
           v-for="product in filteredProducts"
           :key="product.uuid"
-          class="product-card"
-          @click="selectProduct(product)"
-        >
-          <div class="flex items-start justify-between">
-            <div class="flex-1 min-w-0 pr-4">
-              <h3 class="product-title">
-                {{ product.description }}
-              </h3>
-              <div class="product-meta mt-2">
-                <span class="meta-item">
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                    ></path>
-                  </svg>
-                  Stock: {{ product.stock || 0 }} {{ product.unit || "uni" }}
-                </span>
-              </div>
-            </div>
-            <div class="flex-shrink-0">
-              <p class="product-price">S/{{ formatPrice(product.price) }}</p>
-            </div>
-          </div>
-
-          <!-- Indicador visual de clic -->
-          <div class="product-arrow">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5l7 7-7 7"
-              ></path>
-            </svg>
-          </div>
-        </div>
+          :product="product"
+          @click="selectProduct"
+        />
       </div>
     </div>
   </div>
@@ -171,6 +125,8 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import CardProduct from "@/components/Inventory/CardProduct.vue";
 
 // Router
 const router = useRouter();
@@ -196,14 +152,21 @@ function normalize(s = "") {
 }
 
 function buildIndex(items) {
-  index.value = items.map((p) => ({
-    uuid: p.uuid,
-    description: p.description,
-    description_lc: normalize(p.description || ""),
-    price: p.price,
-    stock: p.stock,
-    unit: p.unit || "uni",
-  }));
+  index.value = items.map(
+    (p) => (
+      console.log("Indexando producto:", p),
+      {
+        uuid: p.uuid,
+        description: p.description,
+        description_lc: normalize(p.description || ""),
+        price: p.price,
+        stock: p.stock,
+        unit: p.unit || "uni",
+        type: p.type ? p.type : "MERCH",
+        trackStock: p.trackStock ? p.trackStock : false,
+      }
+    )
+  );
 }
 
 // Cargar inventario inicial
@@ -388,82 +351,6 @@ function formatPrice(price) {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
-/* Product card */
-.product-card {
-  position: relative;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.product-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  transform: translateY(-2px);
-}
-
-.product-card:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
-}
-
-.product-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  line-clamp: 2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.product-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.meta-item svg {
-  flex-shrink: 0;
-}
-
-.product-price {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #3b82f6;
-  white-space: nowrap;
-}
-
-.product-arrow {
-  position: absolute;
-  top: 50%;
-  right: 1rem;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  transition: all 0.2s ease;
-}
-
-.product-card:hover .product-arrow {
-  color: #3b82f6;
-  transform: translateY(-50%) translateX(4px);
-}
-
 /* Empty state */
 .empty-state {
   background: white;
@@ -481,17 +368,6 @@ function formatPrice(price) {
 .dropdown-leave-to {
   opacity: 0;
   transform: translateY(-4px);
-}
-
-/* Loading animation */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 
 /* Custom scrollbar */
@@ -526,23 +402,11 @@ function formatPrice(price) {
     font-size: 16px; /* Prevent zoom on iOS */
     padding: 12px 14px;
   }
-
-  .product-card {
-    padding: 0.875rem;
-  }
 }
 
 @media (max-width: 480px) {
   .header-section h1 {
     font-size: 1.5rem;
-  }
-
-  .product-title {
-    font-size: 0.9375rem;
-  }
-
-  .product-price {
-    font-size: 1.125rem;
   }
 }
 

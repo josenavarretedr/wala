@@ -17,16 +17,24 @@
     </div>
 
     <!-- Valor -->
-    <p class="text-3xl font-bold tabular-nums text-right text-blue-500">
-      {{ transactions.length }}
-    </p>
-    <p class="text-xs text-gray-500 mt-1 text-right">{{ label }}</p>
+    <div class="flex-1 flex flex-col items-end justify-center">
+      <div v-if="isLoading" class="text-blue-500">
+        <SpinnerIcon size="lg" />
+      </div>
+      <template v-else>
+        <p class="text-3xl font-bold tabular-nums text-blue-500">
+          {{ transactions.length }}
+        </p>
+        <p class="text-xs text-gray-500 mt-1">{{ label }}</p>
+      </template>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps, computed } from "vue";
+import { defineProps, computed, ref, watch } from "vue";
 import { Page } from "@iconoir/vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const props = defineProps({
   transactions: {
@@ -47,8 +55,22 @@ const props = defineProps({
   },
 });
 
+const isLoading = ref(true);
+
 const label = computed(() =>
   props.transactions?.length === 1 ? props.singularLabel : props.pluralLabel
+);
+
+// Simular carga cuando cambien las transacciones
+watch(
+  () => props.transactions,
+  () => {
+    isLoading.value = true;
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 300);
+  },
+  { immediate: true }
 );
 </script>
 

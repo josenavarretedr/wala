@@ -26,9 +26,17 @@
     <div class="relative h-32">
       <canvas ref="chartCanvas"></canvas>
 
+      <!-- Loading State -->
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+      >
+        <SpinnerIcon size="md" class="text-blue-500" />
+      </div>
+
       <!-- Estado vacío -->
       <div
-        v-if="!hasData"
+        v-else-if="!hasData"
         class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
       >
         Sin datos en el periodo
@@ -49,6 +57,7 @@ import {
 } from "vue";
 import Chart from "chart.js/auto";
 import { GraphUp } from "@iconoir/vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const props = defineProps({
   transactions: {
@@ -59,6 +68,7 @@ const props = defineProps({
 
 const chartCanvas = ref(null);
 let chartInstance = null;
+const isLoading = ref(true);
 
 // ----- Utils -----
 const formatCurrency = (value) => {
@@ -145,9 +155,13 @@ const maxSale = computed(() => {
 
 // ----- Chart -----
 const renderChart = async () => {
+  isLoading.value = true;
   await nextTick();
   const el = chartCanvas.value;
-  if (!el) return;
+  if (!el) {
+    isLoading.value = false;
+    return;
+  }
 
   const { labels, data } = buildSeries(props.transactions || []);
 
@@ -222,6 +236,8 @@ const renderChart = async () => {
       interaction: { mode: "nearest", intersect: false },
     },
   });
+
+  isLoading.value = false;
 };
 
 onMounted(() => {

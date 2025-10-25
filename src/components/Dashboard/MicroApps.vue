@@ -1,85 +1,124 @@
 <template>
   <!-- Cuadrícula de microaplicaciones y widgets -->
-  <div class="rounded-xl shadow-sm p-4 sm:p-6">
-    <!-- Grid flexible: 3 columnas en móvil, auto-flow en desktop -->
-    <div
-      :class="[
-        'grid gap-2 sm:gap-3 mx-auto transition-all duration-300',
-        // Móvil: 3 columnas fijas
-        'grid-cols-3',
-        // Desktop: auto con columnas flexibles
-        'lg:grid-cols-6 lg:auto-rows-fr lg:gap-4',
-      ]"
-    >
-      <!-- Widget de racha (2x1 en desktop, 3x1 en móvil) -->
+  <div class="p-2 sm:p-4">
+    <!-- Contenedor para móvil -->
+    <div class="lg:hidden">
+      <!-- Widget de racha -->
       <div
-        :class="[
-          'bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden',
-          // Móvil: ocupa las 3 columnas (ancho completo)
-          'col-span-3',
-          // Desktop: ocupa 2 columnas, altura estándar
-          'lg:col-span-2 lg:row-span-1',
-        ]"
+        class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-2 max-w-md mx-auto"
+      >
+        <StreakWidget :compact="true" />
+      </div>
+      <!-- Grid de apps móvil -->
+      <div class="grid grid-cols-4 gap-2 max-w-md mx-auto">
+        <div
+          v-for="(item, index) in visibleApps"
+          :key="item.id"
+          :class="[
+            'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+            'col-span-1 p-2 sm:p-3',
+            item.color === 'blue' &&
+              'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
+            item.color === 'red' &&
+              'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
+            item.color === 'green' &&
+              'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+            item.color === 'purple' &&
+              'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+            item.color === 'orange' &&
+              'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+            !item.available && 'opacity-60 hover:shadow-sm',
+          ]"
+          @click="handleAppClick(item)"
+        >
+          <component
+            v-if="item.isComponent"
+            :is="item.icon"
+            :class="[
+              'mb-1 transition-all duration-200',
+              'w-6 h-6 sm:w-8 sm:h-8',
+              item.available ? getIconColor(item.color) : 'text-gray-400',
+              item.available && getIconHoverColor(item.color),
+            ]"
+          />
+          <div
+            v-else
+            :class="['mb-1 transition-all duration-200', 'text-xl sm:text-2xl']"
+          >
+            {{ item.icon }}
+          </div>
+          <div
+            :class="[
+              'text-center px-1',
+              item.available ? 'text-gray-600 font-medium' : 'text-gray-400',
+              'text-xs',
+            ]"
+          >
+            {{ item.name }}
+          </div>
+          <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
+            Próximamente
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid desktop: 6 columnas, todos en una fila -->
+    <div
+      class="hidden lg:grid lg:grid-cols-6 lg:gap-3 lg:max-w-4xl lg:mx-auto lg:items-stretch"
+    >
+      <!-- Widget de racha (2 columnas) -->
+      <div
+        class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
       >
         <StreakWidget :compact="true" />
       </div>
 
-      <!-- Aplicaciones principales (1x1 cada una) -->
+      <!-- Apps (1 columna cada una, 4 en total) -->
       <div
         v-for="(item, index) in visibleApps"
-        :key="item.id"
+        :key="'desktop-' + item.id"
         :class="[
-          'bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
-          // Cada app ocupa 1 celda (1x1)
-          'col-span-1 row-span-1',
-          'aspect-square',
-          // Hover effects
-          'hover:shadow-md hover:border-blue-200',
-          // Indicar si no está disponible
-          !item.available && 'opacity-60',
+          'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+          'col-span-1',
+          'p-2',
+          item.color === 'blue' &&
+            'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
+          item.color === 'red' &&
+            'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
+          item.color === 'green' &&
+            'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+          item.color === 'purple' &&
+            'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+          item.color === 'orange' &&
+            'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+          !item.available && 'opacity-60 hover:shadow-sm',
         ]"
         @click="handleAppClick(item)"
       >
-        <div
+        <component
+          v-if="item.isComponent"
+          :is="item.icon"
           :class="[
-            'font-semibold mb-1',
-            item.available ? 'text-gray-700' : 'text-gray-500',
-            'text-xl sm:text-2xl lg:text-2xl',
+            'mb-1 transition-all duration-200 w-8 h-8',
+            item.available ? getIconColor(item.color) : 'text-gray-400',
+            item.available && getIconHoverColor(item.color),
           ]"
-        >
+        />
+        <div v-else class="mb-1 transition-all duration-200 text-2xl">
           {{ item.icon }}
         </div>
         <div
           :class="[
-            'text-center px-1 sm:px-2',
-            item.available ? 'text-gray-500' : 'text-gray-400',
+            'text-center px-1',
+            item.available ? 'text-gray-600 font-medium' : 'text-gray-400',
             'text-xs',
           ]"
         >
           {{ item.name }}
         </div>
-        <!-- Indicador de no disponible -->
         <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
           Próximamente
-        </div>
-      </div>
-
-      <!-- Botón "Ver más" (1x1) -->
-      <div
-        :class="[
-          'bg-blue-50 rounded-lg shadow-sm border border-blue-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer hover:bg-blue-100',
-          'col-span-1 row-span-1',
-          'aspect-square',
-        ]"
-        @click="showModal = true"
-      >
-        <div
-          class="font-semibold text-blue-600 mb-1 text-xl sm:text-2xl lg:text-2xl"
-        >
-          +
-        </div>
-        <div class="text-blue-600 text-center px-1 sm:px-2 text-xs">
-          Ver más
         </div>
       </div>
     </div>
@@ -137,12 +176,34 @@
             <div
               v-for="item in availableApps"
               :key="item.id"
-              class="aspect-square bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer hover:shadow-md hover:border-blue-300 hover:bg-blue-50"
+              :class="[
+                'group  bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+                'hover:shadow-lg hover:-translate-y-1',
+                item.color === 'blue' &&
+                  'hover:border-blue-300 hover:bg-blue-50',
+                item.color === 'red' && 'hover:border-red-300 hover:bg-red-50',
+                item.color === 'green' &&
+                  'hover:border-green-300 hover:bg-green-50',
+                item.color === 'purple' &&
+                  'hover:border-purple-300 hover:bg-purple-50',
+                item.color === 'orange' &&
+                  'hover:border-orange-300 hover:bg-orange-50',
+                item.color === 'gray' &&
+                  'hover:border-gray-300 hover:bg-gray-50',
+              ]"
               @click="handleAppClick(item)"
             >
-              <div
-                class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-700 mb-2"
-              >
+              <!-- Icono dinámico: componente o emoji -->
+              <component
+                v-if="item.isComponent"
+                :is="item.icon"
+                :class="[
+                  'w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 mb-2 transition-all duration-200',
+                  getIconColor(item.color),
+                  getIconHoverColor(item.color),
+                ]"
+              />
+              <div v-else class="text-3xl sm:text-4xl lg:text-5xl mb-2">
                 {{ item.icon }}
               </div>
               <div
@@ -163,7 +224,7 @@
             <div
               v-for="item in upcomingApps"
               :key="item.id"
-              class="aspect-square bg-gray-50 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center opacity-60 cursor-not-allowed"
+              class="bg-gray-50 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center opacity-60 cursor-not-allowed"
             >
               <div
                 class="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-500 mb-2"
@@ -201,6 +262,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import StreakWidget from "./StreakWidget.vue";
+import { GraphUp, BoxIso, GraphDown, Reports } from "@iconoir/vue";
 
 // Props
 const props = defineProps({
@@ -218,61 +280,73 @@ const showModal = ref(false);
 
 // Datos de microaplicaciones
 const allMicroApps = ref([
-  { id: 1, name: "Ventas", route: "/sales", available: true, icon: "💰" },
+  {
+    id: 1,
+    name: "Ventas",
+    route: "/sales",
+    available: true,
+    icon: GraphUp,
+    isComponent: true,
+    color: "blue",
+  },
   {
     id: 2,
+    name: "Gastos",
+    route: "/expenses",
+    available: true,
+    icon: GraphDown,
+    isComponent: true,
+    color: "red",
+  },
+  {
+    id: 3,
     name: "Inventario",
     route: "/inventory",
     available: true,
-    icon: "📦",
-  },
-  { id: 3, name: "Gastos", route: "/expenses", available: true, icon: "💸" },
-  { id: 4, name: "Reportes", route: "/reports", available: true, icon: "📊" },
-  {
-    id: 5,
-    name: "Clientes",
-    route: "/customers",
-    available: false,
-    icon: "👥",
+    icon: BoxIso,
+    isComponent: true,
+    color: "purple",
   },
   {
-    id: 6,
-    name: "Proveedores",
-    route: "/suppliers",
-    available: false,
-    icon: "🏢",
-  },
-  { id: 7, name: "Nómina", route: "/payroll", available: false, icon: "💵" },
-  {
-    id: 8,
-    name: "Contabilidad",
-    route: "/accounting",
+    id: 4,
+    name: "Reportes",
+    route: "/reports",
     available: true,
-    icon: "🧮",
-  },
-  {
-    id: 9,
-    name: "Configuración",
-    route: "/settings",
-    available: true,
-    icon: "⚙️",
-  },
-  { id: 10, name: "Usuarios", route: "/users", available: false, icon: "👤" },
-  {
-    id: 11,
-    name: "Respaldos",
-    route: "/backups",
-    available: false,
-    icon: "💾",
-  },
-  {
-    id: 12,
-    name: "Integración",
-    route: "/integrations",
-    available: false,
-    icon: "🔗",
+    icon: Reports,
+    isComponent: true,
+    color: "green",
   },
 ]);
+
+// Función helper para obtener la clase de color del icono
+const getIconColor = (color) => {
+  const colorMap = {
+    blue: "text-blue-300",
+    red: "text-red-300",
+    green: "text-green-300",
+    purple: "text-purple-300",
+    orange: "text-orange-300",
+    indigo: "text-indigo-300",
+    teal: "text-teal-300",
+    gray: "text-gray-300",
+  };
+  return colorMap[color] || "text-gray-700";
+};
+
+// Función helper para obtener la clase de color del icono en hover
+const getIconHoverColor = (color) => {
+  const colorMap = {
+    blue: "group-hover:text-blue-500",
+    red: "group-hover:text-red-500",
+    green: "group-hover:text-green-500",
+    purple: "group-hover:text-purple-500",
+    orange: "group-hover:text-orange-500",
+    indigo: "group-hover:text-indigo-500",
+    teal: "group-hover:text-teal-500",
+    gray: "group-hover:text-gray-500",
+  };
+  return colorMap[color] || "group-hover:text-gray-700";
+};
 
 // Computed properties
 const visibleApps = computed(() => {
@@ -329,43 +403,29 @@ watch(showModal, (newValue) => {
 
 <style scoped>
 /* Transiciones suaves y minimalistas */
-.grid > div {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+.group {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease,
+    background-color 0.2s ease;
 }
 
-.grid > div:active {
-  transform: scale(0.98);
+.group:hover {
+  transform: translateY(-2px);
 }
 
-/* Grid flexible con CSS Grid */
+.group:active {
+  transform: scale(0.98) translateY(0);
+}
+
+/* Desktop: asegurar misma altura para todos los elementos */
 @media (min-width: 1024px) {
-  .grid {
-    /* 6 columnas para flexibilidad: widget (2) + apps (1 cada una) */
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-auto-rows: minmax(100px, auto);
-    max-width: 56rem;
-    margin: 0 auto;
+  /* Hacer que el widget de racha tenga altura completa */
+  .col-span-2 {
+    min-height: 120px;
   }
 
-  /* Asegurar que todos los elementos cuadrados mantengan su aspecto */
+  /* Apps cuadradas */
   .aspect-square {
     aspect-ratio: 1 / 1;
-  }
-}
-
-/* Para pantallas extra grandes */
-@media (min-width: 1280px) {
-  .grid {
-    max-width: 64rem;
-  }
-}
-
-/* Móvil: mantener grid de 3 columnas simple */
-@media (max-width: 1023px) {
-  .grid {
-    max-width: 28rem;
-    margin: 0 auto;
   }
 }
 </style>

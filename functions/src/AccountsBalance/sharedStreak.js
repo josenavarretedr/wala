@@ -26,6 +26,8 @@
  */
 
 const { dayMinus } = require('../Helpers/time');
+const admin = require('firebase-admin');
+const { FieldValue } = require('firebase-admin/firestore');
 
 /**
  * Obtiene el streak actual del negocio desde el documento principal.
@@ -87,14 +89,22 @@ async function breakStreak(db, businessId) {
   const businessRef = db.doc(`businesses/${businessId}`);
   const prev = await getStreak(db, businessId);
 
+  // Construir el objeto newStreak sin valores undefined
   const newStreak = {
     current: 0, // Resetear racha actual
     max: prev.max || 0, // Mantener máxima
-    lastCompletedDay: prev.lastCompletedDay,
     copilotDays: (prev.copilotDays || 0) + 1, // Incrementar días de copilot
     brokenAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+
+  // Solo incluir lastCompletedDay si existe (no es null/undefined)
+  if (prev.lastCompletedDay != null) {
+    newStreak.lastCompletedDay = prev.lastCompletedDay;
+  } else {
+    // Si no existe, usar delete() para removerlo explícitamente
+    newStreak.lastCompletedDay = FieldValue.delete();
+  }
 
   // Actualizar solo el campo streak en el documento del negocio
   await businessRef.update({

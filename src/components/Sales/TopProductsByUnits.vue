@@ -27,7 +27,11 @@
     </div>
 
     <!-- Lista -->
-    <div v-if="rows.length" class="space-y-3">
+    <div v-if="isLoading" class="flex items-center justify-center py-8">
+      <SpinnerIcon size="lg" class="text-blue-500" />
+    </div>
+
+    <div v-else-if="rows.length" class="space-y-3">
       <button
         v-for="(row, idx) in rows"
         :key="row.key"
@@ -70,7 +74,8 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from "vue";
+import { defineProps, defineEmits, computed, ref, watch } from "vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const props = defineProps({
   transactions: { type: Array, required: true }, // cada tx puede tener items: [{ uuid, description, quantity, price? }]
@@ -89,6 +94,8 @@ const props = defineProps({
 });
 
 defineEmits(["select"]);
+
+const isLoading = ref(true);
 
 /** Construye agregados a partir de transaction.items */
 const buildAggFromTransactions = (txs) => {
@@ -135,6 +142,18 @@ const rows = computed(() => {
       pct: Math.max(4, Math.min(100, (r.quantity / max) * 100)), // 4% mínimo visual
     }));
 });
+
+// Simular carga cuando cambien las transacciones
+watch(
+  () => props.transactions,
+  () => {
+    isLoading.value = true;
+    setTimeout(() => {
+      isLoading.value = false;
+    }, 300);
+  },
+  { immediate: true, deep: true }
+);
 </script>
 
 <style scoped>

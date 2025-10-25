@@ -17,9 +17,17 @@
     <div class="relative flex-1 min-h-0">
       <canvas ref="chartCanvas"></canvas>
 
+      <!-- Loading State -->
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+      >
+        <SpinnerIcon size="md" class="text-blue-500" />
+      </div>
+
       <!-- Estado vacío -->
       <div
-        v-if="!hasData"
+        v-else-if="!hasData"
         class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
       >
         Sin datos en el periodo
@@ -39,6 +47,7 @@ import {
   nextTick,
 } from "vue";
 import Chart from "chart.js/auto";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 // ---------- Props ----------
 const props = defineProps({
@@ -51,6 +60,7 @@ const props = defineProps({
 // ---------- Refs / estado ----------
 const chartCanvas = ref(null);
 let chartInstance = null;
+const isLoading = ref(true);
 
 // ---------- Utils ----------
 const formatCurrency = (value) =>
@@ -63,6 +73,36 @@ const formatCurrency = (value) =>
 const getAmount = (tx) => Number(tx?.amount ?? 0);
 const getMethod = (tx) =>
   (tx?.account ?? tx?.paymentMethod ?? "Otros").toString().trim() || "Otros";
+
+// Mapeo de nombres internos a nombres amigables
+const getFriendlyName = (method) => {
+  const methodLower = method.toLowerCase();
+  if (methodLower === "cash") return "Efectivo";
+  if (methodLower === "bank") return "Yape/Plin";
+  return method;
+};
+
+// Mapeo de métodos a colores fijos
+const getColorForMethod = (method) => {
+  const methodLower = method.toLowerCase();
+  if (methodLower === "cash") return "#22c55e"; // verde
+  if (methodLower === "bank") return "#3b82f6"; // azul
+  // Para otros métodos, usar colores de la paleta
+  const palette = [
+    "#f59e0b", // ámbar
+    "#ef4444", // rojo
+    "#a855f7", // violeta
+    "#14b8a6", // teal
+    "#f97316", // naranja
+    "#06b6d4", // cyan
+  ];
+  // Generar un índice basado en el hash del nombre para consistencia
+  let hash = 0;
+  for (let i = 0; i < method.length; i++) {
+    hash = method.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return palette[Math.abs(hash) % palette.length];
+};
 
 // Agrupar montos por método
 const buildPie = (txs) => {
@@ -84,8 +124,9 @@ const buildPie = (txs) => {
   const entries = Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
 
   return {
-    labels: entries.map((e) => e[0]),
+    labels: entries.map((e) => getFriendlyName(e[0])),
     data: entries.map((e) => e[1]),
+    methods: entries.map((e) => e[0]), // Guardar métodos originales para el mapeo de colores
   };
 };
 
@@ -100,11 +141,15 @@ const totalAmount = computed(() => {
 
 // ---------- Chart render ----------
 const renderChart = async () => {
+  isLoading.value = true;
   await nextTick();
   const el = chartCanvas.value;
-  if (!el) return;
+  if (!el) {
+    isLoading.value = false;
+    return;
+  }
 
-  const { labels, data } = buildPie(props.transactions || []);
+  const { labels, data, methods } = buildPie(props.transactions || []);
 
   // Limpiar instancia previa
   if (chartInstance) {
@@ -114,17 +159,8 @@ const renderChart = async () => {
 
   const ctx = el.getContext("2d");
 
-  // Paleta (opcional): si prefieres, puedes dejar que Chart.js asigne colores por defecto
-  const palette = [
-    "#22c55e", // verde
-    "#3b82f6", // azul
-    "#f59e0b", // ámbar
-    "#ef4444", // rojo
-    "#a855f7", // violeta
-    "#14b8a6", // teal
-    "#f97316", // naranja
-    "#06b6d4", // cyan
-  ];
+  // Asignar colores fijos basados en el método original
+  const colors = methods.map((method) => getColorForMethod(method));
 
   chartInstance = new Chart(ctx, {
     type: "pie",
@@ -134,7 +170,7 @@ const renderChart = async () => {
         {
           label: "Ventas",
           data,
-          backgroundColor: labels.map((_, i) => palette[i % palette.length]),
+          backgroundColor: colors,
           borderWidth: 1,
         },
       ],
@@ -160,6 +196,8 @@ const renderChart = async () => {
       },
     },
   });
+
+  isLoading.value = false;
 };
 
 onMounted(renderChart);
