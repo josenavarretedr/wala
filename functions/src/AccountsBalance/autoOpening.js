@@ -269,17 +269,17 @@ async function executeAutoOpening(params) {
 
     if (!existingOpeningSnap.empty) {
       const existingOpening = existingOpeningSnap.docs[0];
-      console.log(`⚠️  Opening already exists: ${existingOpening.id}`);
+      console.log(`⚠️  Opening already exists: ${existingOpening.uuid}`);
       console.log(`   Skipping auto-opening creation`);
 
       return {
         success: false,
-        openingId: existingOpening.id,
+        openingId: existingOpening.uuid,
         message: `Opening already exists for ${day}`,
         data: {
           day,
           businessId,
-          openingId: existingOpening.id,
+          openingId: existingOpening.uuid,
           alreadyExists: true
         }
       };

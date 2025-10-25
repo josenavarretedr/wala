@@ -161,7 +161,7 @@ const renderChart = async () => {
 
   // Gradiente suave
   const gradient = ctx.createLinearGradient(0, 0, 0, el.height);
-  gradient.addColorStop(0, "rgba(16, 185, 129, 0.25)"); // verde 500 con alpha
+  gradient.addColorStop(0, "rgba(59, 130, 246, 0.25)"); // blue 500 con alpha
   gradient.addColorStop(1, "rgba(16, 185, 129, 0.02)");
 
   chartInstance = new Chart(ctx, {
@@ -172,7 +172,7 @@ const renderChart = async () => {
         {
           label: "Ventas",
           data,
-          borderColor: "rgba(16, 185, 129, 1)",
+          borderColor: "rgba(59, 130, 246, 1)",
           backgroundColor: gradient,
           borderWidth: 2,
           tension: 0.35,

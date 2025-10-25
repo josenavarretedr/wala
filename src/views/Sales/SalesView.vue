@@ -18,33 +18,58 @@
     </div>
 
     <!-- Grid de widgets (inspirado en MicroApps) -->
-    <div
-      class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 auto-rows-fr"
-    >
-      <!-- TotalSalesWidget: 2x1 -->
-      <div class="col-span-2 row-span-1">
+    <div class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
+      <!-- TotalSalesWidget: Full width on small, 2 cols on large -->
+      <div class="col-span-2 sm:col-span-2 order-1">
         <TotalSalesWidget
           :transactions="filteredTransactionsIncomeNotAdjusted"
+          class="w-full"
         />
       </div>
 
-      <!-- TicketsWidget: 1x1 -->
-      <div class="col-span-1 row-span-1">
-        <TicketsWidget :transactions="filteredTransactionsIncomeNotAdjusted" />
+      <!-- TicketsWidget: Full width on small, 1 col on large -->
+      <div class="col-span-2 sm:col-span-1 order-2 sm:order-3">
+        <TicketsWidget
+          :transactions="filteredTransactionsIncomeNotAdjusted"
+          class="w-full"
+        />
       </div>
 
-      <!-- TicketsPricePromWidget: 1x1 -->
-      <div class="col-span-1 row-span-1">
+      <!-- TicketsPricePromWidget: Full width on small, 1 col on large -->
+      <div class="col-span-2 sm:col-span-1 order-3 sm:order-4">
         <TicketsPricePromWidget
           :transactions="filteredTransactionsIncomeNotAdjusted"
+          class="w-full"
         />
       </div>
 
-      <!-- SparkLineChart: 4x1 (ancho completo) -->
-      <div class="col-span-2 sm:col-span-4 row-span-1">
+      <!-- SalesAccountsWidget: Full width on small, 2 cols and 2 rows on large -->
+      <div class="col-span-2 sm:col-span-2 sm:row-span-2 order-4 sm:order-2">
+        <SalesAccountsWidget
+          :transactions="filteredTransactionsIncomeNotAdjusted"
+          title="Mix por método de pago"
+        />
+      </div>
+
+      <!-- SparkLineChart: Full width -->
+      <div class="col-span-2 sm:col-span-4 order-5">
         <SparkLineChart :transactions="filteredTransactionsIncomeNotAdjusted" />
       </div>
     </div>
+    <TopProductsByUnits
+      :transactions="filteredTransactionsIncomeNotAdjusted"
+      :limit="5"
+      title="Top por unidades"
+      @select="(row) => goToProduct(row.key)"
+    />
+
+    <!-- Desde transacciones con items -->
+    <TopProductsByRevenue
+      :transactions="filteredTransactionsIncomeNotAdjusted"
+      :limit="5"
+      title="Top por ingreso"
+      @select="(row) => goToProduct(row.key)"
+    />
   </div>
 </template>
 
@@ -53,6 +78,9 @@ import TotalSalesWidget from "@/components/Sales/TotalSalesWidget.vue";
 import TicketsWidget from "@/components/Sales/TicketsWidget.vue";
 import TicketsPricePromWidget from "@/components/Sales/TicketsPricePromWidget.vue";
 import SparkLineChart from "@/components/Sales/SparkLineChart.vue";
+import SalesAccountsWidget from "@/components/Sales/SalesAccountsWidget.vue";
+import TopProductsByUnits from "@/components/Sales/TopProductsByUnits.vue";
+import TopProductsByRevenue from "@/components/Sales/TopProductsByRevenue.vue";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";

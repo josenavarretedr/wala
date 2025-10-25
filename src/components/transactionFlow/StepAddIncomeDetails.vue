@@ -31,7 +31,10 @@
     </div>
 
     <!-- Producto seleccionado -->
-    <div class="space-y-3">
+    <div
+      class="space-y-3"
+      v-if="transactionStore.itemToAddInTransaction.value.description"
+    >
       <label class="text-lg font-semibold text-gray-800"
         >Producto Seleccionado</label
       >
@@ -87,10 +90,12 @@
             <label class="text-sm font-medium text-gray-700">Cantidad</label>
             <div class="relative">
               <input
+                ref="quantityInput"
                 v-model="transactionStore.itemToAddInTransaction.value.quantity"
                 type="number"
                 placeholder="0"
                 min="0"
+                @keydown.enter="focusPriceInput"
                 class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-blue-500 focus:outline-none transition-colors"
                 :class="{
                   'border-red-300 bg-red-50': hasStockWarning && !proceedAnyway,
@@ -161,6 +166,7 @@
               <option value="ml">Mililitro</option>
               <option value="m">Metro</option>
               <option value="cm">Porción</option>
+              <option value="service">Servicio</option>
             </select>
           </div>
 
@@ -169,10 +175,12 @@
             <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
             <div class="relative">
               <input
+                ref="priceInput"
                 v-model="transactionStore.itemToAddInTransaction.value.price"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
+                @keydown.enter="handleAddProductOnEnter"
                 class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
               />
               <div
@@ -226,7 +234,10 @@
     </button>
 
     <!-- Lista de productos agregados -->
-    <div class="space-y-4">
+    <div
+      class="space-y-4"
+      v-if="transactionStore.transactionToAdd.value.items.length > 0"
+    >
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-gray-800">Productos Agregados</h3>
         <Transition name="fade-scale">
@@ -343,6 +354,10 @@ import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const transactionStore = useTransactionStore();
 
+// Referencias a los inputs
+const quantityInput = ref(null);
+const priceInput = ref(null);
+
 // Estado local para "proceder de todos modos"
 const proceedAnyway = ref(false);
 
@@ -406,6 +421,24 @@ const handleResetProduct = () => {
   transactionStore.resetItemToAddInTransaction();
   // Resetear el checkbox
   proceedAnyway.value = false;
+};
+
+/**
+ * Enfoca el input de precio cuando se presiona Enter en cantidad
+ */
+const focusPriceInput = () => {
+  if (priceInput.value) {
+    priceInput.value.focus();
+  }
+};
+
+/**
+ * Maneja el Enter en el input de precio
+ */
+const handleAddProductOnEnter = () => {
+  if (canAddProduct.value) {
+    handleAddProduct();
+  }
 };
 </script>
 

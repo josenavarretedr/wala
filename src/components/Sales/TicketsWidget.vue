@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm cursor-pointer"
+    class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm cursor-pointer flex flex-col"
   >
     <!-- Header compacto -->
     <div class="flex items-center gap-2 mb-2">
@@ -17,10 +17,10 @@
     </div>
 
     <!-- Valor -->
-    <p class="text-3xl font-bold text-gray-900 tabular-nums">
+    <p class="text-3xl font-bold tabular-nums text-right text-blue-500">
       {{ transactions.length }}
     </p>
-    <p class="text-xs text-gray-500 mt-1">{{ label }}</p>
+    <p class="text-xs text-gray-500 mt-1 text-right">{{ label }}</p>
   </div>
 </template>
 

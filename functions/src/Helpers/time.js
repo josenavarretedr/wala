@@ -31,6 +31,21 @@ function endOfDay(dayStr, tz = "America/Lima") {
 function todayStr(tz = "America/Lima") {
   return nowIn(tz).toFormat("yyyy-LL-dd");
 }
+
+/**
+ * Convierte un timestamp específico a 'yyyy-LL-dd' en tz.
+ * Útil para usar el timestamp del scheduler en lugar de DateTime.now().
+ * @param {Date|string} timestamp - JS Date o ISO string
+ * @param {string} tz - IANA timezone
+ */
+function dayFromDate(timestamp, tz = "America/Lima") {
+  const dt = timestamp instanceof Date
+    ? DateTime.fromJSDate(timestamp)
+    : DateTime.fromISO(timestamp);
+  return dt.setZone(tz).toFormat("yyyy-LL-dd");
+}
+
+
 function yesterdayStr(tz = "America/Lima") {
   return nowIn(tz).minus({ days: 1 }).toFormat("yyyy-LL-dd");
 }
@@ -77,4 +92,5 @@ module.exports = {
   dayMinus,
   dayFromTimestamp,
   dateRangeForDay,
+  dayFromDate,
 };
