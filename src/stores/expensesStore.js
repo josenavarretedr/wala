@@ -18,13 +18,71 @@ const expenseToAdd = ref({
 });
 
 export function useExpensesStore() {
-  const { createExpense, updateExpense, getAllExpenses, deleteExpenseByID, deleteExpenseByTransactionRef } = useExpenses();
+  const {
+    // Nuevas funciones
+    searchExpensesByDescription,
+    createExpenseWithLog,
+    addLogToExpense,
+    updateExpenseMetadata,
+    getExpenseById,
+    getAllExpensesWithMetadata,
+    // Funciones legacy
+    createExpense,
+    updateExpense,
+    getAllExpenses,
+    deleteExpenseByID,
+    deleteExpenseByTransactionRef
+  } = useExpenses();
+
+  // ===== NUEVAS FUNCIONES =====
+
+  /**
+   * Busca expenses por descripción
+   * @param {string} searchTerm - Término de búsqueda
+   * @returns {Promise<Array>} Array de expenses
+   */
+  const searchExpenses = async (searchTerm) => {
+    try {
+      return await searchExpensesByDescription(searchTerm);
+    } catch (error) {
+      console.error("Error searching expenses: ", error);
+      return [];
+    }
+  };
+
+  /**
+   * Carga todos los expenses con metadata en el store local
+   */
+  const loadExpensesWithMetadata = async () => {
+    try {
+      expensesInStore.value = await getAllExpensesWithMetadata();
+      console.log(`✅ Loaded ${expensesInStore.value.length} expenses with metadata`);
+    } catch (error) {
+      console.error("Error loading expenses: ", error);
+    }
+  };
+
+  /**
+   * Obtiene un expense específico por ID
+   * @param {string} expenseId - UUID del expense
+   * @returns {Promise<Object|null>} Expense o null
+   */
+  const getExpense = async (expenseId) => {
+    try {
+      return await getExpenseById(expenseId);
+    } catch (error) {
+      console.error("Error getting expense: ", error);
+      return null;
+    }
+  };
+
+  // ===== FUNCIONES LEGACY (mantener por compatibilidad) =====
 
   const addExpense = async (transactionRef) => {
     try {
       expenseToAdd.value.uuid = uuidv4();
       await createExpense(expenseToAdd.value, transactionRef);
-      console.log("Expense added successfully");
+      console.log("⚠️ Legacy expense added (consider using createExpenseWithLog)");
       // Opcional: agregar al store local
       expensesInStore.value.push({ ...expenseToAdd.value });
       resetExpenseToAdd();
@@ -45,7 +103,6 @@ export function useExpensesStore() {
     try {
       await updateExpense(expenseId, updatedData);
       const index = expensesInStore.value.findIndex(e => e.uuid === expenseId);
-      // TODO hacer que se vuelvan a cargar todos los expenses y que se actualice el store local con getExpenses()
       if (index !== -1) {
         expensesInStore.value[index] = { ...expensesInStore.value[index], ...updatedData };
       }
@@ -101,8 +158,14 @@ export function useExpensesStore() {
   };
 
   return {
+    // Estado
     expensesInStore,
     expenseToAdd,
+    // Nuevas funciones
+    searchExpenses,
+    loadExpensesWithMetadata,
+    getExpense,
+    // Funciones legacy
     addExpense,
     getExpenses,
     modifyExpense,

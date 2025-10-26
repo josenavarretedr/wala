@@ -17,13 +17,39 @@
     </div>
 
     <!-- Valor -->
-    <div class="flex-1 flex items-center justify-end">
+    <div class="flex-1 flex flex-col justify-end">
       <div v-if="isLoading" class="text-blue-500">
         <SpinnerIcon size="lg" />
       </div>
-      <p v-else class="text-3xl font-bold text-blue-500 tabular-nums">
-        {{ formattedTotal }}
-      </p>
+      <template v-else>
+        <p class="text-3xl font-bold text-blue-500 tabular-nums">
+          {{ formattedTotal }}
+        </p>
+
+        <!-- Comparativo -->
+        <div v-if="comparison" class="mt-1 flex items-center gap-1">
+          <NavArrowUp
+            v-if="comparison.percentage > 0"
+            class="w-3 h-3 text-green-500"
+          />
+          <NavArrowDown
+            v-else-if="comparison.percentage < 0"
+            class="w-3 h-3 text-red-500"
+          />
+          <span
+            :class="[
+              'text-xs font-medium',
+              comparison.percentage > 0
+                ? 'text-green-600'
+                : comparison.percentage < 0
+                ? 'text-red-600'
+                : 'text-gray-500',
+            ]"
+          >
+            {{ comparison.text }}
+          </span>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -31,13 +57,21 @@
 <script setup>
 import { defineProps, computed, ref, watch } from "vue";
 import { sumTransactions } from "@/utils/mathUtils";
-import { Cash } from "@iconoir/vue";
+import { Cash, NavArrowUp, NavArrowDown } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const props = defineProps({
   transactions: {
     type: Array,
     required: true,
+  },
+  previousTransactions: {
+    type: Array,
+    default: () => [],
+  },
+  periodLabel: {
+    type: String,
+    default: "período anterior",
   },
   title: {
     type: String,
@@ -56,6 +90,33 @@ const formattedTotal = computed(() =>
     maximumFractionDigits: 2,
   }).format(total.value)
 );
+
+// Calcular comparación con período anterior
+const comparison = computed(() => {
+  if (!props.previousTransactions || props.previousTransactions.length === 0) {
+    return { percentage: null, text: "Sin datos previos" };
+  }
+
+  const currentValue = total.value;
+  const previousValue = sumTransactions(props.previousTransactions);
+
+  if (previousValue === 0) {
+    if (currentValue === 0) {
+      return { percentage: 0, text: "Sin cambios" };
+    }
+    return { percentage: 100, text: "Nuevo período" };
+  }
+
+  const percentage = ((currentValue - previousValue) / previousValue) * 100;
+  const absPercentage = Math.abs(percentage).toFixed(1);
+
+  const direction = percentage > 0 ? "más que" : "menos que";
+
+  return {
+    percentage,
+    text: `${absPercentage}% ${direction} ${props.periodLabel}`,
+  };
+});
 
 // Simular carga cuando cambien las transacciones
 watch(

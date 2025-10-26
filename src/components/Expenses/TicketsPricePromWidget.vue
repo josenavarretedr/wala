@@ -18,31 +18,31 @@
 
     <!-- Valor -->
     <div class="flex-1 flex flex-col justify-end">
-      <div v-if="isLoading" class="text-blue-500">
+      <div v-if="isLoading" class="text-red-500">
         <SpinnerIcon size="lg" />
       </div>
       <template v-else>
-        <p class="text-3xl font-bold tabular-nums text-blue-500">
+        <p class="text-3xl font-bold tabular-nums text-red-500">
           {{ formattedAverage }}
         </p>
         <p class="text-xs text-gray-500 mt-1">por ticket</p>
 
-        <!-- Comparativo -->
+        <!-- Comparativo (lógica invertida: menos gastos = verde) -->
         <div v-if="comparison" class="mt-1 flex items-center gap-1">
           <NavArrowUp
-            v-if="comparison.percentage > 0"
+            v-if="comparison.percentage < 0"
             class="w-3 h-3 text-green-500"
           />
           <NavArrowDown
-            v-else-if="comparison.percentage < 0"
+            v-else-if="comparison.percentage > 0"
             class="w-3 h-3 text-red-500"
           />
           <span
             :class="[
               'text-xs font-medium',
-              comparison.percentage > 0
+              comparison.percentage < 0
                 ? 'text-green-600'
-                : comparison.percentage < 0
+                : comparison.percentage > 0
                 ? 'text-red-600'
                 : 'text-gray-500',
             ]"
@@ -78,11 +78,11 @@ const props = defineProps({
 
 const isLoading = ref(true);
 
-const totalSales = computed(() => sumTransactions(props.transactions));
+const totalExpenses = computed(() => sumTransactions(props.transactions));
 
 const averageTicket = computed(() => {
   const count = props.transactions.length;
-  return count === 0 ? 0 : totalSales.value / count;
+  return count === 0 ? 0 : totalExpenses.value / count;
 });
 
 const formattedAverage = computed(() =>
@@ -93,7 +93,7 @@ const formattedAverage = computed(() =>
   }).format(averageTicket.value)
 );
 
-// Calcular comparación con período anterior
+// Calcular comparación con período anterior (lógica invertida para gastos)
 const comparison = computed(() => {
   if (!props.previousTransactions || props.previousTransactions.length === 0) {
     return { percentage: null, text: "Sin datos previos" };
@@ -114,6 +114,7 @@ const comparison = computed(() => {
   const percentage = ((currentValue - previousValue) / previousValue) * 100;
   const absPercentage = Math.abs(percentage).toFixed(1);
 
+  // Para gastos: menos es mejor
   const direction = percentage > 0 ? "más que" : "menos que";
 
   return {

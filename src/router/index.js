@@ -108,12 +108,6 @@ const routes = [
         meta: { permission: 'verIngresos', title: 'Ingresos' }
       },
       {
-        path: 'expenses',
-        name: 'ExpenseManagement',
-        component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
-        meta: { permission: 'verEgresos', title: 'Egresos' }
-      },
-      {
         path: 'transfers',
         name: 'TransferManagement',
         component: () => import('@/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue'),
@@ -213,6 +207,11 @@ const routes = [
         path: 'sales',
         name: 'SalesView',
         component: () => import('@/views/Sales/SalesView.vue'),
+      },
+      {
+        path: 'expenses',
+        name: 'ExpensesView',
+        component: () => import('@/views/Expenses/ExpensesView.vue'),
       }
     ]
   },

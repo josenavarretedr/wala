@@ -5,7 +5,9 @@ import { ref, computed } from 'vue';
 import { useTransaccion } from '@/composables/useTransaction';
 import { useInventory } from '@/composables/useInventory';
 import { useTraceability } from '@/composables/useTraceability';
+import { useExpenses } from '@/composables/useExpenses';
 import { round2, multiplyMoney, addMoney, parseMoneyFloat } from '@/utils/mathUtils';
+import { serverTimestamp } from 'firebase/firestore';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -30,6 +32,8 @@ const transactionToAdd = ref({
   category: null,
   subcategory: null,
   amount: 0,
+  expenseId: null, // ID del expense individual en Firestore
+  oldOrNewExpense: null, // 'new' o 'old'
   // Campos para transfers:
   fromAccount: null,
   toAccount: null,
@@ -123,13 +127,67 @@ export function useTransactionStore() {
       } else if (transactionToAdd.value.type === 'expense') {
         transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
 
+        // Importar funciones de useExpenses para gestionar expenses
+        const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata } = useExpenses();
+
+        // Preparar log data (usar new Date() en lugar de serverTimestamp para arrays)
+        const logData = {
+          amount: transactionToAdd.value.amount,
+          date: new Date(), // Usar Date() en lugar de serverTimestamp()
+          transactionRef: transactionToAdd.value.uuid,
+          account: transactionToAdd.value.account,
+          notes: null
+        };
+
+        let expenseId = null;
+
+        // Verificar si es expense nuevo o existente
+        if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
+          // Expense existente: agregar log
+          expenseId = transactionToAdd.value.expenseId;
+
+          console.log('📊 Agregando log a expense existente:', {
+            expenseId,
+            amount: logData.amount,
+            description: transactionToAdd.value.description
+          });
+
+          await addLogToExpense(expenseId, logData);
+          await updateExpenseMetadata(expenseId);
+
+          console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
+        } else {
+          // Expense nuevo: crear con primer log
+          const expenseData = {
+            description: transactionToAdd.value.description,
+            category: transactionToAdd.value.category,
+            subcategory: transactionToAdd.value.subcategory || null,
+          };
+
+          console.log('✨ Creando nuevo expense con primer log:', expenseData);
+
+          expenseId = await createExpenseWithLog(expenseData, logData);
+
+          // Actualizar el expenseId en la transacción
+          transactionToAdd.value.expenseId = expenseId;
+
+          console.log('✅ Nuevo expense creado con ID:', expenseId);
+        }
+
         // === TRAZABILIDAD: Log de gasto relacionado ===
         relatedEntities.push({
           type: 'expense',
-          id: transactionToAdd.value.uuid,
-          relationship: 'generates_expense'
+          id: expenseId,
+          relationship: 'generates_expense_log',
+          impact: 'medium',
+          metadata: {
+            isNew: transactionToAdd.value.oldOrNewExpense === 'new',
+            category: transactionToAdd.value.category,
+            amount: transactionToAdd.value.amount
+          }
         });
 
+        // Mantener compatibilidad con expensesStore (legacy)
         expensesStore.resetExpenseToAdd();
       }
 
@@ -340,6 +398,8 @@ export function useTransactionStore() {
       category: null,
       subcategory: null,
       amount: null,
+      expenseId: null,
+      oldOrNewExpense: null,
       fromAccount: null,
       toAccount: null,
 

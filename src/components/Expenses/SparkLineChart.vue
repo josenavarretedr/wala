@@ -17,8 +17,8 @@
         </span>
       </div>
 
-      <span v-if="maxSale > 0" class="text-xs text-gray-500 tabular-nums">
-        Máx: {{ formatCurrency(maxSale) }}
+      <span v-if="maxExpense > 0" class="text-xs text-gray-500 tabular-nums">
+        Máx: {{ formatCurrency(maxExpense) }}
       </span>
     </div>
 
@@ -31,7 +31,7 @@
         v-if="isLoading"
         class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
       >
-        <SpinnerIcon size="md" class="text-blue-500" />
+        <SpinnerIcon size="md" class="text-red-500" />
       </div>
 
       <!-- Estado vacío -->
@@ -70,7 +70,7 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: "income", // "income" o "expense"
+    default: "expense",
   },
 });
 
@@ -156,7 +156,7 @@ const buildSeries = (txs) => {
 const hasData = computed(
   () => Array.isArray(props.transactions) && props.transactions.length > 0
 );
-const maxSale = computed(() => {
+const maxExpense = computed(() => {
   const { data } = buildSeries(props.transactions || []);
   return data.length ? Math.max(...data) : 0;
 });
@@ -182,24 +182,17 @@ const renderChart = async () => {
 
   const ctx = el.getContext("2d");
 
-  // Gradiente suave
+  // Gradiente suave (rojo para gastos)
   const gradient = ctx.createLinearGradient(0, 0, 0, el.height);
-  const mainColor =
-    props.type === "income"
-      ? "rgba(59, 130, 246, 0.25)"
-      : "rgba(239, 68, 68, 0.25)";
-  gradient.addColorStop(0, mainColor);
-  gradient.addColorStop(1, "rgba(16, 185, 129, 0.02)");
+  gradient.addColorStop(0, "rgba(239, 68, 68, 0.25)"); // red 500 con alpha
+  gradient.addColorStop(1, "rgba(239, 68, 68, 0.02)");
 
   // Configurar datasets
   const datasets = [
     {
       label: "Período actual",
       data: currentData.data,
-      borderColor:
-        props.type === "income"
-          ? "rgba(59, 130, 246, 1)"
-          : "rgba(239, 68, 68, 1)",
+      borderColor: "rgba(239, 68, 68, 1)", // red 500
       backgroundColor: gradient,
       borderWidth: 2,
       tension: 0.35,

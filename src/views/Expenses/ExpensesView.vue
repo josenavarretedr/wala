@@ -9,7 +9,7 @@
         :class="[
           'px-3 py-1 rounded-full text-sm font-medium transition-colors',
           selectedTimeRange === option.value
-            ? 'bg-blue-500 text-white'
+            ? 'bg-red-500 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
         ]"
       >
@@ -17,80 +17,80 @@
       </button>
     </div>
 
-    <!-- Grid de widgets (inspirado en MicroApps) -->
+    <!-- Grid de widgets -->
     <div class="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-4">
-      <!-- TotalSalesWidget: Full width on small, 2 cols on large -->
+      <!-- TotalExpensesWidget: 2 cols -->
       <div class="col-span-2 sm:col-span-2 order-1">
-        <TotalSalesWidget
-          :transactions="filteredTransactionsIncomeNotAdjusted"
-          :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
+        <TotalExpensesWidget
+          :transactions="filteredTransactionsExpensesNotAdjusted"
+          :previousTransactions="
+            filteredPreviousTransactionsExpensesNotAdjusted
+          "
           :periodLabel="currentPeriodLabel"
           class="w-full"
         />
       </div>
 
-      <!-- TicketsWidget: Full width on small, 1 col on large -->
+      <!-- TicketsWidget: 1 col -->
       <div class="col-span-2 sm:col-span-1 order-2 sm:order-3">
         <TicketsWidget
-          :transactions="filteredTransactionsIncomeNotAdjusted"
-          :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
+          :transactions="filteredTransactionsExpensesNotAdjusted"
+          :previousTransactions="
+            filteredPreviousTransactionsExpensesNotAdjusted
+          "
           :periodLabel="currentPeriodLabel"
           class="w-full"
         />
       </div>
 
-      <!-- TicketsPricePromWidget: Full width on small, 1 col on large -->
+      <!-- TicketsPricePromWidget: 1 col -->
       <div class="col-span-2 sm:col-span-1 order-3 sm:order-4">
         <TicketsPricePromWidget
-          :transactions="filteredTransactionsIncomeNotAdjusted"
-          :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
+          :transactions="filteredTransactionsExpensesNotAdjusted"
+          :previousTransactions="
+            filteredPreviousTransactionsExpensesNotAdjusted
+          "
           :periodLabel="currentPeriodLabel"
           class="w-full"
         />
       </div>
 
-      <!-- SalesAccountsWidget: Full width on small, 2 cols and 2 rows on large -->
+      <!-- ExpensesAccountsWidget: 2 cols, 2 rows -->
       <div class="col-span-2 sm:col-span-2 sm:row-span-2 order-4 sm:order-2">
-        <SalesAccountsWidget
-          :transactions="filteredTransactionsIncomeNotAdjusted"
+        <ExpensesAccountsWidget
+          :transactions="filteredTransactionsExpensesNotAdjusted"
           title="Mix por método de pago"
         />
       </div>
 
+      <!-- ExpensesCategoryWidget: 2 cols, 2 rows -->
+      <div class="col-span-2 sm:col-span-2 sm:row-span-2 order-5">
+        <ExpensesCategoryWidget
+          :transactions="filteredTransactionsExpensesNotAdjusted"
+        />
+      </div>
+
       <!-- SparkLineChart: Full width -->
-      <div class="col-span-2 sm:col-span-4 order-5">
+      <div class="col-span-2 sm:col-span-4 order-6">
         <SparkLineChart
-          :transactions="filteredTransactionsIncomeNotAdjusted"
-          :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
-          type="income"
+          :transactions="filteredTransactionsExpensesNotAdjusted"
+          :previousTransactions="
+            filteredPreviousTransactionsExpensesNotAdjusted
+          "
+          type="expense"
         />
       </div>
     </div>
-    <TopProductsByUnits
-      :transactions="filteredTransactionsIncomeNotAdjusted"
-      :limit="5"
-      title="Top por unidades"
-      @select="(row) => goToProduct(row.key)"
-    />
-
-    <!-- Desde transacciones con items -->
-    <TopProductsByRevenue
-      :transactions="filteredTransactionsIncomeNotAdjusted"
-      :limit="5"
-      title="Top por ingreso"
-      @select="(row) => goToProduct(row.key)"
-    />
   </div>
 </template>
 
 <script setup>
-import TotalSalesWidget from "@/components/Sales/TotalSalesWidget.vue";
-import TicketsWidget from "@/components/Sales/TicketsWidget.vue";
-import TicketsPricePromWidget from "@/components/Sales/TicketsPricePromWidget.vue";
-import SparkLineChart from "@/components/Sales/SparkLineChart.vue";
-import SalesAccountsWidget from "@/components/Sales/SalesAccountsWidget.vue";
-import TopProductsByUnits from "@/components/Sales/TopProductsByUnits.vue";
-import TopProductsByRevenue from "@/components/Sales/TopProductsByRevenue.vue";
+import TotalExpensesWidget from "@/components/Expenses/TotalExpensesWidget.vue";
+import TicketsWidget from "@/components/Expenses/TicketsWidget.vue";
+import TicketsPricePromWidget from "@/components/Expenses/TicketsPricePromWidget.vue";
+import ExpensesAccountsWidget from "@/components/Expenses/ExpensesAccountsWidget.vue";
+import ExpensesCategoryWidget from "@/components/Expenses/ExpensesCategoryWidget.vue";
+import SparkLineChart from "@/components/Expenses/SparkLineChart.vue";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";
@@ -113,18 +113,18 @@ const selectTimeRange = (value) => {
   console.log("Selected time range:", value);
 };
 
-const filteredTransactionsIncomeNotAdjusted = computed(() => {
+const filteredTransactionsExpensesNotAdjusted = computed(() => {
   return transactions.value.filter((transaction) => {
     return (
-      transaction.type === "income" && transaction.category !== "adjustment"
+      transaction.type === "expense" && transaction.category !== "adjustment"
     );
   });
 });
 
-const filteredPreviousTransactionsIncomeNotAdjusted = computed(() => {
+const filteredPreviousTransactionsExpensesNotAdjusted = computed(() => {
   return previousTransactions.value.filter((transaction) => {
     return (
-      transaction.type === "income" && transaction.category !== "adjustment"
+      transaction.type === "expense" && transaction.category !== "adjustment"
     );
   });
 });
@@ -142,7 +142,7 @@ watch(selectedTimeRange, (newValue) => {
   fetchTransactions();
   console.log(
     "Updated filtered transactions:",
-    filteredTransactionsIncomeNotAdjusted.value
+    filteredTransactionsExpensesNotAdjusted.value
   );
 });
 

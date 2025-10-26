@@ -12,25 +12,71 @@
 
     <!-- Formulario de gasto -->
     <div class="space-y-6">
-      <!-- Campo de descripción -->
+      <!-- Campo de búsqueda de gasto -->
       <div class="space-y-3">
         <label class="text-lg font-semibold text-gray-800">
           Descripción del Gasto
         </label>
-        <div class="relative">
-          <input
-            v-model="description"
-            type="text"
-            placeholder="Ej: Compra de materiales, servicios básicos, etc."
-            class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 focus:border-red-500 focus:outline-none transition-colors"
-          />
-          <div
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"
-          ></div>
+
+        <!-- Componente de búsqueda asíncrona -->
+        <SearchExpenseAsync @update:expenseToAdd="handleExpenseSelected" />
+
+        <!-- Mostrar gasto seleccionado -->
+        <div
+          v-if="description"
+          class="p-4 bg-gray-50 border border-gray-200 rounded-xl"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-gray-900 truncate">
+                  {{ description }}
+                </span>
+                <span
+                  v-if="expenseType === 'new'"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                >
+                  Nuevo
+                </span>
+                <span
+                  v-else-if="selectedExpenseMetadata"
+                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                >
+                  Recurrente
+                </span>
+              </div>
+
+              <!-- Metadata para gastos existentes -->
+              <!-- <div
+                v-if="selectedExpenseMetadata && expenseType === 'old'"
+                class="text-xs text-gray-600 space-y-0.5"
+              >
+                <p>
+                  💰 Total gastado: S/
+                  {{ selectedExpenseMetadata.totalSpent?.toFixed(2) || "0.00" }}
+                </p>
+                <p>
+                  📊 Usado {{ selectedExpenseMetadata.occurrences || 0 }}
+                  {{
+                    selectedExpenseMetadata.occurrences === 1 ? "vez" : "veces"
+                  }}
+                </p>
+              </div> -->
+            </div>
+
+            <!-- Botón para limpiar selección -->
+            <button
+              @click="clearExpenseSelection"
+              class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Cambiar gasto"
+            >
+              <Xmark class="w-4 h-4" />
+            </button>
+          </div>
         </div>
-        <p p class="text-xs text-gray-500">
-          Sé específico en la descripción para facilitar el seguimiento de tus
-          gastos
+
+        <p class="text-xs text-gray-500">
+          Busca gastos anteriores o registra uno nuevo
         </p>
       </div>
 
@@ -280,24 +326,65 @@
 import { useExpensesStore } from "@/stores/expensesStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
-import {
-  FastArrowRight,
-  DatabaseExport,
-  ShieldQuestion,
-  Package,
-  Settings,
-  User,
-} from "@iconoir/vue";
+import { Package, Settings, User, Xmark } from "@iconoir/vue";
 import { ref, computed, watch, onMounted } from "vue";
+import SearchExpenseAsync from "./SearchExpenseAsync.vue";
 
 // Variables reactivas locales
 const description = ref("");
 const amount = ref(null);
 const selectedCategory = ref(null);
+const expenseType = ref(null); // 'new' o 'old'
+const selectedExpenseId = ref(null);
+const selectedExpenseMetadata = ref(null);
 
 const expensesStore = useExpensesStore();
 const transactionStore = useTransactionStore();
 const flow = useTransactionFlowStore();
+
+// Handler para cuando se selecciona un gasto
+const handleExpenseSelected = (expenseData) => {
+  description.value = expenseData.description;
+  expenseType.value = expenseData.oldOrNewExpense;
+  selectedExpenseId.value = expenseData.selectedExpenseId;
+
+  if (expenseData.oldOrNewExpense === "old") {
+    // Gasto existente
+    selectedCategory.value = expenseData.category;
+    selectedExpenseMetadata.value = expenseData.metadata;
+  } else {
+    // Gasto nuevo: resetear metadata y categoría
+    selectedExpenseMetadata.value = null;
+    selectedCategory.value = null;
+  }
+
+  // Actualizar stores
+  transactionStore.setExpenseDescription(expenseData.description);
+  transactionStore.transactionToAdd.value.expenseId =
+    expenseData.selectedExpenseId;
+  transactionStore.transactionToAdd.value.oldOrNewExpense =
+    expenseData.oldOrNewExpense;
+
+  if (expenseData.category) {
+    transactionStore.setExpenseCategory(expenseData.category);
+  }
+};
+
+// Función para limpiar la selección
+const clearExpenseSelection = () => {
+  description.value = "";
+  amount.value = null;
+  selectedCategory.value = null;
+  expenseType.value = null;
+  selectedExpenseId.value = null;
+  selectedExpenseMetadata.value = null;
+
+  transactionStore.setExpenseDescription("");
+  transactionStore.setExpenseAmount(0);
+  transactionStore.setExpenseCategory(null);
+  transactionStore.transactionToAdd.value.expenseId = null;
+  transactionStore.transactionToAdd.value.oldOrNewExpense = null;
+};
 
 // Cargar transacciones del día al montar el componente
 onMounted(async () => {
@@ -403,11 +490,6 @@ const selectedAccountLabel = computed(() => {
 });
 
 // Observar cambios y actualizar los stores correspondientes
-watch(description, (newDescription) => {
-  transactionStore.setExpenseDescription(newDescription);
-  expensesStore.modifyExpenseToAddDescription(newDescription);
-});
-
 watch(selectedCategory, (newCategory) => {
   transactionStore.setExpenseCategory(newCategory);
 });
