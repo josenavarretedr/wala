@@ -406,9 +406,9 @@ router.beforeEach(async (to, from, next) => {
 
   // Actualizar el título de la página
   if (to.meta.title) {
-    document.title = `${to.meta.title} - Wala Business`
+    document.title = `${to.meta.title} - Wala`
   } else {
-    document.title = 'Wala Business'
+    document.title = 'Wala | Copiloto para crecer'
   }
 
   console.log('✅ Acceso permitido a:', to.path)

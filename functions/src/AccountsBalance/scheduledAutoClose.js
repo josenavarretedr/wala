@@ -14,7 +14,6 @@ const db = admin.firestore();
 
 const { yesterdayStr, todayStr, dayFromDate } = require('../Helpers/time');
 const { upsertDailySummary } = require('./sharedComputed');
-const { breakStreak, incStreakIfConsecutive } = require('./sharedStreak');
 const { executeAutoOpening } = require('./autoOpening');
 const { DateTime } = require('luxon');
 
@@ -243,10 +242,6 @@ module.exports = functions
               completedAt: FieldValue.serverTimestamp()
             });
 
-            // Romper racha por cierre automático
-            await breakStreak(db, businessId);
-            console.log(`📉 Streak broken (automatic closure)`);
-
             // Traceability log
             await db.collection(`businesses/${businessId}/traceability_logs`).add({
               operationType: 'auto_close',
@@ -275,9 +270,7 @@ module.exports = functions
           }
           // === CASO: Día completo ===
           else if (summary.hasOpening && summary.hasTxn && summary.hasClosure) {
-            console.log(`\n✨ STEP 3: Complete day - Incrementing streak`);
-            await incStreakIfConsecutive(db, businessId, day, tz);
-            console.log(`📈 Streak incremented`);
+            console.log(`\n✨ STEP 3: Complete day - onTransactionWrite already updated streak`);
             results.streakIncreased++;
             action = 'streak-increased';
           }

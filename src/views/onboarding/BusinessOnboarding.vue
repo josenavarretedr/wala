@@ -144,7 +144,7 @@
           negocio.
         </p>
         <div class="text-xs text-gray-500">
-          📧 soporte@walla.app | 📞 +51 999 888 777
+          📧 jose.navarrete@wala.lat | 📞 +51 921 492 993
         </div>
       </div>
     </div>
@@ -266,7 +266,6 @@ const handleCreateBusiness = async () => {
       businessId: businessId,
       businessName: businessForm.value.nombre.trim(),
       rol: businessForm.value.userRole,
-      departamento: businessForm.value.departamento.trim() || null,
       permissions:
         businessForm.value.userRole === "gerente"
           ? BUSINESS_PERMISSIONS.MANAGER

@@ -89,7 +89,7 @@ async function breakStreak(db, businessId) {
   const businessRef = db.doc(`businesses/${businessId}`);
   const prev = await getStreak(db, businessId);
 
-  // Construir el objeto newStreak sin valores undefined
+  // Construir el objeto newStreak base
   const newStreak = {
     current: 0, // Resetear racha actual
     max: prev.max || 0, // Mantener máxima
@@ -98,13 +98,11 @@ async function breakStreak(db, businessId) {
     updatedAt: new Date().toISOString()
   };
 
-  // Solo incluir lastCompletedDay si existe (no es null/undefined)
+  // Solo incluir lastCompletedDay si existe
   if (prev.lastCompletedDay != null) {
     newStreak.lastCompletedDay = prev.lastCompletedDay;
-  } else {
-    // Si no existe, usar delete() para removerlo explícitamente
-    newStreak.lastCompletedDay = FieldValue.delete();
   }
+  // Si no existe, simplemente no lo incluimos (no usamos FieldValue.delete en objeto anidado)
 
   // Actualizar solo el campo streak en el documento del negocio
   await businessRef.update({

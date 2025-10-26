@@ -138,7 +138,7 @@
           soporte técnico.
         </p>
         <div class="mt-3 text-xs text-blue-600">
-          📧 soporte@walla.app | 📞 +51 999 888 777
+          📧 jose.navarrete@wala.lat | 📞 +51 921 492 993
         </div>
       </div>
     </div>

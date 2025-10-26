@@ -216,34 +216,42 @@ const businessId = computed(() => route.params.businessId);
 // Verificar si la racha está activa HOY (con transacciones hoy)
 const isStreakActiveToday = computed(() => {
   if (!streakData.value || streakData.value.current === 0) {
+    console.log("Streak not active today: no streak data or current is 0");
     return false;
   }
 
   // Si no hay lastActiveDay, la racha no está activa hoy
   if (!streakData.value.lastActiveDay) {
+    console.log("Streak not active today: no lastActiveDay");
     return false;
   }
 
-  // Obtener el día actual en formato yyyy-MM-dd
-  const today = new Date().toISOString().split("T")[0];
+  // Obtener el día actual en formato yyyy-MM-dd usando fecha LOCAL
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(now.getDate()).padStart(2, "0")}`;
 
   // Comparar lastActiveDay con hoy
   // lastActiveDay puede venir como string directo o como timestamp de Firestore
   let lastActiveDay;
 
   if (typeof streakData.value.lastActiveDay === "string") {
+    console.log("lastActiveDay is a string:", streakData.value.lastActiveDay);
     lastActiveDay = streakData.value.lastActiveDay;
   } else if (streakData.value.lastActiveDay?.toDate) {
-    // Es un Timestamp de Firestore
-    lastActiveDay = streakData.value.lastActiveDay
-      .toDate()
-      .toISOString()
-      .split("T")[0];
+    // Es un Timestamp de Firestore - convertir a fecha LOCAL
+    const date = streakData.value.lastActiveDay.toDate();
+    lastActiveDay = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   } else {
     return false;
   }
 
   // La racha solo está "encendida" si hay actividad HOY
+  console.log("Comparing lastActiveDay:", lastActiveDay, "with today:", today);
   return lastActiveDay === today;
 });
 
