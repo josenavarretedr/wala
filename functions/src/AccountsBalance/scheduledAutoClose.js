@@ -187,11 +187,12 @@ module.exports = functions
             const closureTransaction = {
               // === IDENTIFICACIÓN ===
               uuid: closureUuid,
+              id: closureUuid,                // ✅ id = uuid para consistencia
               type: 'closure',
               description: 'Cierre automático programado',
               source: 'copilot',
               copilotMode: 'scheduled',
-              openingReference: openingData.id || null,
+              openingReference: openingData.uuid || openingData.id,  // ✅ Usar uuid de apertura
 
               // === SALDOS INICIALES (de apertura) ===
               initialCashBalance: openingData.realCashBalance || 0,

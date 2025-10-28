@@ -11,12 +11,23 @@ export function useCashClosure() {
     try {
       const businessId = ensureBusinessId();
 
+      // ✅ IMPORTANTE: Validar que uuid existe
+      if (!cashClosureData.uuid) {
+        console.error('❌ Cash closure must have a uuid');
+        throw new Error('Cash closure must have a uuid');
+      }
+
+      // ✅ IMPORTANTE: Establecer id = uuid para consistencia
+      cashClosureData.id = cashClosureData.uuid;
+
       const cashClosureRef = doc(db, `businesses/${businessId}/cashClosures`, cashClosureData.uuid);
       await setDoc(cashClosureRef, {
         ...cashClosureData,
+        id: cashClosureData.uuid, // Garantizar consistencia
         createdAt: serverTimestamp(),
       });
-      console.log('Cash closure record created in Firestore');
+
+      console.log('✅ Cash closure created with uuid:', cashClosureData.uuid);
     } catch (error) {
       console.error('Error creating cash closure record: ', error);
       throw error;

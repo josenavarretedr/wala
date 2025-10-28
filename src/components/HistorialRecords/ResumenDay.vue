@@ -198,7 +198,7 @@
 
 <script setup>
 import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 
 const showResume = ref(false);
@@ -243,9 +243,19 @@ watch(
 // 🔄 Watch para detectar cambios en dailySummary directamente
 watch(
   () => accountsBalanceStore.dailySummary,
-  (newSummary) => {
+  (newSummary, oldSummary) => {
     if (newSummary) {
       console.log("✅ ResumenDay - DailySummary actualizado automáticamente");
+
+      // Log de diagnóstico cuando cambia
+      if (oldSummary && newSummary !== oldSummary) {
+        console.log("📊 Valores actualizados en ResumenDay:");
+        console.log("   - Saldo inicial:", saldoInicial.value);
+        console.log("   - Total ingresos:", totalIngresos.value);
+        console.log("   - Total egresos:", totalEgresos.value);
+        console.log("   - Resultado operacional:", resultadoOperacional.value);
+        console.log("   - Saldo actual:", saldoActual.value);
+      }
     }
   },
   { deep: true }
@@ -253,22 +263,25 @@ watch(
 
 // Inicialización
 onMounted(async () => {
-  console.log("📊 ResumenDay - Intentando cargar dailySummary...");
+  console.log("📊 ResumenDay - Montando componente...");
 
-  // OPCIÓN A: Intentar cargar desde dailySummary (recomendado)
+  // 🔥 NUEVO: Iniciar listener en tiempo real
+  console.log("🔥 Iniciando listener en tiempo real de dailySummary...");
+  accountsBalanceStore.startDailySummaryListener();
+
+  // OPCIÓN A: Cargar dailySummary inicial
   const loaded = await accountsBalanceStore.loadFromDailySummary();
 
   if (loaded) {
     console.log("✅ ResumenDay - DailySummary cargado exitosamente");
     console.log("   Fuente de datos: Backend pre-calculado (dailySummary)");
+    console.log("   🔥 Listener activo - se actualizará automáticamente");
   } else {
     console.log(
       "ℹ️ ResumenDay - DailySummary no disponible, usando cálculo manual"
     );
     console.log("   Fuente de datos: Transacciones locales (fallback)");
-
-    // OPCIÓN B: Fallback - cargar transacciones y calcular manualmente
-    // (el store ya tiene la lógica de fallback en los computed properties)
+    console.log("   🔥 Listener activo - esperando primera transacción");
   }
 
   // Log de diagnóstico
@@ -278,6 +291,14 @@ onMounted(async () => {
   console.log("   - Total egresos:", totalEgresos.value);
   console.log("   - Resultado operacional:", resultadoOperacional.value);
   console.log("   - Saldo actual:", saldoActual.value);
+});
+
+// 🛑 Detener listener cuando el componente se desmonta
+onBeforeUnmount(() => {
+  console.log(
+    "🛑 ResumenDay - Desmontando componente y deteniendo listener..."
+  );
+  accountsBalanceStore.stopDailySummaryListener();
 });
 </script>
 

@@ -17,9 +17,24 @@ export function useCashEvent() {
   const createCashEvent = async (cashEventData) => {
     try {
       const businessId = ensureBusinessId();
+
+      // ✅ IMPORTANTE: Validar que uuid existe
+      if (!cashEventData.uuid) {
+        console.error('❌ Cash event must have a uuid');
+        throw new Error('Cash event must have a uuid');
+      }
+
+      // ✅ IMPORTANTE: Establecer id = uuid para consistencia
+      cashEventData.id = cashEventData.uuid;
+
       const ref = doc(db, `businesses/${businessId}/cashEvents`, cashEventData.uuid);
-      await setDoc(ref, { ...cashEventData, createdAt: serverTimestamp() });
-      console.log('Cash event created in Firestore');
+      await setDoc(ref, {
+        ...cashEventData,
+        id: cashEventData.uuid, // Garantizar consistencia
+        createdAt: serverTimestamp()
+      });
+
+      console.log('✅ Cash event created with uuid:', cashEventData.uuid);
     } catch (error) {
       console.error('Error creating cash event: ', error);
       throw error;

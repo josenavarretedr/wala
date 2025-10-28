@@ -12,12 +12,25 @@ export function useTransaccion() {
   const createTransaction = async (transaction) => {
     try {
       const businessId = ensureBusinessId();
+
+      // ✅ IMPORTANTE: Validar que uuid existe
+      if (!transaction.uuid) {
+        console.error('❌ Transaction must have a uuid');
+        throw new Error('Transaction must have a uuid');
+      }
+
+      // ✅ IMPORTANTE: Establecer id = uuid para consistencia total
+      transaction.id = transaction.uuid;
+
       const transactionRef = doc(db, 'businesses', businessId, 'transactions', transaction.uuid);
 
       await setDoc(transactionRef, {
         ...transaction,
+        id: transaction.uuid, // Garantizar consistencia
         createdAt: serverTimestamp(),
       });
+
+      console.log('✅ Transaction created with uuid:', transaction.uuid);
     } catch (error) {
       console.error('Error creating transaction: ', error);
       throw error;

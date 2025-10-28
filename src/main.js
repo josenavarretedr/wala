@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import './style.css'
 import './assets/css/dashboard.css'
+import './assets/css/onboarding.css'
 import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'

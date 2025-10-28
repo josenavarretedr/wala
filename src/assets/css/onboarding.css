@@ -1,0 +1,203 @@
+/**
+ * Estilos personalizados para Driver.js
+ * Personalización del tema de onboarding para que coincida con el diseño de la aplicación
+ */
+
+/* Variables CSS para el tema */
+:root {
+  --driver-primary-color: #2563eb; /* blue-600 - coincide con Tailwind */
+  --driver-text-color: #1f2937; /* gray-800 */
+  --driver-secondary-text: #6b7280; /* gray-500 */
+  --driver-bg-color: #ffffff;
+  --driver-border-radius: 12px;
+  --driver-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* Overlay personalizado - más claro para mejor visibilidad */
+.driver-overlay {
+  background-color: rgba(0, 0, 0, 0.5) !important; /* ✅ Reducido de 0.75 a 0.5 */
+}
+
+/* Contenedor del popover */
+.driver-popover {
+  border-radius: var(--driver-border-radius);
+  box-shadow: var(--driver-shadow);
+  background-color: var(--driver-bg-color);
+  max-width: 400px;
+  padding: 0;
+}
+
+/* Título del popover */
+.driver-popover-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--driver-text-color);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Descripción del popover */
+.driver-popover-description {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--driver-secondary-text);
+  margin-bottom: 1rem;
+}
+
+/* Progreso del tour */
+.driver-popover-progress-text {
+  font-size: 0.75rem;
+  color: var(--driver-primary-color);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.75rem;
+  display: inline-block;
+}
+
+/* Footer con botones */
+.driver-popover-footer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Botones */
+.driver-popover-btn {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+/* Botón siguiente/finalizar */
+.driver-popover-next-btn,
+.driver-popover-done-btn {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  color: white;
+  flex: 1;
+}
+
+.driver-popover-next-btn:hover,
+.driver-popover-done-btn:hover {
+  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+/* Botón anterior */
+.driver-popover-prev-btn {
+  background-color: #f3f4f6;
+  color: var(--driver-text-color);
+  flex: 1;
+}
+
+.driver-popover-prev-btn:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-1px);
+}
+
+/* Botón cerrar */
+.driver-popover-close-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+  border-radius: 50%;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  color: var(--driver-secondary-text);
+}
+
+.driver-popover-close-btn:hover {
+  background-color: #fee2e2;
+  color: #dc2626;
+  transform: scale(1.1);
+}
+
+/* Flecha del popover */
+.driver-popover-arrow {
+  border: 5px solid transparent;
+}
+
+.driver-popover-arrow-side-top {
+  border-top-color: var(--driver-bg-color);
+}
+
+.driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--driver-bg-color);
+}
+
+.driver-popover-arrow-side-left {
+  border-left-color: var(--driver-bg-color);
+}
+
+.driver-popover-arrow-side-right {
+  border-right-color: var(--driver-bg-color);
+}
+
+/* Elemento destacado */
+.driver-active-element {
+  position: relative;
+  z-index: 9999;
+}
+
+/* Animaciones */
+.driver-popover {
+  animation: driver-popover-fade-in 0.3s ease-out;
+}
+
+@keyframes driver-popover-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .driver-popover {
+    max-width: 90vw;
+  }
+  
+  .driver-popover-title {
+    font-size: 1rem;
+  }
+  
+  .driver-popover-description {
+    font-size: 0.875rem;
+  }
+}
+
+/* Estado de carga */
+.driver-popover.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Accesibilidad */
+.driver-popover:focus {
+  outline: 2px solid var(--driver-primary-color);
+  outline-offset: 2px;
+}
+
+/* Mejoras visuales para los badges de progreso */
+/* .driver-popover-progress-text::before {
+  content: '📍 ';
+  margin-right: 0.25rem;
+} */

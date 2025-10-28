@@ -1,11 +1,13 @@
 <template>
   <!-- Navegación -->
   <div
+    data-tour="main-buttons"
     class="flex flex-row justify-center items-stretch gap-3 sm:gap-4 lg:gap-6 max-w-4xl mx-auto bg-white p-2"
   >
     <Suspense>
       <template #default>
         <AccountBalanceBtn
+          data-tour="account-balance-btn"
           class="flex-1 max-w-xs sm:max-w-sm"
         ></AccountBalanceBtn>
       </template>
@@ -18,7 +20,10 @@
 
     <Suspense>
       <template #default>
-        <NewRecordBtn class="flex-1 max-w-xs sm:max-w-sm"></NewRecordBtn>
+        <NewRecordBtn
+          data-tour="new-record-btn"
+          class="flex-1 max-w-xs sm:max-w-sm"
+        ></NewRecordBtn>
       </template>
       <template #fallback>
         <div class="flex-1 max-w-xs sm:max-w-sm">

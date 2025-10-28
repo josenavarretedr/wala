@@ -68,7 +68,12 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
   // Convertir a array para facilitar procesamiento
   const allTransactions = [];
   txSnap.forEach(doc => {
-    allTransactions.push({ id: doc.id, ...doc.data() });
+    const data = doc.data();
+    allTransactions.push({
+      ...data,
+      uuid: data.uuid || doc.id, // ✅ Priorizar uuid del documento
+      id: data.uuid || doc.id,   // ✅ Mantener id igual a uuid
+    });
   });
 
   // ===== FLAGS BÁSICOS =====
@@ -114,12 +119,12 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     if (txType === 'opening') {
       hasOpening = true;
       openingTransaction = tx;
-      console.log(`  ✓ Opening found: ${tx.id}`);
+      console.log(`  ✓ Opening found: ${tx.uuid}`);
     }
 
     if (txType === 'closure') {
       hasClosure = true;
-      console.log(`  ✓ Closure found: ${tx.id}`);
+      console.log(`  ✓ Closure found: ${tx.uuid}`);
     }
 
     // === INGRESOS (excluyendo ajustes) ===
@@ -135,7 +140,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         ingresosBank = addMoney(ingresosBank, amount);
       }
 
-      console.log(`  💰 Income: ${amount} [${account}] (${tx.id})`);
+      console.log(`  💰 Income: ${amount} [${account}] (${tx.uuid})`);
     }
 
     // === EGRESOS (excluyendo ajustes) ===
@@ -151,7 +156,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         egresosBank = addMoney(egresosBank, amount);
       }
 
-      console.log(`  💸 Expense: ${amount} [${account}] (${tx.id})`);
+      console.log(`  💸 Expense: ${amount} [${account}] (${tx.uuid})`);
     }
 
     // === TRANSFERENCIAS ===
@@ -172,7 +177,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         transferenciasEntradaBank = addMoney(transferenciasEntradaBank, amount);
       }
 
-      console.log(`  🔄 Transfer: ${amount} (${tx.fromAccount} -> ${tx.toAccount}) (${tx.id})`);
+      console.log(`  🔄 Transfer: ${amount} (${tx.fromAccount} -> ${tx.toAccount}) (${tx.uuid})`);
     }
 
     // === AJUSTES DE APERTURA ===
@@ -185,7 +190,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         if (account === 'cash') ajustesAperturaCash = subtractMoney(ajustesAperturaCash, amount);
         if (account === 'bank') ajustesAperturaBank = subtractMoney(ajustesAperturaBank, amount);
       }
-      console.log(`  🔧 Opening adjustment: ${amount} [${account}] (${tx.id})`);
+      console.log(`  🔧 Opening adjustment: ${amount} [${account}] (${tx.uuid})`);
     }
 
     // === AJUSTES DE CIERRE ===
@@ -198,7 +203,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         if (account === 'cash') ajustesCierreCash = subtractMoney(ajustesCierreCash, amount);
         if (account === 'bank') ajustesCierreBank = subtractMoney(ajustesCierreBank, amount);
       }
-      console.log(`  � Closure adjustment: ${amount} [${account}] (${tx.id})`);
+      console.log(`  🔩 Closure adjustment: ${amount} [${account}] (${tx.uuid})`);
     }
   });
 
@@ -244,9 +249,10 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     hasClosure,
     hasTxn,
 
-    // Datos de apertura
+    // Datos de apertura (usando UUID)
     openingData: openingTransaction ? {
-      id: openingTransaction.id,
+      uuid: openingTransaction.uuid,  // ✅ UUID principal
+      id: openingTransaction.uuid,    // ✅ Mantener id por compatibilidad
       realCashBalance: saldoInicialCash,
       realBankBalance: saldoInicialBank,
       totalBalance: saldoInicial
@@ -370,7 +376,8 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
  *   
  *   // === DATOS DE APERTURA ===
  *   openingData: {
- *     id: string,
+ *     uuid: string,                 // ✅ UUID de la transacción de apertura
+ *     id: string,                   // ✅ Igual a uuid (compatibilidad)
  *     realCashBalance: number,
  *     realBankBalance: number,
  *     totalBalance: number
@@ -459,7 +466,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
  *   
  *   // === METADATA DE CIERRE AUTOMÁTICO (opcional) ===
  *   isAutoClosed: boolean,
- *   closureId: string,
+ *   closureId: string,              // ✅ UUID de la transacción de cierre
  *   autoCloseReason: string,        // 'scheduled' | 'lazyOpen'
  *   completedAt: Timestamp,
  *   
@@ -470,7 +477,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
 async function upsertDailySummary(db, businessId, day, patch) {
   const ref = db.doc(`businesses/${businessId}/dailySummaries/${day}`);
 
-  console.log(`💾 Upserting daily summary for ${day} with complete structure`);
+  console.log(`💾 Upserting daily summary for ${day} with UUID-based structure`);
 
   await ref.set({
     day,

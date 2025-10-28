@@ -1,0 +1,90 @@
+/**
+ * EJEMPLO: Configuración del tour de onboarding para Transacciones
+ * 
+ * Este archivo es un ejemplo de cómo crear un tour para otra vista
+ * Puedes usarlo como plantilla para crear tours para tus propias vistas
+ */
+
+export const transactionsConfig = {
+  id: 'transactions-tour',
+  name: 'Tour de Transacciones',
+  description: 'Aprende a gestionar tus transacciones',
+  autoStart: true,
+  
+  /**
+   * Esta función determina si este tour debe mostrarse en la ruta actual
+   */
+  routeMatcher: (routePath) => {
+    return routePath.includes('/transactions') || 
+           routePath.includes('/records');
+  },
+  
+  driverConfig: {
+    animate: true,
+    overlayOpacity: 0.5, // ✅ Opacidad reducida para mejor visibilidad
+    smoothScroll: true,
+  },
+  
+  steps: [
+    {
+      popover: {
+        title: 'Gestión de Transacciones 💰',
+        description: 'Aprende a gestionar tus ingresos y gastos de forma eficiente. Te mostraremos las características principales.',
+        side: 'center',
+      }
+    },
+    {
+      element: '[data-tour="transaction-filters"]',
+      popover: {
+        title: '🔍 Filtros de Búsqueda',
+        description: 'Filtra tus transacciones por fecha, tipo, categoría o cuenta. Encuentra rápidamente lo que buscas.',
+        side: 'bottom',
+        align: 'start',
+      }
+    },
+    {
+      element: '[data-tour="new-transaction-btn"]',
+      popover: {
+        title: '➕ Nueva Transacción',
+        description: 'Crea una nueva transacción: ingreso, gasto, transferencia entre cuentas o ajuste de saldo.',
+        side: 'left',
+        align: 'start',
+      }
+    },
+    {
+      element: '[data-tour="transactions-table"]',
+      popover: {
+        title: '📋 Lista de Transacciones',
+        description: 'Aquí aparecen todas tus transacciones. Puedes editarlas, eliminarlas o ver más detalles haciendo clic en cada una.',
+        side: 'top',
+        align: 'center',
+      }
+    },
+    {
+      element: '[data-tour="export-btn"]',
+      popover: {
+        title: '📊 Exportar Datos',
+        description: 'Exporta tus transacciones a Excel o PDF para llevar un mejor control o compartir con tu contador.',
+        side: 'left',
+        align: 'end',
+      }
+    },
+    {
+      popover: {
+        title: '¡Listo para gestionar! 🎉',
+        description: 'Ahora conoces todas las herramientas para gestionar tus transacciones. ¡Empieza a registrar!',
+        side: 'center',
+      }
+    }
+  ]
+};
+
+/**
+ * EJEMPLO DE USO:
+ * 
+ * 1. Descomenta este archivo
+ * 2. Importalo en /config/onboarding/index.js
+ * 3. Agrégalo al objeto onboardingConfigs
+ * 4. Agrega los atributos data-tour en tu componente de transacciones
+ * 5. Llama a autoStartIfFirstVisit() en onMounted
+ */

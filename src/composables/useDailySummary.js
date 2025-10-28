@@ -1,5 +1,5 @@
 // useDailySummary.js
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 import { ensureBusinessId } from '@/composables/useBusinessUtils';
 
@@ -19,7 +19,8 @@ import { ensureBusinessId } from '@/composables/useBusinessUtils';
  * - adjustments: { opening: {cash, bank, total}, closure: {cash, bank, total}, total }
  * - balances: { initial: {cash, bank, total}, expected: {cash, bank, total}, actual: {cash, bank, total} }
  * - operational: { result, resultCash, resultBank, flowCash, flowBank }
- * - openingData: { id, realCashBalance, realBankBalance, totalBalance }
+ * - openingData: { uuid, id, realCashBalance, realBankBalance, totalBalance }
+ * - closureId: uuid del cierre (si existe)
  */
 export function useDailySummary() {
   const db = getFirestore(appFirebase);
@@ -390,10 +391,28 @@ export function useDailySummary() {
   /**
    * Obtiene los datos de la transacción de apertura
    * @param {Object} summary - DailySummary
-   * @returns {Object|null} - Datos de apertura
+   * @returns {Object|null} - Datos de apertura con uuid
    */
   const getOpeningData = (summary) => {
     return getNestedValue(summary, 'openingData', null);
+  };
+
+  /**
+   * Obtiene el UUID de la transacción de apertura
+   * @param {Object} summary - DailySummary
+   * @returns {string|null} - UUID de la apertura
+   */
+  const getOpeningUuid = (summary) => {
+    return getNestedValue(summary, 'openingData.uuid', null);
+  };
+
+  /**
+   * Obtiene el UUID de la transacción de cierre
+   * @param {Object} summary - DailySummary
+   * @returns {string|null} - UUID del cierre
+   */
+  const getClosureUuid = (summary) => {
+    return getNestedValue(summary, 'closureId', null);
   };
 
   /**
@@ -423,10 +442,140 @@ export function useDailySummary() {
     return getNestedValue(summary, 'hasTxn', false);
   };
 
+  /**
+   * 🔥 NUEVO: Escuchar cambios en tiempo real del dailySummary de hoy
+   * Retorna una función unsubscribe para detener el listener
+   * 
+   * @param {Function} callback - Función callback que recibe el dailySummary actualizado
+   * @returns {Function} - Función para detener el listener
+   * 
+   * @example
+   * const unsubscribe = watchTodayDailySummary((summary) => {
+   *   console.log('DailySummary actualizado:', summary);
+   *   // Actualizar estado de la aplicación
+   * });
+   * 
+   * // Cuando ya no se necesite el listener:
+   * unsubscribe();
+   */
+  const watchTodayDailySummary = (callback) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        console.error('❌ businessId no disponible para watchTodayDailySummary');
+        return () => { }; // Retornar función vacía
+      }
+
+      // Formatear la fecha actual como 'yyyy-LL-dd'
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const dayString = `${year}-${month}-${day}`;
+
+      // Referencia al documento dailySummary
+      const dailySummaryRef = doc(
+        db,
+        `businesses/${businessId}/dailySummaries/${dayString}`
+      );
+
+      console.log(`👀 Iniciando listener de dailySummary para ${dayString}`);
+
+      // Configurar listener en tiempo real
+      const unsubscribe = onSnapshot(
+        dailySummaryRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log('🔄 DailySummary actualizado en tiempo real');
+
+            // Validar estructura
+            if (!validateDailySummaryStructure(data)) {
+              console.warn('⚠️ DailySummary tiene estructura incompleta:', data);
+            }
+
+            // Llamar al callback con los datos actualizados
+            callback(data);
+          } else {
+            console.log('ℹ️ DailySummary aún no existe para hoy');
+            callback(null);
+          }
+        },
+        (error) => {
+          console.error('❌ Error en listener de dailySummary:', error);
+          callback(null);
+        }
+      );
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ Error configurando listener de dailySummary:', error);
+      return () => { }; // Retornar función vacía
+    }
+  };
+
+  /**
+   * 🔥 NUEVO: Escuchar cambios en tiempo real de un dailySummary específico
+   * 
+   * @param {string} dayString - Fecha en formato 'yyyy-LL-dd'
+   * @param {Function} callback - Función callback que recibe el dailySummary actualizado
+   * @returns {Function} - Función para detener el listener
+   */
+  const watchDailySummary = (dayString, callback) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId || !dayString) {
+        console.error('❌ businessId y dayString son requeridos');
+        return () => { };
+      }
+
+      const dailySummaryRef = doc(
+        db,
+        `businesses/${businessId}/dailySummaries/${dayString}`
+      );
+
+      console.log(`👀 Iniciando listener de dailySummary para ${dayString}`);
+
+      const unsubscribe = onSnapshot(
+        dailySummaryRef,
+        (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            console.log(`🔄 DailySummary de ${dayString} actualizado en tiempo real`);
+
+            if (!validateDailySummaryStructure(data)) {
+              console.warn(`⚠️ DailySummary de ${dayString} tiene estructura incompleta`);
+            }
+
+            callback(data);
+          } else {
+            console.log(`ℹ️ DailySummary de ${dayString} no existe`);
+            callback(null);
+          }
+        },
+        (error) => {
+          console.error(`❌ Error en listener de dailySummary para ${dayString}:`, error);
+          callback(null);
+        }
+      );
+
+      return unsubscribe;
+    } catch (error) {
+      console.error('❌ Error configurando listener de dailySummary:', error);
+      return () => { };
+    }
+  };
+
   return {
     // Métodos de obtención
     getTodayDailySummary,
     getDailySummary,
+
+    // 🔥 NUEVO: Listeners en tiempo real
+    watchTodayDailySummary,
+    watchDailySummary,
 
     // Validación
     validateDailySummaryStructure,
@@ -470,8 +619,10 @@ export function useDailySummary() {
     getEfectoTransferenciasEnCash,
     getEfectoTransferenciasEnBank,
 
-    // Datos de apertura
+    // Datos de apertura/cierre
     getOpeningData,
+    getOpeningUuid,
+    getClosureUuid,
 
     // Flags
     hasOpening,

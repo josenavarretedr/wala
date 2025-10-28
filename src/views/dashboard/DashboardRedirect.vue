@@ -1,29 +1,41 @@
 <template>
   <div class="space-y-6 max-w-2xl mx-auto mb-20">
-    <MicroApps
-      :business-id="businessId"
-      @navigate-to-app="handleNavigateToApp"
-    />
+    <!-- Micro Aplicaciones -->
+    <div data-tour="micro-apps">
+      <MicroApps
+        :business-id="businessId"
+        @navigate-to-app="handleNavigateToApp"
+      />
+    </div>
 
     <!-- ¿Cómo va el día? -->
     <Suspense>
       <template #default>
-        <ResumenDay :transactions="[]" />
+        <div data-tour="resumen-day">
+          <ResumenDay :transactions="[]" />
+        </div>
       </template>
       <template #fallback>
         <Loader />
       </template>
     </Suspense>
 
+    <!-- Historial de transacciones del día -->
     <Suspense>
       <template #default>
-        <ListRecordByDay :transactions="[]" />
+        <div data-tour="transactions-list">
+          <ListRecordByDay :transactions="[]" />
+        </div>
       </template>
       <template #fallback>
         <Loader />
       </template>
     </Suspense>
 
+    <!-- Botón de acciones rápidas -->
+    <QuickActionBtn />
+
+    <!-- Botones principales fijos -->
     <div
       class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
     >
@@ -39,6 +51,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useOnboarding } from "@/composables/useOnboarding";
 
 // Imports de componentes
 import MicroApps from "@/components/Dashboard/MicroApps.vue";
@@ -46,6 +59,7 @@ import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 import Loader from "@/components/ui/Loader.vue";
 import MainBtns from "../../components/Dashboard/MainBtns.vue";
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
+import QuickActionBtn from "@/components/Dashboard/QuickActionBtn.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -53,6 +67,7 @@ const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore(); // ✅ NUEVO: Usar BusinessStore
 const transactionsStore = useTransactionStore();
+const { autoStartIfFirstVisit } = useOnboarding(); // ✅ Sistema de onboarding
 
 // ✅ ARQUITECTURA COHERENTE: Computed properties usando la nueva estructura
 
@@ -132,6 +147,9 @@ onMounted(async () => {
   // await transactionsStore.getTransactionsToday();
 
   loadDashboardData();
+
+  // ✅ Auto-iniciar tour de onboarding en primera visita
+  await autoStartIfFirstVisit();
 });
 </script>
 

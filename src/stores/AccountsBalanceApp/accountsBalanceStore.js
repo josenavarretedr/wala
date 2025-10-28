@@ -31,6 +31,9 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   const isLoadingFromSummary = ref(false);
   const summaryLoadError = ref(null);
 
+  // 🔥 NUEVO: Listener en tiempo real
+  let dailySummaryUnsubscribe = null;
+
   // ===== SETTERS PARA CONFIGURAR DATOS =====
 
   /**
@@ -1162,6 +1165,69 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     return await loadFromDailySummary();
   };
 
+  /**
+   * 🔥 NUEVO: Iniciar listener en tiempo real del dailySummary
+   * Actualiza automáticamente el store cuando las Cloud Functions modifican el dailySummary
+   * 
+   * @returns {Function} - Función para detener el listener
+   */
+  const startDailySummaryListener = () => {
+    // Detener listener anterior si existe
+    if (dailySummaryUnsubscribe) {
+      console.log('🛑 Deteniendo listener anterior de dailySummary');
+      dailySummaryUnsubscribe();
+      dailySummaryUnsubscribe = null;
+    }
+
+    console.log('🔥 Iniciando listener en tiempo real de dailySummary...');
+
+    dailySummaryUnsubscribe = getDailySummaryComposable().watchTodayDailySummary((summary) => {
+      if (summary) {
+        console.log('🔄 DailySummary actualizado automáticamente desde Firestore');
+        dailySummary.value = summary;
+
+        // Actualizar openingTransaction desde dailySummary
+        if (summary.openingData && getDailySummaryComposable().hasOpening(summary)) {
+          openingTransaction.value = {
+            uuid: summary.openingData.uuid || summary.openingData.id,
+            id: summary.openingData.uuid || summary.openingData.id,
+            type: 'opening',
+            realCashBalance: summary.openingData.realCashBalance,
+            realBankBalance: summary.openingData.realBankBalance,
+            totalBalance: summary.openingData.totalBalance,
+            expectedCashBalance: summary.balances?.expected?.cash || 0,
+            expectedBankBalance: summary.balances?.expected?.bank || 0,
+          };
+          console.log('✅ OpeningTransaction actualizada desde listener');
+        } else {
+          openingTransaction.value = null;
+        }
+
+        console.log('📊 Store actualizado con nuevos valores:');
+        console.log('   - Ingresos:', getDailySummaryComposable().getTotalIngresos(summary));
+        console.log('   - Egresos:', getDailySummaryComposable().getTotalEgresos(summary));
+        console.log('   - Saldo actual:', getDailySummaryComposable().getSaldoActual(summary));
+      } else {
+        console.log('ℹ️ DailySummary no disponible en listener');
+        dailySummary.value = null;
+        openingTransaction.value = null;
+      }
+    });
+
+    return dailySummaryUnsubscribe;
+  };
+
+  /**
+   * 🛑 Detener listener en tiempo real del dailySummary
+   */
+  const stopDailySummaryListener = () => {
+    if (dailySummaryUnsubscribe) {
+      console.log('🛑 Deteniendo listener de dailySummary');
+      dailySummaryUnsubscribe();
+      dailySummaryUnsubscribe = null;
+    }
+  };
+
   return {
     // ===== NUEVO: ESTADO Y MÉTODOS DE DAILYSUMMARY =====
     dailySummary,
@@ -1171,6 +1237,10 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     loadFromDailySummary,
     loadDailySummary,
     forceReloadSummary,
+
+    // 🔥 NUEVO: Listener en tiempo real
+    startDailySummaryListener,
+    stopDailySummaryListener,
 
     // Estado
     transactions,
