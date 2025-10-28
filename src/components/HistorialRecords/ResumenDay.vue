@@ -4,11 +4,38 @@
   >
     <!-- Header con información inicial y toggle -->
     <div
-      @click="showResume = !showResume"
       class="cursor-pointer transition-all duration-200 hover:bg-gray-50 -m-2 p-4 rounded-lg"
     >
+      <!-- Toggle section -->
+      <div
+        class="flex items-center justify-center gap-3 pt-2border-gray-100"
+        @click="showResume = !showResume"
+        v-if="!showResume"
+      >
+        <div
+          class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"
+        >
+          <component
+            :is="showResume ? EyeClosed : Eye"
+            class="w-3 h-3 text-blue-600"
+          />
+        </div>
+
+        <div>
+          <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+            Resumen día
+          </h3>
+          <p class="text-xs sm:text-sm text-gray-500">
+            {{ showResume ? "Ocultar información" : "Mira cómo te fue hoy" }}
+          </p>
+        </div>
+      </div>
       <!-- Estado expandido - información sensible visible -->
-      <div v-if="showResume" class="text-center mb-4">
+      <div
+        class="text-center mb-4"
+        @click="showResume = !showResume"
+        v-if="showResume"
+      >
         <p class="text-sm text-gray-500 mb-1">Saldo actual</p>
         <p class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
           S/ {{ saldoActual.toFixed(2) }}
@@ -29,27 +56,6 @@
               {{ saldoActualBank.toFixed(2) }}
             </span>
           </div>
-        </div>
-      </div>
-
-      <!-- Toggle section -->
-      <div class="flex items-center justify-center gap-3 pt-2border-gray-100">
-        <div
-          class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"
-        >
-          <component
-            :is="showResume ? EyeClosed : Eye"
-            class="w-3 h-3 text-blue-600"
-          />
-        </div>
-
-        <div>
-          <h3 class="text-base sm:text-lg font-semibold text-gray-900">
-            Resumen día
-          </h3>
-          <p class="text-xs sm:text-sm text-gray-500">
-            {{ showRecords ? "Ocultar información" : "Mira cómo te fue hoy" }}
-          </p>
         </div>
       </div>
     </div>
@@ -193,25 +199,18 @@
 <script setup>
 import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
 import { ref, computed, onMounted } from "vue";
-import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 
 const showResume = ref(false);
 
-const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 
-// Usar transactionsInStore en lugar del prop
-const transactions = computed(
-  () => transactionStore.transactionsInStore.value || []
-);
+// ===== 🚀 MIGRACIÓN A DAILYSUMMARY =====
+// Ahora el store carga datos desde dailySummary automáticamente
+// Los computed properties del store ya están configurados para usar
+// dailySummary cuando esté disponible (modo híbrido)
 
-// Configurar el store de balance cuando cambien las transacciones
-const setupBalanceStore = () => {
-  accountsBalanceStore.setTransactions(transactions.value);
-};
-
-// Usar los cálculos del store de balance
+// Usar los cálculos del store (ahora híbrido con dailySummary)
 const opening = computed(() => accountsBalanceStore.openingTransaction);
 const saldoInicial = computed(() => accountsBalanceStore.saldoInicial);
 const totalIngresos = computed(() => accountsBalanceStore.totalIngresos);
@@ -229,17 +228,32 @@ const saldoActualBank = computed(() => accountsBalanceStore.saldoActualBank);
 
 // Inicialización
 onMounted(async () => {
-  // Cargar las transacciones de hoy cuando se monte el componente
-  await transactionStore.getTransactionsToday();
-  // Configurar el store de balance con las transacciones cargadas
-  setupBalanceStore();
-});
+  console.log("📊 ResumenDay - Intentando cargar dailySummary...");
 
-// Reconfigurar el store cuando cambien las transacciones
-const { value: transactionsValue } = transactions;
-if (transactionsValue && transactionsValue.length > 0) {
-  setupBalanceStore();
-}
+  // OPCIÓN A: Intentar cargar desde dailySummary (recomendado)
+  const loaded = await accountsBalanceStore.loadFromDailySummary();
+
+  if (loaded) {
+    console.log("✅ ResumenDay - DailySummary cargado exitosamente");
+    console.log("   Fuente de datos: Backend pre-calculado (dailySummary)");
+  } else {
+    console.log(
+      "ℹ️ ResumenDay - DailySummary no disponible, usando cálculo manual"
+    );
+    console.log("   Fuente de datos: Transacciones locales (fallback)");
+
+    // OPCIÓN B: Fallback - cargar transacciones y calcular manualmente
+    // (el store ya tiene la lógica de fallback en los computed properties)
+  }
+
+  // Log de diagnóstico
+  console.log("📈 Valores cargados:");
+  console.log("   - Saldo inicial:", saldoInicial.value);
+  console.log("   - Total ingresos:", totalIngresos.value);
+  console.log("   - Total egresos:", totalEgresos.value);
+  console.log("   - Resultado operacional:", resultadoOperacional.value);
+  console.log("   - Saldo actual:", saldoActual.value);
+});
 </script>
 
 <style scoped>

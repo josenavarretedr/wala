@@ -28,7 +28,7 @@ const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helper
  * @returns {Promise<Object>} Objeto con estructura completa de accountsBalanceStore:
  *   - hasOpening: boolean
  *   - hasClosure: boolean
- *   - hasTxn: boolean
+ *   - hasTxn: boolean (true si hay income o expense NO-adjustment; transfer NO cuenta)
  *   - openingData: Object - Datos de la apertura
  *   - totals: Object - Totales generales
  *   - byAccount: Object - Desglose por cuenta (cash/bank)
@@ -36,6 +36,14 @@ const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helper
  *   - adjustments: Object - Ajustes de apertura y cierre
  *   - balances: Object - Saldos iniciales, esperados y actuales
  *   - operational: Object - Resultados operacionales
+ * 
+ * Tipos de transacciones que cuentan para hasTxn (racha):
+ *   ✅ income (category !== 'adjustment')
+ *   ✅ expense (category !== 'adjustment')
+ *   ❌ transfer (NO cuenta para racha)
+ *   ❌ adjustment (NO cuenta para racha)
+ *   ❌ opening (NO cuenta para racha)
+ *   ❌ closure (NO cuenta para racha)
  * 
  * Tipos de transacciones reconocidas (consistente con transactionStore):
  * - 'opening': Apertura de caja
@@ -147,8 +155,8 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     }
 
     // === TRANSFERENCIAS ===
+    // NOTA: Las transferencias NO cuentan para hasTxn (no afectan la racha)
     if (txType === 'transfer') {
-      hasTxn = true;
       totalTransferencias = addMoney(totalTransferencias, amount);
 
       if (tx.fromAccount === 'cash') {

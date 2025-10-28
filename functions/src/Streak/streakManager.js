@@ -36,6 +36,21 @@ function decideMode(medianGap) {
   if (medianGap <= 3) return 'weekly'; // tratamos weekly como daily suavizado
   return 'eventual';
 }
+/**
+ * Determina si un día es activo basándose en el campo hasTxn del dailySummary.
+ * 
+ * Un día es activo cuando hasTxn === true, lo cual sucede cuando hay:
+ * ✅ Transacciones de income (que no sean adjustments)
+ * ✅ Transacciones de expense (que no sean adjustments)
+ * 
+ * NO cuentan como días activos:
+ * ❌ Solo transferencias (transfer)
+ * ❌ Solo ajustes (adjustment)
+ * ❌ Solo apertura/cierre (opening/closure)
+ * 
+ * @param {Object} summaryDoc - Documento de dailySummary
+ * @returns {boolean} - true si el día es activo
+ */
 function isActiveDay(summaryDoc) {
   return !!(summaryDoc && summaryDoc.hasTxn === true);
 }

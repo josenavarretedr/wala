@@ -87,6 +87,13 @@
                 S/ {{ accountsBalanceStore.egresosCash.toFixed(2) }}
               </span>
             </div>
+            <div class="flex justify-between text-purple-700">
+              <span>Neto transferencias:</span>
+              <span class="font-semibold tabular-nums">
+                S/
+                {{ accountsBalanceStore.efectoTransferenciasEnCash.toFixed(2) }}
+              </span>
+            </div>
             <div
               class="pt-2 border-t border-emerald-300 flex justify-between font-bold"
             >
@@ -343,7 +350,48 @@ const findOpeningToday = () => {
 };
 
 // Configurar el accountsBalanceStore
-const setupBalanceStore = () => {
+const setupBalanceStore = async () => {
+  console.log("📊 StepCashBalance - Configurando balance store...");
+
+  // 🚀 NUEVO: Intentar cargar desde dailySummary primero
+  const loaded = await accountsBalanceStore.loadFromDailySummary();
+
+  if (loaded) {
+    console.log(
+      "✅ StepCashBalance - Usando dailySummary (backend pre-calculado)"
+    );
+    console.log("📊 dailySummary cargado:", accountsBalanceStore.dailySummary);
+    console.log(
+      "📊 dailySummary.transfers:",
+      accountsBalanceStore.dailySummary?.transfers
+    );
+    console.log(
+      "📊 dailySummary.transfers.cash:",
+      accountsBalanceStore.dailySummary?.transfers?.cash
+    );
+    console.log("📊 hasDailySummary:", accountsBalanceStore.hasDailySummary);
+
+    // Forzar acceso directo al composable para debug
+    const dailySummaryComp = useDailySummary();
+    const valorDirecto = dailySummaryComp.getEfectoTransferenciasEnCash(
+      accountsBalanceStore.dailySummary
+    );
+    console.log(
+      "📊 efectoTransferenciasEnCash (directo del composable):",
+      valorDirecto
+    );
+    console.log(
+      "📊 efectoTransferenciasEnCash (desde store):",
+      accountsBalanceStore.efectoTransferenciasEnCash
+    );
+    return;
+  }
+
+  // Fallback: Cargar transacciones manualmente (legacy)
+  console.log(
+    "ℹ️ StepCashBalance - DailySummary no disponible, usando transacciones"
+  );
+
   if (isOpeningMode.value) {
     accountsBalanceStore.setTransactions([]);
   } else {
@@ -372,7 +420,7 @@ onMounted(async () => {
       findOpeningToday();
     }
 
-    setupBalanceStore();
+    await setupBalanceStore();
 
     // Establecer el valor esperado como valor inicial
     realCashBalance.value = expectedCashBalance.value;

@@ -100,7 +100,7 @@
         <div class="flex flex-col gap-1">
           <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
           <p v-if="maxAmount > 0" class="text-xs text-blue-600 font-medium">
-            💰 Saldo disponible en {{ selectedAccountLabel }}: S/
+            Saldo disponible en {{ selectedAccountLabel }}: S/
             {{ maxAmount.toFixed(2) }}
           </p>
           <p

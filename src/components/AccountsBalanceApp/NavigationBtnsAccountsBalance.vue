@@ -182,6 +182,10 @@ const finalizarRegistro = async () => {
     // Asegurarse de tener el dailySummary actualizado
     dailySummary.value = await getTodayDailySummary();
 
+    // 🚀 NOTA: Los valores usados aquí (expectedCashBalance, expectedFinalBank, etc.)
+    // ya provienen del accountsBalanceStore híbrido que prioriza dailySummary.
+    // No es necesario calcular nada manualmente, el store ya lo hace.
+
     const stepsData = flow.stepsData;
 
     // Determinar los valores finales para cash

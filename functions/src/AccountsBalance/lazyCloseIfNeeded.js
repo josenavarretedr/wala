@@ -92,9 +92,9 @@ module.exports = functions.https.onCall(async (data, context) => {
     const closureUuid = uuidv4();
     const closureRef = db.collection(`businesses/${businessId}/transactions`).doc(closureUuid);
 
-    // Acceso seguro a propiedades anidadas
-    const openingData = agg.opening || {};
-    const totals = agg.totals || {};
+    // Acceso seguro a propiedades anidadas (estructura de getDayAggregates)
+    const openingData = agg.openingData || {};
+    const { byAccount, balances, totals, transfers, adjustments, operational } = agg;
 
     // Calcular el timestamp del final del día anterior (23:59:59.999)
     // Esto es importante porque el cierre pertenece al día anterior, no al momento actual
@@ -102,48 +102,84 @@ module.exports = functions.https.onCall(async (data, context) => {
 
     // Estructura completa de cierre (consistente con buildClosureTransaction)
     const closureTransaction = {
+      // === IDENTIFICACIÓN ===
       uuid: closureUuid,
       type: 'closure',
       description: 'Cierre automático (lazy-open)',
       source: 'copilot',
       copilotMode: 'lazyOpen',
-      openingReference: openingData.uuid || null,
+      openingReference: openingData.id || null,
 
-      // Saldos iniciales (de la apertura)
+      // === SALDOS INICIALES (de apertura) ===
       initialCashBalance: openingData.realCashBalance || 0,
       initialBankBalance: openingData.realBankBalance || 0,
 
-      // Movimientos del día
-      totalIngresos: totals.totalIngresos || 0,
-      totalEgresos: totals.totalEgresos || 0,
-      ingresosCash: totals.ingresosCash || 0,
-      ingresosBank: totals.ingresosBank || 0,
-      egresosCash: totals.egresosCash || 0,
-      egresosBank: totals.egresosBank || 0,
+      // === TOTALES GENERALES (sin ajustes) ===
+      totalIngresos: totals?.income || 0,
+      totalEgresos: totals?.expense || 0,
+      ingresosCash: byAccount?.cash?.income || 0,
+      ingresosBank: byAccount?.bank?.income || 0,
+      egresosCash: byAccount?.cash?.expense || 0,
+      egresosBank: byAccount?.bank?.expense || 0,
 
-      // Balances esperados
-      expectedCashBalance: totals.expectedFinalCash || 0,
-      expectedBankBalance: totals.expectedFinalBank || 0,
+      // === TRANSFERENCIAS ===
+      totalTransferencias: transfers?.total || 0,
+      transferencias: {
+        cash: {
+          in: transfers?.cash?.in || 0,
+          out: transfers?.cash?.out || 0,
+          net: transfers?.cash?.net || 0
+        },
+        bank: {
+          in: transfers?.bank?.in || 0,
+          out: transfers?.bank?.out || 0,
+          net: transfers?.bank?.net || 0
+        }
+      },
 
-      // Balances reales (igual a esperados en cierre automático)
-      realCashBalance: totals.expectedFinalCash || 0,
-      realBankBalance: totals.expectedFinalBank || 0,
+      // === AJUSTES ===
+      ajustesApertura: {
+        cash: adjustments?.opening?.cash || 0,
+        bank: adjustments?.opening?.bank || 0,
+        total: adjustments?.opening?.total || 0
+      },
+      ajustesCierre: {
+        cash: 0, // No hay ajustes de cierre en auto-close
+        bank: 0,
+        total: 0
+      },
 
-      // Campos compatibles
-      totalCash: totals.expectedFinalCash || 0,
-      totalBank: totals.expectedFinalBank || 0,
-      cashAmount: totals.expectedFinalCash || 0,
-      bankAmount: totals.expectedFinalBank || 0,
+      // === BALANCES ESPERADOS (sin ajustes cierre) ===
+      expectedCashBalance: balances?.expected?.cash || 0,
+      expectedBankBalance: balances?.expected?.bank || 0,
 
-      // Diferencias (0 en cierre automático sin conteo real)
+      // === BALANCES REALES (igual a esperados en cierre automático) ===
+      realCashBalance: balances?.actual?.cash || 0,
+      realBankBalance: balances?.actual?.bank || 0,
+
+      // === DIFERENCIAS (0 en cierre automático sin conteo real) ===
       cashDifference: 0,
       bankDifference: 0,
 
+      // === RESULTADOS OPERACIONALES ===
+      resultadoOperacional: operational?.result || 0,
+      resultadoOperacionalCash: operational?.resultCash || 0,
+      resultadoOperacionalBank: operational?.resultBank || 0,
+      flujoNetoCash: operational?.flowCash || 0,
+      flujoNetoBank: operational?.flowBank || 0,
+
+      // === CAMPOS COMPATIBLES (legacy) ===
+      totalCash: balances?.actual?.cash || 0,
+      totalBank: balances?.actual?.bank || 0,
+      cashAmount: balances?.actual?.cash || 0,
+      bankAmount: balances?.actual?.bank || 0,
+
+      // === ESTRUCTURA ESTÁNDAR ===
       items: [],
       itemsAndStockLogs: [],
       amount: 0,
 
-      // Metadata para trazabilidad
+      // === METADATA ===
       metadata: {
         closedDay: day, // El día que se está cerrando (día anterior)
         triggerType: 'lazy_open',

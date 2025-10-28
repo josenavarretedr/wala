@@ -180,9 +180,6 @@ onMounted(async () => {
               } else {
                 // Plantilla para gasto existente
                 const relativeTime = formatRelativeTime(item.lastUsedAt);
-                const categoryBadge = item.expenseCategory
-                  ? `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">${item.expenseCategory}</span>`
-                  : "";
 
                 return html`
                   <div
@@ -195,7 +192,12 @@ onMounted(async () => {
                         >
                           ${item.expenseDescription}
                         </span>
-                        ${categoryBadge}
+                        ${item.expenseCategory &&
+                        html`<span
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+                        >
+                          ${item.expenseCategory}
+                        </span>`}
                       </div>
                       <span class="text-xs text-gray-500">
                         ${relativeTime} • ${item.occurrences}

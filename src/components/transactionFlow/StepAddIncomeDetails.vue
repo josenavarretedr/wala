@@ -11,8 +11,17 @@
     </div>
 
     <!-- Buscador de productos -->
-    <div class="space-y-4">
-      <h2 class="text-lg font-semibold text-gray-800">Buscar Producto</h2>
+    <div
+      class="space-y-4"
+      v-if="!transactionStore.itemToAddInTransaction.value.description"
+    >
+      <h2 class="text-lg font-semibold text-gray-800">
+        Buscar
+        <span v-if="transactionStore.transactionToAdd.value.items.length === 0"
+          >producto</span
+        >
+        <span v-else>otros productos</span>
+      </h2>
       <Suspense>
         <template #default>
           <SearchProductAsync />

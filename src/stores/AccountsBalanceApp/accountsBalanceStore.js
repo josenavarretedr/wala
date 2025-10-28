@@ -3,18 +3,33 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { round2, addMoney, subtractMoney, sumTransactions } from '@/utils/mathUtils';
+import { useDailySummary } from '@/composables/useDailySummary';
 
 /**
  * Store para cálculos financieros y balance de cuentas
  * Equivalente al flujo de caja empresarial
  * 
- * Este store recibe datos de transacciones y proporciona todos los cálculos financieros
- * necesarios de forma reutilizable y consistente
+ * 🚀 MIGRACIÓN A DAILYSUMMARY:
+ * Este store ahora actúa como wrapper híbrido:
+ * 1. Prioridad: Usar dailySummary (backend pre-calculado) si está disponible
+ * 2. Fallback: Calcular manualmente desde transacciones si dailySummary no existe
+ * 3. Mantener builders de transacciones (opening, closure, adjustments)
+ * 
+ * Ventajas:
+ * - ✅ Consistencia total backend-frontend
+ * - ✅ Cero cálculos en frontend (mejor rendimiento)
+ * - ✅ Single source of truth (dailySummary)
+ * - ✅ Retrocompatibilidad garantizada
  */
 export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   // ===== ESTADO =====
   const transactions = ref([]);
   const openingTransaction = ref(null);
+
+  // Estado para dailySummary (fuente primaria de datos)
+  const dailySummary = ref(null);
+  const isLoadingFromSummary = ref(false);
+  const summaryLoadError = ref(null);
 
   // ===== SETTERS PARA CONFIGURAR DATOS =====
 
@@ -38,12 +53,142 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     openingTransaction.value = opening;
   };
 
+  // ===== NUEVO: CARGA DESDE DAILYSUMMARY =====
+
+  /**
+   * 🚀 NUEVO: Cargar datos desde dailySummary (backend pre-calculado)
+   * Esta es la opción más eficiente y consistente.
+   * 
+   * @returns {Promise<boolean>} - True si se cargó exitosamente, false si no existe
+   */
+  const loadFromDailySummary = async () => {
+    isLoadingFromSummary.value = true;
+    summaryLoadError.value = null;
+
+    try {
+      console.log('📊 Cargando dailySummary...');
+      const summary = await getDailySummaryComposable().getTodayDailySummary();
+
+      if (summary) {
+        dailySummary.value = summary;
+
+        // 🔧 IMPORTANTE: Establecer openingTransaction desde dailySummary si existe
+        if (summary.openingData && getDailySummaryComposable().hasOpening(summary)) {
+          openingTransaction.value = {
+            uuid: summary.openingData.id,
+            type: 'opening',
+            realCashBalance: summary.openingData.realCashBalance,
+            realBankBalance: summary.openingData.realBankBalance,
+            totalBalance: summary.openingData.totalBalance,
+            // Campos adicionales que podrían existir
+            expectedCashBalance: summary.balances.expected.cash,
+            expectedBankBalance: summary.balances.expected.bank,
+          };
+          console.log('✅ OpeningTransaction establecida desde dailySummary');
+        } else {
+          openingTransaction.value = null;
+          console.log('ℹ️ No hay opening en dailySummary');
+        }
+
+        console.log('✅ DailySummary cargado exitosamente');
+        console.log('   - Ingresos:', getDailySummaryComposable().getTotalIngresos(summary));
+        console.log('   - Egresos:', getDailySummaryComposable().getTotalEgresos(summary));
+        console.log('   - Resultado:', getDailySummaryComposable().getResultadoOperacional(summary));
+        console.log('   - Has Opening:', getDailySummaryComposable().hasOpening(summary));
+        return true;
+      } else {
+        console.log('ℹ️ No existe dailySummary para hoy (se usará cálculo manual)');
+        dailySummary.value = null;
+        openingTransaction.value = null;
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error cargando dailySummary:', error);
+      summaryLoadError.value = error.message;
+      dailySummary.value = null;
+      openingTransaction.value = null;
+      return false;
+    } finally {
+      isLoadingFromSummary.value = false;
+    }
+  };
+
+  /**
+   * 🚀 NUEVO: Cargar dailySummary de un día específico
+   * 
+   * @param {string} dayString - Fecha en formato 'yyyy-LL-dd'
+   * @returns {Promise<boolean>} - True si se cargó exitosamente
+   */
+  const loadDailySummary = async (dayString) => {
+    isLoadingFromSummary.value = true;
+    summaryLoadError.value = null;
+
+    try {
+      const summary = await getDailySummaryComposable().getDailySummary(dayString);
+
+      if (summary) {
+        dailySummary.value = summary;
+
+        // 🔧 IMPORTANTE: Establecer openingTransaction desde dailySummary si existe
+        if (summary.openingData && getDailySummaryComposable().hasOpening(summary)) {
+          openingTransaction.value = {
+            uuid: summary.openingData.id,
+            type: 'opening',
+            realCashBalance: summary.openingData.realCashBalance,
+            realBankBalance: summary.openingData.realBankBalance,
+            totalBalance: summary.openingData.totalBalance,
+            expectedCashBalance: summary.balances.expected.cash,
+            expectedBankBalance: summary.balances.expected.bank,
+          };
+          console.log(`✅ OpeningTransaction de ${dayString} establecida`);
+        } else {
+          openingTransaction.value = null;
+        }
+
+        console.log(`✅ DailySummary de ${dayString} cargado`);
+        return true;
+      } else {
+        dailySummary.value = null;
+        openingTransaction.value = null;
+        return false;
+      }
+    } catch (error) {
+      console.error(`❌ Error cargando dailySummary de ${dayString}:`, error);
+      summaryLoadError.value = error.message;
+      dailySummary.value = null;
+      openingTransaction.value = null;
+      return false;
+    } finally {
+      isLoadingFromSummary.value = false;
+    }
+  };
+
+  /**
+   * Verifica si dailySummary está disponible
+   * @returns {boolean}
+   */
+  const hasDailySummary = computed(() => dailySummary.value !== null);
+
+  /**
+   * Helper para obtener una nueva instancia del composable
+   * Esto asegura reactividad correcta en los computed
+   */
+  const getDailySummaryComposable = () => useDailySummary();
+
+
   // ===== CÁLCULOS DE INGRESOS =====
 
   /**
    * Total de ingresos reales (ventas), excluyendo ajustes
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const totalIngresos = computed(() => {
+    // Prioridad 1: Usar dailySummary si está disponible
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getTotalIngresos(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
     );
@@ -51,8 +196,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Ingresos por efectivo, excluyendo ajustes de apertura
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const ingresosCash = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getIngresosCash(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx =>
         tx.type === 'income' &&
@@ -64,8 +216,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Ingresos por banco/digital, excluyendo ajustes de apertura
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const ingresosBank = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getIngresosBank(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx =>
         tx.type === 'income' &&
@@ -79,8 +238,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Total de egresos operativos, excluyendo ajustes
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const totalEgresos = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getTotalEgresos(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
     );
@@ -88,8 +254,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Egresos por efectivo, excluyendo ajustes
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const egresosCash = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getEgresosCash(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
@@ -101,8 +274,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Egresos por banco/digital, excluyendo ajustes
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const egresosBank = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getEgresosBank(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return sumTransactions(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
@@ -116,8 +296,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Transferencias que SALEN de efectivo (cash -> bank)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const transferenciasSalidaCash = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getNestedValue(dailySummary.value, 'transfers.cash.out', 0);
+    }
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'transfer' && tx.fromAccount === 'cash')
     );
@@ -125,8 +309,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Transferencias que ENTRAN a efectivo (bank -> cash)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const transferenciasEntradaCash = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getNestedValue(dailySummary.value, 'transfers.cash.in', 0);
+    }
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'transfer' && tx.toAccount === 'cash')
     );
@@ -134,8 +322,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Transferencias que SALEN de banco (bank -> cash)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const transferenciasSalidaBank = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getNestedValue(dailySummary.value, 'transfers.bank.out', 0);
+    }
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'transfer' && tx.fromAccount === 'bank')
     );
@@ -143,8 +335,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Transferencias que ENTRAN a banco (cash -> bank)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const transferenciasEntradaBank = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getNestedValue(dailySummary.value, 'transfers.bank.in', 0);
+    }
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'transfer' && tx.toAccount === 'bank')
     );
@@ -152,22 +348,35 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Efecto neto de transferencias en efectivo (entradas - salidas)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const efectoTransferenciasEnCash = computed(() => {
+    if (hasDailySummary.value) {
+      const valor = getDailySummaryComposable().getEfectoTransferenciasEnCash(dailySummary.value);
+      return valor;
+    }
     return subtractMoney(transferenciasEntradaCash.value, transferenciasSalidaCash.value);
   });
 
   /**
    * Efecto neto de transferencias en banco (entradas - salidas)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const efectoTransferenciasEnBank = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getEfectoTransferenciasEnBank(dailySummary.value);
+    }
     return subtractMoney(transferenciasEntradaBank.value, transferenciasSalidaBank.value);
   });
 
   /**
    * Total de transferencias realizadas (sin considerar dirección)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const totalTransferencias = computed(() => {
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getNestedValue(dailySummary.value, 'transfers.total', 0);
+    }
     return sumTransactions(
       transactions.value.filter(tx => tx.type === 'transfer')
     );
@@ -288,8 +497,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Total de ajustes de cierre solamente
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const totalAjustesCierre = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getTotalAjustesCierre(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     console.log("=== CALCULO TOTAL AJUSTES CIERRE EN STORE ===");
     console.log("Transacciones en store:", transactions.value.length);
 
@@ -310,24 +526,45 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Saldo inicial de efectivo según apertura
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a openingTransaction
    */
   const saldoInicialCash = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getSaldoInicialCash(dailySummary.value);
+    }
+
+    // Fallback: Usar openingTransaction
     return round2(openingTransaction.value?.realCashBalance ||
       openingTransaction.value?.totalCash || 0);
   });
 
   /**
    * Saldo inicial de banco según apertura
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a openingTransaction
    */
   const saldoInicialBank = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getSaldoInicialBank(dailySummary.value);
+    }
+
+    // Fallback: Usar openingTransaction
     return round2(openingTransaction.value?.realBankBalance ||
       openingTransaction.value?.totalBank || 0);
   });
 
   /**
    * Saldo inicial total
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const saldoInicial = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getSaldoInicial(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(saldoInicialCash.value, saldoInicialBank.value);
   });
 
@@ -335,8 +572,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Balance esperado de efectivo (saldo inicial + movimientos operativos + transferencias)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const expectedFinalCash = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getExpectedFinalCash(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(
       saldoInicialCash.value,
       ingresosCash.value,
@@ -347,8 +591,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Balance esperado de banco (saldo inicial + movimientos operativos + transferencias)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const expectedFinalBank = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getExpectedFinalBank(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(
       saldoInicialBank.value,
       ingresosBank.value,
@@ -359,8 +610,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Balance total esperado
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const expectedFinalTotal = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getExpectedFinalTotal(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(expectedFinalCash.value, expectedFinalBank.value);
   });
 
@@ -368,8 +626,17 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Saldo actual de efectivo (incluye transferencias y ajustes)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const saldoActualCash = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      console.log('=== OBTENIENDO SALDO ACTUAL CASH DESDE DAILYSUMMARY ===');
+      console.log('DailySummary:', dailySummary.value);
+      return getDailySummaryComposable().getSaldoActualCash(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(
       saldoInicialCash.value,
       ingresosCash.value,
@@ -381,8 +648,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Saldo actual de banco (incluye transferencias y ajustes)
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const saldoActualBank = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getSaldoActualBank(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(
       saldoInicialBank.value,
       ingresosBank.value,
@@ -394,8 +668,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
   /**
    * Saldo actual total
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const saldoActual = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getSaldoActual(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return addMoney(saldoActualCash.value, saldoActualBank.value);
   });
 
@@ -404,8 +685,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   /**
    * Resultado operacional del día (ventas - gastos, SIN ajustes)
    * Este es el KPI principal del negocio
+   * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const resultadoOperacional = computed(() => {
+    // Prioridad 1: Usar dailySummary
+    if (hasDailySummary.value) {
+      return getDailySummaryComposable().getResultadoOperacional(dailySummary.value);
+    }
+
+    // Fallback: Calcular manualmente
     return subtractMoney(totalIngresos.value, totalEgresos.value);
   });
 
@@ -619,16 +907,19 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     const bankDiff = calculateDifference(realBankBalance, expectedFinalBank.value);
 
     return {
+      // === IDENTIFICACIÓN ===
       uuid: generateUUID(),
       type: 'closure',
       description: 'Cierre de caja',
+      source: 'manual',
+      copilotMode: 'manual',
       openingReference: openingUuid,
 
-      // Saldos iniciales (de la apertura)
+      // === SALDOS INICIALES (de apertura) ===
       initialCashBalance: saldoInicialCash.value,
       initialBankBalance: saldoInicialBank.value,
 
-      // Movimientos del día
+      // === TOTALES GENERALES (sin ajustes) ===
       totalIngresos: totalIngresos.value,
       totalEgresos: totalEgresos.value,
       ingresosCash: ingresosCash.value,
@@ -636,24 +927,59 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       egresosCash: egresosCash.value,
       egresosBank: egresosBank.value,
 
-      // Balances esperados
+      // === TRANSFERENCIAS ===
+      totalTransferencias: totalTransferencias.value,
+      transferencias: {
+        cash: {
+          in: transferenciasEntradaCash.value,
+          out: transferenciasSalidaCash.value,
+          net: efectoTransferenciasEnCash.value
+        },
+        bank: {
+          in: transferenciasEntradaBank.value,
+          out: transferenciasSalidaBank.value,
+          net: efectoTransferenciasEnBank.value
+        }
+      },
+
+      // === AJUSTES ===
+      ajustesApertura: {
+        cash: ajustesAperturaCash.value,
+        bank: ajustesAperturaBank.value,
+        total: totalAjustesApertura.value
+      },
+      ajustesCierre: {
+        cash: ajustesCierreCash.value,
+        bank: ajustesCierreBank.value,
+        total: totalAjustesCierre.value
+      },
+
+      // === BALANCES ESPERADOS (sin ajustes cierre) ===
       expectedCashBalance: expectedFinalCash.value,
       expectedBankBalance: expectedFinalBank.value,
 
-      // Balances reales contados
+      // === BALANCES REALES (contados) ===
       realCashBalance: realCashBalance || 0,
       realBankBalance: realBankBalance || 0,
 
-      // Campos compatibles
+      // === DIFERENCIAS ===
+      cashDifference: cashDiff,
+      bankDifference: bankDiff,
+
+      // === RESULTADOS OPERACIONALES ===
+      resultadoOperacional: resultadoOperacional.value,
+      resultadoOperacionalCash: resultadoOperacionalCash.value,
+      resultadoOperacionalBank: resultadoOperacionalBank.value,
+      flujoNetoCash: flujoNetoCash.value,
+      flujoNetoBank: flujoNetoBank.value,
+
+      // === CAMPOS COMPATIBLES (legacy) ===
       totalCash: realCashBalance || 0,
       totalBank: realBankBalance || 0,
       cashAmount: realCashBalance || 0,
       bankAmount: realBankBalance || 0,
 
-      // Diferencias
-      cashDifference: cashDiff,
-      bankDifference: bankDiff,
-
+      // === ESTRUCTURA ESTÁNDAR ===
       items: [],
       itemsAndStockLogs: [],
       amount: 0,
@@ -771,6 +1097,14 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   }));
 
   return {
+    // ===== NUEVO: ESTADO Y MÉTODOS DE DAILYSUMMARY =====
+    dailySummary,
+    isLoadingFromSummary,
+    summaryLoadError,
+    hasDailySummary,
+    loadFromDailySummary,
+    loadDailySummary,
+
     // Estado
     transactions,
     openingTransaction,
@@ -850,3 +1184,4 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     buildClosureAdjustments,
   };
 });
+

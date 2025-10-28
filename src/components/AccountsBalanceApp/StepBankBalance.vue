@@ -95,6 +95,13 @@
                 S/ {{ accountsBalanceStore.egresosBank.toFixed(2) }}
               </span>
             </div>
+            <div class="flex justify-between text-purple-700">
+              <span>Neto transferencias:</span>
+              <span class="font-semibold tabular-nums">
+                S/
+                {{ accountsBalanceStore.efectoTransferenciasEnBank.toFixed(2) }}
+              </span>
+            </div>
             <div
               class="pt-2 border-t border-purple-300 flex justify-between font-bold"
             >
@@ -346,7 +353,24 @@ const findOpeningToday = () => {
 };
 
 // Configurar el accountsBalanceStore
-const setupBalanceStore = () => {
+const setupBalanceStore = async () => {
+  console.log("📊 StepBankBalance - Configurando balance store...");
+
+  // 🚀 NUEVO: Intentar cargar desde dailySummary primero
+  const loaded = await accountsBalanceStore.loadFromDailySummary();
+
+  if (loaded) {
+    console.log(
+      "✅ StepBankBalance - Usando dailySummary (backend pre-calculado)"
+    );
+    return;
+  }
+
+  // Fallback: Cargar transacciones manualmente (legacy)
+  console.log(
+    "ℹ️ StepBankBalance - DailySummary no disponible, usando transacciones"
+  );
+
   if (isOpeningMode.value) {
     accountsBalanceStore.setTransactions([]);
   } else {
@@ -376,7 +400,7 @@ onMounted(async () => {
       findOpeningToday();
     }
 
-    setupBalanceStore();
+    await setupBalanceStore();
 
     // Establecer el valor esperado como valor inicial
     realBankBalance.value = expectedBankBalance.value;
