@@ -55,7 +55,7 @@ const itemToAddInTransaction = ref({
 const currentStepOfAddTransaction = ref(0);
 
 export function useTransactionStore() {
-  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps, getLastClosureTransactions } = useTransaccion();
+  const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps, getTransactionsByDay, getLastClosureTransactions } = useTransaccion();
   const { createStockLog, deleteStockLog } = useInventory();
   const { logTransactionOperation, logInventoryOperation, startOperationChain } = useTraceability();
 
@@ -317,6 +317,46 @@ export function useTransactionStore() {
           severity: 'medium',
           tags: ['data_error', 'fetch_failure', 'daily_data'],
           component: 'TransactionStore.getTransactionsToday'
+        }
+      );
+    }
+  }
+
+  /**
+   * Obtiene las transacciones de un día específico y las almacena en transactionsInStore
+   * @param {string} dayString - Fecha en formato 'yyyy-MM-dd'
+   */
+  const getTransactionsByDayStore = async (dayString) => {
+    try {
+      // === TRAZABILIDAD: Log de acceso a datos del día específico ===
+      await logTransactionOperation(
+        'read',
+        'day_transactions',
+        { action: 'fetch_day_transactions', date: dayString },
+        {
+          reason: 'data_access_specific_day_transactions',
+          severity: 'low',
+          tags: ['data_read', 'transaction_list', 'daily_data', 'specific_date'],
+          component: 'TransactionStore.getTransactionsByDayStore'
+        }
+      );
+
+      transactionsInStore.value = await getTransactionsByDay(dayString);
+      console.log(`✅ Transactions for ${dayString} fetched with traceability`);
+
+    } catch (error) {
+      console.error(`❌ Error fetching transactions for ${dayString}:`, error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'day_transactions',
+        { error: error.message, date: dayString },
+        {
+          reason: 'fetch_day_transactions_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'daily_data', 'specific_date'],
+          component: 'TransactionStore.getTransactionsByDayStore'
         }
       );
     }
@@ -697,6 +737,7 @@ export function useTransactionStore() {
     addTransaction,
     getTransactions,
     getTransactionsToday,
+    getTransactionsByDayStore,
     getLastClosures,
     getOneTransactionDataByID,
     getAllIncomeTransactionsInStore,

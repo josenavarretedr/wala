@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { Eye, EyeClosed } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
@@ -91,6 +91,14 @@ import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
 import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
 import CardViewAllRecords from "@/components/HistorialRecords/CardViewAllRecords.vue";
+
+// Props
+const props = defineProps({
+  dayString: {
+    type: String,
+    default: null, // Si no se pasa, usa el día de hoy
+  },
+});
 
 // Estado del toggle
 const showRecords = ref(false);
@@ -138,7 +146,27 @@ function getRecordComponent(type) {
   }
 }
 
-await transactionStore.getTransactionsToday();
+// Cargar transacciones según el día
+const loadTransactions = async () => {
+  if (props.dayString) {
+    // Cargar transacciones de un día específico
+    await transactionStore.getTransactionsByDayStore(props.dayString);
+  } else {
+    // Cargar transacciones del día actual
+    await transactionStore.getTransactionsToday();
+  }
+};
+
+// Cargar al montar
+loadTransactions();
+
+// Watch para recargar cuando cambie el día
+watch(
+  () => props.dayString,
+  () => {
+    loadTransactions();
+  }
+);
 </script>
 
 <style scoped>

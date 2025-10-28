@@ -214,12 +214,112 @@ const finalizarRegistro = async () => {
         generateUUID,
       });
 
-      console.log("✅ Transacción de apertura construida:", openingTransaction);
+      // ✅ DEBUG DETALLADO: Validar estructura ANTES de guardar
+      console.log("=== 🔍 APERTURA CONSTRUIDA (ANTES DE GUARDAR) ===");
+      console.log("📋 Campos Básicos:");
+      console.log("   - UUID:", openingTransaction.uuid);
+      console.log("   - ID:", openingTransaction.id);
+      console.log("   - Type:", openingTransaction.type);
+      console.log("   - Description:", openingTransaction.description);
+
+      console.log("🎯 Origen:");
+      console.log("   - Source:", openingTransaction.source);
+      console.log("   - CopilotMode:", openingTransaction.copilotMode);
+
+      console.log("💰 Balances:");
+      console.log(
+        "   - Expected Cash:",
+        openingTransaction.expectedCashBalance
+      );
+      console.log(
+        "   - Expected Bank:",
+        openingTransaction.expectedBankBalance
+      );
+      console.log("   - Real Cash:", openingTransaction.realCashBalance);
+      console.log("   - Real Bank:", openingTransaction.realBankBalance);
+      console.log("   - Total Balance:", openingTransaction.totalBalance);
+
+      console.log("📊 Diferencias:");
+      console.log("   - Cash Diff:", openingTransaction.cashDifference);
+      console.log("   - Bank Diff:", openingTransaction.bankDifference);
+
+      console.log("🔄 Transferencias:");
+      console.log("   - Total:", openingTransaction.totalTransferencias);
+      console.log("   - Cash:", openingTransaction.transferencias?.cash);
+      console.log("   - Bank:", openingTransaction.transferencias?.bank);
+
+      console.log("⚙️ Ajustes:");
+      console.log("   - Apertura:", openingTransaction.ajustesApertura);
+      console.log("   - Cierre:", openingTransaction.ajustesCierre);
+
+      console.log("📈 Operacionales:");
+      console.log("   - Resultado:", openingTransaction.resultadoOperacional);
+      console.log("   - Flujo Cash:", openingTransaction.flujoNetoCash);
+      console.log("   - Flujo Bank:", openingTransaction.flujoNetoBank);
+
+      console.log("🏷️ Metadata:");
+      console.log("   - Metadata:", openingTransaction.metadata);
+
+      console.log("🔑 Referencias:");
+      console.log(
+        "   - Last Closure Ref:",
+        openingTransaction.lastClosureReference
+      );
+      console.log("   - Opening Ref:", openingTransaction.openingReference);
+
+      // Validar campos críticos
+      const requiredFields = [
+        "uuid",
+        "id",
+        "type",
+        "source",
+        "copilotMode",
+        "expectedCashBalance",
+        "expectedBankBalance",
+        "realCashBalance",
+        "realBankBalance",
+        "transferencias",
+        "ajustesApertura",
+        "ajustesCierre",
+        "totalIngresos",
+        "totalEgresos",
+        "metadata",
+      ];
+
+      const missingFields = requiredFields.filter(
+        (field) => !(field in openingTransaction)
+      );
+
+      if (missingFields.length > 0) {
+        console.error("❌ CAMPOS FALTANTES EN APERTURA:", missingFields);
+        throw new Error(
+          `Opening transaction is missing fields: ${missingFields.join(", ")}`
+        );
+      }
+
+      console.log("✅ Validación de estructura completada");
+      console.log(
+        "📝 Total de campos:",
+        Object.keys(openingTransaction).length
+      );
+      console.log("📄 ESTRUCTURA COMPLETA (JSON):");
+      console.log(JSON.stringify(openingTransaction, null, 2));
+      console.log("===========================================");
 
       // Guardar transacción de apertura
       transactionStore.transactionToAdd.value = openingTransaction;
+
+      console.log("💾 Guardando en Firestore...");
       await transactionStore.addTransaction();
+
       console.log("✅ Transacción de apertura guardada en Firebase");
+      console.log("🔍 VERIFICAR EN FIRESTORE CONSOLE:");
+      console.log(
+        `   Path: businesses/${businessStore.getBusinessId}/transactions/${openingTransaction.uuid}`
+      );
+      console.log(
+        "Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, metadata"
+      );
 
       // Calcular diferencias
       const cashDiff = accountsBalanceStore.calculateDifference(
@@ -261,6 +361,12 @@ const finalizarRegistro = async () => {
         throw new Error("No se encontró la apertura del día");
       }
 
+      console.log("📂 Apertura del día encontrada:", {
+        uuid: openingData.value.uuid,
+        realCashBalance: openingData.value.realCashBalance,
+        realBankBalance: openingData.value.realBankBalance,
+      });
+
       // Construir transacción de cierre
       const closureTransaction = accountsBalanceStore.buildClosureTransaction({
         openingUuid: openingData.value.uuid,
@@ -269,12 +375,91 @@ const finalizarRegistro = async () => {
         generateUUID,
       });
 
-      console.log("✅ Transacción de cierre construida:", closureTransaction);
+      // ✅ DEBUG DETALLADO: Validar estructura ANTES de guardar
+      console.log("=== 🔍 CIERRE CONSTRUIDO (ANTES DE GUARDAR) ===");
+      console.log("📋 Campos Básicos:");
+      console.log("   - UUID:", closureTransaction.uuid);
+      console.log("   - ID:", closureTransaction.id);
+      console.log("   - Type:", closureTransaction.type);
+      console.log("   - Description:", closureTransaction.description);
+
+      console.log("🎯 Origen:");
+      console.log("   - Source:", closureTransaction.source);
+      console.log("   - CopilotMode:", closureTransaction.copilotMode);
+
+      console.log("💰 Balances:");
+      console.log("   - Initial Cash:", closureTransaction.initialCashBalance);
+      console.log("   - Initial Bank:", closureTransaction.initialBankBalance);
+      console.log(
+        "   - Expected Cash:",
+        closureTransaction.expectedCashBalance
+      );
+      console.log(
+        "   - Expected Bank:",
+        closureTransaction.expectedBankBalance
+      );
+      console.log("   - Real Cash:", closureTransaction.realCashBalance);
+      console.log("   - Real Bank:", closureTransaction.realBankBalance);
+
+      console.log("📊 Diferencias:");
+      console.log("   - Cash Diff:", closureTransaction.cashDifference);
+      console.log("   - Bank Diff:", closureTransaction.bankDifference);
+
+      console.log("📈 Totales del Día:");
+      console.log("   - Total Ingresos:", closureTransaction.totalIngresos);
+      console.log("   - Total Egresos:", closureTransaction.totalEgresos);
+      console.log("   - Ingresos Cash:", closureTransaction.ingresosCash);
+      console.log("   - Ingresos Bank:", closureTransaction.ingresosBank);
+
+      console.log("🔄 Transferencias:");
+      console.log("   - Total:", closureTransaction.totalTransferencias);
+      console.log("   - Cash:", closureTransaction.transferencias?.cash);
+      console.log("   - Bank:", closureTransaction.transferencias?.bank);
+
+      console.log("⚙️ Ajustes:");
+      console.log("   - Apertura:", closureTransaction.ajustesApertura);
+      console.log("   - Cierre:", closureTransaction.ajustesCierre);
+
+      console.log("📈 Operacionales:");
+      console.log("   - Resultado:", closureTransaction.resultadoOperacional);
+      console.log(
+        "   - Resultado Cash:",
+        closureTransaction.resultadoOperacionalCash
+      );
+      console.log(
+        "   - Resultado Bank:",
+        closureTransaction.resultadoOperacionalBank
+      );
+      console.log("   - Flujo Cash:", closureTransaction.flujoNetoCash);
+      console.log("   - Flujo Bank:", closureTransaction.flujoNetoBank);
+
+      console.log("🏷️ Metadata:");
+      console.log("   - Metadata:", closureTransaction.metadata);
+
+      console.log("🔑 Referencias:");
+      console.log("   - Opening Ref:", closureTransaction.openingReference);
+
+      console.log("✅ Validación de estructura completada");
+      console.log(
+        "📝 Total de campos:",
+        Object.keys(closureTransaction).length
+      );
+      console.log("===========================================");
 
       // Guardar transacción de cierre
       transactionStore.transactionToAdd.value = closureTransaction;
+
+      console.log("💾 Guardando cierre en Firestore...");
       await transactionStore.addTransaction();
+
       console.log("✅ Transacción de cierre guardada en Firebase");
+      console.log("🔍 VERIFICAR EN FIRESTORE CONSOLE:");
+      console.log(
+        `   Path: businesses/${businessStore.getBusinessId}/transactions/${closureTransaction.uuid}`
+      );
+      console.log(
+        "   Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, ajustesCierre, metadata"
+      );
 
       // Construir ajustes si hay diferencias
       const adjustments = accountsBalanceStore.buildClosureAdjustments({

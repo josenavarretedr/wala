@@ -153,30 +153,76 @@ async function createAutoOpening(db, businessId, day, lastClosure, tz = DEFAULT_
 
   // Estructura completa de apertura automática
   const openingTransaction = {
+    // === IDENTIFICACIÓN ===
     uuid: openingUuid,
+    id: openingUuid, // Compatibilidad con sharedComputed.js
     type: 'opening',
     description: 'Apertura automática generada por el sistema',
     source: 'copilot',
     copilotMode: 'auto_opening',
 
-    // Saldos iniciales (copiados del cierre anterior)
+    // === BALANCES ===
+    expectedCashBalance: cashBalance, // = último cierre
+    expectedBankBalance: bankBalance, // = último cierre
     realCashBalance: cashBalance,
     realBankBalance: bankBalance,
+
+    // === DIFERENCIAS (0 en auto-opening) ===
+    cashDifference: 0,
+    bankDifference: 0,
+
+    // === TOTALES OPERACIONALES (siempre 0 en apertura) ===
+    totalIngresos: 0,
+    totalEgresos: 0,
+    ingresosCash: 0,
+    ingresosBank: 0,
+    egresosCash: 0,
+    egresosBank: 0,
+
+    // === TRANSFERENCIAS (siempre 0 en apertura) ===
+    totalTransferencias: 0,
+    transferencias: {
+      cash: { in: 0, out: 0, net: 0 },
+      bank: { in: 0, out: 0, net: 0 }
+    },
+
+    // === AJUSTES ===
+    ajustesApertura: {
+      cash: 0,
+      bank: 0,
+      total: 0
+    },
+    ajustesCierre: {
+      cash: 0,
+      bank: 0,
+      total: 0
+    },
+
+    // === RESULTADOS OPERACIONALES (siempre 0 en apertura) ===
+    resultadoOperacional: 0,
+    resultadoOperacionalCash: 0,
+    resultadoOperacionalBank: 0,
+    flujoNetoCash: 0,
+    flujoNetoBank: 0,
+
+    // === CAMPOS COMPATIBLES (legacy) ===
     totalCash: cashBalance,
     totalBank: bankBalance,
-
-    // Campos compatibles con diferentes versiones del sistema
+    totalBalance: cashBalance + bankBalance,
     cashAmount: cashBalance,
     bankAmount: bankBalance,
-    amount: 0, // Apertura no tiene monto de transacción
 
+    // === ESTRUCTURA ESTÁNDAR ===
     items: [],
     itemsAndStockLogs: [],
+    amount: 0,
 
-    // Referencia al cierre del que se tomaron los datos
-    previousClosureReference: lastClosure.id,
+    // === REFERENCIAS ===
+    openingReference: null,
+    lastClosureReference: lastClosure.id,
+    previousClosureReference: lastClosure.id, // legacy compatibility
 
-    // Metadata para trazabilidad
+    // === METADATA (mejorada) ===
     metadata: {
       day: day,
       triggerType: 'auto_opening',

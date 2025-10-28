@@ -212,6 +212,11 @@ const routes = [
         path: 'expenses',
         name: 'ExpensesView',
         component: () => import('@/views/Expenses/ExpensesView.vue'),
+      },
+      {
+        path: 'streak',
+        name: 'StreakView',
+        component: () => import('@/views/StreakView.vue'),
       }
     ]
   },

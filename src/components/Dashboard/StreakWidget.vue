@@ -7,7 +7,7 @@
         ? 'p-3 sm:p-4 flex flex-col justify-center'
         : 'bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 hover:shadow-md flex flex-col',
     ]"
-    @click="showModal = true"
+    @click="goToStreakView"
   >
     <!-- Línea principal: icono + número -->
     <div class="flex items-center justify-center gap-3 sm:gap-4">
@@ -189,7 +189,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { FireFlame, SnowFlake } from "@iconoir/vue";
@@ -203,6 +203,7 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const router = useRouter();
 
 // Reactive data
 const streakData = ref(null);
@@ -290,6 +291,16 @@ const formatDate = (timestamp) => {
     month: "short",
     year: "numeric",
   });
+};
+
+// Navigate to StreakView
+const goToStreakView = () => {
+  if (businessId.value) {
+    router.push({
+      name: "StreakView",
+      params: { businessId: businessId.value },
+    });
+  }
 };
 
 // Load streak data from Firestore

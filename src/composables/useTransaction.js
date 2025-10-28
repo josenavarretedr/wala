@@ -125,6 +125,43 @@ export function useTransaccion() {
     return transactions;
   };
 
+  /**
+   * Obtiene las transacciones de un día específico
+   * @param {string} dayString - Fecha en formato 'yyyy-MM-dd'
+   * @returns {Promise<Array>} - Array de transacciones del día
+   */
+  const getTransactionsByDay = async (dayString) => {
+    const businessId = ensureBusinessId();
+    console.log('Obteniendo transacciones del día:', dayString);
+
+    let transactions = [];
+
+    // Parsear la fecha del string yyyy-MM-dd
+    const [year, month, day] = dayString.split('-').map(Number);
+
+    // Inicio del día (00:00:00)
+    const startOfDay = new Date(year, month - 1, day);
+
+    // Final del día (23:59:59)
+    const endOfDay = new Date(year, month - 1, day + 1);
+
+    const q = query(
+      collection(db, `businesses/${businessId}/transactions`),
+      where("createdAt", ">=", startOfDay),
+      where("createdAt", "<", endOfDay)
+    );
+
+    // Ejecutar la consulta
+    const querySnapshot = await getDocs(q);
+    querySnapshot.forEach((doc) => {
+      transactions.push(doc.data());
+    });
+
+    console.log(`✅ Se obtuvieron ${transactions.length} transacciones del día ${dayString}`);
+
+    return transactions;
+  };
+
   const getTransactionsRange = async (startDate, endDate) => {
     // Implementar función para obtener transacciones en un rango de fechas
     const businessId = ensureBusinessId();
@@ -217,6 +254,7 @@ export function useTransaccion() {
     updateTransaction,
     deleteTransactionByID,
     getTransactionsTodayCmps,
+    getTransactionsByDay,
     getTransactionsRange,
     getAllTransactions,
     getTransactionByID,

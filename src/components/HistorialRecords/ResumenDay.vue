@@ -198,7 +198,7 @@
 
 <script setup>
 import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 
 const showResume = ref(false);
@@ -225,6 +225,31 @@ const saldoActual = computed(() => accountsBalanceStore.saldoActual);
 
 const saldoActualCash = computed(() => accountsBalanceStore.saldoActualCash);
 const saldoActualBank = computed(() => accountsBalanceStore.saldoActualBank);
+
+// 🔄 Watch para detectar cambios en transacciones y recargar automáticamente
+watch(
+  () => accountsBalanceStore.transactions,
+  async (newTransactions) => {
+    if (newTransactions && newTransactions.length > 0) {
+      console.log(
+        "🔄 ResumenDay - Detectados cambios en transacciones, recargando..."
+      );
+      await accountsBalanceStore.forceReloadSummary();
+    }
+  },
+  { deep: true }
+);
+
+// 🔄 Watch para detectar cambios en dailySummary directamente
+watch(
+  () => accountsBalanceStore.dailySummary,
+  (newSummary) => {
+    if (newSummary) {
+      console.log("✅ ResumenDay - DailySummary actualizado automáticamente");
+    }
+  },
+  { deep: true }
+);
 
 // Inicialización
 onMounted(async () => {
