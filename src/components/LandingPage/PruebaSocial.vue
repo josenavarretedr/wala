@@ -1,25 +1,11 @@
 <template>
   <section
     id="prueba-social-section"
-    class="py-16 sm:py-20 px-4 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden"
+    class="py-16 sm:py-20 px-4 relative overflow-hidden"
   >
-    <!-- Sombras sutiles de fondo (coherente con otras secciones) -->
-    <div
-      class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
-    >
-      <div
-        class="absolute top-0 left-0 w-96 h-96 bg-blue-50 rounded-full filter blur-3xl opacity-30"
-      ></div>
-      <div
-        class="absolute bottom-0 right-0 w-96 h-96 bg-emerald-50 rounded-full filter blur-3xl opacity-30"
-      ></div>
-    </div>
-
     <div class="max-w-6xl mx-auto">
       <!-- Contenedor principal tipo card (estilo HistorialRecords) -->
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 transition-all duration-200 hover:shadow-md hover:border-gray-200 mb-8"
-      >
+      <div class="bg-white p-6 sm:p-8 md:p-12 transition-all duration-200 mb-8">
         <!-- Badge superior -->
         <div class="flex justify-center mb-6">
           <div

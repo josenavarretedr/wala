@@ -26,6 +26,7 @@
             class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-700"
           >
             <span class="text-2xl">💡</span>
+            <QuestionMark class="w-5 h-5 text-orange-600" />
             <span class="text-sm font-medium">La solución</span>
           </div>
         </div>

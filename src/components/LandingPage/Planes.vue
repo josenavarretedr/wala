@@ -1,20 +1,8 @@
 <template>
   <section
     id="planes-section"
-    class="py-16 sm:py-20 px-4 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden"
+    class="py-16 sm:py-20 px-4 relative overflow-hidden"
   >
-    <!-- Sombras sutiles de fondo (coherente con otras secciones) -->
-    <div
-      class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
-    >
-      <div
-        class="absolute top-0 right-0 w-96 h-96 bg-purple-50 rounded-full filter blur-3xl opacity-30"
-      ></div>
-      <div
-        class="absolute bottom-0 left-0 w-96 h-96 bg-orange-50 rounded-full filter blur-3xl opacity-30"
-      ></div>
-    </div>
-
     <div class="max-w-6xl mx-auto">
       <!-- Contenedor principal tipo card (estilo HistorialRecords) -->
       <div
@@ -25,7 +13,7 @@
           <div
             class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
           >
-            <span class="text-2xl">💸</span>
+            <!-- <span class="text-2xl">💸</span> -->
             <span class="text-sm font-medium">Planes y Precios</span>
           </div>
         </div>
@@ -56,7 +44,7 @@
           class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all duration-200 hover:shadow-lg hover:border-emerald-300 hover:-translate-y-1 relative"
         >
           <!-- Badge del plan -->
-          <div class="flex justify-center mb-4">
+          <!-- <div class="flex justify-center mb-4">
             <div
               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700"
             >
@@ -65,13 +53,13 @@
                 >Gratis</span
               >
             </div>
-          </div>
+          </div> -->
 
           <!-- Nombre del plan -->
           <h3
             class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center"
           >
-            Core
+            Básico
           </h3>
 
           <!-- Precio -->
@@ -156,16 +144,16 @@
           </div>
 
           <!-- Badge del plan -->
-          <div class="flex justify-center mb-4 mt-2">
+          <!-- <div class="flex justify-center mb-4 mt-2">
             <div
               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
             >
               <span class="text-lg">🟣</span>
               <span class="text-xs font-semibold uppercase tracking-wide"
-                >Premium</span
+                >Pro</span
               >
             </div>
-          </div>
+          </div> -->
 
           <!-- Nombre del plan -->
           <h3
@@ -254,7 +242,7 @@
           class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all duration-200 hover:shadow-lg hover:border-orange-300 hover:-translate-y-1 relative"
         >
           <!-- Badge del plan -->
-          <div class="flex justify-center mb-4">
+          <!-- <div class="flex justify-center mb-4">
             <div
               class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700"
             >
@@ -263,7 +251,7 @@
                 >Institucional</span
               >
             </div>
-          </div>
+          </div> -->
 
           <!-- Nombre del plan -->
           <h3

@@ -25,7 +25,7 @@
           <div
             class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-orange-700"
           >
-            <span class="text-2xl">❓</span>
+            <QuestionMark class="w-5 h-5 text-orange-600" />
             <span class="text-sm font-medium">Preguntas Frecuentes</span>
           </div>
         </div>
@@ -324,6 +324,7 @@ import {
   Shield,
   Heart,
   NavArrowDown,
+  QuestionMark,
   Number1Square,
   Number2Square,
   Number3Square,

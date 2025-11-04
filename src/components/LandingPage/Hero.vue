@@ -14,17 +14,8 @@
             <img
               src="@/assets/logoWala2.png"
               alt="WALA - Tu copiloto digital para negocios"
-              class="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 mx-auto mb-4 animate-fadeInScale"
+              class="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto animate-fadeInScale"
             />
-            <!-- Badge debajo del logo -->
-            <!-- <div
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-orange-700"
-            >
-              <span
-                class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"
-              ></span>
-              <span class="text-sm font-medium">Tu copiloto para crecer</span>
-            </div> -->
           </div>
         </div>
 
