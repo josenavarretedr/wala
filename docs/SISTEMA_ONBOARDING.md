@@ -146,33 +146,56 @@ Los estilos están en `/assets/css/onboarding.css`. Puedes personalizar:
 
 ## 📊 Persistencia en Firestore
 
-Los datos se guardan en:
+Los datos se guardan en una **subcolección `settings/onboarding`** dentro del documento del negocio:
 
 ```
-users/{userId}/settings/onboarding
+businesses/{businessId}/settings/onboarding
 ```
 
 Estructura del documento:
 
 ```javascript
 {
-  completedTours: ['dashboard-tour', 'transactions-tour'],
+  // Tours completados por usuario (objeto con UIDs como keys)
+  completedTours: {
+    'userId1': ['dashboard-tour', 'transactions-tour'],
+    'userId2': ['dashboard-tour']
+  },
+
+  // Último tour completado (metadatos)
   lastTourCompleted: {
     tourId: 'dashboard-tour',
-    completedAt: '2025-10-28T...',
-    userId: 'abc123'
+    completedAt: '2025-11-02T...',
+    userId: 'abc123',
+    businessId: 'business123'
   },
+
+  // Tracking de inicios de tours (analytics)
   tourStarts: [
     {
       tourId: 'dashboard-tour',
-      startedAt: '2025-10-28T...',
-      userId: 'abc123'
+      startedAt: '2025-11-02T...',
+      userId: 'abc123',
+      businessId: 'business123'
     }
   ],
-  createdAt: '2025-10-28T...',
-  updatedAt: '2025-10-28T...'
+
+  createdAt: '2025-11-02T...',
+  updatedAt: '2025-11-02T...'
 }
 ```
+
+### 🔑 Ventajas de guardar en subcolección settings/:
+
+- ✅ Cada usuario puede completar tours independientemente en cada negocio
+- ✅ Los gerentes pueden ver estadísticas de onboarding de su negocio
+- ✅ Analytics por negocio (no mezcla datos entre negocios)
+- ✅ Si un usuario trabaja en varios negocios, cada uno tiene su propio progreso
+- ✅ Mejor organización: Configuraciones separadas del documento principal
+- ✅ Escalabilidad: Permite agregar más configuraciones en `settings/`
+- ✅ Rendimiento: Lecturas más específicas sin cargar todo el documento business
+
+**Nota**: Para más detalles sobre la estructura completa del documento business, consulta: [`BUSINESS_DOCUMENT_STRUCTURE.md`](./BUSINESS_DOCUMENT_STRUCTURE.md)
 
 ## 🎛️ API del Composable `useOnboarding`
 

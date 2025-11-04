@@ -111,7 +111,7 @@
 
         <!-- CTA Ultra Directo -->
         <div class="mt-16 md:mt-20">
-          <button class="wow-cta-button">
+          <button class="wow-cta-button" @click="goToLogin">
             Quiero lo mejor para mi negocio ahora
           </button>
 
@@ -125,7 +125,14 @@
 </template>
 
 <script setup>
-// Script minimalista - sin animaciones complejas
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+
+// Función para redirigir a login
+const goToLogin = () => {
+  router.push("/auth/login");
+};
 </script>
 
 <style scoped>

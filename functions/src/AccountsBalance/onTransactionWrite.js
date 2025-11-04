@@ -57,6 +57,12 @@ module.exports = functions.firestore
     const businessDoc = await db.doc(`businesses/${businessId}`).get();
     const tz = (businessDoc.exists && businessDoc.data().timezone) || DEFAULT_TZ;
 
+    // Verificar que el negocio aún existe
+    if (!businessDoc.exists) {
+      console.log(`⚠️  Business ${businessId} no longer exists, skipping aggregation`);
+      return null;
+    }
+
     const day = dayFromTimestamp(doc.createdAt, tz);
     console.log(`📅 Processing day: ${day} (tz: ${tz})`);
 

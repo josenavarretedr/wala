@@ -100,6 +100,14 @@ const routes = [
         meta: { role: 'gerente', title: 'Datos del Negocio' }
       },
 
+      // ✅ NUEVO: Ruta de planes y suscripciones
+      {
+        path: 'plans',
+        name: 'BusinessPlans',
+        component: () => import('@/views/Plans/PlansView.vue'),
+        meta: { title: 'Planes y Suscripciones' }
+      },
+
       // Rutas de transacciones
       {
         path: 'income',
@@ -166,6 +174,13 @@ const routes = [
         name: 'TraceabilityTesting',
         component: () => import('@/views/TraceabilityTesting.vue'),
         meta: { role: 'gerente', title: 'Testing de Trazabilidad' }
+      },
+      // ✅ NUEVO: Ruta para testing del sistema de suscripciones
+      {
+        path: 'testing/subscription',
+        name: 'SubscriptionTesting',
+        component: () => import('@/views/Testing/SubscriptionTest.vue'),
+        meta: { title: 'Testing de Suscripciones' }
       },
       {
         path: 'inventory',
@@ -383,6 +398,29 @@ router.beforeEach(async (to, from, next) => {
       // Si el negocio ya estaba cargado pero el loader está visible, ocultarlo
       console.log('📍 Router: Negocio ya cargado, ocultando loader')
       loader.hide()
+    }
+
+    // ==========================================
+    // 🔐 NUEVO: Verificar feature requerida por ruta
+    // ==========================================
+    if (to.meta.requiresFeature) {
+      const hasFeature = businessStore.hasFeature(to.meta.requiresFeature)
+
+      if (!hasFeature) {
+        console.log('❌ Feature no disponible:', to.meta.requiresFeature)
+        console.log('🔄 Redirigiendo a página de planes...')
+        
+        // Redirigir a página de planes con el query param de la feature bloqueada
+        return next({
+          path: `/business/${businessId}/plans`,
+          query: { 
+            feature: to.meta.requiresFeature,
+            from: to.path
+          }
+        })
+      } else {
+        console.log('✅ Feature disponible:', to.meta.requiresFeature)
+      }
     }
 
     // Verificar permisos específicos usando BusinessStore

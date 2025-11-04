@@ -62,16 +62,40 @@ Completa tour → Guarda en Firestore
 ## 💾 Estructura en Firestore
 
 ```
-users/
-  {userId}/
-    settings/
-      onboarding/
-        - completedTours: ['dashboard-tour']
-        - lastTourCompleted: {...}
-        - tourStarts: [{...}]
-        - createdAt: timestamp
-        - updatedAt: timestamp
+business/
+  {businessId}/
+    - nombre: "Mi Negocio"
+    - tipo: "restaurante"
+    - ... otros campos ...
+    - onboarding: {
+        completedTours: {
+          userId1: ['dashboard-tour'],
+          userId2: ['dashboard-tour', 'transactions-tour']
+        },
+        lastTourCompleted: {...},
+        tourStarts: [{...}],
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }
 ```
+
+**Ruta del documento**: `business/{businessId}`  
+**Campo de onboarding**: `onboarding` (objeto dentro del documento)
+
+### 🔑 Ventajas:
+
+- ✅ **Simple y directo** - Todo en un solo documento
+- ✅ **Sin subcollecciones** - Menos complejidad
+- ✅ **Queries eficientes** - Un solo read para obtener el negocio completo
+- ✅ **Fácil de mantener** - Datos del onboarding junto con el negocio
+
+### 🔑 Por qué guardar por negocio:
+
+- ✅ Cada usuario completa tours por negocio
+- ✅ Un usuario puede trabajar en múltiples negocios
+- ✅ Cada negocio tiene sus propias estadísticas
+- ✅ Los gerentes pueden ver quién completó los tours
+- ✅ Analytics más precisos y separados por negocio
 
 ## 🎨 Características Visuales
 

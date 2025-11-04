@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router';
 import { doc, setDoc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db } from '@/firebaseInit';
 import { useAuthStore } from '@/stores/authStore';
+import { useBusinessStore } from '@/stores/businessStore';
 
 // Importar todas las configuraciones de onboarding
 import { onboardingConfigs } from '@/config/onboarding';
@@ -14,7 +15,7 @@ import { onboardingConfigs } from '@/config/onboarding';
  * 
  * Proporciona funcionalidades para:
  * - Iniciar tours guiados por vista
- * - Persistir progreso en Firestore
+ * - Persistir progreso en Firestore por negocio
  * - Auto-iniciar en primera visita
  * - Tracking de analytics
  * 
@@ -23,6 +24,7 @@ import { onboardingConfigs } from '@/config/onboarding';
 export function useOnboarding() {
   const route = useRoute();
   const authStore = useAuthStore();
+  const businessStore = useBusinessStore();
 
   const driverInstance = ref(null);
   const isActive = ref(false);
@@ -46,20 +48,27 @@ export function useOnboarding() {
   };
 
   /**
-   * Verifica si el usuario ya completó un tour específico
+   * Verifica si el usuario ya completó un tour específico en el negocio actual
    * @param {string} tourId - ID del tour
    * @returns {Promise<boolean>}
    */
   const hasCompletedTour = async (tourId) => {
-    if (!authStore.user?.uid) return false;
+    const businessId = businessStore.getBusinessId;
+
+    if (!authStore.user?.uid || !businessId) {
+      console.warn('⚠️ No hay usuario o negocio activo');
+      return false;
+    }
 
     try {
-      const userOnboardingRef = doc(db, 'users', authStore.user.uid, 'settings', 'onboarding');
-      const docSnap = await getDoc(userOnboardingRef);
+      const onboardingRef = doc(db, 'businesses', businessId, 'settings', 'onboarding');
+      const docSnap = await getDoc(onboardingRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-        return data.completedTours?.includes(tourId) || false;
+        // Verificar si este usuario completó este tour en este negocio
+        const userCompletions = data.completedTours?.[authStore.user.uid] || [];
+        return userCompletions.includes(tourId);
       }
 
       return false;
@@ -70,73 +79,97 @@ export function useOnboarding() {
   };
 
   /**
-   * Marca un tour como completado en Firestore
+   * Marca un tour como completado en Firestore para el negocio actual
    * @param {string} tourId - ID del tour
    */
   const markTourCompleted = async (tourId) => {
-    if (!authStore.user?.uid) return;
+    const businessId = businessStore.getBusinessId;
+
+    if (!authStore.user?.uid || !businessId) {
+      console.warn('⚠️ No hay usuario o negocio activo para marcar tour completado');
+      return;
+    }
 
     try {
-      const userOnboardingRef = doc(db, 'users', authStore.user.uid, 'settings', 'onboarding');
-      const docSnap = await getDoc(userOnboardingRef);
+      const onboardingRef = doc(db, 'businesses', businessId, 'settings', 'onboarding');
+      const docSnap = await getDoc(onboardingRef);
 
       const tourData = {
         tourId,
         completedAt: new Date().toISOString(),
         userId: authStore.user.uid,
+        businessId,
       };
 
       if (docSnap.exists()) {
-        await updateDoc(userOnboardingRef, {
-          completedTours: arrayUnion(tourId),
-          lastTourCompleted: tourData,
-          updatedAt: new Date().toISOString(),
-        });
+        // Actualizar documento existente
+        const currentData = docSnap.data();
+        const userCompletions = currentData.completedTours?.[authStore.user.uid] || [];
+
+        // Evitar duplicados
+        if (!userCompletions.includes(tourId)) {
+          await updateDoc(onboardingRef, {
+            [`completedTours.${authStore.user.uid}`]: arrayUnion(tourId),
+            'lastTourCompleted': tourData,
+            'updatedAt': new Date().toISOString(),
+          });
+        }
       } else {
-        await setDoc(userOnboardingRef, {
-          completedTours: [tourId],
+        // Crear nuevo documento con onboarding
+        await setDoc(onboardingRef, {
+          completedTours: {
+            [authStore.user.uid]: [tourId]
+          },
           lastTourCompleted: tourData,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-        });
+        }, { merge: true }); // merge: true para no sobrescribir otros campos
       }
 
-      console.log(`✅ Tour "${tourId}" marcado como completado`);
+      console.log(`✅ Tour "${tourId}" marcado como completado en negocio "${businessId}"`);
     } catch (error) {
       console.error('❌ Error marcando tour como completado:', error);
     }
   };
 
   /**
-   * Registra el inicio de un tour (analytics)
+   * Registra el inicio de un tour (analytics) en el negocio actual
    * @param {string} tourId - ID del tour
    */
   const trackTourStart = async (tourId) => {
-    if (!authStore.user?.uid) return;
+    const businessId = businessStore.getBusinessId;
+
+    if (!authStore.user?.uid || !businessId) {
+      console.warn('⚠️ No hay usuario o negocio activo para registrar inicio de tour');
+      return;
+    }
 
     try {
-      const userOnboardingRef = doc(db, 'users', authStore.user.uid, 'settings', 'onboarding');
-      const docSnap = await getDoc(userOnboardingRef);
+      const onboardingRef = doc(db, 'businesses', businessId, 'settings', 'onboarding');
+      const docSnap = await getDoc(onboardingRef);
 
       const tourStartData = {
         tourId,
         startedAt: new Date().toISOString(),
         userId: authStore.user.uid,
+        businessId,
       };
 
       if (docSnap.exists()) {
-        await updateDoc(userOnboardingRef, {
-          tourStarts: arrayUnion(tourStartData),
-          lastUpdated: new Date().toISOString(),
+        // Documento existe, actualizar
+        await updateDoc(onboardingRef, {
+          'tourStarts': arrayUnion(tourStartData),
+          'lastUpdated': new Date().toISOString(),
         });
       } else {
-        await setDoc(userOnboardingRef, {
+        // Documento no existe, crear con merge
+        await setDoc(onboardingRef, {
           tourStarts: [tourStartData],
-          createdAt: new Date().toISOString(),
-        });
+          lastUpdated: new Date().toISOString(),
+        }, { merge: true });
       }
 
-      console.log(`📊 Tour "${tourId}" - inicio registrado`);
+      console.log(`📊 Tour "${tourId}" - inicio registrado en negocio "${businessId}"`);
     } catch (error) {
       console.error('❌ Error registrando inicio de tour:', error);
     }
@@ -275,18 +308,32 @@ export function useOnboarding() {
   };
 
   /**
-   * Obtiene estadísticas del usuario sobre tours
+   * Obtiene estadísticas de tours del negocio actual
    * @returns {Promise<Object>}
    */
   const getUserTourStats = async () => {
-    if (!authStore.user?.uid) return null;
+    const businessId = businessStore.getBusinessId;
+
+    if (!authStore.user?.uid || !businessId) {
+      console.warn('⚠️ No hay usuario o negocio activo para obtener estadísticas');
+      return null;
+    }
 
     try {
-      const userOnboardingRef = doc(db, 'users', authStore.user.uid, 'settings', 'onboarding');
-      const docSnap = await getDoc(userOnboardingRef);
+      const onboardingRef = doc(db, 'businesses', businessId, 'settings', 'onboarding');
+      const docSnap = await getDoc(onboardingRef);
 
       if (docSnap.exists()) {
-        return docSnap.data();
+        const data = docSnap.data();
+
+        // Filtrar datos para el usuario actual
+        return {
+          completedTours: data.completedTours?.[authStore.user.uid] || [],
+          allTourStarts: data.tourStarts || [],
+          userTourStarts: data.tourStarts?.filter(ts => ts.userId === authStore.user.uid) || [],
+          lastTourCompleted: data.lastTourCompleted,
+          businessId: businessId,
+        };
       }
 
       return null;

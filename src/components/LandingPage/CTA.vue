@@ -1,124 +1,182 @@
 <template>
   <section
-    class="cta-section relative min-h-screen bg-slate-50 flex items-center justify-center px-4 py-20"
+    id="cta-section"
+    class="py-16 sm:py-20 px-4 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden"
   >
-    <!-- Sombras decorativas sutiles -->
-    <div class="absolute inset-0 pointer-events-none overflow-hidden">
-      <!-- Sombra superior derecha (energía) -->
+    <div class="max-w-5xl mx-auto">
+      <!-- Contenedor principal tipo card con diseño emocional -->
       <div
-        class="absolute top-0 right-0 w-96 h-96 bg-orange-100 rounded-full filter blur-3xl opacity-30 translate-x-32 -translate-y-32"
-      ></div>
-
-      <!-- Sombra inferior izquierda (confianza) -->
-      <div
-        class="absolute bottom-0 left-0 w-80 h-80 bg-blue-100 rounded-full filter blur-3xl opacity-25 -translate-x-32 translate-y-32"
-      ></div>
-
-      <!-- Sombra central sutil -->
-      <div
-        class="absolute top-1/2 left-1/2 w-64 h-64 bg-orange-50 rounded-full filter blur-2xl opacity-40 -translate-x-32 -translate-y-32"
-      ></div>
-    </div>
-
-    <div class="max-w-5xl mx-auto text-center relative z-10">
-      <!-- Emoji destacado -->
-      <div class="mb-8">
-        <span class="text-6xl md:text-7xl lg:text-8xl">👉</span>
-      </div>
-
-      <!-- Mensaje principal -->
-      <div class="mb-12">
-        <h2
-          class="text-4xl md:text-5xl lg:text-6xl font-extralight text-slate-800 mb-8 leading-tight tracking-tight"
-        >
-          <span class="block mb-4">Empieza gratis hoy y descubre</span>
-          <span class="block mb-4"
-            >cómo
-            <span class="text-orange-600 font-light">WALA</span>
-            puede ser tu
-          </span>
-          <span class="block text-blue-600 font-light"
-            >copiloto empresarial</span
+        class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16 transition-all duration-200 hover:shadow-md hover:border-gray-200 mb-8"
+      >
+        <!-- Título Principal con emoticón de corazón -->
+        <div class="text-center mb-6">
+          <h2
+            class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
           >
-        </h2>
-      </div>
+            No estás <span class="text-blue-600">solo</span>.
+            <span class="block mt-2"
+              >WALA te <span class="text-yellow-600">acompaña</span> en cada
+              paso</span
+            >
+            <span class="block mt-2">de tu negocio</span>
+          </h2>
+        </div>
 
-      <!-- CTA Principal -->
-      <div class="mb-16">
-        <button
-          class="group bg-gradient-to-r from-orange-500 to-orange-600 text-white px-12 py-6 rounded-2xl font-medium text-xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-300 hover:-translate-y-2 hover:from-orange-600 hover:to-orange-700 relative overflow-hidden min-w-[280px]"
-        >
-          <span class="relative z-10">Probar gratis ahora</span>
-
-          <!-- Efecto de brillo en hover -->
-          <div
-            class="absolute inset-0 bg-gradient-to-r from-orange-400 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          ></div>
-        </button>
-      </div>
-
-      <!-- Información adicional sutil -->
-      <div class="text-center">
+        <!-- Subtítulo -->
         <p
-          class="text-lg md:text-xl font-light text-slate-600 mb-6 max-w-2xl mx-auto leading-relaxed"
+          class="text-xl sm:text-2xl md:text-3xl text-gray-600 mb-12 text-center font-normal leading-relaxed max-w-4xl mx-auto"
         >
-          Sin tarjeta de crédito • Sin compromisos • Sin instalaciones complejas
+          <span class="font-medium text-gray-800">Organiza</span>,
+          <span class="font-medium text-blue-700">aprende</span> y
+          <span class="font-medium text-yellow-700">crece</span> con
+          tranquilidad.
         </p>
 
-        <!-- Indicadores de beneficios -->
-        <div
-          class="flex flex-wrap justify-center gap-8 text-sm md:text-base text-slate-500 font-light"
-        >
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-            <span>Setup en 2 minutos</span>
+        <!-- Separador decorativo -->
+        <div class="flex justify-center mb-12">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-16 h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent"
+            ></div>
+            <div class="w-2 h-2 bg-yellow-400 rounded-full"></div>
+            <div
+              class="w-16 h-px bg-gradient-to-r from-transparent via-yellow-400 to-transparent"
+            ></div>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 bg-blue-400 rounded-full"></span>
-            <span>Soporte 24/7</span>
+        </div>
+
+        <!-- CTA final (grande y centrado) -->
+        <div class="flex flex-col items-center gap-6 mb-8">
+          <button
+            @click="createAccount"
+            class="group bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-16 py-6 rounded-2xl font-bold text-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:from-yellow-600 hover:to-orange-600 relative overflow-hidden"
+          >
+            <span class="relative z-10 flex items-center gap-3">
+              <Rocket class="w-7 h-7" />
+              Crear cuenta gratuita
+            </span>
+
+            <!-- Efecto de brillo en hover -->
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            ></div>
+          </button>
+
+          <!-- Info adicional debajo del botón -->
+          <div class="text-center">
+            <p class="text-base text-gray-500 mb-2">
+              Sin tarjeta de crédito · 15 días de prueba gratis · Cancela cuando
+              quieras
+            </p>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 bg-orange-400 rounded-full"></span>
-            <span>Cancela cuando quieras</span>
-          </div>
+        </div>
+
+        <!-- Microcopy inferior con corazón -->
+        <div class="text-center pt-8 border-t border-gray-200">
+          <p
+            class="text-lg sm:text-xl text-gray-600 font-medium flex items-center justify-center gap-2 flex-wrap"
+          >
+            Hecho con
+            <span class="text-2xl animate-pulse">💛</span>
+            en Latinoamérica
+          </p>
         </div>
       </div>
 
-      <!-- Elemento decorativo de cierre -->
-      <div class="flex justify-center mt-20">
-        <div class="flex items-center gap-4">
+      <!-- Cards de valores adicionales -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <!-- Valor 1: Acompañamiento -->
+        <div
+          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center transition-all duration-200 hover:shadow-md hover:border-yellow-200 hover:-translate-y-1"
+        >
           <div
-            class="w-20 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent"
-          ></div>
-          <div class="w-3 h-3 bg-orange-400 rounded-full opacity-60"></div>
+            class="w-14 h-14 bg-yellow-50 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <Group class="w-7 h-7 text-yellow-600" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            Acompañamiento constante
+          </h3>
+          <p class="text-sm text-gray-600">
+            Nunca estarás solo. Soporte y guías siempre disponibles.
+          </p>
+        </div>
+
+        <!-- Valor 2: Aprendizaje -->
+        <div
+          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center transition-all duration-200 hover:shadow-md hover:border-blue-200 hover:-translate-y-1"
+        >
           <div
-            class="w-20 h-px bg-gradient-to-r from-transparent via-orange-400 to-transparent"
-          ></div>
+            class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <BookStack class="w-7 h-7 text-blue-600" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            Aprende a tu ritmo
+          </h3>
+          <p class="text-sm text-gray-600">
+            Contenido educativo diseñado para emprendedores.
+          </p>
+        </div>
+
+        <!-- Valor 3: Crecimiento -->
+        <div
+          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center transition-all duration-200 hover:shadow-md hover:border-orange-200 hover:-translate-y-1"
+        >
+          <div
+            class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
+            <GraphUp class="w-7 h-7 text-orange-600" />
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">
+            Crece con confianza
+          </h3>
+          <p class="text-sm text-gray-600">
+            Herramientas que crecen junto con tu negocio.
+          </p>
+        </div>
+      </div>
+
+      <!-- Mensaje final motivacional -->
+      <div
+        class="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-100 p-8 text-center"
+      >
+        <div class="max-w-3xl mx-auto">
+          <p
+            class="text-xl sm:text-2xl text-gray-800 font-medium leading-relaxed mb-4"
+          >
+            Tu negocio merece claridad.
+            <span class="text-yellow-700">Tú mereces tranquilidad</span>.
+          </p>
+          <p class="text-base sm:text-lg text-gray-600">
+            Empieza hoy tu camino hacia un negocio más organizado y rentable.
+          </p>
         </div>
       </div>
     </div>
-
-    <!-- Gradiente de fondo sutil -->
-    <div
-      class="absolute inset-0 bg-gradient-to-t from-orange-50/20 via-transparent to-blue-50/10 pointer-events-none"
-    ></div>
   </section>
 </template>
 
 <script setup>
-// Script limpio sin lógica compleja
+import { useRouter } from "vue-router";
+import { Heart, Rocket, Group, BookStack, GraphUp } from "@iconoir/vue";
+
+const router = useRouter();
+
+// Función para crear cuenta - redirige a login
+const createAccount = () => {
+  router.push("/auth/login");
+};
 </script>
 
 <style scoped>
-/* Animación de entrada */
-.cta-section {
-  animation: fadeInUp 1s ease-out;
-}
+/* Estilos coherentes con Hero, Pain, Solution, Funcionalidades, PruebaSocial, FAQ, Planes y HistorialRecords */
 
+/* Animación de entrada para las cards */
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -126,58 +184,76 @@
   }
 }
 
-/* Animación del emoji */
-span:first-child {
-  animation: bounce 2s ease-in-out infinite;
+/* Aplicar animación escalonada a las cards de valores */
+.grid > div:nth-child(1) {
+  animation: fadeInUp 0.5s ease-out 0.1s backwards;
 }
 
-@keyframes bounce {
+.grid > div:nth-child(2) {
+  animation: fadeInUp 0.5s ease-out 0.2s backwards;
+}
+
+.grid > div:nth-child(3) {
+  animation: fadeInUp 0.5s ease-out 0.3s backwards;
+}
+
+/* Animación del corazón */
+@keyframes pulse {
   0%,
-  20%,
-  50%,
-  80%,
   100% {
-    transform: translateY(0);
+    transform: scale(1);
   }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
+  50% {
+    transform: scale(1.1);
   }
 }
 
-/* Efecto hover del botón */
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Transiciones suaves */
+button,
+.hover\:shadow-md,
+.hover\:shadow-xl,
+.hover\:shadow-2xl {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: translateY(-4px) scale(0.98);
+}
+
+/* Efecto especial para el botón principal */
 button:hover {
-  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(251, 191, 36, 0.3),
+    0 10px 10px -5px rgba(251, 191, 36, 0.2);
 }
 
-/* Responsive mejorado */
-@media (max-width: 768px) {
+/* Responsive adjustments */
+@media (max-width: 640px) {
   h2 {
-    font-size: 2.5rem !important;
     line-height: 1.2;
   }
 
   button {
-    min-width: 250px;
-    padding: 1rem 2rem;
-    font-size: 1.125rem;
+    padding: 1.25rem 2.5rem;
+    font-size: 1.25rem;
   }
 }
 
-/* Animación de los indicadores */
-.flex.items-center.gap-2 {
-  animation: fadeInUp 1.2s ease-out;
+/* Animación suave del icono Rocket */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
-.flex.items-center.gap-2:nth-child(1) {
-  animation-delay: 0.2s;
-}
-.flex.items-center.gap-2:nth-child(2) {
-  animation-delay: 0.4s;
-}
-.flex.items-center.gap-2:nth-child(3) {
-  animation-delay: 0.6s;
+button:hover svg {
+  animation: float 1s ease-in-out infinite;
 }
 </style>
