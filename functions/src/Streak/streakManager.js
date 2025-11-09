@@ -9,6 +9,11 @@ const DAYS_HISTORY = 90;
 const MIN_ALLOWED_GAP = 5;
 const MAX_ALLOWED_GAP = 14;
 
+// ====== LOGGING ======
+const IS_DEV = process.env.FUNCTIONS_EMULATOR === 'true' || process.env.NODE_ENV === 'development';
+const log = IS_DEV ? console.log : () => { };
+const logAlways = console.log; // Logs importantes siempre visibles
+
 // ====== TIME HELPERS ======
 const toYmd = (d, tz = DEFAULT_TZ) => DateTime.fromJSDate(d).setZone(tz).toFormat('yyyy-LL-dd');
 const daysBetweenYmd = (a, b, tz = DEFAULT_TZ) => {
@@ -65,23 +70,20 @@ async function getSummary(db, businessId, day) {
   return snap.exists ? { id: snap.id, ...snap.data() } : null;
 }
 async function getOrInitStreak(db, businessId) {
-  // Guardar streak como campo dentro del documento del negocio
   const ref = db.doc(`businesses/${businessId}`);
   const snap = await ref.get();
-  console.log('🔍 [STREAK] getOrInitStreak - businessId:', businessId, 'existe:', snap.exists);
+  log('🔍 [STREAK] getOrInitStreak - businessId:', businessId);
 
   if (snap.exists) {
     const businessData = snap.data();
     const streakData = businessData.streak || null;
-    console.log('🔍 [STREAK] Datos del negocio:', businessData ? 'existe' : 'null');
-    console.log('🔍 [STREAK] Streak existente:', streakData);
 
     if (streakData) {
       return { ref, data: streakData };
     }
   }
 
-  // Inicializar streak como campo dentro del documento business
+  // Inicializar streak
   const init = {
     mode: 'auto',
     current: 0,
@@ -92,7 +94,7 @@ async function getOrInitStreak(db, businessId) {
     copilotAssistedSessions: 0,
     lastUpdated: FieldValue.serverTimestamp()
   };
-  console.log('⚠️ [STREAK] Inicializando nuevo streak:', init);
+  logAlways('⚠️ [STREAK] Inicializando nuevo streak para', businessId);
 
   await ref.set({ streak: init }, { merge: true });
   return { ref, data: init };
@@ -100,16 +102,22 @@ async function getOrInitStreak(db, businessId) {
 async function getActiveDaysHistory(db, businessId, tz = DEFAULT_TZ) {
   const today = DateTime.now().setZone(tz);
   const start = today.minus({ days: DAYS_HISTORY }).toFormat('yyyy-LL-dd');
-  console.log('📊 [STREAK] Consultando historial de días activos desde:', start);
+  log('📊 [STREAK] Consultando historial desde:', start);
+
   try {
     const snap = await db.collection(`businesses/${businessId}/dailySummaries`)
       .where('hasTxn', '==', true)
       .where('day', '>=', start)
       .orderBy('day', 'asc')
       .get();
+
     const days = [];
-    snap.forEach(d => { const v = d.data(); if (v && typeof v.day === 'string') days.push(v.day); });
-    console.log('📊 [STREAK] Días activos encontrados:', days.length);
+    snap.forEach(d => {
+      const v = d.data();
+      if (v && typeof v.day === 'string') days.push(v.day);
+    });
+
+    log('📊 [STREAK] Días activos encontrados:', days.length);
     return days;
   } catch (error) {
     console.error('❌ [STREAK] Error al consultar días activos:', error.message);
@@ -124,12 +132,24 @@ function computeMedianGapFromDays(days, tz = DEFAULT_TZ) {
   return median(gaps);
 }
 
-// ====== CORE ======
 /**
  * Actualiza la racha contextualizada después de cerrar un día (manual o auto).
- * - Suma solo en días activos (hasTxn=true)
- * - En modo 'eventual': auto-cierre con actividad SÍ suma.
- * - En modo 'daily': puedes forzar política 'strict' para NO sumar auto-cierre.
+ * 
+ * NUEVA LÓGICA:
+ * - Día activo = hasOpening + hasTxn (NO requiere hasClosure)
+ * - Actualización ocurre al cerrar día (hasClosure: true)
+ * - Política fija: autoClosePolicy = 'lenient' (siempre valorar esfuerzo)
+ * - copilotAssistedSessions solo es contador estadístico
+ * 
+ * @param {Object} params - Parámetros
+ * @param {FirebaseFirestore.Firestore} params.db - Instancia de Firestore
+ * @param {string} params.businessId - ID del negocio
+ * @param {string} params.day - Día a actualizar (yyyy-LL-dd)
+ * @param {Object} params.summary - DailySummary (opcional, se obtiene si no se provee)
+ * @param {string} params.tz - Timezone (default: 'America/Lima')
+ * @param {boolean} params.forceRecalc - Forzar recálculo de ritmo
+ * @param {string} params.autoClosePolicy - 'lenient' (default) | 'strict'
+ * @returns {Promise<Object>} Resultado de la actualización
  */
 async function updateStreakContextualizada({
   db,
@@ -138,68 +158,94 @@ async function updateStreakContextualizada({
   summary = null,
   tz = DEFAULT_TZ,
   forceRecalc = false,
-  autoClosePolicy = 'lenient' // 'strict' | 'lenient'
+  autoClosePolicy = 'lenient'
 }) {
-  console.log('🔵 [STREAK] Iniciando updateStreakContextualizada', { businessId, day, forceRecalc, autoClosePolicy });
+  logAlways(`� [STREAK] Actualizando racha - Business: ${businessId}, Día: ${day}`);
 
-  if (!db || !businessId || !day) throw new Error('db, businessId y day son requeridos');
+  if (!db || !businessId || !day) {
+    throw new Error('[STREAK] db, businessId y day son requeridos');
+  }
 
+  // Obtener o validar dailySummary
   const summaryDoc = summary || await getSummary(db, businessId, day);
-  console.log('🔵 [STREAK] SummaryDoc obtenido:', summaryDoc);
-  if (!summaryDoc) return { updated: false, streak: null, reason: 'no-summary' };
+  if (!summaryDoc) {
+    log('� [STREAK] No existe dailySummary para', day);
+    return { updated: false, streak: null, reason: 'no-summary' };
+  }
 
+  log('📋 [STREAK] DailySummary:', {
+    hasOpening: summaryDoc.hasOpening,
+    hasTxn: summaryDoc.hasTxn,
+    hasClosure: summaryDoc.hasClosure,
+    isAutoClosed: summaryDoc.isAutoClosed
+  });
+
+  // Obtener streak actual
   const { ref: streakRef, data: streak } = await getOrInitStreak(db, businessId);
-  console.log('🔵 [STREAK] Streak actual obtenido:', streak);
 
+  // Calcular ritmo si es necesario
   let mode = streak.mode || 'auto';
   let medianGap = streak.medianGap || 0;
   let allowedGap = streak.allowedGap || MIN_ALLOWED_GAP;
-  console.log('🔵 [STREAK] Valores iniciales - mode:', mode, 'medianGap:', medianGap, 'allowedGap:', allowedGap);
 
   if (mode === 'auto' && (forceRecalc || !medianGap || !allowedGap)) {
-    console.log('🟡 [STREAK] Recalculando ritmo automático...');
+    log('🟡 [STREAK] Recalculando ritmo automático...');
     const activeDays = await getActiveDaysHistory(db, businessId, tz);
-    console.log('🟡 [STREAK] Días activos en historial:', activeDays);
     const md = computeMedianGapFromDays(activeDays, tz);
     const ag = calcAllowedGap(md);
     const autoMode = decideMode(md);
-    console.log('🟡 [STREAK] Valores calculados - medianGap:', md, 'allowedGap:', ag, 'autoMode:', autoMode);
+
     medianGap = md;
     allowedGap = ag;
     mode = (autoMode === 'weekly') ? 'daily' : autoMode;
-    // Actualizar campo streak dentro del documento business
+
+    log('🟡 [STREAK] Nuevo ritmo - medianGap:', medianGap, 'allowedGap:', allowedGap, 'mode:', mode);
+
     await streakRef.set({
-      streak: { medianGap, allowedGap, mode, lastUpdated: FieldValue.serverTimestamp() }
+      streak: {
+        ...streak,
+        medianGap,
+        allowedGap,
+        mode,
+        lastUpdated: FieldValue.serverTimestamp()
+      }
     }, { merge: true });
-    console.log('🟡 [STREAK] Ritmo actualizado en Firestore');
   }
 
   const active = isActiveDay(summaryDoc);
   const copilotClosed = wasCopilotClosed(summaryDoc);
-  console.log('🔵 [STREAK] Estado del día - active:', active, 'copilotClosed:', copilotClosed);
 
+  // ✅ NUEVA LÓGICA: Con 'lenient', siempre cuenta si es activo
   let canCount = active;
-  if (mode === 'daily' && copilotClosed && autoClosePolicy === 'strict') {
-    canCount = false;
-  }
-  console.log('🔵 [STREAK] ¿Puede contar? canCount:', canCount, '(mode:', mode, 'autoClosePolicy:', autoClosePolicy + ')');
+
+  // Log de decisión (solo en dev)
+  log('🎯 [STREAK] Decisión:', {
+    día: day,
+    esActivo: active,
+    cerradoPorCopilot: copilotClosed,
+    política: autoClosePolicy,
+    puedeContar: canCount,
+    últimoDíaActivo: streak.lastActiveDay,
+    rachaAnterior: streak.current
+  });
 
   if (!canCount) {
-    console.log('🔴 [STREAK] NO SE CUENTA - Saliendo sin actualizar streak');
-    // Actualizar campo streak dentro del documento business
+    log('🔴 [STREAK] Día no cuenta para racha');
     await streakRef.set({
       streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
     }, { merge: true });
-    return { updated: false, streak: { ...streak, mode, medianGap, allowedGap }, reason: 'not-counting' };
+    return {
+      updated: false,
+      streak: { ...streak, mode, medianGap, allowedGap },
+      reason: 'not-counting'
+    };
   }
 
   const lastActiveDay = streak.lastActiveDay || null;
-  console.log('🟢 [STREAK] Calculando nueva racha - lastActiveDay:', lastActiveDay, 'current actual:', streak.current);
 
-  // ⚠️ CRÍTICO: Solo incrementar si es un día DIFERENTE al último día activo
+  // ⚠️ CRÍTICO: No contar dos veces el mismo día
   if (lastActiveDay === day) {
-    console.log('⏭️ [STREAK] Ya se contó este día (' + day + '), saltando actualización');
-    // Actualizar solo el timestamp sin cambiar valores
+    log('⏭️ [STREAK] Ya se contó este día');
     await streakRef.set({
       streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
     }, { merge: true });
@@ -210,21 +256,22 @@ async function updateStreakContextualizada({
     };
   }
 
+  // Calcular nueva racha
   let newCurrent = 1;
   if (lastActiveDay) {
     const gap = daysBetweenYmd(lastActiveDay, day, tz);
-    console.log('🟢 [STREAK] Gap entre días:', gap, '(permitido:', allowedGap + ')');
     newCurrent = (gap <= allowedGap) ? (Number(streak.current || 0) + 1) : 1;
-    console.log('🟢 [STREAK] Nueva racha calculada - newCurrent:', newCurrent);
+
+    log('🟢 [STREAK] Gap:', gap, 'días (permitido:', allowedGap + ')');
+    log('🟢 [STREAK] Nueva racha:', newCurrent);
   } else {
-    console.log('🟢 [STREAK] Primera actividad - newCurrent:', newCurrent);
+    log('🆕 [STREAK] Primera actividad registrada');
   }
 
   const newMax = Math.max(Number(streak.max || 0), newCurrent);
   const copilotAssistedSessions = Number(streak.copilotAssistedSessions || 0) + (copilotClosed ? 1 : 0);
-  console.log('🟢 [STREAK] Valores finales - newCurrent:', newCurrent, 'newMax:', newMax, 'copilotAssistedSessions:', copilotAssistedSessions);
 
-  // Actualizar campo streak dentro del documento business
+  // Guardar en Firestore
   const dataToSet = {
     streak: {
       current: newCurrent,
@@ -237,32 +284,34 @@ async function updateStreakContextualizada({
       lastUpdated: FieldValue.serverTimestamp()
     }
   };
-  console.log('✅ [STREAK] GUARDANDO EN FIRESTORE:', JSON.stringify({
+
+  logAlways(`✅ [STREAK] GUARDADO - Business: ${businessId}`, {
     current: newCurrent,
     max: newMax,
-    lastActiveDay: day,
-    medianGap,
-    allowedGap,
-    mode,
-    copilotAssistedSessions
-  }));
+    copilotAssisted: copilotAssistedSessions
+  });
 
   await streakRef.set(dataToSet, { merge: true });
-  console.log('✅ [STREAK] Streak actualizado exitosamente en Firestore');
 
   return {
     updated: true,
     streak: {
-      current: newCurrent, max: newMax, lastActiveDay: day,
-      medianGap, allowedGap, mode, copilotAssistedSessions
+      current: newCurrent,
+      max: newMax,
+      lastActiveDay: day,
+      medianGap,
+      allowedGap,
+      mode,
+      copilotAssistedSessions
     },
     reason: 'counted'
   };
 }
 
-/** Cron semanal opcional para recalcular ritmo/modo */
+/**
+ * Recalcula ritmo y modo del streak (cron semanal opcional).
+ */
 async function recalcRhythmAndMode(db, businessId, tz = DEFAULT_TZ) {
-  // Acceder al documento business directamente
   const streakRef = db.doc(`businesses/${businessId}`);
   const snap = await streakRef.get();
   const businessData = snap.exists ? snap.data() : {};
@@ -274,7 +323,6 @@ async function recalcRhythmAndMode(db, businessId, tz = DEFAULT_TZ) {
   const autoMode = decideMode(md);
   const mode = (data.mode === 'auto' || !data.mode) ? ((autoMode === 'weekly') ? 'daily' : autoMode) : data.mode;
 
-  // Actualizar campo streak dentro del documento business
   await streakRef.set({
     streak: {
       ...data,
@@ -285,7 +333,16 @@ async function recalcRhythmAndMode(db, businessId, tz = DEFAULT_TZ) {
     }
   }, { merge: true });
 
+  logAlways(`📊 [STREAK] Ritmo recalculado - Business: ${businessId}`, { medianGap: md, allowedGap: ag, mode });
+
   return { medianGap: md, allowedGap: ag, mode };
 }
 
-module.exports = { updateStreakContextualizada, recalcRhythmAndMode };
+module.exports = {
+  updateStreakContextualizada,
+  recalcRhythmAndMode,
+  // Exportar helpers para testing
+  isActiveDay,
+  wasCopilotClosed,
+  daysBetweenYmd
+};

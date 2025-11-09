@@ -27,7 +27,7 @@ const db = admin.firestore();
 
 const { yesterdayStr, endOfDay } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
-const { breakStreak } = require('./sharedStreak');
+const { updateStreakContextualizada } = require('../Streak/streakManager');
 
 const DEFAULT_TZ = 'America/Lima';
 
@@ -210,9 +210,28 @@ module.exports = functions.https.onCall(async (data, context) => {
     });
     console.log(`✅ Daily summary updated with complete financial data`);
 
-    // Romper racha de días consecutivos
-    await breakStreak(db, businessId);
-    console.log(`📉 Streak broken due to automatic closure`);
+    // ✅ ACTUALIZAR RACHA usando streakManager
+    console.log(`🔥 Updating streak with contextual system...`);
+    const streakResult = await updateStreakContextualizada({
+      db,
+      businessId,
+      day,
+      summary: {
+        ...updatedAgg,
+        hasClosure: true,
+        isAutoClosed: true,
+        closureId: closureUuid,
+        autoCloseReason: 'lazyOpen'
+      },
+      tz,
+      autoClosePolicy: 'lenient' // Valorar esfuerzo aunque sea cierre automático
+    });
+
+    console.log(`✅ Streak updated:`, {
+      updated: streakResult.updated,
+      current: streakResult.streak?.current,
+      reason: streakResult.reason
+    });
 
     // Registrar en traceability_logs para trazabilidad completa
     await db.collection(`businesses/${businessId}/traceability_logs`).add({

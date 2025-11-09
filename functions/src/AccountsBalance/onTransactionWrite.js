@@ -77,16 +77,27 @@ module.exports = functions.firestore
       lastUpdated: FieldValue.serverTimestamp()
     });
 
-    // Actualizar racha contextualizada (pasar como objeto)
-    await updateStreakContextualizada({
-      db,
-      businessId,
-      day,
-      summary: agg, // Ya tenemos los agregados calculados
-      tz
-    }).catch(err => {
-      console.error('❌ Error updating streak:', err);
-    });
+    // ✅ ACTUALIZAR RACHA solo si el día está cerrado y tiene transacciones
+    if (agg.hasOpening && agg.hasTxn && agg.hasClosure) {
+      console.log(`🔥 Day complete - Updating streak contextually...`);
+
+      await updateStreakContextualizada({
+        db,
+        businessId,
+        day,
+        summary: agg,
+        tz,
+        autoClosePolicy: 'lenient' // Siempre valorar esfuerzo
+      }).catch(err => {
+        console.error('❌ Error updating streak:', err);
+      });
+    } else {
+      console.log(`⏭️ Day incomplete - Skipping streak update`, {
+        hasOpening: agg.hasOpening,
+        hasTxn: agg.hasTxn,
+        hasClosure: agg.hasClosure
+      });
+    }
 
     console.log(`✅ Daily summary updated for ${day}`);
     return null;

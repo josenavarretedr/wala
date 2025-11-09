@@ -112,11 +112,22 @@
       </div>
     </div>
 
-    <!-- Línea dinámica adicional (contexto motivador) -->
+    <!-- ✨ NUEVO: Línea de Copilot Assistance -->
     <div
-      v-if="!compact && streakData"
-      class="mt-3 pt-3 border-t border-gray-100 text-center"
+      v-if="!compact && streakData && streakData.copilotAssistedSessions > 0"
+      class="mt-3 pt-3 border-t border-gray-100"
     >
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-gray-500"> 🤖 Copilot te ayudó </span>
+        <span class="font-medium text-blue-600">
+          {{ streakData.copilotAssistedSessions }}
+          {{ streakData.copilotAssistedSessions === 1 ? "vez" : "veces" }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Línea dinámica adicional (contexto motivador) -->
+    <div v-if="!compact && streakData" class="mt-2 text-center">
       <p class="text-xs text-gray-500">💪 {{ motivationalText }}</p>
     </div>
   </div>
