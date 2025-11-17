@@ -50,15 +50,23 @@
         />
       </div>
 
-      <!-- Product Information Cards -->
-      <ProductInformation
+      <ProductHeader
+        :key="`header-${product.uuid}-${product.stock}-${
+          product.stockLog?.length || 0
+        }`"
         :description="product.description"
-        :price="product.price"
-        :cost="product.cost"
-        :created-at="product.createdAt"
+        :stock="product.stock"
         :product-id="product.uuid"
         :product-type="product.type"
         :track-stock="product.trackStock"
+        :unit="product.unit"
+        :stock-log="product.stockLog"
+        class="mb-6"
+      />
+
+      <ProductEconomicInfo
+        :price="product.price"
+        :cost="product.cost"
         :unit="product.unit"
         class="mb-4"
       />
@@ -100,8 +108,9 @@
 import { ref, onMounted, watch, onActivated, nextTick } from "vue";
 import { useRoute, useRouter, onBeforeRouteUpdate } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
+import ProductHeader from "@/components/Inventory/ProductDetails/ProductHeader.vue";
 import ProductMoves from "@/components/Inventory/ProductDetails/ProductMoves.vue";
-import ProductInformation from "@/components/Inventory/ProductDetails/ProductInformation.vue";
+import ProductEconomicInfo from "@/components/Inventory/ProductDetails/ProductEconomicInfo.vue";
 import ProductStockAlert from "@/components/Inventory/ProductDetails/ProductStockAlert.vue";
 import ProductoNoStock from "@/components/Inventory/ProductDetails/ProductoNoStock.vue";
 import ResumenMoves from "@/components/Inventory/ProductDetails/ResumenMoves.vue";

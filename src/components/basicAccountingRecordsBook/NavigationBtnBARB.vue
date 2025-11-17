@@ -134,16 +134,26 @@ const isNextButtonEnabled = computed(() => {
       if (currentStepLabel === "Detalles ingreso") {
         result = transactionData.items && transactionData.items.length > 0;
       }
-      // Para egresos, verificar que haya descripción, monto y categoría
+      // Para egresos, verificar según la categoría
       else if (currentStepLabel === "Detalles egreso") {
-        result =
-          transactionData.description &&
-          transactionData.description.trim() !== "" &&
-          transactionData.amount !== null &&
-          transactionData.amount !== undefined &&
-          transactionData.amount > 0 &&
-          transactionData.category !== null &&
-          transactionData.category !== undefined;
+        // Si es materials, verificar que haya materialItems
+        if (transactionData.category === "materials") {
+          result =
+            transactionData.materialItems &&
+            transactionData.materialItems.length > 0 &&
+            transactionData.amount > 0;
+        }
+        // Para labor/overhead, verificar descripción, monto y categoría
+        else {
+          result =
+            transactionData.description &&
+            transactionData.description.trim() !== "" &&
+            transactionData.amount !== null &&
+            transactionData.amount !== undefined &&
+            transactionData.amount > 0 &&
+            transactionData.category !== null &&
+            transactionData.category !== undefined;
+        }
       }
       // Para transferencias, verificar que haya cuenta origen, destino y monto
       else if (currentStepLabel === "Detalles transferencia") {
@@ -191,6 +201,7 @@ const isNextButtonEnabled = computed(() => {
 const getValidationMessage = () => {
   const currentStepConfig = flow.currentStepConfig;
   const currentStepLabel = currentStepConfig?.label;
+  const transactionData = transactionStore.transactionToAdd.value;
 
   switch (currentStepLabel) {
     case "Tipo de transacción":
@@ -203,6 +214,10 @@ const getValidationMessage = () => {
       return "Debes agregar al menos un producto";
 
     case "Detalles egreso":
+      // Mensaje específico según la categoría
+      if (transactionData.category === "materials") {
+        return "Debes agregar al menos un material a la compra";
+      }
       return "Completa la descripción, monto y categoría del gasto";
 
     case "Detalles transferencia":

@@ -24,7 +24,7 @@ exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 
 
 // FUNCIÓN DE PRUEBA (remover en producción)
-exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');
+// exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');
 
 
 

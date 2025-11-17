@@ -46,16 +46,50 @@ export function useExpenses() {
   /**
    * Crea un nuevo expense con su primer log
    * @param {Object} expenseData - Datos del expense (description, category, subcategory)
-   * @param {Object} logData - Datos del primer log (amount, date, transactionRef, account, notes)
+   * @param {Object} logData - Datos del primer log (amount, date, transactionRef, account, notes, materialItems)
    * @returns {Promise<string>} UUID del expense creado
    */
   const createExpenseWithLog = async (expenseData, logData) => {
     try {
       const businessId = ensureBusinessId();
-      const expenseId = uuidv4();
+
+      // Si se proporciona un UUID específico (como para materials), usarlo
+      const expenseId = expenseData.uuid || uuidv4();
 
       const now = serverTimestamp();
       const nowDate = new Date(); // Para usar dentro de arrays
+
+      const firstLog = {
+        amount: logData.amount,
+        date: logData.date, // Ya viene como Date del store
+        transactionRef: logData.transactionRef,
+        account: logData.account,
+        notes: logData.notes || null,
+        logId: uuidv4(),
+        createdAt: nowDate,
+      };
+
+      // Si el log incluye materialItems, agregarlos (limpiando undefined)
+      if (logData.materialItems && logData.materialItems.length > 0) {
+        firstLog.materialItems = logData.materialItems.map(item => {
+          // Limpiar valores undefined y convertirlos a null
+          return {
+            uuid: item.uuid || null,
+            productId: item.productId || null,
+            description: item.description || null,
+            quantity: item.quantity || 0,
+            unit: item.unit || null,
+            cost: item.cost || 0,
+            totalCost: item.totalCost || 0,
+            oldOrNewProduct: item.oldOrNewProduct || null,
+            stockLogId: item.stockLogId || null,
+          };
+        });
+
+        console.log('📦 Creando expense con materialItems:', {
+          itemsCount: firstLog.materialItems.length
+        });
+      }
 
       const expenseDoc = {
         uuid: expenseId,
@@ -64,24 +98,38 @@ export function useExpenses() {
         subcategory: expenseData.subcategory || null,
         createdAt: now,
         updatedAt: now,
-        logs: [
-          {
-            amount: logData.amount,
-            date: logData.date, // Ya viene como serverTimestamp del store
-            transactionRef: logData.transactionRef,
-            account: logData.account,
-            notes: logData.notes || null,
-            logId: uuidv4(),
-            createdAt: nowDate, // Usar Date() en lugar de serverTimestamp()
-          }
-        ],
+        logs: [firstLog],
         metadata: {
           totalSpent: logData.amount,
           occurrences: 1,
-          lastUsedAt: nowDate, // Usar Date() en lugar de serverTimestamp()
+          lastUsedAt: nowDate,
           averageAmount: logData.amount,
         }
       };
+
+      // Si es expense de materials, agregar metadata extendida inicial
+      if (expenseData.category === 'materials' && firstLog.materialItems) {
+        const items = firstLog.materialItems;
+
+        expenseDoc.metadata.totalItems = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        expenseDoc.metadata.uniqueProducts = new Set(items.map(item => item.productId).filter(Boolean)).size;
+
+        // Top products inicial (filtrar productos sin ID)
+        expenseDoc.metadata.topProducts = items
+          .filter(item => item.productId) // Solo items con productId
+          .map(item => ({
+            productId: item.productId,
+            description: item.description || 'Sin descripción',
+            totalQuantity: item.quantity || 0,
+            totalSpent: item.totalCost || 0,
+            occurrences: 1
+          }));
+
+        console.log('📊 Metadata inicial para materials:', {
+          totalItems: expenseDoc.metadata.totalItems,
+          uniqueProducts: expenseDoc.metadata.uniqueProducts
+        });
+      }
 
       const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
       await setDoc(expenseRef, expenseDoc);
@@ -97,7 +145,7 @@ export function useExpenses() {
   /**
    * Agrega un log a un expense existente
    * @param {string} expenseId - UUID del expense
-   * @param {Object} logData - Datos del log (amount, date, transactionRef, account, notes)
+   * @param {Object} logData - Datos del log (amount, date, transactionRef, account, notes, materialItems)
    */
   const addLogToExpense = async (expenseId, logData) => {
     try {
@@ -115,6 +163,29 @@ export function useExpenses() {
         logId: uuidv4(),
         createdAt: nowDate, // Usar Date() en lugar de serverTimestamp()
       };
+
+      // Si el log incluye materialItems, agregarlos (limpiando undefined)
+      if (logData.materialItems && logData.materialItems.length > 0) {
+        logWithId.materialItems = logData.materialItems.map(item => {
+          // Limpiar valores undefined y convertirlos a null
+          return {
+            uuid: item.uuid || null,
+            productId: item.productId || null,
+            description: item.description || null,
+            quantity: item.quantity || 0,
+            unit: item.unit || null,
+            cost: item.cost || 0,
+            totalCost: item.totalCost || 0,
+            oldOrNewProduct: item.oldOrNewProduct || null,
+            stockLogId: item.stockLogId || null,
+          };
+        });
+
+        console.log('📦 Agregando materialItems al log:', {
+          logId: logWithId.logId,
+          itemsCount: logWithId.materialItems.length
+        });
+      }
 
       await updateDoc(expenseRef, {
         logs: arrayUnion(logWithId),
@@ -151,7 +222,7 @@ export function useExpenses() {
         return;
       }
 
-      // Calcular metadata
+      // Calcular metadata básica
       const totalSpent = logs.reduce((sum, log) => sum + (log.amount || 0), 0);
       const occurrences = logs.length;
       const averageAmount = totalSpent / occurrences;
@@ -163,11 +234,61 @@ export function useExpenses() {
         return logDate > latestDate ? log.date : latest;
       }, logs[0].date);
 
+      const metadata = {
+        totalSpent,
+        occurrences,
+        averageAmount,
+        lastUsedAt: lastLog,
+      };
+
+      // ✅ Si es expense de materials, calcular metadata extendida
+      if (expenseData.category === 'materials') {
+        const allMaterialItems = logs.flatMap(log => log.materialItems || []);
+
+        // Total de items comprados
+        metadata.totalItems = allMaterialItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+        // Productos únicos
+        const uniqueProductIds = new Set(
+          allMaterialItems
+            .map(item => item.productId)
+            .filter(Boolean)
+        );
+        metadata.uniqueProducts = uniqueProductIds.size;
+
+        // Top 5 productos más comprados (por gasto total)
+        const productStats = {};
+        allMaterialItems.forEach(item => {
+          if (!item.productId) return;
+
+          if (!productStats[item.productId]) {
+            productStats[item.productId] = {
+              productId: item.productId,
+              description: item.description,
+              totalQuantity: 0,
+              totalSpent: 0,
+              occurrences: 0
+            };
+          }
+
+          productStats[item.productId].totalQuantity += item.quantity || 0;
+          productStats[item.productId].totalSpent += item.totalCost || 0;
+          productStats[item.productId].occurrences += 1;
+        });
+
+        metadata.topProducts = Object.values(productStats)
+          .sort((a, b) => b.totalSpent - a.totalSpent)
+          .slice(0, 5);
+
+        console.log('📊 Metadata extendida para materials:', {
+          totalItems: metadata.totalItems,
+          uniqueProducts: metadata.uniqueProducts,
+          topProducts: metadata.topProducts.length
+        });
+      }
+
       await updateDoc(expenseRef, {
-        'metadata.totalSpent': totalSpent,
-        'metadata.occurrences': occurrences,
-        'metadata.averageAmount': averageAmount,
-        'metadata.lastUsedAt': lastLog,
+        metadata,
         updatedAt: serverTimestamp(),
       });
 

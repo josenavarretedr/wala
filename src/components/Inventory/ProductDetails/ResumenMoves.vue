@@ -62,9 +62,15 @@
               >
             </div>
             <p
-              class="text-base sm:text-lg font-semibold text-red-800 tabular-nums"
+              class="text-base sm:text-lg font-semibold text-red-800 tabular-nums mb-1"
             >
               {{ totalSales }} {{ productUnit }}
+            </p>
+            <p
+              v-if="totalSalesAmount > 0"
+              class="text-xs font-medium text-red-600"
+            >
+              → S/ {{ totalSalesAmount.toFixed(2) }}
             </p>
           </div>
           <!-- Total Compras -->
@@ -95,9 +101,15 @@
               >
             </div>
             <p
-              class="text-base sm:text-lg font-semibold text-green-800 tabular-nums"
+              class="text-base sm:text-lg font-semibold text-green-800 tabular-nums mb-1"
             >
               {{ totalBuys }} {{ productUnit }}
+            </p>
+            <p
+              v-if="totalBuysAmount > 0"
+              class="text-xs font-medium text-green-600"
+            >
+              → S/ {{ totalBuysAmount.toFixed(2) }}
             </p>
           </div>
 
@@ -168,11 +180,35 @@ const totalSales = computed(() => {
     .reduce((sum, log) => sum + (log.quantity || 0), 0);
 });
 
+const totalSalesAmount = computed(() => {
+  if (!props.stockLog) return 0;
+  return props.stockLog
+    .filter((log) => log.type === "sell")
+    .reduce((sum, log) => {
+      if (log.price && log.quantity) {
+        return sum + log.price * log.quantity;
+      }
+      return sum;
+    }, 0);
+});
+
 const totalBuys = computed(() => {
   if (!props.stockLog) return 0;
   return props.stockLog
     .filter((log) => log.type === "buy")
     .reduce((sum, log) => sum + (log.quantity || 0), 0);
+});
+
+const totalBuysAmount = computed(() => {
+  if (!props.stockLog) return 0;
+  return props.stockLog
+    .filter((log) => log.type === "buy")
+    .reduce((sum, log) => {
+      if (log.cost && log.quantity) {
+        return sum + log.cost * log.quantity;
+      }
+      return sum;
+    }, 0);
 });
 
 const totalReturns = computed(() => {

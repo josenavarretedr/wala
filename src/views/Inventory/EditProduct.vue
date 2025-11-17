@@ -511,17 +511,22 @@
           <select
             v-model="formData.unit"
             class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            :disabled="formData.type === 'SERVICE'"
           >
-            <option value="uni">Unidad (uni)</option>
-            <option value="kg">Kilogramo</option>
-            <option value="g">Gramo</option>
-            <option value="lt">Litro</option>
-            <option value="ml">Mililitro</option>
-            <option value="m">Metro</option>
-            <option value="cm">centímetro</option>
-            <option value="porcion">Porción</option>
-            <option value="service">Servicio</option>
+            <option
+              v-for="option in availableUnitOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
           </select>
+          <p
+            v-if="formData.type === 'SERVICE'"
+            class="text-xs text-gray-500 mt-1"
+          >
+            Los servicios solo pueden usar la unidad "Servicio"
+          </p>
         </div>
 
         <!-- Control de Stock -->
@@ -561,11 +566,13 @@
             <button
               type="button"
               @click="formData.trackStock = !formData.trackStock"
-              :disabled="formData.type === 'MERCH'"
+              :disabled="
+                formData.type === 'MERCH' || formData.type === 'SERVICE'
+              "
               :class="[
                 'relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2',
                 formData.trackStock ? 'bg-teal-600' : 'bg-gray-200',
-                formData.type === 'MERCH'
+                formData.type === 'MERCH' || formData.type === 'SERVICE'
                   ? 'opacity-50 cursor-not-allowed'
                   : '',
               ]"
@@ -590,7 +597,9 @@
           </div>
           <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
             <p class="text-xs text-gray-600">
-              ✗ Este producto no tendrá seguimiento de inventario
+              ✗ Este
+              {{ formData.type === "SERVICE" ? "servicio" : "producto" }} no
+              tendrá seguimiento de inventario
             </p>
           </div>
         </div>
@@ -638,6 +647,26 @@ const formData = ref({
   type: "MERCH",
 });
 
+// Computed: Opciones de unidad disponibles según el tipo de producto
+const availableUnitOptions = computed(() => {
+  // Si es SERVICE, solo mostrar la opción "service"
+  if (formData.value.type === "SERVICE") {
+    return [{ value: "service", label: "Servicio" }];
+  }
+
+  // Para MERCH y PRODUCT, mostrar todas las unidades excepto "service"
+  return [
+    { value: "uni", label: "Unidad (uni)" },
+    { value: "kg", label: "Kilogramo" },
+    { value: "g", label: "Gramo" },
+    { value: "lt", label: "Litro" },
+    { value: "ml", label: "Mililitro" },
+    { value: "m", label: "Metro" },
+    { value: "cm", label: "Centímetro" },
+    { value: "porcion", label: "Porción" },
+  ];
+});
+
 // Computed: Cálculos de margen
 const calculateMarginAmount = computed(() => {
   if (!formData.value.price || !formData.value.cost) return "0.00";
@@ -659,13 +688,16 @@ watch(
     // MERCH siempre controla stock
     if (newType === "MERCH") {
       formData.value.trackStock = true;
+      formData.value.unit = "uni";
     }
     // SERVICE no controla stock por defecto
     else if (newType === "SERVICE") {
       formData.value.trackStock = false;
       formData.value.unit = "service";
+    } else if (newType === "PRODUCT") {
+      formData.value.unit = "uni";
+      formData.value.trackStock = false;
     }
-    // PRODUCT puede o no controlar stock (lo deja como está)
   }
 );
 

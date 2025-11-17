@@ -32,8 +32,12 @@ const transactionToAdd = ref({
   category: null,
   subcategory: null,
   amount: 0,
+  notes: null, // Notas adicionales sobre el gasto
   expenseId: null, // ID del expense individual en Firestore
   oldOrNewExpense: null, // 'new' o 'old'
+  // Campos para transacciones de egreso tipo 'materials':
+  materialItems: [], // Array de materiales/insumos comprados
+  materialItemsAndStockLogs: [], // Relación entre items y stockLogs
   // Campos para transfers:
   fromAccount: null,
   toAccount: null,
@@ -49,6 +53,17 @@ const itemToAddInTransaction = ref({
   stock: null,
   trackStock: false,
   proceedAnyway: false, // Flag para indicar que se procedió con stock insuficiente
+});
+
+const itemToAddInExpenseMaterial = ref({
+  description: null,
+  quantity: null,
+  cost: null, // Para gastos usamos 'cost' en lugar de 'price'
+  oldOrNewProduct: null,
+  selectedProductUuid: null,
+  unit: null,
+  stock: null,
+  trackStock: true, // Por defecto los materiales tienen seguimiento
 });
 
 
@@ -125,53 +140,115 @@ export function useTransactionStore() {
           transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
         }
       } else if (transactionToAdd.value.type === 'expense') {
-        transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
-
         // Importar funciones de useExpenses para gestionar expenses
-        const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata } = useExpenses();
+        const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
 
-        // Preparar log data (usar new Date() en lugar de serverTimestamp para arrays)
-        const logData = {
-          amount: transactionToAdd.value.amount,
-          date: new Date(), // Usar Date() en lugar de serverTimestamp()
-          transactionRef: transactionToAdd.value.uuid,
-          account: transactionToAdd.value.account,
-          notes: null
-        };
+        // Para materials, calcular el total desde materialItems
+        if (transactionToAdd.value.category === 'materials') {
+          const materialTotal = (transactionToAdd.value.materialItems || []).reduce((sum, material) => {
+            return sum + (material.cost || 0) * (material.quantity || 0);
+          }, 0);
+          transactionToAdd.value.amount = materialTotal;
 
-        let expenseId = null;
-
-        // Verificar si es expense nuevo o existente
-        if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
-          // Expense existente: agregar log
-          expenseId = transactionToAdd.value.expenseId;
-
-          console.log('📊 Agregando log a expense existente:', {
-            expenseId,
-            amount: logData.amount,
-            description: transactionToAdd.value.description
+          console.log('🛒 Expense de materials detectado:', {
+            totalMaterials: transactionToAdd.value.materialItems?.length || 0,
+            amount: materialTotal
           });
 
-          await addLogToExpense(expenseId, logData);
-          await updateExpenseMetadata(expenseId);
+          // ✅ USAR EXPENSE ÚNICO CON ID FIJO PARA EL AÑO
+          const currentYear = new Date().getFullYear();
+          const MATERIALS_EXPENSE_ID = `materials-expense-${currentYear}`;
 
-          console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
-        } else {
-          // Expense nuevo: crear con primer log
-          const expenseData = {
-            description: transactionToAdd.value.description,
-            category: transactionToAdd.value.category,
-            subcategory: transactionToAdd.value.subcategory || null,
+          // Preparar log data con materialItems incluidos
+          const logData = {
+            amount: transactionToAdd.value.amount,
+            date: new Date(),
+            transactionRef: transactionToAdd.value.uuid,
+            account: transactionToAdd.value.account,
+            notes: transactionToAdd.value.notes || null,
+
+            // Incluir materialItems con totalCost calculado
+            materialItems: transactionToAdd.value.materialItems.map(item => ({
+              ...item,
+              totalCost: (item.cost || 0) * (item.quantity || 0)
+            }))
           };
 
-          console.log('✨ Creando nuevo expense con primer log:', expenseData);
+          // Buscar si ya existe el expense de materials de este año
+          const existingExpense = await getExpenseById(MATERIALS_EXPENSE_ID);
 
-          expenseId = await createExpenseWithLog(expenseData, logData);
+          if (existingExpense) {
+            // Agregar log al expense existente
+            await addLogToExpense(MATERIALS_EXPENSE_ID, logData);
+            await updateExpenseMetadata(MATERIALS_EXPENSE_ID);
 
-          // Actualizar el expenseId en la transacción
-          transactionToAdd.value.expenseId = expenseId;
+            transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
+            transactionToAdd.value.oldOrNewExpense = 'old';
 
-          console.log('✅ Nuevo expense creado con ID:', expenseId);
+            console.log(`✅ Log agregado a expense de materials del año ${currentYear}`);
+          } else {
+            // Crear nuevo expense de materials para el año
+            const expenseData = {
+              uuid: MATERIALS_EXPENSE_ID,
+              description: 'COMPRAS DE MATERIALES/INSUMOS',
+              category: 'materials',
+              subcategory: null,
+            };
+
+            await createExpenseWithLog(expenseData, logData);
+
+            transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
+            transactionToAdd.value.oldOrNewExpense = 'new';
+
+            console.log(`✅ Nuevo expense de materials creado para el año ${currentYear}`);
+          }
+        } else {
+          // Para otros tipos de gastos (labor, overhead)
+          transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
+
+          // Preparar log data (usar new Date() en lugar de serverTimestamp para arrays)
+          const logData = {
+            amount: transactionToAdd.value.amount,
+            date: new Date(),
+            transactionRef: transactionToAdd.value.uuid,
+            account: transactionToAdd.value.account,
+            notes: transactionToAdd.value.notes || null
+          };
+
+          let expenseId = null;
+
+          // Verificar si es expense nuevo o existente
+          if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
+            // Expense existente: agregar log
+            expenseId = transactionToAdd.value.expenseId;
+
+            console.log('📊 Agregando log a expense existente:', {
+              expenseId,
+              amount: logData.amount,
+              description: transactionToAdd.value.description
+            });
+
+            await addLogToExpense(expenseId, logData);
+            await updateExpenseMetadata(expenseId);
+
+            console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
+          } else {
+            // Expense nuevo: crear con primer log
+            const expenseData = {
+              description: transactionToAdd.value.description,
+              category: transactionToAdd.value.category,
+              subcategory: transactionToAdd.value.subcategory || null,
+            };
+
+            console.log('✨ Creando nuevo expense con primer log:', expenseData);
+
+            expenseId = await createExpenseWithLog(expenseData, logData);
+
+            // Actualizar el expenseId en la transacción
+            transactionToAdd.value.expenseId = expenseId;
+
+            console.log('✅ Nuevo expense creado con ID:', expenseId);
+          }
         }
 
         // === TRAZABILIDAD: Log de gasto relacionado ===
@@ -183,7 +260,9 @@ export function useTransactionStore() {
           metadata: {
             isNew: transactionToAdd.value.oldOrNewExpense === 'new',
             category: transactionToAdd.value.category,
-            amount: transactionToAdd.value.amount
+            amount: transactionToAdd.value.amount,
+            isMaterialPurchase: transactionToAdd.value.category === 'materials',
+            materialItemsCount: transactionToAdd.value.materialItems?.length || 0
           }
         });
 
@@ -438,8 +517,12 @@ export function useTransactionStore() {
       category: null,
       subcategory: null,
       amount: null,
+      notes: null, // Resetear notas
       expenseId: null,
       oldOrNewExpense: null,
+      // Campos para transacciones de egreso tipo 'materials':
+      materialItems: [], // Array de materiales/insumos comprados
+      materialItemsAndStockLogs: [], // Relación entre items y stockLogs
       fromAccount: null,
       toAccount: null,
 
@@ -564,6 +647,22 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.trackStock = product.trackStock ?? false;
   }
 
+  const modifyItemToAddInExpenseMaterial = (material) => {
+    if (material.oldOrNewProduct === "old") {
+      itemToAddInExpenseMaterial.value.uuid = material.selectedProductUuid;
+    } else {
+      itemToAddInExpenseMaterial.value.uuid = uuidv4();
+    }
+    itemToAddInExpenseMaterial.value.description = material.description;
+    itemToAddInExpenseMaterial.value.quantity = material.quantity;
+    itemToAddInExpenseMaterial.value.cost = material.cost;
+    itemToAddInExpenseMaterial.value.oldOrNewProduct = material.oldOrNewProduct;
+    itemToAddInExpenseMaterial.value.selectedProductUuid = material.selectedProductUuid;
+    itemToAddInExpenseMaterial.value.unit = material.unit;
+    itemToAddInExpenseMaterial.value.stock = material.stock ?? null;
+    itemToAddInExpenseMaterial.value.trackStock = material.trackStock ?? true;
+  }
+
   const resetItemToAddInTransaction = () => {
     itemToAddInTransaction.value = {
       description: null,
@@ -575,6 +674,19 @@ export function useTransactionStore() {
       stock: null,
       trackStock: false,
       proceedAnyway: false,
+    };
+  }
+
+  const resetItemToAddInExpenseMaterial = () => {
+    itemToAddInExpenseMaterial.value = {
+      description: null,
+      quantity: null,
+      cost: null,
+      oldOrNewProduct: null,
+      selectedProductUuid: null,
+      unit: null,
+      stock: null,
+      trackStock: true,
     };
   }
 
@@ -634,10 +746,64 @@ export function useTransactionStore() {
     };
   }
 
+  const addMaterialItemToExpense = () => {
+    const material = { ...itemToAddInExpenseMaterial.value };
+
+    // Asegurar que materialItems existe
+    if (!transactionToAdd.value.materialItems) {
+      transactionToAdd.value.materialItems = [];
+    }
+
+    // Homogeneizar estructura con campos consistentes
+    const materialItem = {
+      uuid: material.uuid || uuidv4(), // Generar UUID si no existe
+      productId: material.selectedProductUuid || null, // ID del producto en la collection 'products'
+      description: material.description,
+      quantity: material.quantity,
+      unit: material.unit,
+      cost: material.cost,
+      oldOrNewProduct: material.oldOrNewProduct,
+      stockLogId: null, // Se asignará después de crear el stockLog
+    };
+
+    // No hay validaciones de stock para compras de materiales
+    // Solo agregamos el item al array
+    transactionToAdd.value.materialItems.push(materialItem);
+
+    console.log('📦 Material agregado a la compra:', {
+      uuid: materialItem.uuid,
+      productId: materialItem.productId,
+      descripcion: materialItem.description,
+      cantidad: materialItem.quantity,
+      costo: materialItem.cost,
+      unidad: materialItem.unit,
+      tipo: materialItem.oldOrNewProduct
+    });
+
+    // Resetear el item
+    itemToAddInExpenseMaterial.value = {
+      description: null,
+      quantity: null,
+      cost: null,
+      oldOrNewProduct: null,
+      selectedProductUuid: null,
+      unit: null,
+      stock: null,
+      trackStock: true,
+    };
+  }
+
   const removeItemToTransaction = (uuid) => {
     const index = transactionToAdd.value.items.findIndex(i => i.uuid === uuid);
     if (index !== -1) {
       transactionToAdd.value.items.splice(index, 1);
+    }
+  }
+
+  const removeMaterialItemFromExpense = (uuid) => {
+    const index = transactionToAdd.value.materialItems.findIndex(i => i.uuid === uuid);
+    if (index !== -1) {
+      transactionToAdd.value.materialItems.splice(index, 1);
     }
   }
 
@@ -733,6 +899,7 @@ export function useTransactionStore() {
     transactionToAdd,
     currentStepOfAddTransaction,
     itemToAddInTransaction,
+    itemToAddInExpenseMaterial,
     status,
     addTransaction,
     getTransactions,
@@ -757,14 +924,18 @@ export function useTransactionStore() {
     nextStepToAddTransaction,
     prevStepToAddTransaction,
     modifyItemToAddInTransaction,
+    modifyItemToAddInExpenseMaterial,
     resetItemToAddInTransaction,
+    resetItemToAddInExpenseMaterial,
     addItemToTransaction,
+    addMaterialItemToExpense,
     setExpenseDescription,
     setExpenseAmount,
     setExpenseCategory,
     setTransferFromAccount,
     setTransferToAccount,
     removeItemToTransaction,
+    removeMaterialItemFromExpense,
     getSteps,
     totalSteps,
     hasCajaDiaria,

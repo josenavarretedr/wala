@@ -77,9 +77,11 @@ module.exports = functions.firestore
       lastUpdated: FieldValue.serverTimestamp()
     });
 
-    // ✅ ACTUALIZAR RACHA solo si el día está cerrado y tiene transacciones
-    if (agg.hasOpening && agg.hasTxn && agg.hasClosure) {
-      console.log(`🔥 Day complete - Updating streak contextually...`);
+    // ✅ ACTUALIZAR RACHA en dos casos:
+    // 1. Día está completo (hasOpening + hasTxn + hasClosure): Incrementa la racha
+    // 2. Día activo sin cerrar (hasOpening + hasTxn): Solo actualiza lastActiveDay
+    if (agg.hasOpening && agg.hasTxn) {
+      console.log(`🔥 Day active - Updating streak contextually...`);
 
       await updateStreakContextualizada({
         db,
@@ -92,7 +94,7 @@ module.exports = functions.firestore
         console.error('❌ Error updating streak:', err);
       });
     } else {
-      console.log(`⏭️ Day incomplete - Skipping streak update`, {
+      console.log(`⏭️ Day not active - Skipping streak update`, {
         hasOpening: agg.hasOpening,
         hasTxn: agg.hasTxn,
         hasClosure: agg.hasClosure

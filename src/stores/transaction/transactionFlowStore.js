@@ -5,6 +5,7 @@ import { useTransactionStore } from '@/stores/transaction/transactionStore';
 // Importa los componentes de los pasos
 import StepIncomeOrExpense from '@/components/transactionFlow/StepIncomeOrExpense.vue';
 import StepCashOrBank from '@/components/transactionFlow/StepCashOrBank.vue';
+import StepExpenseType from '@/components/transactionFlow/StepExpenseType.vue'
 import StepAddIncomeDetails from '@/components/transactionFlow/StepAddIncomeDetails.vue';
 import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDetails.vue';
 import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePreview.vue';
@@ -61,17 +62,62 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           const inventoryStore = useInventoryStore();
           const transactionStore = useTransactionStore();
 
-          const items = transactionStore.transactionToAdd.value.items;
-          console.log('📦 Items a procesar:', items);
+          // ========================================
+          // PROCESAR INGRESOS (ventas)
+          // ========================================
+          if (currentStepConfig?.label === 'Detalles ingreso') {
+            const items = transactionStore.transactionToAdd.value.items;
+            console.log('📦 Items de venta a procesar:', items);
 
-          if (items && items.length > 0) {
-            await inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(items);
-            console.log('✅ Inventario procesado exitosamente');
-            this.transactionLoading = false;
-          } else {
-            console.warn('⚠️ No hay items para procesar en el inventario');
-            this.transactionLoading = false;
+            if (items && items.length > 0) {
+              await inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(items);
+              console.log('✅ Inventario procesado exitosamente (ventas)');
+            } else {
+              console.warn('⚠️ No hay items para procesar en el inventario (ventas)');
+            }
           }
+
+          // ========================================
+          // PROCESAR EGRESOS DE TIPO MATERIALS (compras)
+          // ========================================
+          if (currentStepConfig?.label === 'Detalles egreso') {
+            const category = transactionStore.transactionToAdd.value.category;
+
+            if (category === 'materials') {
+              const materialItems = transactionStore.transactionToAdd.value.materialItems;
+              console.log('🛒 Materiales de compra a procesar:', materialItems);
+
+              if (materialItems && materialItems.length > 0) {
+                // Procesar cada material y crear los productos/stockLogs necesarios
+                const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(materialItems);
+
+                console.log('✅ Inventario procesado exitosamente (compra de materiales)');
+                console.log('📋 Mapeo de stockLogs:', materialStockLogMap);
+
+                // Actualizar materialItems con sus stockLogIds correspondientes
+                if (materialStockLogMap && materialStockLogMap.length > 0) {
+                  transactionStore.transactionToAdd.value.materialItemsAndStockLogs = materialStockLogMap;
+
+                  // Actualizar cada material item con su stockLogId
+                  materialItems.forEach(material => {
+                    const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
+                    if (mapping) {
+                      material.stockLogId = mapping.stockLogId;
+                      console.log(`🔗 Material ${material.description} vinculado a stockLog ${mapping.stockLogId}`);
+                    }
+                  });
+                }
+              } else {
+                console.warn('⚠️ No hay materiales para procesar en el inventario');
+              }
+            } else {
+              // Para labor/overhead no se procesa inventario
+              console.log('ℹ️ Gasto tipo labor/overhead, no requiere procesamiento de inventario');
+            }
+          }
+
+          this.transactionLoading = false;
+
         } catch (error) {
           console.error('❌ Error procesando inventario:', error);
           this.transactionLoading = false;
@@ -113,6 +159,7 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push({ label: 'Preview ingreso', component: StepAddIncomePreview });
       } else if (transactionType === 'expense') {
         this.steps.push({ label: 'Cuenta', component: StepCashOrBank });
+        this.steps.push({ label: 'Tipo Egreso', component: StepExpenseType });
         this.steps.push({ label: 'Detalles egreso', component: StepAddExpenseDetails });
         this.steps.push({ label: 'Preview egreso', component: StepAddExpensePreview });
       } else if (transactionType === 'transfer') {

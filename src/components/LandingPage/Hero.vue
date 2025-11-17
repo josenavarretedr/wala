@@ -23,13 +23,12 @@
         <h1
           class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
         >
-          Tu copiloto para manejar
-          <span class="text-orange-600">tu negocio</span> con
-          <span class="text-blue-600">claridad</span>
+          <span class="text-blue-600">Copiloto</span> de tu
+          <span class="text-orange-600">negocio</span>
         </h1>
 
         <!-- Subtítulo (H2) -->
-        <h2
+        <!-- <h2
           class="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 text-center font-normal leading-relaxed max-w-4xl mx-auto"
         >
           WALA te ayuda a organizar tus ventas, gastos y clientes sin
@@ -37,7 +36,7 @@
           <span class="font-medium text-gray-800"
             >Simple, confiable y pensado para ti.</span
           >
-        </h2>
+        </h2> -->
 
         <!-- Grid de beneficios (estilo ResumenDay) -->
         <div

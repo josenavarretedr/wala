@@ -4,7 +4,7 @@
     <Hero></Hero>
 
     <!-- Sección 1: El Problema -->
-    <Pain></Pain>
+    <!-- <Pain></Pain> -->
     <!-- Sección 2: La Solución (WALA) -->
     <!-- <Solution></Solution> -->
 

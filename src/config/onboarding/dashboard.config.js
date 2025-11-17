@@ -24,7 +24,7 @@ export const dashboardConfig = {
     // 0) Bienvenida
     {
       popover: {
-        title: '💜 Bienvenido a WALA',
+        title: 'Bienvenido a WALA',
         description: `
           <div class="text-sm leading-relaxed">
             <p>Tu <strong>racha diaria</strong> es el corazón de WALA: <strong>Aperturar → Registrar → Cerrar</strong>.</p>
@@ -64,7 +64,6 @@ export const dashboardConfig = {
         description: `
           <div class="text-sm leading-relaxed">
             <p>Visualiza <strong>ingresos</strong>, <strong>egresos</strong> y <strong>balance</strong> en <span class="text-emerald-600 font-semibold">tiempo real</span>.</p>
-            <p class="text-gray-600">Si el balance no cuadra, revisa movimientos o inventario.</p>
           </div>
         `,
         side: 'top',

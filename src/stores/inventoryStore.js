@@ -139,6 +139,131 @@ export function useInventoryStore() {
     }
   }
 
+  /**
+   * Procesa compras de materiales/insumos y crea/actualiza productos en inventario
+   * Crea stockLogs con type: 'buy' para registrar la entrada de stock
+   */
+  const addMaterialItemsToInventoryForPurchase = async (materialItems) => {
+    const operationChain = startOperationChain('bulk_purchase_materials');
+
+    try {
+      let processedCount = 0;
+      const relatedEntities = [];
+      const materialStockLogMap = []; // Array para mapear materials con sus stockLogIds
+
+      for (const material of materialItems) {
+        const productId = material.uuid || material.selectedProductUuid;
+
+        // Verificar si el producto ya existe
+        if (material.oldOrNewProduct === "old") {
+          const productExists = await getProductById(productId);
+
+          if (!productExists) {
+            console.warn(
+              `⚠️ Material ${productId} marcado como "old" pero no existe. ` +
+              `Convirtiendo a "new" automáticamente.`,
+              { description: material.description, productId }
+            );
+
+            material.oldOrNewProduct = "new";
+
+            await operationChain.addStep('update', 'inventory', productId, {
+              reason: 'auto_convert_old_to_new_material',
+              severity: 'medium',
+              tags: ['inventory_validation', 'material_purchase', 'auto_correction'],
+              previousState: { oldOrNewProduct: 'old' },
+              newState: { oldOrNewProduct: 'new' },
+            });
+          }
+        }
+
+        // Si es un material nuevo, crearlo en el inventario
+        if (material.oldOrNewProduct === "new") {
+          const newProduct = {
+            uuid: productId,
+            description: material.description,
+            price: material.cost, // El costo de compra se usa como precio inicial
+            unit: material.unit,
+            stock: material.quantity, // Stock inicial = cantidad comprada
+            trackStock: material.trackStock ?? true,
+          };
+
+          await operationChain.addStep('create', 'inventory', productId, {
+            newState: newProduct,
+            reason: 'new_material_purchase',
+            severity: 'medium',
+            tags: ['inventory_creation', 'material_purchase', 'new_material']
+          });
+
+          await createItem(newProduct, 'MERCH');
+          processedCount++;
+
+          relatedEntities.push({
+            type: 'inventory',
+            id: productId,
+            relationship: 'created_via_purchase',
+            metadata: {
+              quantity: material.quantity,
+              cost: material.cost,
+              totalCost: material.cost * material.quantity
+            }
+          });
+
+          console.log(`✅ Nuevo material creado: ${material.description} (${material.quantity} ${material.unit})`);
+        }
+
+        // Crear stockLog con type: 'buy' para registrar la compra
+        const stockLogData = {
+          uuid: productId, // UUID del producto (requerido por createStockLog)
+          productId: productId, // También mantener productId para referencia
+          quantity: material.quantity,
+          type: 'buy', // Tipo de operación: compra
+          cost: material.cost,
+          totalCost: material.cost * material.quantity,
+          unit: material.unit,
+          description: `Compra: ${material.description}`,
+          createdAt: new Date(),
+        };
+
+        const stockLogId = await addStockLogInInventory(stockLogData, 'buy');
+
+        // Mapear el material UUID con su stockLogId
+        materialStockLogMap.push({
+          materialUuid: material.uuid,
+          stockLogId: stockLogId
+        });
+
+        console.log(`📦 StockLog creado para compra: ${material.description} (+${material.quantity} ${material.unit}) - ID: ${stockLogId}`);
+      }
+
+      await operationChain.finish({
+        reason: 'bulk_material_purchase_completed',
+        metadata: {
+          totalProcessed: materialItems.length,
+          newMaterialsAdded: processedCount,
+          relatedEntities
+        }
+      });
+
+      console.log(`✅ Compra de materiales completada: ${materialItems.length} materiales procesados`);
+
+      // Retornar el mapeo de materials con sus stockLogIds
+      return materialStockLogMap;
+
+    } catch (error) {
+      console.error('❌ Error procesando compra de materiales:', error);
+
+      await operationChain.addStep('error', 'inventory', 'bulk_purchase', {
+        newState: { error: error.message },
+        reason: 'bulk_material_purchase_failed',
+        severity: 'high',
+        tags: ['inventory_error', 'material_purchase', 'purchase_failure']
+      });
+
+      throw error;
+    }
+  }
+
   const addStockLogInInventory = async (stockLog, typeStockLog = 'sell') => {
     try {
       // === TRAZABILIDAD: Log de creación de stock log ===
@@ -382,6 +507,7 @@ export function useInventoryStore() {
     getProductDetails,
     addStockLogInInventory,
     addItemToInventoryFromArryOfItemsNewOrOld,
+    addMaterialItemsToInventoryForPurchase,
     saveInventoryCount,
     updateProduct: updateProductDetails,
   };

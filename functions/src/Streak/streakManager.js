@@ -246,9 +246,33 @@ async function updateStreakContextualizada({
   // ⚠️ CRÍTICO: No contar dos veces el mismo día
   if (lastActiveDay === day) {
     log('⏭️ [STREAK] Ya se contó este día');
+
+    // Si el día ya está cerrado, actualizar copilotAssistedSessions si aplica
+    const hasClosure = summaryDoc.hasClosure === true;
+    if (hasClosure && copilotClosed) {
+      const updatedCopilotSessions = Number(streak.copilotAssistedSessions || 0) + 1;
+
+      await streakRef.set({
+        streak: {
+          ...streak,
+          copilotAssistedSessions: updatedCopilotSessions,
+          lastUpdated: FieldValue.serverTimestamp()
+        }
+      }, { merge: true });
+
+      log('🤖 [STREAK] Actualizado copilotAssistedSessions:', updatedCopilotSessions);
+
+      return {
+        updated: true,
+        streak: { ...streak, copilotAssistedSessions: updatedCopilotSessions, mode, medianGap, allowedGap },
+        reason: 'copilot-sessions-updated'
+      };
+    }
+
     await streakRef.set({
       streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
     }, { merge: true });
+
     return {
       updated: false,
       streak: { ...streak, mode, medianGap, allowedGap },
@@ -256,7 +280,7 @@ async function updateStreakContextualizada({
     };
   }
 
-  // Calcular nueva racha
+  // 🔥 Calcular nueva racha (el usuario trabajó hoy)
   let newCurrent = 1;
   if (lastActiveDay) {
     const gap = daysBetweenYmd(lastActiveDay, day, tz);
@@ -285,9 +309,10 @@ async function updateStreakContextualizada({
     }
   };
 
-  logAlways(`✅ [STREAK] GUARDADO - Business: ${businessId}`, {
+  logAlways(`✅ [STREAK] RACHA INCREMENTADA - Business: ${businessId}`, {
     current: newCurrent,
     max: newMax,
+    lastActiveDay: day,
     copilotAssisted: copilotAssistedSessions
   });
 
