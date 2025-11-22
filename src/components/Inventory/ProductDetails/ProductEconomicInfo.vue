@@ -25,8 +25,11 @@
 
     <!-- Grid de Información Financiera - Mobile First -->
     <div class="space-y-2">
-      <!-- Precio de Venta -->
-      <div class="bg-green-50 rounded-lg p-3 border border-green-100">
+      <!-- Precio de Venta (NO mostrar para RAW_MATERIAL) -->
+      <div
+        v-if="productType !== 'RAW_MATERIAL'"
+        class="bg-green-50 rounded-lg p-3 border border-green-100"
+      >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
             <svg
@@ -69,9 +72,13 @@
                 d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
               ></path>
             </svg>
-            <span class="text-xs font-medium text-orange-700"
-              >Costo por {{ unitLabelShort }}</span
-            >
+            <span class="text-xs font-medium text-orange-700">
+              {{
+                productType === "RAW_MATERIAL"
+                  ? "Costo de compra"
+                  : `Costo por ${unitLabelShort}`
+              }}
+            </span>
           </div>
           <p v-if="cost" class="text-lg font-bold text-orange-800 tabular-nums">
             S/ {{ formatPrice(cost) }}
@@ -80,9 +87,9 @@
         </div>
       </div>
 
-      <!-- Margen de Ganancia + Chip de Rentabilidad -->
+      <!-- Margen de Ganancia + Chip de Rentabilidad (NO mostrar para RAW_MATERIAL) -->
       <div
-        v-if="hasCostData"
+        v-if="hasCostData && productType !== 'RAW_MATERIAL'"
         class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-3 border border-purple-100"
       >
         <!-- Margen -->
@@ -171,6 +178,12 @@ const props = defineProps({
   unit: {
     type: String,
     default: "uni",
+  },
+  productType: {
+    type: String,
+    default: "MERCH",
+    validator: (value) =>
+      ["MERCH", "PRODUCT", "RAW_MATERIAL", "SERVICE"].includes(value),
   },
 });
 

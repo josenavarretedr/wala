@@ -68,6 +68,7 @@
         :price="product.price"
         :cost="product.cost"
         :unit="product.unit"
+        :product-type="product.type"
         class="mb-4"
       />
 

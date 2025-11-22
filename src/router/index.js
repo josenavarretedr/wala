@@ -96,7 +96,7 @@ const routes = [
       {
         path: 'business-info',
         name: 'BusinessInfo',
-        component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
+        component: () => import('@/views/business/BusinessInfo.vue'),
         meta: { role: 'gerente', title: 'Datos del Negocio' }
       },
 
@@ -187,6 +187,12 @@ const routes = [
         name: 'InventoryDashboard',
         component: () => import('@/views/Inventory/InventoryDashboard.vue')
       },
+      {
+        path: 'inventory/product/new',
+        name: 'InventoryAddProduct',
+        component: () => import('@/views/Inventory/AddProduct.vue')
+      }
+      ,
       {
         path: 'inventory/product/:productId',
         name: 'InventoryProductDetails',
@@ -409,11 +415,11 @@ router.beforeEach(async (to, from, next) => {
       if (!hasFeature) {
         console.log('❌ Feature no disponible:', to.meta.requiresFeature)
         console.log('🔄 Redirigiendo a página de planes...')
-        
+
         // Redirigir a página de planes con el query param de la feature bloqueada
         return next({
           path: `/business/${businessId}/plans`,
-          query: { 
+          query: {
             feature: to.meta.requiresFeature,
             from: to.path
           }

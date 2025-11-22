@@ -6,7 +6,12 @@
     Este wrapper delega la renderización al nuevo componente ProductEconomicInfo
     manteniendo la misma interfaz de props para no romper código existente.
   -->
-  <ProductEconomicInfo :price="price" :cost="cost" />
+  <ProductEconomicInfo
+    :price="price"
+    :cost="cost"
+    :unit="unit"
+    :productType="productType"
+  />
 </template>
 
 <script setup>
@@ -37,7 +42,8 @@ const props = defineProps({
   productType: {
     type: String,
     default: "MERCH",
-    validator: (value) => ["MERCH", "PRODUCT", "SERVICE"].includes(value),
+    validator: (value) =>
+      ["MERCH", "PRODUCT", "RAW_MATERIAL", "SERVICE"].includes(value),
   },
   trackStock: {
     type: Boolean,

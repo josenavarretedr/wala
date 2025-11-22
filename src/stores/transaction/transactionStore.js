@@ -12,6 +12,7 @@ import { serverTimestamp } from 'firebase/firestore';
 import { v4 as uuidv4 } from "uuid";
 
 import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
+import { useInventoryStore } from "@/stores/inventoryStore"; // Importa el store de inventario
 import { fromJSON } from 'postcss';
 const expensesStore = useExpensesStore(); // Usa el store
 
@@ -143,8 +144,39 @@ export function useTransactionStore() {
         // Importar funciones de useExpenses para gestionar expenses
         const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
 
+        // Instanciar inventoryStore para gestionar productos y stockLogs
+        const inventoryStore = useInventoryStore();
+
+        // Declarar expenseId al inicio para que esté disponible en todo el bloque
+        let expenseId = null;
+
         // Para materials, calcular el total desde materialItems
         if (transactionToAdd.value.category === 'materials') {
+          // 🛒 GESTIÓN DE INVENTARIO: Procesar materials en la colección 'products'
+          console.log('🛒 Iniciando procesamiento de materials en inventario...');
+
+          // Llamar a inventoryStore para crear/actualizar productos y stockLogs
+          const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(
+            transactionToAdd.value.materialItems
+          );
+
+          // Actualizar materialItems con los stockLogIds generados
+          if (materialStockLogMap && materialStockLogMap.length > 0) {
+            transactionToAdd.value.materialItems = transactionToAdd.value.materialItems.map(material => {
+              const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
+              if (mapping) {
+                return {
+                  ...material,
+                  stockLogId: mapping.stockLogId
+                };
+              }
+              return material;
+            });
+
+            console.log('✅ Materials procesados en inventario con stockLogIds:', materialStockLogMap);
+          }
+
+
           const materialTotal = (transactionToAdd.value.materialItems || []).reduce((sum, material) => {
             return sum + (material.cost || 0) * (material.quantity || 0);
           }, 0);
@@ -182,6 +214,7 @@ export function useTransactionStore() {
             await addLogToExpense(MATERIALS_EXPENSE_ID, logData);
             await updateExpenseMetadata(MATERIALS_EXPENSE_ID);
 
+            expenseId = MATERIALS_EXPENSE_ID;
             transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
             transactionToAdd.value.oldOrNewExpense = 'old';
 
@@ -197,6 +230,7 @@ export function useTransactionStore() {
 
             await createExpenseWithLog(expenseData, logData);
 
+            expenseId = MATERIALS_EXPENSE_ID;
             transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
             transactionToAdd.value.oldOrNewExpense = 'new';
 
@@ -214,8 +248,6 @@ export function useTransactionStore() {
             account: transactionToAdd.value.account,
             notes: transactionToAdd.value.notes || null
           };
-
-          let expenseId = null;
 
           // Verificar si es expense nuevo o existente
           if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
@@ -289,8 +321,13 @@ export function useTransactionStore() {
         }
       );
 
-      // Crear la transacción en Firestore (eliminar duplicación)
-      await createTransaction(transactionToAdd.value);
+      // Limpiar objeto de transacción: eliminar campos undefined antes de guardar en Firestore
+      const cleanTransaction = JSON.parse(JSON.stringify(transactionToAdd.value, (key, value) => {
+        return value === undefined ? null : value;
+      }));
+
+      // Crear la transacción en Firestore
+      await createTransaction(cleanTransaction);
       console.log('✅ Transaction added successfully with traceId:', traceId);
 
       // === TRAZABILIDAD: Finalizar operación compleja ===

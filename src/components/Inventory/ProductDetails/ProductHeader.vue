@@ -219,7 +219,8 @@ const props = defineProps({
   productType: {
     type: String,
     default: "MERCH",
-    validator: (value) => ["MERCH", "PRODUCT", "SERVICE"].includes(value),
+    validator: (value) =>
+      ["MERCH", "PRODUCT", "RAW_MATERIAL", "SERVICE"].includes(value),
   },
   trackStock: {
     type: Boolean,
@@ -312,6 +313,7 @@ const productTypeLabel = computed(() => {
   const labels = {
     MERCH: "Mercadería",
     PRODUCT: "Producto",
+    RAW_MATERIAL: "Insumo",
     SERVICE: "Servicio",
   };
   return labels[props.productType] || "Mercadería";
@@ -321,6 +323,7 @@ const productTypeBadgeClass = computed(() => {
   const classes = {
     MERCH: "bg-emerald-100 text-emerald-700 border border-emerald-200",
     PRODUCT: "bg-purple-100 text-purple-700 border border-purple-200",
+    RAW_MATERIAL: "bg-amber-100 text-amber-700 border border-amber-200",
     SERVICE: "bg-blue-100 text-blue-700 border border-blue-200",
   };
   return classes[props.productType] || classes.MERCH;
@@ -331,6 +334,8 @@ const productTypeIcon = computed(() => {
     MERCH: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z", // Shopping bag
     PRODUCT:
       "M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z", // Flask
+    RAW_MATERIAL:
+      "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4", // Cube (material/ingredient)
     SERVICE:
       "M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z", // Briefcase
   };

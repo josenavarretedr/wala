@@ -1,6 +1,6 @@
 <template>
   <!-- Cuadrícula de microaplicaciones y widgets -->
-  <div class="p-2 sm:p-4">
+  <div class="p-2 sm:p-4 lg:px-8 lg:py-4">
     <!-- Contenedor para móvil -->
     <div class="lg:hidden">
       <!-- Widget de racha -->
@@ -65,11 +65,11 @@
 
     <!-- Grid desktop: 6 columnas, todos en una fila -->
     <div
-      class="hidden lg:grid lg:grid-cols-6 lg:gap-3 lg:max-w-4xl lg:mx-auto lg:items-stretch"
+      class="hidden lg:grid lg:grid-cols-6 lg:gap-4 xl:gap-5 lg:max-w-7xl xl:max-w-[1400px] lg:mx-auto lg:items-stretch"
     >
       <!-- Widget de racha (2 columnas) -->
       <div
-        class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden"
+        class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
       >
         <StreakWidget :compact="true" />
       </div>
@@ -81,7 +81,7 @@
         :class="[
           'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
           'col-span-1',
-          'p-2',
+          'p-4 min-h-[140px]',
           item.color === 'blue' &&
             'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
           item.color === 'red' &&
@@ -100,19 +100,22 @@
           v-if="item.isComponent"
           :is="item.icon"
           :class="[
-            'mb-1 transition-all duration-200 w-8 h-8',
+            'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
             item.available ? getIconColor(item.color) : 'text-gray-400',
             item.available && getIconHoverColor(item.color),
           ]"
         />
-        <div v-else class="mb-1 transition-all duration-200 text-2xl">
+        <div
+          v-else
+          class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
+        >
           {{ item.icon }}
         </div>
         <div
           :class="[
             'text-center px-1',
             item.available ? 'text-gray-600 font-medium' : 'text-gray-400',
-            'text-xs',
+            'text-sm xl:text-base',
           ]"
         >
           {{ item.name }}
@@ -420,12 +423,19 @@ watch(showModal, (newValue) => {
 @media (min-width: 1024px) {
   /* Hacer que el widget de racha tenga altura completa */
   .col-span-2 {
-    min-height: 120px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
   }
 
-  /* Apps cuadradas */
-  .aspect-square {
-    aspect-ratio: 1 / 1;
+  /* Apps cuadradas con altura mínima */
+  .col-span-1 {
+    min-height: 140px;
+  }
+
+  /* Asegurar que todo esté en una sola fila visible */
+  .lg\:grid-cols-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 </style>

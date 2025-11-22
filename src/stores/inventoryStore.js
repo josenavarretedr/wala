@@ -9,7 +9,7 @@ const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
 
 export function useInventoryStore() {
-  const { getAllItemsInInventory, createItem, createStockLog, getProductById, updateProduct } = useInventory();
+  const { getAllItemsInInventory, createItem, createProduct, createStockLog, getProductById, updateProduct } = useInventory();
   const { logInventoryOperation, logCreate, startOperationChain } = useTraceability();
 
   // Obtener los ítems en inventario
@@ -500,6 +500,64 @@ export function useInventoryStore() {
     }
   };
 
+  /**
+   * Crea un nuevo producto en el inventario con trazabilidad completa
+   * @param {Object} productData - Datos del producto a crear
+   * @returns {Promise<string>} UUID del producto creado
+   */
+  const createNewProduct = async (productData) => {
+    const operationChain = startOperationChain('create_new_product');
+
+    try {
+      console.log('📦 Creando nuevo producto:', productData);
+
+      // === TRAZABILIDAD: Log de inicio ===
+      await operationChain.addStep('create', 'inventory', 'new_product', {
+        newState: productData,
+        reason: 'new_product_creation_initiated',
+        severity: 'medium',
+        tags: ['product_creation', 'inventory_add', 'user_action']
+      });
+
+      // Llamar al composable para crear el producto
+      const productId = await createProduct(productData);
+
+      // === TRAZABILIDAD: Log de éxito ===
+      await operationChain.finish({
+        reason: 'product_created_successfully',
+        metadata: {
+          productId,
+          description: productData.description,
+          type: productData.type,
+          trackStock: productData.trackStock,
+          relatedEntities: [
+            { type: 'inventory', id: productId, relationship: 'created' }
+          ]
+        }
+      });
+
+      console.log('✅ Producto creado con trazabilidad completa:', productId);
+
+      // Refrescar inventario para incluir el nuevo producto
+      await getItemsInInventory();
+
+      return productId;
+
+    } catch (error) {
+      console.error('❌ Error creando producto:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await operationChain.addStep('error', 'inventory', 'new_product', {
+        newState: { error: error.message },
+        reason: 'product_creation_failed',
+        severity: 'high',
+        tags: ['product_error', 'creation_failure', 'user_action_failed']
+      });
+
+      throw error;
+    }
+  };
+
   return {
     allItemsInInventory,
     itemToAddToInventory,
@@ -510,5 +568,6 @@ export function useInventoryStore() {
     addMaterialItemsToInventoryForPurchase,
     saveInventoryCount,
     updateProduct: updateProductDetails,
+    createNewProduct,
   };
 }

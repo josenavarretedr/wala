@@ -86,9 +86,7 @@
               <Network class="w-8 h-8 text-purple-600" />
             </div>
             <p class="text-sm font-semibold text-gray-900">RESCAM</p>
-            <p class="text-xs text-gray-500 mt-1">
-              Red de Servicios Cooperativos
-            </p>
+            <p class="text-xs text-gray-500 mt-1">Responsables del Cambio</p>
           </div>
 
           <!-- Aliado 4: Cooperación Internacional -->
@@ -341,7 +339,7 @@ const stopCarousel = () => {
 
 // Animación del contador de usuarios
 const animatedUsers = ref(0);
-const targetUsers = 1500;
+const targetUsers = 100;
 
 const animateCounter = () => {
   const duration = 2000; // 2 segundos

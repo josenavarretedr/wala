@@ -2,29 +2,29 @@
   <!-- Widget minimalista con click para abrir modal -->
   <div
     :class="[
-      'w-full h-full transition-shadow duration-200 cursor-pointer',
+      'w-full h-full transition-shadow duration-200 cursor-pointer flex flex-col justify-center',
       compact
-        ? 'p-3 sm:p-4'
+        ? 'p-3 sm:p-4 lg:p-4'
         : 'bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 hover:shadow-md',
     ]"
     @click="goToStreakView"
   >
     <!-- Grid de 2 columnas: [Icono+Número] | [Estados] -->
-    <div class="grid grid-cols-[auto_1fr] gap-4 items-start">
+    <div class="grid grid-cols-[auto_1fr] gap-3 lg:gap-4 items-center">
       <!-- Columna 1: Icono + Número -->
       <div
-        class="flex flex-row justify-center items-center gap-3 min-w-[120px]"
+        class="flex flex-row justify-center items-center gap-2 lg:gap-3 min-w-[90px] lg:min-w-[110px]"
       >
         <!-- Icono de fuego -->
         <div class="relative">
           <SnowFlake
             v-if="!isStreakActiveToday"
-            class="w-8 h-8 sm:w-10 sm:h-10 text-gray-300"
+            class="w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10 text-gray-300"
           />
           <FireFlame
             v-else
             :class="[
-              'transition-all duration-300 w-8 h-8 sm:w-10 sm:h-10',
+              'transition-all duration-300 w-7 h-7 sm:w-9 sm:h-9 lg:w-10 lg:h-10',
               isStreakActiveToday
                 ? 'text-red-500 animate-flame'
                 : 'text-gray-300',
@@ -42,7 +42,7 @@
         <div class="text-center">
           <p
             :class="[
-              'font-extrabold tabular-nums transition-all duration-300 text-3xl sm:text-4xl',
+              'font-extrabold tabular-nums transition-all duration-300 text-2xl sm:text-3xl lg:text-4xl',
               isStreakActiveToday ? 'text-red-500' : 'text-gray-300',
             ]"
           >
@@ -55,7 +55,7 @@
       </div>
 
       <!-- Columna 2: Estados del día -->
-      <div class="space-y-2">
+      <div class="space-y-1.5 lg:space-y-2">
         <!-- Apertura -->
         <div class="flex items-center gap-2">
           <div
@@ -70,7 +70,7 @@
               hasOpeningToday ? 'text-gray-800 font-medium' : 'text-gray-400',
             ]"
           >
-            Apertura
+            {{ hasOpeningToday ? "Día aperturado." : "Día aún no aperturado." }}
           </span>
         </div>
 
@@ -88,7 +88,9 @@
               hasTxnToday ? 'text-gray-800 font-medium' : 'text-gray-400',
             ]"
           >
-            Transacciones
+            {{
+              hasTxnToday ? "Transacción hecha." : "Registra algún movimiento."
+            }}
           </span>
         </div>
 
@@ -106,7 +108,7 @@
               hasClosureToday ? 'text-gray-800 font-medium' : 'text-gray-400',
             ]"
           >
-            Cierre
+            {{ hasClosureToday ? "Cierre completado." : "Día aún no cerrado." }}
           </span>
         </div>
       </div>

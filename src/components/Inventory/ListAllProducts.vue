@@ -160,6 +160,7 @@ function buildIndex(items) {
         description: p.description,
         description_lc: normalize(p.description || ""),
         price: p.price,
+        cost: p.cost, // ✅ Agregado: campo cost
         stock: p.stock,
         unit: p.unit || "uni",
         type: p.type ? p.type : "MERCH",

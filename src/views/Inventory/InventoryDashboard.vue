@@ -13,11 +13,17 @@
         </div>
       </template>
     </Suspense>
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
+    >
+      <NavigationBtnInventory />
+    </div>
   </div>
 </template>
 
 <script setup>
 import ListAllProducts from "@/components/Inventory/ListAllProducts.vue";
+import NavigationBtnInventory from "@/components/Inventory/NavigationBtnInventory.vue";
 </script>
 
 <style scoped>

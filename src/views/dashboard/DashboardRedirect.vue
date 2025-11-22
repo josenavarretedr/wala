@@ -1,45 +1,51 @@
 <template>
-  <div class="space-y-6 max-w-2xl mx-auto mb-20">
-    <!-- Micro Aplicaciones -->
-    <div data-tour="micro-apps">
+  <div class="space-y-6 mb-20">
+    <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
+    <div data-tour="micro-apps" class="max-w-2xl lg:max-w-none mx-auto">
       <MicroApps
         :business-id="businessId"
         @navigate-to-app="handleNavigateToApp"
       />
     </div>
 
-    <!-- ¿Cómo va el día? -->
-    <Suspense>
-      <template #default>
-        <div data-tour="resumen-day">
-          <ResumenDay :transactions="[]" />
-        </div>
-      </template>
-      <template #fallback>
-        <Loader />
-      </template>
-    </Suspense>
+    <!-- Contenedor con max-w-2xl para el resto del contenido -->
+    <div class="max-w-2xl mx-auto space-y-6">
+      <!-- Contenedor con max-w-2xl para el resto del contenido -->
+      <div class="max-w-2xl mx-auto space-y-6">
+        <!-- ¿Cómo va el día? -->
+        <Suspense>
+          <template #default>
+            <div data-tour="resumen-day">
+              <ResumenDay :transactions="[]" />
+            </div>
+          </template>
+          <template #fallback>
+            <Loader />
+          </template>
+        </Suspense>
 
-    <!-- Historial de transacciones del día -->
-    <Suspense>
-      <template #default>
-        <div data-tour="transactions-list">
-          <ListRecordByDay :transactions="[]" />
-        </div>
-      </template>
-      <template #fallback>
-        <Loader />
-      </template>
-    </Suspense>
+        <!-- Historial de transacciones del día -->
+        <Suspense>
+          <template #default>
+            <div data-tour="transactions-list">
+              <ListRecordByDay :transactions="[]" />
+            </div>
+          </template>
+          <template #fallback>
+            <Loader />
+          </template>
+        </Suspense>
+      </div>
 
-    <!-- ✅ Botones flotantes unificados -->
-    <FloatingActionButtons :show-report="false" :show-quick-action="true" />
+      <!-- ✅ Botones flotantes unificados -->
+      <FloatingActionButtons :show-report="false" :show-quick-action="true" />
 
-    <!-- Botones principales fijos -->
-    <div
-      class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
-    >
-      <MainBtns />
+      <!-- Botones principales fijos -->
+      <div
+        class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
+      >
+        <MainBtns />
+      </div>
     </div>
   </div>
 </template>

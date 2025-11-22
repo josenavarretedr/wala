@@ -36,9 +36,9 @@
       <button
         @click="deleteRegister()"
         :disabled="isDisabled"
-        class="flex-1 py-4 bg-red-600 text-white text-lg font-bold rounded-2xl shadow-2xl shadow-red-500/30 hover:bg-red-700 hover:shadow-red-500/40 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+        class="flex-1 py-3 border-2 border-red-500 text-red-500 font-semibold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
-        <Trash class="w-5 h-5" />
+        <Trash class="w-4 h-4" />
         Eliminar
       </button>
     </div>

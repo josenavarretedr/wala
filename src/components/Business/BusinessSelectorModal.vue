@@ -12,17 +12,27 @@
 
       <!-- Modal -->
       <div
-        class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+        class="inline-block align-bottom bg-white rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
       >
         <!-- Header -->
         <div class="flex items-center justify-between mb-6">
-          <h3 class="text-lg font-medium text-gray-900">Seleccionar Negocio</h3>
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">
+              Cambiar de negocio
+            </h3>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ userStore.userBusinesses.length }} negocio{{
+                userStore.userBusinesses.length !== 1 ? "s" : ""
+              }}
+              disponible{{ userStore.userBusinesses.length !== 1 ? "s" : "" }}
+            </p>
+          </div>
           <button
             @click="$emit('close')"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
           >
             <svg
-              class="w-6 h-6"
+              class="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -38,13 +48,13 @@
         </div>
 
         <!-- Lista de negocios -->
-        <div class="space-y-3">
+        <div class="space-y-2 mb-4">
           <div
             v-for="business in userStore.userBusinesses"
             :key="business.businessId"
             @click="selectBusiness(business)"
             :class="[
-              'flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all',
+              'flex items-center p-3 sm:p-4 rounded-lg border cursor-pointer transition-all duration-200',
               business.businessId === currentBusiness?.businessId
                 ? 'border-blue-500 bg-blue-50'
                 : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50',
@@ -52,65 +62,116 @@
           >
             <!-- Icon del negocio -->
             <div
-              class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4"
+              :class="[
+                'w-10 h-10 rounded-lg flex items-center justify-center mr-3 transition-colors',
+                business.businessId === currentBusiness?.businessId
+                  ? 'bg-blue-100'
+                  : 'bg-gray-100',
+              ]"
             >
-              <span class="text-blue-600 font-bold text-lg">
-                {{ business.businessName.charAt(0) }}
+              <span
+                :class="[
+                  'font-semibold text-base',
+                  business.businessId === currentBusiness?.businessId
+                    ? 'text-blue-600'
+                    : 'text-gray-600',
+                ]"
+              >
+                {{ business.businessName.charAt(0).toUpperCase() }}
               </span>
             </div>
 
             <!-- Información del negocio -->
-            <div class="flex-1">
-              <h4 class="text-sm font-medium text-gray-900">
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-medium text-gray-900 truncate">
                 {{ business.businessName }}
               </h4>
-              <p class="text-xs text-gray-500">
-                {{ business.rol === "gerente" ? "👑 Gerente" : "👤 Empleado" }}
-              </p>
-              <p class="text-xs text-gray-400">
-                {{ business.businessType || "Negocio" }}
+              <p class="text-xs text-gray-500 truncate">
+                {{ business.departamento || "Sin departamento" }}
               </p>
             </div>
 
             <!-- Indicador de selección -->
             <div
               v-if="business.businessId === currentBusiness?.businessId"
-              class="text-blue-500"
+              class="ml-2"
             >
-              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <div
+                class="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center"
+              >
+                <svg
+                  class="w-3 h-3 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="3"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+            <div v-else class="ml-2">
+              <svg
+                class="w-5 h-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
-                  fill-rule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clip-rule="evenodd"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
             </div>
           </div>
+        </div>
 
-          <!-- Opción para crear un nuevo negocio -->
+        <!-- Divider -->
+        <div class="border-t border-gray-200 my-4"></div>
 
+        <!-- Opción para crear un nuevo negocio -->
+        <div
+          @click="createNewBusiness"
+          class="flex items-center p-3 sm:p-4 rounded-lg border border-dashed border-gray-300 cursor-pointer transition-all duration-200 hover:border-blue-400 hover:bg-blue-50 group"
+        >
           <div
-            @click="createNewBusiness"
-            class="flex items-center p-4 rounded-lg border-2 cursor-pointer transition-all border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+            class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mr-3 group-hover:bg-blue-100 transition-colors"
           >
-            <div
-              class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4"
+            <svg
+              class="w-5 h-5 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <span class="text-blue-600 font-bold text-lg">+</span>
-            </div>
-            <div class="flex-1">
-              <h4 class="text-sm font-medium text-gray-900">
-                Crear Nuevo Negocio
-              </h4>
-            </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-sm font-medium text-gray-900">
+              Crear nuevo negocio
+            </h4>
+            <p class="text-xs text-gray-500">
+              Configura un nuevo emprendimiento
+            </p>
           </div>
         </div>
 
         <!-- Footer -->
-        <div class="mt-6 pt-4 border-t border-gray-200">
+        <div class="mt-6">
           <button
             @click="$emit('close')"
-            class="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            class="w-full py-2.5 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
           >
             Cancelar
           </button>

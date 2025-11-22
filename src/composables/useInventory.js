@@ -55,6 +55,87 @@ export function useInventory() {
     }
   };
 
+  /**
+   * Crea un nuevo producto en el inventario con validaciones completas
+   * @param {Object} productData - Datos del producto
+   * @param {string} productData.description - Nombre del producto (obligatorio)
+   * @param {number} productData.price - Precio de venta
+   * @param {number} productData.cost - Costo de compra
+   * @param {string} productData.unit - Unidad de medida (default: 'uni')
+   * @param {string} productData.type - Tipo: MERCH, PRODUCT, RAW_MATERIAL, SERVICE (default: 'MERCH')
+   * @param {boolean} productData.trackStock - Controlar stock (default: según tipo)
+   * @returns {Promise<string>} UUID del producto creado
+   */
+  const createProduct = async (productData) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        throw new Error('No se puede crear producto sin businessId activo');
+      }
+
+      // Validaciones
+      if (!productData.description || productData.description.trim() === '') {
+        throw new Error('La descripción del producto es obligatoria');
+      }
+
+      // Validar que al menos precio o costo esté presente
+      // Para RAW_MATERIAL, el costo es obligatorio
+      if (productData.type === 'RAW_MATERIAL') {
+        if (!productData.cost || productData.cost <= 0) {
+          throw new Error('El costo es obligatorio para materias primas/insumos');
+        }
+      } else {
+        if (!productData.price && !productData.cost) {
+          throw new Error('Debes especificar al menos el precio de venta o el costo del producto');
+        }
+      }
+
+      // Generar UUID para el nuevo producto
+      const productId = uuidv4();
+
+      // Determinar trackStock según el tipo
+      let trackStock = productData.trackStock ?? false;
+      if (productData.type === 'MERCH' || productData.type === 'RAW_MATERIAL') {
+        trackStock = true; // Siempre controlar stock para mercadería e insumos
+      } else if (productData.type === 'SERVICE') {
+        trackStock = false; // Servicios nunca tienen stock
+      }
+
+      // Preparar datos del producto
+      const productRef = doc(db, `businesses/${businessId}/products`, productId);
+      const productPayload = {
+        description: productData.description.trim().toUpperCase(),
+        price: productData.price !== undefined && productData.price !== null ? Number(productData.price) : 0,
+        cost: productData.cost !== undefined && productData.cost !== null ? Number(productData.cost) : 0,
+        stock: 0, // Stock inicial siempre es 0 (se añade después con addStock)
+        unit: productData.unit || 'uni',
+        type: productData.type || 'MERCH',
+        trackStock,
+        stockLog: [], // Historial de stock vacío al crear
+        createdAt: serverTimestamp(),
+      };
+
+      // Crear producto en Firestore
+      await setDoc(productRef, productPayload);
+
+      console.log('✅ Producto creado exitosamente:', {
+        id: productId,
+        description: productPayload.description,
+        type: productPayload.type,
+        trackStock: productPayload.trackStock,
+        price: productPayload.price,
+        cost: productPayload.cost
+      });
+
+      return productId;
+
+    } catch (error) {
+      console.error('❌ Error creando producto:', error);
+      throw error;
+    }
+  };
+
   const createStockLog = async (item, typeStockLog = 'sell') => {
     try {
       const businessId = ensureBusinessId();
@@ -393,6 +474,7 @@ export function useInventory() {
 
   return {
     createItem,
+    createProduct,
     createStockLog,
     deleteStockLog,
     getAllItemsInInventory,

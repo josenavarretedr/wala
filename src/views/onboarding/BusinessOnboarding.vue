@@ -1,21 +1,59 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12 px-4"
-  >
+  <div class="min-h-screen bg-gray-50 py-8 px-4">
     <div class="max-w-2xl mx-auto">
+      <!-- Botón de volver (solo en modo create) -->
+      <button
+        v-if="isCreateMode"
+        @click="goBack"
+        class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Volver
+      </button>
+
       <!-- Header -->
       <div class="text-center mb-8">
         <div
-          class="mx-auto w-20 h-20 bg-green-600 rounded-2xl flex items-center justify-center mb-6"
+          class="mx-auto w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4"
         >
-          <span class="text-3xl text-white">{{
-            isCreateMode ? "➕" : "🏢"
-          }}</span>
+          <svg
+            class="w-6 h-6 text-blue-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              v-if="isCreateMode"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            />
+            <path
+              v-else
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+            />
+          </svg>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mb-2">
-          {{ isCreateMode ? "Crear nuevo negocio" : "¡Bienvenido a Walla!" }}
+        <h1 class="text-2xl font-semibold text-gray-900 mb-1">
+          {{ isCreateMode ? "Crear nuevo negocio" : "¡Bienvenido a Wala!" }}
         </h1>
-        <p class="text-gray-600">
+        <p class="text-sm text-gray-500">
           {{
             isCreateMode
               ? "Agrega un nuevo negocio a tu cuenta"
@@ -25,97 +63,106 @@
       </div>
 
       <!-- Formulario -->
-      <div class="bg-white rounded-2xl shadow-xl p-8">
+      <div
+        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
+      >
         <form @submit.prevent="handleCreateBusiness" class="space-y-6">
           <!-- Nombre del negocio -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Nombre del negocio *
+            <label class="block text-sm font-medium text-gray-900 mb-2">
+              Nombre del negocio
+              <span class="text-red-500">*</span>
             </label>
             <input
               v-model="businessForm.nombre"
               type="text"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              placeholder="Ej: Restaurante El Buen Sabor"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm"
+              placeholder="Ej: Mi Bodega Central"
             />
           </div>
 
           <!-- Tipo de negocio -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de negocio *
+            <label class="block text-sm font-medium text-gray-900 mb-2">
+              Tipo de negocio
+              <span class="text-red-500">*</span>
             </label>
             <select
               v-model="businessForm.tipo"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
             >
               <option value="">Selecciona un tipo</option>
-              <option value="restaurante">🍽️ Restaurante</option>
-              <option value="tienda">🛍️ Tienda</option>
-              <option value="farmacia">💊 Farmacia</option>
-              <option value="panaderia">🥖 Panadería</option>
-              <option value="ferreteria">🔧 Ferretería</option>
-              <option value="salon">💄 Salón de Belleza</option>
-              <option value="consultorio">🏥 Consultorio</option>
-              <option value="servicios">🔧 Servicios</option>
-              <option value="consultoria">💼 Consultoría</option>
-              <option value="freelance">💻 Freelance</option>
-              <option value="otro">📦 Otro</option>
+              <option value="restaurante">Restaurante</option>
+              <option value="tienda">Tienda</option>
+              <option value="bodega">Bodega</option>
+              <option value="farmacia">Farmacia</option>
+              <option value="panaderia">Panadería</option>
+              <option value="ferreteria">Ferretería</option>
+              <option value="salon">Salón de Belleza</option>
+              <option value="consultorio">Consultorio</option>
+              <option value="cafeteria">Cafetería</option>
+              <option value="servicios">Servicios</option>
+              <option value="consultoria">Consultoría</option>
+              <option value="freelance">Freelance</option>
+              <option value="otro">Otro</option>
             </select>
           </div>
 
-          <!-- Departamento (opcional para empleados) -->
-          <!-- <div v-if="businessForm.userRole === 'empleado'">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Departamento (opcional)
+          <!-- Descripción del negocio -->
+          <div>
+            <label class="block text-sm font-medium text-gray-900 mb-2">
+              Descripción del negocio
+              <span class="text-gray-400 text-xs font-normal">(opcional)</span>
             </label>
-            <input
-              v-model="businessForm.departamento"
-              type="text"
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-              placeholder="Ej: Cocina, Ventas, Administración"
-            />
-          </div> -->
-
-          <!-- Información adicional -->
-          <!-- <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
-            <div class="flex">
-              <span class="text-blue-400 text-lg mr-3">💡</span>
-              <div>
-                <h4 class="text-sm font-medium text-blue-800">
-                  Información importante
-                </h4>
-                <p class="text-sm text-blue-700 mt-1">
-                  
-                </p>
-              </div>
-            </div>
-          </div> -->
+            <textarea
+              v-model="businessForm.descripcion"
+              rows="3"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm resize-none"
+              placeholder="Describe brevemente tu negocio: qué vendes, qué servicios ofreces, o cualquier detalle relevante..."
+            ></textarea>
+            <p class="mt-1 text-xs text-gray-500">
+              Esta información te ayudará a identificar mejor tu negocio
+            </p>
+          </div>
 
           <!-- Botones -->
-          <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex flex-col-reverse sm:flex-row gap-3 pt-4">
             <button
               v-if="isCreateMode"
               type="button"
               @click="goBack"
-              class="flex-1 py-3 px-4 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all duration-200"
+              class="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200"
             >
-              ← Volver
+              Cancelar
             </button>
 
             <button
               type="submit"
               :disabled="isLoading"
-              class="flex-1 py-3 px-4 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-all duration-200 font-medium"
+              class="flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
             >
               <span v-if="!isLoading" class="flex items-center justify-center">
-                <span class="mr-2">🚀</span>
-                {{ isCreateMode ? "Crear negocio" : "Comenzar" }}
+                <svg
+                  class="w-4 h-4 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                {{ isCreateMode ? "Crear negocio" : "Continuar" }}
               </span>
               <span v-else class="flex items-center justify-center">
-                <span class="mr-2">⏳</span>
+                <div
+                  class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+                ></div>
                 Creando...
               </span>
             </button>
@@ -124,28 +171,36 @@
           <!-- Error message -->
           <div
             v-if="error"
-            class="bg-red-50 border border-red-200 rounded-xl p-4"
+            class="bg-red-50 border border-red-200 rounded-lg p-4"
           >
-            <span class="text-red-400 mr-2">⚠️</span>
-            <span class="text-sm text-red-700">{{ error }}</span>
+            <div class="flex items-start">
+              <svg
+                class="w-5 h-5 text-red-400 mr-2 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span class="text-sm text-red-700">{{ error }}</span>
+            </div>
           </div>
         </form>
       </div>
 
-      <!-- Ayuda -->
+      <!-- Información adicional -->
       <div
-        class="mt-8 bg-gray-50 border border-gray-200 rounded-xl p-6 text-center"
+        class="mt-6 bg-blue-50 border border-blue-100 rounded-lg p-4 text-center"
       >
-        <h4 class="text-lg font-semibold text-gray-800 mb-2">
-          ¿Necesitas ayuda?
-        </h4>
-        <p class="text-gray-600 text-sm mb-4">
-          Puedes cambiar esta información más tarde desde la configuración del
-          negocio.
+        <p class="text-xs text-blue-700">
+          Podrás cambiar esta información en cualquier momento desde la
+          configuración de tu negocio
         </p>
-        <div class="text-xs text-gray-500">
-          📧 jose.navarrete@wala.lat | 📞 +51 921 492 993
-        </div>
       </div>
     </div>
   </div>
@@ -196,6 +251,7 @@ const BUSINESS_PERMISSIONS = {
 const businessForm = ref({
   nombre: "",
   tipo: "",
+  descripcion: "",
   userRole: "gerente",
   departamento: "",
 });
@@ -243,6 +299,7 @@ const handleCreateBusiness = async () => {
       id: businessId,
       nombre: businessForm.value.nombre.trim(),
       tipo: businessForm.value.tipo,
+      descripcion: businessForm.value.descripcion.trim() || "",
       direccion: "",
       telefono: "",
       email: "",
