@@ -5,6 +5,8 @@ import { useTransactionStore } from '@/stores/transaction/transactionStore';
 // Importa los componentes de los pasos
 import StepIncomeOrExpense from '@/components/transactionFlow/StepIncomeOrExpense.vue';
 import StepCashOrBank from '@/components/transactionFlow/StepCashOrBank.vue';
+import StepPaymentMethod from '@/components/transactionFlow/StepPaymentMethod.vue';
+import StepAttachClient from '@/components/transactionFlow/StepAttachClient.vue';
 import StepExpenseType from '@/components/transactionFlow/StepExpenseType.vue'
 import StepAddIncomeDetails from '@/components/transactionFlow/StepAddIncomeDetails.vue';
 import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDetails.vue';
@@ -154,18 +156,27 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       ];
 
       if (transactionType === 'income') {
-        this.steps.push({ label: 'Cuenta', component: StepCashOrBank });
-        this.steps.push({ label: 'Detalles ingreso', component: StepAddIncomeDetails });
-        this.steps.push({ label: 'Preview ingreso', component: StepAddIncomePreview });
+        // NUEVO FLUJO PARA INGRESOS CON PAGOS PARCIALES Y CLIENTES
+        this.steps.push(
+          { label: 'Detalles ingreso', component: StepAddIncomeDetails },
+          { label: 'Método de pago', component: StepPaymentMethod },      // NUEVO
+          { label: 'Adjuntar cliente', component: StepAttachClient },     // NUEVO
+          { label: 'Preview ingreso', component: StepAddIncomePreview }
+        );
       } else if (transactionType === 'expense') {
-        this.steps.push({ label: 'Cuenta', component: StepCashOrBank });
-        this.steps.push({ label: 'Tipo Egreso', component: StepExpenseType });
-        this.steps.push({ label: 'Detalles egreso', component: StepAddExpenseDetails });
-        this.steps.push({ label: 'Preview egreso', component: StepAddExpensePreview });
+        // MANTENER FLUJO EXISTENTE PARA EGRESOS
+        this.steps.push(
+          { label: 'Cuenta', component: StepCashOrBank },
+          { label: 'Tipo Egreso', component: StepExpenseType },
+          { label: 'Detalles egreso', component: StepAddExpenseDetails },
+          { label: 'Preview egreso', component: StepAddExpensePreview }
+        );
       } else if (transactionType === 'transfer') {
         // Aquí podrías definir pasos específicos para transferencias si es necesario
-        this.steps.push({ label: 'Detalles transferencia', component: StepTransferDetails });
-        this.steps.push({ label: 'Preview transferencia', component: StepTransferPreview });
+        this.steps.push(
+          { label: 'Detalles transferencia', component: StepTransferDetails },
+          { label: 'Preview transferencia', component: StepTransferPreview }
+        );
       }
 
       // this.steps.push({ label: 'Resumen', component: StepSummary });

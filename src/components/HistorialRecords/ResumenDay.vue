@@ -83,7 +83,7 @@
             <div class="flex items-center gap-2 mb-2">
               <GraphUp class="w-4 h-4 text-green-600" />
               <span class="text-xs sm:text-sm font-medium text-green-700"
-                >Ventas hoy</span
+                >Ingresos recibidos</span
               >
             </div>
             <p class="text-base sm:text-lg font-semibold text-green-800">

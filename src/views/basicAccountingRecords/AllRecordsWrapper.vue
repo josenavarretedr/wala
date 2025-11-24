@@ -94,6 +94,7 @@
 import { computed, onMounted, ref } from "vue";
 import { Filter, FilterSolid } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { calculatePaymentStatus } from "@/utils/paymentCalculator";
 import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
@@ -170,6 +171,16 @@ const dataOrdenada = computed(() => {
           tx.type !== "opening" &&
           tx.category !== "adjustment"
       )
+      .map((tx) => {
+        // Si es una transacción de ingreso, calcular el estado de pago
+        if (tx.type === "income") {
+          return {
+            ...tx,
+            ...calculatePaymentStatus(tx),
+          };
+        }
+        return tx;
+      })
       .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
 
     // Agregar en el orden correcto para este día:

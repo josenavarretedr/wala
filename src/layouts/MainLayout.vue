@@ -110,25 +110,35 @@ const currentPageTitle = computed(() => {
   return route.meta?.title || "Dashboard";
 });
 
-// Configuración de elementos del menú
-const mainItems = computed(() => [
-  {
-    icon: "dashboard",
-    label: "Dashboard",
-    to: `/business/${currentBusinessId.value}/dashboard`,
-    permission: null,
-  },
-]);
+// Configuración de elementos del menú - ✅ Solo retornar items si tenemos un businessId válido
+const mainItems = computed(() => {
+  const businessId = currentBusinessId.value;
+  if (!businessId) return [];
 
-const adminItems = computed(() => [
-  {
-    icon: "business",
-    label: "Datos del negocio",
-    to: `/business/${currentBusinessId.value}/business-info`,
-    permission: null,
-    role: "gerente",
-  },
-]);
+  return [
+    {
+      icon: "dashboard",
+      label: "Dashboard",
+      to: `/business/${businessId}/dashboard`,
+      permission: null,
+    },
+  ];
+});
+
+const adminItems = computed(() => {
+  const businessId = currentBusinessId.value;
+  if (!businessId) return [];
+
+  return [
+    {
+      icon: "business",
+      label: "Datos del negocio",
+      to: `/business/${businessId}/business-info`,
+      permission: null,
+      role: "gerente",
+    },
+  ];
+});
 
 const accountItems = computed(() => [
   {

@@ -1,4 +1,4 @@
-// accountsBalanceStore.js
+﻿// accountsBalanceStore.js
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -16,10 +16,10 @@ import { useDailySummary } from '@/composables/useDailySummary';
  * 3. Mantener builders de transacciones (opening, closure, adjustments)
  * 
  * Ventajas:
- * - ✅ Consistencia total backend-frontend
- * - ✅ Cero cálculos en frontend (mejor rendimiento)
- * - ✅ Single source of truth (dailySummary)
- * - ✅ Retrocompatibilidad garantizada
+ * -  Consistencia total backend-frontend
+ * -  Cero cálculos en frontend (mejor rendimiento)
+ * -  Single source of truth (dailySummary)
+ * -  Retrocompatibilidad garantizada
  */
 export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   // ===== ESTADO =====
@@ -87,13 +87,13 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
             expectedCashBalance: summary.balances.expected.cash,
             expectedBankBalance: summary.balances.expected.bank,
           };
-          console.log('✅ OpeningTransaction establecida desde dailySummary');
+          console.log(' OpeningTransaction establecida desde dailySummary');
         } else {
           openingTransaction.value = null;
           console.log('ℹ️ No hay opening en dailySummary');
         }
 
-        console.log('✅ DailySummary cargado exitosamente');
+        console.log(' DailySummary cargado exitosamente');
         console.log('   - Ingresos:', getDailySummaryComposable().getTotalIngresos(summary));
         console.log('   - Egresos:', getDailySummaryComposable().getTotalEgresos(summary));
         console.log('   - Resultado:', getDailySummaryComposable().getResultadoOperacional(summary));
@@ -106,7 +106,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
         return false;
       }
     } catch (error) {
-      console.error('❌ Error cargando dailySummary:', error);
+      console.error(' Error cargando dailySummary:', error);
       summaryLoadError.value = error.message;
       dailySummary.value = null;
       openingTransaction.value = null;
@@ -143,12 +143,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
             expectedCashBalance: summary.balances.expected.cash,
             expectedBankBalance: summary.balances.expected.bank,
           };
-          console.log(`✅ OpeningTransaction de ${dayString} establecida`);
+          console.log(` OpeningTransaction de ${dayString} establecida`);
         } else {
           openingTransaction.value = null;
         }
 
-        console.log(`✅ DailySummary de ${dayString} cargado`);
+        console.log(` DailySummary de ${dayString} cargado`);
         return true;
       } else {
         dailySummary.value = null;
@@ -156,7 +156,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
         return false;
       }
     } catch (error) {
-      console.error(`❌ Error cargando dailySummary de ${dayString}:`, error);
+      console.error(` Error cargando dailySummary de ${dayString}:`, error);
       summaryLoadError.value = error.message;
       dailySummary.value = null;
       openingTransaction.value = null;
@@ -1198,7 +1198,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
             expectedCashBalance: summary.balances?.expected?.cash || 0,
             expectedBankBalance: summary.balances?.expected?.bank || 0,
           };
-          console.log('✅ OpeningTransaction actualizada desde listener');
+          console.log(' OpeningTransaction actualizada desde listener');
         } else {
           openingTransaction.value = null;
         }
@@ -1321,4 +1321,5 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     buildClosureAdjustments,
   };
 });
+
 

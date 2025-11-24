@@ -40,6 +40,7 @@ const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helper
  * Tipos de transacciones que cuentan para hasTxn (racha):
  *   ✅ income (category !== 'adjustment')
  *   ✅ expense (category !== 'adjustment')
+ *   ✅ payment (cobros de ventas a crédito)
  *   ❌ transfer (NO cuenta para racha)
  *   ❌ adjustment (NO cuenta para racha)
  *   ❌ opening (NO cuenta para racha)
@@ -49,8 +50,12 @@ const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helper
  * - 'opening': Apertura de caja
  * - 'closure': Cierre de caja
  * - 'income': Ingreso (venta)
+ *   - paymentStatus: 'completed' | 'partial' | 'pending'
+ *   - totalPaid: monto efectivamente recibido
+ *   - payments: array de pagos realizados
  * - 'expense': Egreso (gasto)
  * - 'transfer': Transferencia entre cuentas
+ * - 'payment': Pago posterior de una venta a crédito
  */
 async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
   console.log(`📊 Calculating detailed aggregates for ${day} in business ${businessId}`);
@@ -130,17 +135,68 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     // === INGRESOS (excluyendo ajustes) ===
     if (txType === 'income' && category !== 'adjustment') {
       hasTxn = true;
-      totalIngresos = addMoney(totalIngresos, amount);
+
+      // 💰 LÓGICA DE PAGOS PARCIALES:
+      // - Si paymentStatus === 'completed': Contar amount completo
+      // - Si paymentStatus === 'partial': Contar solo totalPaid
+      // - Si paymentStatus === 'pending': Contar 0 (no se ha recibido nada)
+      let amountReceived = amount;
+
+      if (tx.paymentStatus === 'partial' && tx.totalPaid !== undefined) {
+        amountReceived = parseMoneyNumber(tx.totalPaid || 0);
+        console.log(`  💵 Partial payment: ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
+      } else if (tx.paymentStatus === 'pending') {
+        amountReceived = 0;
+        console.log(`  ⏳ Pending payment: ${amount} [${account}] (${tx.uuid})`);
+      } else {
+        // completed o sin paymentStatus (legacy)
+        console.log(`  💰 Full payment: ${amountReceived} [${account}] (${tx.uuid})`);
+      }
+
+      totalIngresos = addMoney(totalIngresos, amountReceived);
 
       // Por cuenta (excluyendo ajustes de apertura)
-      if (account === 'cash' && subcategory !== 'opening_adjustment') {
-        ingresosCash = addMoney(ingresosCash, amount);
+      // Para pagos parciales, necesitamos revisar el payments array para el desglose correcto
+      if (tx.paymentStatus === 'partial' && tx.payments && Array.isArray(tx.payments)) {
+        // Desglosar por método según payments array
+        tx.payments.forEach(payment => {
+          const paymentAmount = parseMoneyNumber(payment.amount || 0);
+          const paymentMethod = payment.method || 'cash';
+
+          if (paymentMethod === 'cash') {
+            ingresosCash = addMoney(ingresosCash, paymentAmount);
+          } else if (paymentMethod === 'bank' || paymentMethod === 'yape' || paymentMethod === 'plin') {
+            // Yape y Plin se cuentan como bank (digital)
+            ingresosBank = addMoney(ingresosBank, paymentAmount);
+          }
+        });
+      } else {
+        // Pago completo o pendiente: usar account principal
+        if (account === 'cash' && subcategory !== 'opening_adjustment') {
+          ingresosCash = addMoney(ingresosCash, amountReceived);
+        }
+        if ((account === 'bank' || account === 'yape' || account === 'plin') && subcategory !== 'opening_adjustment') {
+          ingresosBank = addMoney(ingresosBank, amountReceived);
+        }
       }
-      if (account === 'bank' && subcategory !== 'opening_adjustment') {
-        ingresosBank = addMoney(ingresosBank, amount);
+    }
+
+    // === PAGOS POSTERIORES (tipo 'payment') ===
+    // Contar pagos registrados hoy de ventas antiguas
+    if (txType === 'payment') {
+      hasTxn = true;
+      const paymentAmount = parseMoneyNumber(amount || 0);
+
+      totalIngresos = addMoney(totalIngresos, paymentAmount);
+
+      // Desglosar por cuenta
+      if (account === 'cash') {
+        ingresosCash = addMoney(ingresosCash, paymentAmount);
+      } else if (account === 'bank' || account === 'yape' || account === 'plin') {
+        ingresosBank = addMoney(ingresosBank, paymentAmount);
       }
 
-      console.log(`  💰 Income: ${amount} [${account}] (${tx.uuid})`);
+      console.log(`  � Payment received: ${paymentAmount} [${account}] (${tx.uuid})`);
     }
 
     // === EGRESOS (excluyendo ajustes) ===

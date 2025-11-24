@@ -7,7 +7,9 @@ import { useInventory } from '@/composables/useInventory';
 import { useTraceability } from '@/composables/useTraceability';
 import { useExpenses } from '@/composables/useExpenses';
 import { round2, multiplyMoney, addMoney, parseMoneyFloat } from '@/utils/mathUtils';
-import { serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp, Timestamp, getFirestore, doc, writeBatch } from 'firebase/firestore';
+import { calculatePaymentStatus, validateNewPayment } from '@/utils/paymentCalculator';
+import { ANONYMOUS_CLIENT_ID } from '@/types/client';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -28,6 +30,13 @@ const transactionToAdd = ref({
   // Campos para transacciones de ingreso:
   items: [],
   itemsAndStockLogs: [],
+  // NUEVOS CAMPOS PARA PAGOS PARCIALES Y CLIENTES:
+  payments: [],           // Array de pagos realizados
+  paymentStatus: 'completed',  // 'pending' | 'partial' | 'completed'
+  totalPaid: 0,           // Calculado automáticamente
+  balance: 0,             // Calculado automáticamente
+  clientId: null,         // UUID del cliente o null para anónimo
+  clientName: 'Cliente Anónimo', // Nombre denormalizado
   // Campos para transacciones de egreso:
   description: null,
   category: null,
@@ -302,6 +311,52 @@ export function useTransactionStore() {
         expensesStore.resetExpenseToAdd();
       }
 
+      // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
+      if (transactionToAdd.value.type === 'income') {
+        // Obtener el total de la transacción
+        const totalAmount = getTransactionToAddTotal();
+
+        // Si payments está vacío, crear payment inicial con el monto total
+        if (!transactionToAdd.value.payments || transactionToAdd.value.payments.length === 0) {
+          // Pago completo: crear payment con el monto total
+          transactionToAdd.value.payments = [{
+            uuid: crypto.randomUUID(),
+            amount: totalAmount,
+            date: Timestamp.now(),
+            method: transactionToAdd.value.account || 'cash',
+            notes: 'Pago completo al registrar',
+            registeredBy: transactionToAdd.value.userId || 'unknown'
+          }];
+        }
+
+        // Calcular y agregar campos calculados de pago
+        // Asegurarse de pasar total explícitamente
+        const calculatedFields = calculatePaymentStatus({
+          ...transactionToAdd.value,
+          total: totalAmount,
+          amount: totalAmount
+        });
+
+        transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
+        transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
+        transactionToAdd.value.balance = calculatedFields.balance;
+
+        // Asegurar que clientId tenga un valor
+        if (!transactionToAdd.value.clientId) {
+          transactionToAdd.value.clientId = ANONYMOUS_CLIENT_ID;
+          transactionToAdd.value.clientName = 'Cliente Anónimo';
+        }
+
+        console.log('💰 Información de pago procesada:', {
+          totalAmount,
+          payments: transactionToAdd.value.payments.length,
+          totalPaid: transactionToAdd.value.totalPaid,
+          balance: transactionToAdd.value.balance,
+          paymentStatus: transactionToAdd.value.paymentStatus,
+          clientId: transactionToAdd.value.clientId
+        });
+      }
+
       // === TRAZABILIDAD: Log de creación de transacción ===
       traceId = await logTransactionOperation(
         'create',
@@ -550,6 +605,13 @@ export function useTransactionStore() {
       account: null,
       items: [],
       itemsAndStockLogs: [],
+      // CAMPOS PARA PAGOS PARCIALES Y CLIENTES:
+      payments: [],
+      paymentStatus: 'completed',
+      totalPaid: 0,
+      balance: 0,
+      clientId: null,
+      clientName: 'Cliente Anónimo',
       description: null,
       category: null,
       subcategory: null,
@@ -931,6 +993,278 @@ export function useTransactionStore() {
     );
   };
 
+  /**
+   * Agrega un nuevo pago a una transacción existente
+   * @param {string} transactionId - UUID de la transacción
+   * @param {Object} paymentData - Datos del nuevo pago
+   */
+  const addPayment = async (transactionId, paymentData) => {
+    try {
+      console.log('💰 Agregando pago a transacción:', transactionId);
+
+      // Obtener la transacción del store
+      const transaction = transactionsInStore.value.find(t => t.uuid === transactionId);
+
+      if (!transaction) {
+        throw new Error('Transacción no encontrada');
+      }
+
+      // Crear el objeto de pago completo
+      const newPayment = {
+        uuid: paymentData.uuid || crypto.randomUUID(),
+        amount: paymentData.amount,
+        date: paymentData.date || Timestamp.now(),
+        method: paymentData.method,
+        notes: paymentData.notes || '',
+        registeredBy: paymentData.registeredBy
+      };
+
+      // Actualizar el array de payments
+      const updatedPayments = [...(transaction.payments || []), newPayment];
+
+      // Recalcular estado de pago
+      const calculatedFields = calculatePaymentStatus({
+        ...transaction,
+        payments: updatedPayments
+      });
+
+      // Preparar actualización
+      const updates = {
+        payments: updatedPayments,
+        paymentStatus: calculatedFields.paymentStatus,
+        totalPaid: calculatedFields.totalPaid,
+        balance: calculatedFields.balance
+      };
+
+      // Actualizar en Firestore
+      const { updateTransaction } = useTransaccion();
+      await updateTransaction(transactionId, updates);
+
+      // Actualizar en el store local
+      const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
+      if (index !== -1) {
+        transactionsInStore.value[index] = {
+          ...transactionsInStore.value[index],
+          ...updates
+        };
+      }
+
+      console.log('✅ Pago agregado exitosamente');
+      return newPayment;
+    } catch (error) {
+      console.error('❌ Error agregando pago:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Establece la información del cliente para la transacción
+   */
+  const setClientInfo = (clientId, clientName) => {
+    transactionToAdd.value.clientId = clientId;
+    transactionToAdd.value.clientName = clientName;
+  };
+
+  /**
+   * Establece la información de pago para la transacción
+   */
+  const setPaymentInfo = (paymentMethod, isPartialPayment, partialAmount = null) => {
+    console.log('💰 setPaymentInfo called:', {
+      paymentMethod,
+      isPartialPayment,
+      partialAmount,
+      currentPaymentStatus: transactionToAdd.value.paymentStatus
+    });
+
+    if (isPartialPayment && partialAmount) {
+      // Pago parcial: crear payment con el monto parcial
+      transactionToAdd.value.payments = [{
+        uuid: crypto.randomUUID(),
+        amount: partialAmount,
+        date: Timestamp.now(),
+        method: paymentMethod,
+        notes: 'Pago inicial',
+        registeredBy: transactionToAdd.value.userId || 'unknown'
+      }];
+
+      // Calcular estado
+      const total = getTransactionToAddTotal();
+      const calculatedFields = calculatePaymentStatus({
+        ...transactionToAdd.value,
+        total
+      });
+
+      transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
+      transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
+      transactionToAdd.value.balance = calculatedFields.balance;
+
+      console.log('✅ Pago parcial establecido:', {
+        paymentStatus: transactionToAdd.value.paymentStatus,
+        totalPaid: transactionToAdd.value.totalPaid,
+        balance: transactionToAdd.value.balance,
+        payments: transactionToAdd.value.payments
+      });
+    } else {
+      // Pago completo: se manejará en addTransaction
+      transactionToAdd.value.payments = [];
+      transactionToAdd.value.paymentStatus = 'completed';
+      transactionToAdd.value.account = paymentMethod; // Mantener compatibilidad
+
+      console.log('✅ Pago completo establecido:', {
+        paymentStatus: transactionToAdd.value.paymentStatus,
+        account: transactionToAdd.value.account
+      });
+    }
+  };
+
+  /**
+   * Crea una transacción tipo 'payment' y actualiza la venta original
+   * @param {Object} paymentData
+   * @param {string} paymentData.relatedTransactionId - UUID de la venta
+   * @param {number} paymentData.amount - Monto del pago
+   * @param {string} paymentData.account - Método: cash|bank|yape|plin
+   * @param {string} [paymentData.notes] - Notas opcionales
+   */
+  const createPaymentTransaction = async (paymentData) => {
+    try {
+      // Importar stores necesarios
+      const { useAuthStore } = await import('@/stores/authStore');
+      const { useBusinessStore } = await import('@/stores/businessStore');
+      const { useClientStore } = await import('@/stores/clientStore');
+
+      const authStore = useAuthStore();
+      const businessStore = useBusinessStore();
+      const currentUser = authStore.user;
+      const businessId = businessStore.getBusinessId;
+
+      if (!businessId) {
+        throw new Error('No hay negocio activo');
+      }
+      if (!currentUser) {
+        throw new Error('Usuario no autenticado');
+      }
+
+      // 1. Obtener la transacción original
+      const originalTransaction = transactionsInStore.value.find(
+        t => t.uuid === paymentData.relatedTransactionId
+      );
+
+      if (!originalTransaction) {
+        throw new Error('Transacción original no encontrada');
+      }
+
+      if (originalTransaction.type !== 'income') {
+        throw new Error('Solo se pueden registrar pagos para ingresos');
+      }
+
+      // 2. Validar el pago
+      const validation = validateNewPayment(originalTransaction, paymentData.amount);
+      if (!validation.valid) {
+        throw new Error(validation.message);
+      }
+
+      // 3. Calcular balances
+      const currentStatus = calculatePaymentStatus(originalTransaction);
+      const previousBalance = currentStatus.balance;
+      const newBalance = Math.max(previousBalance - paymentData.amount, 0);
+
+      // 4. Crear el objeto payment para agregar al array
+      const newPaymentEntry = {
+        uuid: crypto.randomUUID(),
+        amount: paymentData.amount,
+        date: Timestamp.now(),
+        method: paymentData.account,
+        notes: paymentData.notes || `Pago registrado el ${new Date().toLocaleDateString('es-PE')}`,
+        registeredBy: currentUser.uid
+      };
+
+      // 5. Crear la transacción tipo 'payment'
+      const paymentTransaction = {
+        uuid: crypto.randomUUID(),
+        type: 'payment',
+        amount: paymentData.amount,
+        account: paymentData.account,
+        createdAt: Timestamp.now(),
+
+        // Referencia
+        relatedTransactionId: originalTransaction.uuid,
+        relatedTransactionTotal: originalTransaction.total || originalTransaction.amount || 0,
+
+        // Cliente
+        clientId: originalTransaction.clientId || ANONYMOUS_CLIENT_ID,
+        clientName: originalTransaction.clientName || 'Cliente Anónimo',
+
+        // Cálculos
+        previousBalance,
+        newBalance,
+
+        // Metadata
+        notes: paymentData.notes || '',
+        registeredBy: currentUser.uid,
+        businessId,
+        userId: currentUser.uid
+      };
+
+      // 6. Actualizar la transacción original
+      const updatedPayments = [...(originalTransaction.payments || []), newPaymentEntry];
+      const updatedStatus = calculatePaymentStatus({
+        ...originalTransaction,
+        payments: updatedPayments,
+        total: originalTransaction.total || originalTransaction.amount || 0
+      });
+
+      // 7. Batch update en Firestore
+      const db = getFirestore();
+      const batch = writeBatch(db);
+
+      // Crear payment transaction
+      const paymentRef = doc(db, 'businesses', businessId, 'transactions', paymentTransaction.uuid);
+      batch.set(paymentRef, paymentTransaction);
+
+      // Actualizar transacción original
+      const originalRef = doc(db, 'businesses', businessId, 'transactions', originalTransaction.uuid);
+      batch.update(originalRef, {
+        payments: updatedPayments,
+        paymentStatus: updatedStatus.paymentStatus,
+        totalPaid: updatedStatus.totalPaid,
+        balance: updatedStatus.balance,
+        updatedAt: Timestamp.now()
+      });
+
+      await batch.commit();
+
+      // 8. Actualizar metadata del cliente si existe
+      if (originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
+        const clientStore = useClientStore();
+        await clientStore.updateClientMetadata(originalTransaction.clientId);
+      }
+
+      // 9. Actualizar state local
+      transactionsInStore.value.push(paymentTransaction);
+      const index = transactionsInStore.value.findIndex(t => t.uuid === originalTransaction.uuid);
+      if (index !== -1) {
+        transactionsInStore.value[index] = {
+          ...transactionsInStore.value[index],
+          payments: updatedPayments,
+          ...updatedStatus
+        };
+      }
+
+      console.log('✅ Pago registrado exitosamente:', {
+        paymentId: paymentTransaction.uuid,
+        amount: paymentTransaction.amount,
+        newBalance: updatedStatus.balance,
+        newStatus: updatedStatus.paymentStatus
+      });
+
+      return { success: true, paymentTransaction };
+
+    } catch (error) {
+      console.error('❌ Error creando pago:', error);
+      throw error;
+    }
+  };
+
   return {
     transactionsInStore,
     transactionToAdd,
@@ -977,6 +1311,11 @@ export function useTransactionStore() {
     totalSteps,
     hasCajaDiaria,
     hasClosureToday,
-    isTransactionFromToday
+    isTransactionFromToday,
+    // NUEVAS FUNCIONES PARA PAGOS Y CLIENTES
+    addPayment,
+    setClientInfo,
+    setPaymentInfo,
+    createPaymentTransaction
   };
 }

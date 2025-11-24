@@ -97,7 +97,7 @@ const routes = [
         path: 'business-info',
         name: 'BusinessInfo',
         component: () => import('@/views/business/BusinessInfo.vue'),
-        meta: { role: 'gerente', title: 'Datos del Negocio' }
+        meta: { title: 'Datos del Negocio' }
       },
 
       // ✅ NUEVO: Ruta de planes y suscripciones
@@ -166,6 +166,14 @@ const routes = [
         path: 'accounts-balance',
         name: 'AccountBalanceApp',
         component: () => import('@/views/AccountsBalanceApp/AccountBalanceAppWrapper.vue'),
+      },
+
+      // ✅ NUEVO: Cuentas por Cobrar
+      {
+        path: 'accounts-receivable',
+        name: 'AccountsReceivable',
+        component: () => import('@/views/AccountsReceivable.vue'),
+        meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
       },
 
       // Ruta para testing del sistema de trazabilidad (solo para desarrollo)

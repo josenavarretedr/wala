@@ -214,11 +214,23 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
-import { getFirestore, doc, updateDoc } from "firebase/firestore";
+import { useUserStore } from "@/stores/useUserStore";
+import { useAuthStore } from "@/stores/authStore";
+import {
+  getFirestore,
+  doc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
 
 const route = useRoute();
 const businessStore = useBusinessStore();
+const userStore = useUserStore();
+const authStore = useAuthStore();
 const db = getFirestore(appFirebase);
 
 const isEditing = ref(false);
@@ -254,6 +266,55 @@ const loadBusinessData = () => {
   }
 };
 
+// Función para actualizar el businessName en todas las relaciones usuarios-negocio
+const updateBusinessNameInUserRelations = async (
+  businessId,
+  newBusinessName
+) => {
+  try {
+    // Buscar todos los usuarios que tienen este negocio
+    const usersRef = collection(db, "users");
+    const usersSnapshot = await getDocs(usersRef);
+
+    const updatePromises = [];
+
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      const businessRelationRef = doc(
+        db,
+        "users",
+        userId,
+        "businesses",
+        businessId
+      );
+
+      // Intentar actualizar la relación (si existe)
+      updatePromises.push(
+        updateDoc(businessRelationRef, {
+          businessName: newBusinessName,
+          updatedAt: new Date(),
+        }).catch((error) => {
+          // Si el documento no existe, no hacemos nada (el usuario no tiene este negocio)
+          if (error.code !== "not-found") {
+            console.warn(
+              `No se pudo actualizar relación para usuario ${userId}:`,
+              error
+            );
+          }
+        })
+      );
+    }
+
+    await Promise.all(updatePromises);
+    console.log(
+      `✅ Nombre del negocio actualizado en todas las relaciones de usuarios`
+    );
+  } catch (error) {
+    console.error("Error al actualizar relaciones de usuarios:", error);
+    // No lanzamos el error para no bloquear la actualización principal
+  }
+};
+
 const handleSave = async () => {
   isSaving.value = true;
   message.value = null;
@@ -262,6 +323,7 @@ const handleSave = async () => {
     const businessId = route.params.businessId;
     const businessRef = doc(db, "businesses", businessId);
 
+    // 1. Actualizar el documento principal del negocio
     await updateDoc(businessRef, {
       nombre: formData.value.nombre,
       tipo: formData.value.tipo,
@@ -269,8 +331,31 @@ const handleSave = async () => {
       updatedAt: new Date(),
     });
 
-    // Actualizar el store local
+    // 2. Actualizar el nombre del negocio en todas las relaciones usuarios-negocio
+    // Solo actualizamos businessName, que es el campo que se replica
+    await updateBusinessNameInUserRelations(businessId, formData.value.nombre);
+
+    // 3. Actualizar el store local del negocio
     await businessStore.loadBusiness(businessId);
+
+    // 4. Actualizar el store local del usuario (para reflejar el cambio en currentBusiness)
+    if (authStore.user?.uid) {
+      await userStore.loadUserBusinesses(authStore.user.uid);
+
+      // Si el negocio actual es el que se está editando, actualizar currentBusiness
+      if (userStore.currentBusiness?.businessId === businessId) {
+        const updatedBusiness = userStore.userBusinesses.find(
+          (b) => b.businessId === businessId
+        );
+        if (updatedBusiness) {
+          userStore.currentBusiness = updatedBusiness;
+          localStorage.setItem(
+            "currentBusiness",
+            JSON.stringify(updatedBusiness)
+          );
+        }
+      }
+    }
 
     message.value = {
       type: "success",

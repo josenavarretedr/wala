@@ -31,8 +31,9 @@
           ]"
           @click="handleAppClick(item)"
         >
+          <!-- Icono como componente -->
           <component
-            v-if="item.isComponent"
+            v-if="item.isComponent && typeof item.icon !== 'string'"
             :is="item.icon"
             :class="[
               'mb-1 transition-all duration-200',
@@ -41,6 +42,27 @@
               item.available && getIconHoverColor(item.color),
             ]"
           />
+          <!-- Icono SVG para 'receipt' -->
+          <svg
+            v-else-if="item.icon === 'receipt'"
+            :class="[
+              'mb-1 transition-all duration-200',
+              'w-6 h-6 sm:w-8 sm:h-8',
+              item.available ? getIconColor(item.color) : 'text-gray-400',
+              item.available && getIconHoverColor(item.color),
+            ]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            />
+          </svg>
+          <!-- Emoji/texto fallback -->
           <div
             v-else
             :class="['mb-1 transition-all duration-200', 'text-xl sm:text-2xl']"
@@ -96,8 +118,9 @@
         ]"
         @click="handleAppClick(item)"
       >
+        <!-- Icono como componente -->
         <component
-          v-if="item.isComponent"
+          v-if="item.isComponent && typeof item.icon !== 'string'"
           :is="item.icon"
           :class="[
             'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
@@ -105,6 +128,26 @@
             item.available && getIconHoverColor(item.color),
           ]"
         />
+        <!-- Icono SVG para 'receipt' -->
+        <svg
+          v-else-if="item.icon === 'receipt'"
+          :class="[
+            'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
+            item.available ? getIconColor(item.color) : 'text-gray-400',
+            item.available && getIconHoverColor(item.color),
+          ]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <!-- Emoji/texto fallback -->
         <div
           v-else
           class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
@@ -318,6 +361,15 @@ const allMicroApps = ref([
     icon: Reports,
     isComponent: true,
     color: "green",
+  },
+  {
+    id: 5,
+    name: "Cuentas por Cobrar",
+    route: "/accounts-receivable",
+    available: true,
+    icon: "receipt",
+    isComponent: true,
+    color: "orange",
   },
 ]);
 
