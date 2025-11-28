@@ -226,6 +226,21 @@ const routes = [
         name: 'InventoryCount',
         component: () => import('@/views/Inventory/InventoryCount.vue')
       },
+
+      // ✅ NUEVO: Rutas de Clientes
+      {
+        path: 'clients',
+        name: 'ClientsDashboard',
+        component: () => import('@/views/Clients/ClientsDashboard.vue'),
+        meta: { title: 'Clientes' }
+      },
+      {
+        path: 'clients/:clientId',
+        name: 'ClientDetails',
+        component: () => import('@/views/Clients/ClientDetails.vue'),
+        meta: { title: 'Detalle del Cliente' }
+      },
+
       // {
       //   path: 'records/:registerId',
       //   name: 'DetailsRecords',

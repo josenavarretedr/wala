@@ -54,8 +54,12 @@
           +S/ {{ formatAmount(record.amount) }}
         </div>
         <router-link
-          :to="{ name: 'DetailsRecords', params: { registerId: record.uuid } }"
+          :to="{
+            name: 'DetailsRecords',
+            params: { registerId: record.relatedTransactionId },
+          }"
           class="p-1 text-emerald-400 hover:text-emerald-600 rounded-md transition-colors"
+          title="Ver venta original"
         >
           <InfoCircle class="w-4 h-4" />
         </router-link>
@@ -199,28 +203,59 @@
           </svg>
           <span class="hidden sm:inline">Pendiente</span>
         </div>
+
+        <!-- Badge de pago completado (con sistema de pagos) -->
+        <div
+          v-if="
+            record.type === 'income' &&
+            record.paymentStatus === 'completed' &&
+            record.payments &&
+            record.payments.length > 1
+          "
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200 shrink-0"
+        >
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span class="hidden sm:inline">Saldado</span>
+        </div>
       </div>
 
       <!-- Lado derecho: Monto y botón -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Monto con lógica para pagos parciales -->
+        <!-- Monto para ingresos con sistema de pagos (parcial, pendiente o completado con historial) -->
         <div
           v-if="
             record.type === 'income' &&
-            record.paymentStatus &&
-            record.paymentStatus !== 'completed'
+            record.payments &&
+            record.payments.length > 0
           "
           class="text-right"
         >
           <div
             class="text-base sm:text-lg font-bold text-blue-600 tabular-nums"
           >
-            +S/ {{ formatAmount(record.totalPaid || record.amount) }}
+            +S/ {{ formatAmount(getDisplayAmount(record)) }}
           </div>
-          <div class="text-xs text-gray-500">de S/ {{ getTotal(record) }}</div>
+          <div
+            v-if="record.paymentStatus && record.payments.length > 1"
+            class="text-xs text-gray-500"
+          >
+            de S/ {{ getTotal(record) }}
+          </div>
         </div>
 
-        <!-- Monto normal para pagos completados o no especificados -->
+        <!-- Monto normal para transacciones sin sistema de pagos -->
         <div
           v-else
           :class="[
@@ -350,6 +385,13 @@ function formatAmount(amount) {
 
 function getTotal(record) {
   return (record.total || record.amount || 0).toFixed(2);
+}
+
+function getDisplayAmount(record) {
+  // Si payments existe y tiene exactamente 1 elemento (pago inicial)
+  if (record.payments && record.payments.length >= 1) {
+    return record.payments[0].amount || 0;
+  }
 }
 
 function formatedDate(date) {

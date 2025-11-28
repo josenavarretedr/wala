@@ -14,23 +14,140 @@
     <div
       class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
     >
-      <!-- Total destacado -->
+      <!-- Total destacado con estado de pago -->
       <div
         v-if="transactionStore.transactionToAdd.value.items.length > 0"
-        class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 text-center"
+        :class="[
+          'text-white p-6 text-center',
+          getPaymentStatus() === 'completed'
+            ? 'bg-gradient-to-r from-blue-500 to-blue-600'
+            : 'bg-gradient-to-r from-orange-500 to-orange-600',
+        ]"
       >
         <div class="text-3xl font-bold mb-1">
           S/ {{ getTotal().toFixed(2) }}
         </div>
-        <div class="text-blue-100 text-sm">Total de la venta</div>
+        <div
+          :class="[
+            'text-sm',
+            getPaymentStatus() === 'completed'
+              ? 'text-blue-100'
+              : 'text-orange-100',
+          ]"
+        >
+          Total de la venta
+        </div>
+        <!-- Badge de estado de pago -->
+        <div v-if="getPaymentStatus() !== 'completed'" class="mt-3">
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-sm"
+          >
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Pago Parcial
+          </span>
+        </div>
       </div>
 
-      <!-- Información de tipo y cuenta -->
+      <!-- Información de pago parcial o historial -->
+      <div
+        v-if="
+          transactionStore.transactionToAdd.value.items.length > 0 &&
+          transactionStore.transactionToAdd.value.payments &&
+          transactionStore.transactionToAdd.value.payments.length > 0
+        "
+        :class="[
+          'border-b p-4',
+          getPaymentStatus() !== 'completed'
+            ? 'bg-orange-50 border-orange-100'
+            : 'bg-gray-50 border-gray-100',
+        ]"
+      >
+        <!-- Resumen de pagos (solo si no está completado) -->
+        <div
+          v-if="getPaymentStatus() !== 'completed'"
+          class="space-y-2 text-sm mb-4 pb-4 border-b border-orange-200"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Abono inicial:</span>
+            <span class="font-semibold text-orange-600">
+              S/ {{ getInitialPayment().toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Saldo pendiente:</span>
+            <span class="font-semibold text-red-600">
+              S/ {{ getBalance().toFixed(2) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Historial de pagos (siempre que exista) -->
+        <div>
+          <h4 class="text-xs font-semibold text-gray-700 mb-2">
+            {{
+              getPaymentStatus() === "completed"
+                ? "Resumen de pagos"
+                : "Pagos registrados"
+            }}
+          </h4>
+          <div class="space-y-2">
+            <div
+              v-for="(payment, index) in transactionStore.transactionToAdd.value
+                .payments"
+              :key="index"
+              class="flex justify-between items-center text-xs bg-white rounded-lg p-2"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500"
+                  >Pago {{ index + 1 }}
+                  {{ index === 0 ? "(Inicial)" : "" }}</span
+                >
+                <span
+                  :class="[
+                    'px-2 py-0.5 rounded text-xs',
+                    payment.account === 'cash'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-purple-100 text-purple-700',
+                  ]"
+                >
+                  {{ payment.account === "cash" ? "Efectivo" : "Digital" }}
+                </span>
+              </div>
+              <span class="font-semibold text-gray-800">
+                S/ {{ payment.amount.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de tipo, cuenta y cliente -->
       <div
         v-if="transactionStore.transactionToAdd.value.items.length > 0"
         class="p-4 border-b border-gray-100"
       >
-        <div class="grid grid-cols-2 gap-3">
+        <div
+          :class="[
+            'grid gap-3',
+            transactionStore.transactionToAdd.value.clientId &&
+            transactionStore.transactionToAdd.value.clientId !==
+              'anonymous-client'
+              ? 'grid-cols-3'
+              : 'grid-cols-2',
+          ]"
+        >
           <div class="bg-blue-50 rounded-xl p-4 text-center">
             <div
               class="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-2 flex items-center justify-center"
@@ -50,6 +167,40 @@
             </div>
             <div class="text-sm font-medium text-green-700">
               {{ getAccountLabel }}
+            </div>
+          </div>
+
+          <!-- Cliente (solo si no es anónimo) -->
+          <div
+            v-if="
+              transactionStore.transactionToAdd.value.clientId &&
+              transactionStore.transactionToAdd.value.clientId !==
+                'anonymous-client'
+            "
+            class="bg-purple-50 rounded-xl p-4 text-center"
+          >
+            <div
+              class="w-8 h-8 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center"
+            >
+              <svg
+                class="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </div>
+            <div class="text-sm font-medium text-purple-700 truncate px-1">
+              {{
+                transactionStore.transactionToAdd.value.clientName ||
+                "Sin nombre"
+              }}
             </div>
           </div>
         </div>
@@ -188,6 +339,22 @@ const getAccountIcon = computed(() => {
   const account = transactionStore.transactionToAdd.value.account;
   return account === "cash" ? Coins : SmartphoneDevice;
 });
+
+const getPaymentStatus = () => {
+  return transactionStore.transactionToAdd.value.paymentStatus || "completed";
+};
+
+const getInitialPayment = () => {
+  const payments = transactionStore.transactionToAdd.value.payments;
+  if (payments && payments.length > 0) {
+    return payments[0].amount || 0;
+  }
+  return 0;
+};
+
+const getBalance = () => {
+  return transactionStore.transactionToAdd.value.balance || 0;
+};
 
 const formatDate = (date) => {
   return new Intl.DateTimeFormat("es-PE", {

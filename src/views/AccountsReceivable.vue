@@ -67,7 +67,7 @@
     </div>
 
     <!-- Filtros -->
-    <div class="max-w-7xl mx-auto px-4 py-4">
+    <!-- <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex gap-2 overflow-x-auto pb-2">
         <button
           v-for="filter in filters"
@@ -83,7 +83,7 @@
           {{ filter.label }}
         </button>
       </div>
-    </div>
+    </div> -->
 
     <!-- Lista agrupada por cliente -->
     <div class="max-w-7xl mx-auto px-4 space-y-4">
@@ -117,77 +117,122 @@
           <div
             v-for="transaction in group.transactions"
             :key="transaction.uuid"
-            class="p-6 hover:bg-gray-50 transition-colors"
+            class="p-3 sm:p-4 hover:bg-gray-50 transition-all duration-200"
           >
-            <div class="flex items-start justify-between gap-4">
-              <!-- Info de la venta -->
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="text-xs text-gray-500">
-                    {{ formatDate(transaction.createdAt) }}
-                  </span>
-                  <span
-                    :class="[
-                      'px-2 py-0.5 rounded text-xs font-medium',
-                      transaction.paymentStatus === 'pending'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-amber-100 text-amber-700',
-                    ]"
-                  >
-                    {{
-                      transaction.paymentStatus === "pending"
-                        ? "Pendiente"
-                        : "Parcial"
-                    }}
-                  </span>
-                </div>
-
-                <p
-                  v-if="transaction.description"
-                  class="text-sm text-gray-600 mb-2 line-clamp-2"
+            <!-- Header de la transacción -->
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Badge de estado -->
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border shrink-0',
+                    transaction.paymentStatus === 'pending'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-orange-50 text-orange-700 border-orange-200',
+                  ]"
                 >
-                  {{ transaction.description }}
-                </p>
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span>{{
+                    transaction.paymentStatus === "pending"
+                      ? "Pendiente"
+                      : "Parcial"
+                  }}</span>
+                </span>
 
-                <div class="grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span class="text-gray-500">Total:</span>
-                    <span class="font-medium text-gray-800 ml-1">
-                      S/ {{ getTransactionTotal(transaction).toFixed(2) }}
-                    </span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Pagado:</span>
-                    <span class="font-medium text-green-600 ml-1">
-                      S/ {{ transaction.totalPaid.toFixed(2) }}
-                    </span>
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Saldo:</span>
-                    <span class="font-medium text-orange-600 ml-1">
-                      S/ {{ transaction.balance.toFixed(2) }}
-                    </span>
-                  </div>
-                </div>
+                <!-- Fecha -->
+                <span class="text-xs text-gray-500">
+                  {{ formatDate(transaction.createdAt) }}
+                </span>
               </div>
 
-              <!-- Acciones -->
-              <div class="flex flex-col gap-2">
-                <button
-                  @click="openPaymentModal(transaction)"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap transition-colors"
-                >
-                  Registrar Pago
-                </button>
+              <!-- Botón de ver detalles y registrar pago -->
+              <div class="flex items-center gap-2 shrink-0">
                 <router-link
                   :to="{
                     name: 'DetailsRecords',
                     params: { registerId: transaction.uuid },
                   }"
-                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium text-center transition-colors"
+                  class="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all duration-200"
+                  title="Ver detalles de la venta"
                 >
-                  Ver Detalles
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                 </router-link>
+                <button
+                  @click="openPaymentModal(transaction)"
+                  class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium inline-flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  <span class="hidden sm:inline">Registrar Pago</span>
+                  <span class="sm:hidden">Pagar</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Descripción (si existe) -->
+            <p
+              v-if="transaction.description"
+              class="text-xs text-gray-600 mb-3 line-clamp-2 px-1"
+            >
+              {{ transaction.description }}
+            </p>
+
+            <!-- Grid de montos -->
+            <div
+              class="grid grid-cols-3 gap-2 sm:gap-4 mb-3 bg-gray-50 rounded-lg p-2 sm:p-3"
+            >
+              <div class="text-center">
+                <div class="text-xs text-gray-500 mb-0.5">Total</div>
+                <div class="text-sm sm:text-base font-semibold text-gray-900">
+                  S/ {{ getTransactionTotal(transaction).toFixed(2) }}
+                </div>
+              </div>
+              <div class="text-center border-x border-gray-200">
+                <div class="text-xs text-gray-500 mb-0.5">Pagado</div>
+                <div class="text-sm sm:text-base font-semibold text-green-600">
+                  S/ {{ transaction.totalPaid.toFixed(2) }}
+                </div>
+              </div>
+              <div class="text-center">
+                <div class="text-xs text-gray-500 mb-0.5">Pendiente</div>
+                <div class="text-sm sm:text-base font-semibold text-red-600">
+                  S/ {{ transaction.balance.toFixed(2) }}
+                </div>
               </div>
             </div>
           </div>
@@ -236,13 +281,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAccountsReceivable } from "@/composables/useAccountsReceivable";
 import PaymentRegistrationModal from "@/components/AccountsReceivable/PaymentRegistrationModal.vue";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const { pendingTransactions, totalReceivable, receivablesByClient } =
   useAccountsReceivable();
 
+const transactionStore = useTransactionStore();
 const showPaymentModal = ref(false);
 const selectedTransaction = ref(null);
 const currentFilter = ref("all");
@@ -252,6 +299,17 @@ const filters = [
   { label: "Pendientes", value: "pending" },
   { label: "Parciales", value: "partial" },
 ];
+
+// Cargar transacciones con balance pendiente al montar el componente
+onMounted(async () => {
+  try {
+    console.log("🔄 Cargando cuentas por cobrar...");
+    await transactionStore.fetchPendingTransactions();
+    console.log("✅ Cuentas por cobrar cargadas");
+  } catch (error) {
+    console.error("❌ Error cargando cuentas por cobrar:", error);
+  }
+});
 
 // Computed
 const filteredReceivablesByClient = computed(() => {

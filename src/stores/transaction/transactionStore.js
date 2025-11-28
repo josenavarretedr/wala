@@ -349,6 +349,7 @@ export function useTransactionStore() {
 
         console.log('💰 Información de pago procesada:', {
           totalAmount,
+          amount: transactionToAdd.value.amount,
           payments: transactionToAdd.value.payments.length,
           totalPaid: transactionToAdd.value.totalPaid,
           balance: transactionToAdd.value.balance,
@@ -384,6 +385,29 @@ export function useTransactionStore() {
       // Crear la transacción en Firestore
       await createTransaction(cleanTransaction);
       console.log('✅ Transaction added successfully with traceId:', traceId);
+      console.log('📊 Transaction data saved:', {
+        uuid: cleanTransaction.uuid,
+        type: cleanTransaction.type,
+        amount: cleanTransaction.amount,
+        balance: cleanTransaction.balance,
+        clientId: cleanTransaction.clientId,
+        clientName: cleanTransaction.clientName,
+        paymentStatus: cleanTransaction.paymentStatus
+      });
+
+      // Actualizar metadata del cliente si la transacción tiene clientId
+      if (transactionToAdd.value.clientId && transactionToAdd.value.clientId !== ANONYMOUS_CLIENT_ID) {
+        try {
+          console.log(`🔄 Actualizando metadata del cliente: ${transactionToAdd.value.clientId}`);
+          const { useClientStore } = await import('@/stores/clientStore');
+          const clientStore = useClientStore();
+          await clientStore.updateClientMetadata(transactionToAdd.value.clientId);
+          console.log('✅ Cliente metadata actualizada después de crear transacción');
+        } catch (clientError) {
+          console.warn('⚠️ No se pudo actualizar metadata del cliente:', clientError);
+          // No lanzar error, la transacción ya se guardó correctamente
+        }
+      }
 
       // === TRAZABILIDAD: Finalizar operación compleja ===
       await operationChain.finish({
@@ -532,6 +556,62 @@ export function useTransactionStore() {
       );
     }
   }
+
+  /**
+   * Obtiene todas las transacciones con balance pendiente (para Cuentas por Cobrar)
+   * Filtra transacciones de tipo 'income' con balance > 0
+   */
+  const fetchPendingTransactions = async () => {
+    try {
+      console.log('🔄 Cargando transacciones con balance pendiente...');
+
+      // === TRAZABILIDAD: Log de acceso a datos ===
+      await logTransactionOperation(
+        'read',
+        'pending_transactions',
+        { action: 'fetch_pending_transactions' },
+        {
+          reason: 'data_access_pending_transactions',
+          severity: 'low',
+          tags: ['data_read', 'accounts_receivable', 'pending_balance'],
+          component: 'TransactionStore.fetchPendingTransactions'
+        }
+      );
+
+      // Cargar todas las transacciones de tipo income con balance pendiente
+      const allTransactions = await getAllTransactions();
+
+      // Filtrar solo las que tienen balance pendiente
+      const pendingTransactions = allTransactions.filter(t =>
+        t.type === 'income' &&
+        t.balance &&
+        t.balance > 0
+      );
+
+      transactionsInStore.value = pendingTransactions;
+
+      console.log(`✅ ${pendingTransactions.length} transacciones con balance pendiente cargadas`);
+      return pendingTransactions;
+
+    } catch (error) {
+      console.error('❌ Error cargando transacciones pendientes:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'pending_transactions',
+        { error: error.message },
+        {
+          reason: 'fetch_pending_transactions_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'accounts_receivable'],
+          component: 'TransactionStore.fetchPendingTransactions'
+        }
+      );
+
+      throw error;
+    }
+  };
 
   /**
    * Obtiene las últimas transacciones de tipo "closure" del negocio
@@ -1276,6 +1356,7 @@ export function useTransactionStore() {
     getTransactions,
     getTransactionsToday,
     getTransactionsByDayStore,
+    fetchPendingTransactions,
     getLastClosures,
     getOneTransactionDataByID,
     getAllIncomeTransactionsInStore,

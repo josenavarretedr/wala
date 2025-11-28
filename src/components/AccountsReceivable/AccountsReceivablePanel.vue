@@ -29,7 +29,7 @@
     </div>
 
     <!-- Resumen -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
         class="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg"
       >
@@ -54,7 +54,7 @@
           {{ receivablesByClient.length }}
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Loading -->
     <div v-if="loading" class="text-center py-12">
@@ -118,96 +118,177 @@
         </div>
 
         <!-- Transacciones del cliente -->
-        <div class="divide-y divide-gray-200">
+        <div class="divide-y divide-gray-100">
           <div
             v-for="transaction in group.transactions"
             :key="transaction.uuid"
-            class="p-4 hover:bg-gray-50 transition-colors"
+            class="p-3 sm:p-4 hover:bg-gray-50 transition-all duration-200"
           >
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center gap-2">
-                  <span class="font-medium text-gray-800">{{
-                    formatDate(transaction.date)
-                  }}</span>
-                  <span
-                    :class="[
-                      'px-2 py-1 rounded-full text-xs font-medium',
-                      transaction.paymentStatus === 'partial'
-                        ? 'bg-orange-100 text-orange-700'
-                        : 'bg-red-100 text-red-700',
-                    ]"
-                  >
-                    {{
-                      transaction.paymentStatus === "partial"
-                        ? "Pago Parcial"
-                        : "Pendiente"
-                    }}
-                  </span>
-                </div>
-
-                <div class="mt-2 grid grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <span class="text-gray-500">Total:</span>
-                    <span class="font-medium text-gray-700 ml-1"
-                      >S/ {{ transaction.total.toFixed(2) }}</span
-                    >
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Pagado:</span>
-                    <span class="font-medium text-green-600 ml-1"
-                      >S/ {{ transaction.totalPaid.toFixed(2) }}</span
-                    >
-                  </div>
-                  <div>
-                    <span class="text-gray-500">Pendiente:</span>
-                    <span class="font-medium text-red-600 ml-1"
-                      >S/ {{ transaction.balance.toFixed(2) }}</span
-                    >
-                  </div>
-                </div>
-
-                <!-- Historial de pagos -->
-                <div
-                  v-if="transaction.payments && transaction.payments.length > 0"
-                  class="mt-3"
+            <!-- Header de la transacción -->
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Badge de estado -->
+                <span
+                  :class="[
+                    'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium border shrink-0',
+                    transaction.paymentStatus === 'partial'
+                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                      : 'bg-red-50 text-red-700 border-red-200',
+                  ]"
                 >
-                  <div class="text-xs text-gray-500 font-medium mb-2">
-                    Historial de pagos:
-                  </div>
-                  <div class="space-y-1">
-                    <div
-                      v-for="payment in transaction.payments"
-                      :key="payment.uuid"
-                      class="flex items-center gap-2 text-xs text-gray-600"
-                    >
-                      <svg
-                        class="w-4 h-4 text-green-500"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path
-                          fill-rule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clip-rule="evenodd"
-                        />
-                      </svg>
-                      <span>S/ {{ payment.amount.toFixed(2) }}</span>
-                      <span class="text-gray-400">•</span>
-                      <span>{{ formatPaymentMethod(payment.method) }}</span>
-                      <span class="text-gray-400">•</span>
-                      <span>{{ formatDate(payment.date) }}</span>
-                    </div>
-                  </div>
-                </div>
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  <span>{{
+                    transaction.paymentStatus === "partial"
+                      ? "Pago Parcial"
+                      : "Pendiente"
+                  }}</span>
+                </span>
+
+                <!-- Fecha -->
+                <span class="text-xs text-gray-500">
+                  {{ formatDate(transaction.date) }}
+                </span>
               </div>
 
-              <button
-                @click="openPaymentModal(transaction)"
-                class="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              <!-- Botón de ver detalles y registrar pago -->
+              <div class="flex items-center gap-2 shrink-0">
+                <router-link
+                  :to="{
+                    name: 'DetailsRecords',
+                    params: { registerId: transaction.uuid },
+                  }"
+                  class="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-all duration-200"
+                  title="Ver detalles de la venta"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </router-link>
+                <button
+                  @click="openPaymentModal(transaction)"
+                  class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs sm:text-sm font-medium inline-flex items-center gap-1.5"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                  <span class="hidden sm:inline">Registrar Pago</span>
+                  <span class="sm:hidden">Pagar</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid de montos -->
+            <div
+              class="grid grid-cols-3 gap-2 sm:gap-4 mb-3 bg-gray-50 rounded-lg p-2 sm:p-3"
+            >
+              <div class="text-center">
+                <div class="text-xs text-gray-500 mb-0.5">Total</div>
+                <div class="text-sm sm:text-base font-semibold text-gray-900">
+                  S/ {{ transaction.total.toFixed(2) }}
+                </div>
+              </div>
+              <div class="text-center border-x border-gray-200">
+                <div class="text-xs text-gray-500 mb-0.5">Pagado</div>
+                <div class="text-sm sm:text-base font-semibold text-green-600">
+                  S/ {{ transaction.totalPaid.toFixed(2) }}
+                </div>
+              </div>
+              <div class="text-center">
+                <div class="text-xs text-gray-500 mb-0.5">Pendiente</div>
+                <div class="text-sm sm:text-base font-semibold text-red-600">
+                  S/ {{ transaction.balance.toFixed(2) }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Historial de pagos -->
+            <div
+              v-if="transaction.payments && transaction.payments.length > 0"
+              class="mt-3 pt-3 border-t border-gray-200"
+            >
+              <div
+                class="flex items-center gap-2 text-xs font-medium text-gray-600 mb-2"
               >
-                Registrar Pago
-              </button>
+                <svg
+                  class="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+                <span
+                  >Historial de pagos ({{ transaction.payments.length }})</span
+                >
+              </div>
+              <div class="space-y-2">
+                <div
+                  v-for="payment in transaction.payments"
+                  :key="payment.uuid"
+                  class="flex items-center justify-between gap-2 text-xs bg-green-50 rounded-md p-2 border border-green-100"
+                >
+                  <div class="flex items-center gap-2 flex-1 min-w-0">
+                    <svg
+                      class="w-4 h-4 text-green-600 shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span class="font-semibold text-green-700"
+                      >S/ {{ payment.amount.toFixed(2) }}</span
+                    >
+                    <span class="text-gray-400 hidden sm:inline">•</span>
+                    <span class="text-gray-600 truncate">{{
+                      formatPaymentMethod(payment.method)
+                    }}</span>
+                  </div>
+                  <span class="text-gray-500 shrink-0">{{
+                    formatDate(payment.date)
+                  }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>

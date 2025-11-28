@@ -178,6 +178,34 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    */
   const getDailySummaryComposable = () => useDailySummary();
 
+  /**
+   * Helper para calcular el monto recibido de una transacción
+   * Considera el sistema de pagos parciales
+   */
+  const getReceivedAmount = (tx) => {
+    // Si es un pago (cobro), usar el amount completo
+    if (tx.type === 'payment') {
+      return tx.amount || 0;
+    }
+
+    // Si es un ingreso con sistema de pagos
+    if (tx.type === 'income' && tx.payments && tx.payments.length > 0) {
+      // Siempre usar el primer pago (pago inicial)
+      return tx.payments[0].amount || 0;
+    }
+
+    // Para transacciones sin sistema de pagos, usar amount normal
+    return tx.amount || 0;
+  };
+
+  /**
+   * Suma transacciones considerando pagos parciales
+   */
+  const sumTransactionsWithPayments = (transactions) => {
+    const sum = transactions.reduce((acc, tx) => acc + getReceivedAmount(tx), 0);
+    return round2(sum);
+  };
+
 
   // ===== CÁLCULOS DE INGRESOS =====
 
@@ -191,8 +219,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       return getDailySummaryComposable().getTotalIngresos(dailySummary.value);
     }
 
-    // Fallback: Calcular manualmente
-    return sumTransactions(
+    // Fallback: Calcular manualmente considerando pagos parciales
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
     );
   });
@@ -207,8 +235,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       return getDailySummaryComposable().getIngresosCash(dailySummary.value);
     }
 
-    // Fallback: Calcular manualmente
-    return sumTransactions(
+    // Fallback: Calcular manualmente considerando pagos parciales
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.account === 'cash' &&
@@ -227,8 +255,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       return getDailySummaryComposable().getIngresosBank(dailySummary.value);
     }
 
-    // Fallback: Calcular manualmente
-    return sumTransactions(
+    // Fallback: Calcular manualmente considerando pagos parciales
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'income' &&
         tx.account === 'bank' &&

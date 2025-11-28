@@ -233,22 +233,40 @@ const getValidationMessage = () => {
 
 const finalizarRegistro = async () => {
   // Lógica para finalizar el registro de la transacción
-
   flow.transactionLoading = true;
 
-  await transactionStore.addTransaction();
+  try {
+    console.log("🔄 Iniciando finalización de registro...");
+    console.log("📊 Transacción a guardar:", {
+      type: transactionStore.transactionToAdd.value.type,
+      clientId: transactionStore.transactionToAdd.value.clientId,
+      clientName: transactionStore.transactionToAdd.value.clientName,
+      balance: transactionStore.transactionToAdd.value.balance,
+      total: transactionStore.transactionToAdd.value.total,
+      paymentStatus: transactionStore.transactionToAdd.value.paymentStatus,
+    });
 
-  let businessId = businessStore.getBusinessId;
-  // Verifica si la operación fue exitosa (puedes definir un status si lo deseas)
+    await transactionStore.addTransaction();
 
-  flow.resetFlow();
-  // TODO: Resetear el store tambien del transactionStore
-  transactionStore.resetTransactionToAdd();
+    console.log("✅ Transacción guardada exitosamente");
 
-  flow.transactionLoading = false;
-  router.push({
-    name: "BusinessDashboard",
-    params: { businessId },
-  });
+    let businessId = businessStore.getBusinessId;
+
+    // Resetear el flujo y el store
+    flow.resetFlow();
+    transactionStore.resetTransactionToAdd();
+
+    flow.transactionLoading = false;
+
+    console.log("🏠 Redirigiendo al dashboard...");
+    router.push({
+      name: "BusinessDashboard",
+      params: { businessId },
+    });
+  } catch (error) {
+    console.error("❌ Error en finalizarRegistro:", error);
+    flow.transactionLoading = false;
+    throw error;
+  }
 };
 </script>

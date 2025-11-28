@@ -136,42 +136,54 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     if (txType === 'income' && category !== 'adjustment') {
       hasTxn = true;
 
-      // 💰 LÓGICA DE PAGOS PARCIALES:
-      // - Si paymentStatus === 'completed': Contar amount completo
-      // - Si paymentStatus === 'partial': Contar solo totalPaid
+      // 💰 LÓGICA DE PAGOS PARCIALES Y COMPLETADOS:
+      // - Si tiene payments[] con múltiples pagos (>1) Y está completed:
+      //   Usar payments[0].amount (pago inicial recibido ese día)
+      // - Si paymentStatus === 'completed' sin payments[] o solo 1 pago:
+      //   Contar amount completo (pago directo)
+      // - Si paymentStatus === 'partial': Contar solo payments[0].amount
       // - Si paymentStatus === 'pending': Contar 0 (no se ha recibido nada)
       let amountReceived = amount;
 
-      if (tx.paymentStatus === 'partial' && tx.totalPaid !== undefined) {
-        amountReceived = parseMoneyNumber(tx.totalPaid || 0);
+      // Verificar si tiene sistema de pagos múltiples
+      const hasMultiplePayments = tx.payments && Array.isArray(tx.payments) && tx.payments.length > 1;
+
+      if (tx.paymentStatus === 'completed' && hasMultiplePayments) {
+        // Caso especial: Venta completada con múltiples pagos
+        // Solo contar el pago inicial (el resto ya se contó como type='payment')
+        amountReceived = parseMoneyNumber(tx.payments[0].amount || 0);
+        console.log(`  ✅ Completed with ${tx.payments.length} payments: using initial ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
+      } else if (tx.paymentStatus === 'partial' && tx.payments && tx.payments.length > 0) {
+        // Pago parcial: usar solo el primer pago
+        amountReceived = parseMoneyNumber(tx.payments[0].amount || 0);
         console.log(`  💵 Partial payment: ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
       } else if (tx.paymentStatus === 'pending') {
+        // Sin pagar
         amountReceived = 0;
         console.log(`  ⏳ Pending payment: ${amount} [${account}] (${tx.uuid})`);
       } else {
-        // completed o sin paymentStatus (legacy)
+        // Pago completo directo (sin sistema de pagos) o completed con 1 solo pago
         console.log(`  💰 Full payment: ${amountReceived} [${account}] (${tx.uuid})`);
       }
 
       totalIngresos = addMoney(totalIngresos, amountReceived);
 
       // Por cuenta (excluyendo ajustes de apertura)
-      // Para pagos parciales, necesitamos revisar el payments array para el desglose correcto
-      if (tx.paymentStatus === 'partial' && tx.payments && Array.isArray(tx.payments)) {
-        // Desglosar por método según payments array
-        tx.payments.forEach(payment => {
-          const paymentAmount = parseMoneyNumber(payment.amount || 0);
-          const paymentMethod = payment.method || 'cash';
+      // Para pagos parciales o completados con múltiples pagos, usar el account del payments[0]
+      if ((tx.paymentStatus === 'partial' || (tx.paymentStatus === 'completed' && hasMultiplePayments))
+        && tx.payments && Array.isArray(tx.payments) && tx.payments.length > 0) {
+        // Usar el método del primer pago
+        const firstPayment = tx.payments[0];
+        const paymentAmount = parseMoneyNumber(firstPayment.amount || 0);
+        const paymentAccount = firstPayment.account || 'cash';
 
-          if (paymentMethod === 'cash') {
-            ingresosCash = addMoney(ingresosCash, paymentAmount);
-          } else if (paymentMethod === 'bank' || paymentMethod === 'yape' || paymentMethod === 'plin') {
-            // Yape y Plin se cuentan como bank (digital)
-            ingresosBank = addMoney(ingresosBank, paymentAmount);
-          }
-        });
+        if (paymentAccount === 'cash') {
+          ingresosCash = addMoney(ingresosCash, paymentAmount);
+        } else if (paymentAccount === 'bank' || paymentAccount === 'yape' || paymentAccount === 'plin') {
+          ingresosBank = addMoney(ingresosBank, paymentAmount);
+        }
       } else {
-        // Pago completo o pendiente: usar account principal
+        // Pago completo directo: usar account principal
         if (account === 'cash' && subcategory !== 'opening_adjustment') {
           ingresosCash = addMoney(ingresosCash, amountReceived);
         }

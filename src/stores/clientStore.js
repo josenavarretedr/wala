@@ -107,15 +107,18 @@ export const useClientStore = defineStore('clientStore', () => {
 
   /**
    * Crea un nuevo cliente
+   * @param {Object} clientData - Datos del cliente
+   * @param {Object} [initialMetadata] - Metadata inicial opcional (si se conoce de antemano)
    */
-  async function createClient(clientData) {
+  async function createClient(clientData, initialMetadata = {}) {
     const businessStore = useBusinessStore();
     const businessId = businessStore.getBusinessId;
 
     console.log('🔍 Debug createClient:', {
       hasBusinessStore: !!businessStore,
       business: businessStore.business,
-      businessId
+      businessId,
+      hasInitialMetadata: !!Object.keys(initialMetadata).length
     });
 
     if (!businessId) {
@@ -136,16 +139,22 @@ export const useClientStore = defineStore('clientStore', () => {
         phone: clientData.phone || null,
         businessId,
         isActive: true,
-        totalPurchases: 0,
-        pendingBalance: 0,
-        transactionCount: 0,
-        lastPurchase: null,
+        // Usar metadata inicial si se proporciona, sino inicializar en 0
+        totalPurchases: initialMetadata.totalPurchases ?? 0,
+        pendingBalance: initialMetadata.pendingBalance ?? 0,
+        transactionCount: initialMetadata.transactionCount ?? 0,
+        lastPurchase: initialMetadata.lastPurchase ?? null,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       };
 
       await setDoc(clientRef, newClient);
-      console.log('✅ Cliente creado:', clientId);
+
+      if (Object.keys(initialMetadata).length > 0) {
+        console.log('✅ Cliente creado con metadata inicial:', clientId, initialMetadata);
+      } else {
+        console.log('✅ Cliente creado:', clientId);
+      }
 
       loading.value = false;
       return newClient;
@@ -217,6 +226,8 @@ export const useClientStore = defineStore('clientStore', () => {
     try {
       const db = getFirestore();
 
+      console.log(`🔍 Buscando transacciones del cliente: ${clientId}`);
+
       // Obtener todas las transacciones del cliente
       const transactionsRef = collection(db, 'businesses', businessId, 'transactions');
       const q = query(
@@ -227,6 +238,8 @@ export const useClientStore = defineStore('clientStore', () => {
 
       const snapshot = await getDocs(q);
 
+      console.log(`📊 Encontradas ${snapshot.size} transacciones tipo income para el cliente`);
+
       let totalPurchases = 0;
       let pendingBalance = 0;
       let lastPurchase = null;
@@ -235,18 +248,27 @@ export const useClientStore = defineStore('clientStore', () => {
       snapshot.docs.forEach(doc => {
         const transaction = doc.data();
 
-        // Sumar total de compras
-        totalPurchases += transaction.total || 0;
+        console.log(`  📝 Transacción ${doc.id}:`, {
+          amount: transaction.amount,
+          balance: transaction.balance,
+          createdAt: transaction.createdAt?.toDate?.()?.toISOString?.() || 'no date'
+        });
+
+        // Sumar total de compras (usar amount que es el campo correcto)
+        totalPurchases += transaction.amount || 0;
 
         // Sumar balance pendiente
         if (transaction.balance) {
           pendingBalance += transaction.balance;
         }
 
-        // Encontrar la última compra
-        if (transaction.date) {
-          if (!lastPurchase || transaction.date.toMillis() > lastPurchase.toMillis()) {
-            lastPurchase = transaction.date;
+        // Encontrar la última compra (usando createdAt en lugar de date)
+        if (transaction.createdAt) {
+          const transactionTime = transaction.createdAt.toMillis ? transaction.createdAt.toMillis() : 0;
+          const lastPurchaseTime = lastPurchase ? (lastPurchase.toMillis ? lastPurchase.toMillis() : 0) : 0;
+
+          if (transactionTime > lastPurchaseTime) {
+            lastPurchase = transaction.createdAt;
           }
         }
       });
@@ -261,7 +283,12 @@ export const useClientStore = defineStore('clientStore', () => {
         updatedAt: Timestamp.now()
       });
 
-      console.log(`✅ Metadata actualizada para cliente ${clientId}`);
+      console.log(`✅ Metadata actualizada para cliente ${clientId}:`, {
+        totalPurchases: `S/ ${totalPurchases.toFixed(2)}`,
+        pendingBalance: `S/ ${pendingBalance.toFixed(2)}`,
+        transactionCount,
+        lastPurchase: lastPurchase ? new Date(lastPurchase.toMillis()).toISOString() : 'null'
+      });
     } catch (err) {
       console.error('❌ Error actualizando metadata del cliente:', err);
       throw err;

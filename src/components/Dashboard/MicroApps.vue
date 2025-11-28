@@ -25,6 +25,8 @@
               'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
             item.color === 'purple' &&
               'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+            item.color === 'indigo' &&
+              'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
             item.color === 'orange' &&
               'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
             !item.available && 'opacity-60 hover:shadow-sm',
@@ -85,9 +87,9 @@
       </div>
     </div>
 
-    <!-- Grid desktop: 6 columnas, todos en una fila -->
+    <!-- Grid desktop: 8 columnas, todos en una fila -->
     <div
-      class="hidden lg:grid lg:grid-cols-6 lg:gap-4 xl:gap-5 lg:max-w-7xl xl:max-w-[1400px] lg:mx-auto lg:items-stretch"
+      class="hidden lg:grid lg:grid-cols-8 lg:gap-4 xl:gap-5 lg:max-w-7xl xl:max-w-[1600px] lg:mx-auto lg:items-stretch"
     >
       <!-- Widget de racha (2 columnas) -->
       <div
@@ -96,7 +98,7 @@
         <StreakWidget :compact="true" />
       </div>
 
-      <!-- Apps (1 columna cada una, 4 en total) -->
+      <!-- Apps (1 columna cada una, 6 en total) -->
       <div
         v-for="(item, index) in visibleApps"
         :key="'desktop-' + item.id"
@@ -112,6 +114,8 @@
             'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
           item.color === 'purple' &&
             'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+          item.color === 'indigo' &&
+            'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
           item.color === 'orange' &&
             'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
           !item.available && 'opacity-60 hover:shadow-sm',
@@ -232,6 +236,8 @@
                   'hover:border-green-300 hover:bg-green-50',
                 item.color === 'purple' &&
                   'hover:border-purple-300 hover:bg-purple-50',
+                item.color === 'indigo' &&
+                  'hover:border-indigo-300 hover:bg-indigo-50',
                 item.color === 'orange' &&
                   'hover:border-orange-300 hover:bg-orange-50',
                 item.color === 'gray' &&
@@ -308,7 +314,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import StreakWidget from "./StreakWidget.vue";
-import { GraphUp, BoxIso, GraphDown, Reports } from "@iconoir/vue";
+import { GraphUp, BoxIso, GraphDown, Reports, Group } from "@iconoir/vue";
 
 // Props
 const props = defineProps({
@@ -355,6 +361,15 @@ const allMicroApps = ref([
   },
   {
     id: 4,
+    name: "Clientes",
+    route: "/clients",
+    available: true,
+    icon: Group,
+    isComponent: true,
+    color: "indigo",
+  },
+  {
+    id: 5,
     name: "Reportes",
     route: "/reports",
     available: true,
@@ -363,7 +378,7 @@ const allMicroApps = ref([
     color: "green",
   },
   {
-    id: 5,
+    id: 6,
     name: "Cuentas por Cobrar",
     route: "/accounts-receivable",
     available: true,
@@ -405,8 +420,8 @@ const getIconHoverColor = (color) => {
 
 // Computed properties
 const visibleApps = computed(() => {
-  // Mostrar solo 4 apps principales (ya que el widget ocupa espacio)
-  return allMicroApps.value.slice(0, 4);
+  // Mostrar 6 apps principales (ya que el widget ocupa 2 espacios en grid de 8)
+  return allMicroApps.value.slice(0, 6);
 });
 
 const availableApps = computed(() => {
