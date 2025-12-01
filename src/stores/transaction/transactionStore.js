@@ -1224,6 +1224,12 @@ export function useTransactionStore() {
         throw new Error('Usuario no autenticado');
       }
 
+      console.log('💰 [PAYMENT] Iniciando creación de pago:', {
+        relatedTransactionId: paymentData.relatedTransactionId,
+        amount: paymentData.amount,
+        account: paymentData.account
+      });
+
       // 1. Obtener la transacción original
       const originalTransaction = transactionsInStore.value.find(
         t => t.uuid === paymentData.relatedTransactionId
@@ -1236,6 +1242,13 @@ export function useTransactionStore() {
       if (originalTransaction.type !== 'income') {
         throw new Error('Solo se pueden registrar pagos para ingresos');
       }
+
+      console.log('📊 [PAYMENT] Transacción original encontrada:', {
+        uuid: originalTransaction.uuid,
+        type: originalTransaction.type,
+        createdAt: originalTransaction.createdAt,
+        balance: originalTransaction.balance
+      });
 
       // 2. Validar el pago
       const validation = validateNewPayment(originalTransaction, paymentData.amount);
@@ -1259,8 +1272,10 @@ export function useTransactionStore() {
       };
 
       // 5. Crear la transacción tipo 'payment'
+      const paymentTransactionUuid = crypto.randomUUID(); // ✅ UUID único
+
       const paymentTransaction = {
-        uuid: crypto.randomUUID(),
+        uuid: paymentTransactionUuid,
         type: 'payment',
         amount: paymentData.amount,
         account: paymentData.account,
@@ -1285,6 +1300,14 @@ export function useTransactionStore() {
         userId: currentUser.uid
       };
 
+      console.log('🆕 [PAYMENT] Nueva transacción payment creada:', {
+        uuid: paymentTransaction.uuid,
+        type: paymentTransaction.type,
+        createdAt: paymentTransaction.createdAt,
+        relatedTo: paymentTransaction.relatedTransactionId,
+        amount: paymentTransaction.amount
+      });
+
       // 6. Actualizar la transacción original
       const updatedPayments = [...(originalTransaction.payments || []), newPaymentEntry];
       const updatedStatus = calculatePaymentStatus({
@@ -1293,13 +1316,26 @@ export function useTransactionStore() {
         total: originalTransaction.total || originalTransaction.amount || 0
       });
 
+      console.log('🔄 [PAYMENT] Actualizando venta original:', {
+        uuid: originalTransaction.uuid,
+        newPaymentsCount: updatedPayments.length,
+        newStatus: updatedStatus.paymentStatus,
+        newBalance: updatedStatus.balance
+      });
+
       // 7. Batch update en Firestore
       const db = getFirestore();
       const batch = writeBatch(db);
 
       // Crear payment transaction
-      const paymentRef = doc(db, 'businesses', businessId, 'transactions', paymentTransaction.uuid);
+      const paymentRef = doc(db, 'businesses', businessId, 'transactions', paymentTransactionUuid);
       batch.set(paymentRef, paymentTransaction);
+
+      console.log('📝 [PAYMENT] Agregando payment transaction al batch:', {
+        path: `businesses/${businessId}/transactions/${paymentTransactionUuid}`,
+        type: paymentTransaction.type,
+        createdAt: paymentTransaction.createdAt
+      });
 
       // Actualizar transacción original
       const originalRef = doc(db, 'businesses', businessId, 'transactions', originalTransaction.uuid);
@@ -1311,12 +1347,20 @@ export function useTransactionStore() {
         updatedAt: Timestamp.now()
       });
 
+      console.log('📝 [PAYMENT] Actualizando venta original en batch:', {
+        path: `businesses/${businessId}/transactions/${originalTransaction.uuid}`,
+        paymentsCount: updatedPayments.length,
+        paymentStatus: updatedStatus.paymentStatus
+      });
+
       await batch.commit();
+      console.log('✅ [PAYMENT] Batch commit exitoso');
 
       // 8. Actualizar metadata del cliente si existe
       if (originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
         const clientStore = useClientStore();
         await clientStore.updateClientMetadata(originalTransaction.clientId);
+        console.log('✅ [PAYMENT] Metadata del cliente actualizada');
       }
 
       // 9. Actualizar state local
@@ -1330,11 +1374,12 @@ export function useTransactionStore() {
         };
       }
 
-      console.log('✅ Pago registrado exitosamente:', {
+      console.log('✅ [PAYMENT] Pago registrado exitosamente:', {
         paymentId: paymentTransaction.uuid,
         amount: paymentTransaction.amount,
         newBalance: updatedStatus.balance,
-        newStatus: updatedStatus.paymentStatus
+        newStatus: updatedStatus.paymentStatus,
+        createdAt: 'HOY (Timestamp.now())'
       });
 
       return { success: true, paymentTransaction };

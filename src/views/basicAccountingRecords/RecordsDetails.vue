@@ -9,30 +9,55 @@
 
     <!-- Content Card -->
     <div>
-      <Suspense>
-        <template #default>
-          <component
-            :is="dynamicComponent"
-            v-if="transactionData"
-            :transactionData="transactionData"
-          />
-          <div v-else class="text-center py-6">
-            <p class="text-sm text-gray-500">No se encontró la transacción</p>
-          </div>
-        </template>
-        <template #fallback>
-          <div class="text-center py-6">
-            <div
-              class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-2 animate-spin"
-            ></div>
-            <p class="text-sm text-gray-500">Cargando detalles...</p>
-          </div>
-        </template>
-      </Suspense>
+      <!-- Estado de carga -->
+      <div
+        v-if="isLoading"
+        class="flex flex-col items-center justify-center py-12"
+      >
+        <SpinnerIcon size="lg" class="text-gray-600 mx-auto mb-4" />
+        <p class="text-sm text-gray-500 mt-3">Cargando detalles...</p>
+      </div>
+
+      <!-- Error: No se encontró -->
+      <div
+        v-else-if="!transactionData"
+        class="flex flex-col items-center justify-center py-12 text-center"
+      >
+        <div
+          class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4"
+        >
+          <svg
+            class="w-8 h-8 text-red-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800 mb-1">
+          Transacción no encontrada
+        </h3>
+        <p class="text-sm text-gray-500">
+          No se pudo cargar la información de esta transacción
+        </p>
+      </div>
+
+      <!-- Contenido cargado -->
+      <component
+        v-else
+        :is="dynamicComponent"
+        :transactionData="transactionData"
+      />
     </div>
 
     <!-- Actions -->
-    <div class="flex gap-4 mt-6">
+    <div v-if="transactionData && !isLoading" class="flex gap-4 mt-6">
       <button
         @click="deleteRegister()"
         :disabled="isDisabled"
@@ -63,11 +88,14 @@ import TransferDetails from "@/components/HistorialRecords/Details/TransferDetai
 import AccountsBalanceDetails from "@/components/HistorialRecords/Details/AccountsBalanceDetails.vue";
 
 import CloseBtn from "@/components/ui/CloseBtn.vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 import { useCashEventStore } from "@/stores/cashEventStore";
 
 const cashEventStore = useCashEventStore();
 const businessStore = useBusinessStore();
+
+const isLoading = ref(true);
 
 const hasClosureToday = computed(() => {
   return transactionStore.hasClosureToday();
@@ -109,6 +137,7 @@ const closeBtnConfig = computed(() => ({
 }));
 
 onMounted(async () => {
+  isLoading.value = true;
   try {
     const transactionId = route.params.registerId;
     console.log("🔍 [RecordsDetails] Buscando transacción:", transactionId);
@@ -126,6 +155,7 @@ onMounted(async () => {
       const businessId = businessStore.business?.id;
       if (!businessId) {
         console.error("❌ No hay businessId disponible");
+        isLoading.value = false;
         return;
       }
 
@@ -148,6 +178,7 @@ onMounted(async () => {
         transaccionAConsulta = [firestoreData]; // Envolver en array para mantener compatibilidad
       } else {
         console.error("❌ [RecordsDetails] Transacción no existe en Firestore");
+        isLoading.value = false;
         return;
       }
     } else {
@@ -178,6 +209,8 @@ onMounted(async () => {
     }
   } catch (error) {
     console.error("Error al obtener la transacción:", error);
+  } finally {
+    isLoading.value = false;
   }
 });
 
@@ -205,55 +238,8 @@ button:focus {
   outline-offset: 2px;
 }
 
-/* Mobile-first optimizations */
-@media (max-width: 375px) {
-  .max-w-sm {
-    max-width: 100%;
-    margin: 0 auto;
-  }
-
-  .py-4 {
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-  }
-
-  .text-3xl {
-    font-size: 1.75rem;
-  }
-}
-
-/* Enhanced shadow effects */
-.shadow-sm {
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-/* Subtle card elevation */
-.bg-white {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-}
-
 /* Button press effect */
 button:active {
   transform: translateY(1px);
-}
-
-/* Typography improvements */
-.font-bold {
-  letter-spacing: -0.025em;
-}
-
-.font-semibold {
-  letter-spacing: -0.01em;
-}
-
-/* Loading spinner */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
 }
 </style>

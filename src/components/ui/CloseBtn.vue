@@ -42,6 +42,11 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  navigationType: {
+    type: String,
+    default: "back", // 'back' o 'dashboard'
+    validator: (value) => ["back", "dashboard"].includes(value),
+  },
   tooltipText: {
     type: String,
     default: "Cerrar",
@@ -59,6 +64,7 @@ const { handleClose: executeClose } = useCloseBtn({
   additionalStores: props.additionalStores,
   flowType: props.flowType,
   autoNavigate: props.autoNavigate,
+  navigationType: props.navigationType,
 });
 
 /**

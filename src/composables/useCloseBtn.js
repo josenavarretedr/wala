@@ -22,8 +22,16 @@ export function useFlowClose() {
     }
   };
 
+  /**
+   * Navega a la ruta anterior usando router.back()
+   */
+  const navigateBack = () => {
+    router.back();
+  };
+
   return {
-    navigateToDashboard
+    navigateToDashboard,
+    navigateBack
   };
 }
 
@@ -151,17 +159,19 @@ export function executeFlowResets(flowStore, additionalStores = {}, flowType) {
  * @param {Object} options.flowStore - Store del flow principal
  * @param {Object} options.additionalStores - Stores adicionales que necesitan reset
  * @param {string} options.flowType - Tipo de flow
- * @param {boolean} options.autoNavigate - Si debe navegar automáticamente al dashboard
+ * @param {boolean} options.autoNavigate - Si debe navegar automáticamente
+ * @param {string} options.navigationType - Tipo de navegación: 'back' (router.back()) o 'dashboard'
  */
 export function useCloseBtn(options = {}) {
   const {
     flowStore = null,
     additionalStores = {},
     flowType = 'TRANSACTION',
-    autoNavigate = true
+    autoNavigate = true,
+    navigationType = 'back' // Por defecto usa router.back()
   } = options;
 
-  const { navigateToDashboard } = useFlowClose();
+  const { navigateToDashboard, navigateBack } = useFlowClose();
 
   /**
    * Función principal de cierre
@@ -170,14 +180,19 @@ export function useCloseBtn(options = {}) {
     // Ejecutar resets
     executeFlowResets(flowStore, additionalStores, flowType);
 
-    // Navegar al dashboard si está habilitado
+    // Navegar si está habilitado
     if (autoNavigate) {
-      navigateToDashboard();
+      if (navigationType === 'dashboard') {
+        navigateToDashboard();
+      } else {
+        navigateBack();
+      }
     }
   };
 
   return {
     handleClose,
-    navigateToDashboard
+    navigateToDashboard,
+    navigateBack
   };
 }

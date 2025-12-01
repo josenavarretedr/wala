@@ -1,34 +1,32 @@
 <template>
   <div
     v-if="isOpen"
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
     @click.self="closeModal"
   >
-    <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-    >
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
       <!-- Header -->
-      <div
-        class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4 flex items-center justify-between"
-      >
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-10 h-10 bg-white bg-opacity-20 rounded-lg flex items-center justify-center"
-          >
-            <IconoirEditPencil class="w-6 h-6 text-white" />
+      <div class="bg-white px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center"
+            >
+              <IconoirEditPencil class="w-5 h-5 text-blue-600" />
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">Editar Cliente</h3>
           </div>
-          <h3 class="text-xl font-bold text-white">Editar Cliente</h3>
+          <button
+            @click="closeModal"
+            class="text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+          >
+            <IconoirXmark class="w-5 h-5" />
+          </button>
         </div>
-        <button
-          @click="closeModal"
-          class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-colors"
-        >
-          <IconoirXmark class="w-5 h-5" />
-        </button>
       </div>
 
       <!-- Form Body -->
-      <div class="p-6 space-y-4">
+      <div class="p-6 space-y-4 max-h-[calc(100vh-16rem)] overflow-y-auto">
         <!-- Nombre (Requerido) -->
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -38,11 +36,14 @@
             v-model="formData.name"
             type="text"
             placeholder="Ej: Juan Pérez"
-            class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            :class="{ 'border-red-300 bg-red-50': errors.name }"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+            :class="{
+              'border-red-300 bg-red-50 focus:ring-red-500 focus:border-red-500':
+                errors.name,
+            }"
             @input="errors.name = ''"
           />
-          <p v-if="errors.name" class="mt-1 text-sm text-red-600">
+          <p v-if="errors.name" class="mt-1.5 text-sm text-red-600">
             {{ errors.name }}
           </p>
         </div>
@@ -52,19 +53,20 @@
           <label class="block text-sm font-semibold text-gray-700 mb-2">
             Teléfono
           </label>
-          <div class="flex items-center space-x-2">
-            <span class="text-gray-500 px-3 py-3 bg-gray-100 rounded-xl"
+          <div class="flex items-center gap-2">
+            <span
+              class="text-gray-600 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium"
               >+51</span
             >
             <input
               v-model="formData.phone"
               type="tel"
               placeholder="987654321"
-              class="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              class="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               maxlength="15"
             />
           </div>
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1.5 text-xs text-gray-500">
             Formato: 9 dígitos sin espacios
           </p>
         </div>
@@ -78,11 +80,11 @@
             v-model="formData.dni"
             type="text"
             placeholder="12345678"
-            class="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             maxlength="8"
             @input="validateDni"
           />
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1.5 text-xs text-gray-500">
             Documento de identidad (8 dígitos)
           </p>
         </div>
@@ -90,30 +92,32 @@
         <!-- Error General -->
         <div
           v-if="errors.general"
-          class="bg-red-50 border border-red-200 rounded-xl p-3"
+          class="bg-red-50 border border-red-200 rounded-lg p-3"
         >
           <p class="text-sm text-red-700">{{ errors.general }}</p>
         </div>
       </div>
 
       <!-- Footer Actions -->
-      <div class="bg-gray-50 px-6 py-4 flex items-center justify-end space-x-3">
+      <div
+        class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-3"
+      >
         <button
           @click="closeModal"
           :disabled="loading"
-          class="px-5 py-2.5 text-gray-700 hover:bg-gray-200 rounded-xl font-medium transition-colors disabled:opacity-50"
+          class="px-4 py-2 text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancelar
         </button>
         <button
           @click="handleSubmit"
           :disabled="loading || !isFormValid || !hasChanges"
-          class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          <IconoirCheck v-if="!loading" class="w-5 h-5" />
+          <IconoirCheck v-if="!loading" class="w-4 h-4" />
           <div
             v-else
-            class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
+            class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
           ></div>
           <span>{{ loading ? "Guardando..." : "Guardar Cambios" }}</span>
         </button>

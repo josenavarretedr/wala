@@ -204,25 +204,19 @@ const isStreakActiveToday = computed(() => {
     "0"
   )}-${String(now.getDate()).padStart(2, "0")}`;
 
-  // Comparar lastActiveDay con hoy
-  // lastActiveDay puede venir como string directo o como timestamp de Firestore
-  let lastActiveDay;
-
-  if (typeof streakData.value.lastActiveDay === "string") {
-    console.log("lastActiveDay is a string:", streakData.value.lastActiveDay);
-    lastActiveDay = streakData.value.lastActiveDay;
-  } else if (streakData.value.lastActiveDay?.toDate) {
-    // Es un Timestamp de Firestore - convertir a fecha LOCAL
-    const date = streakData.value.lastActiveDay.toDate();
-    lastActiveDay = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  } else {
-    return false;
-  }
+  // lastActiveDay SIEMPRE es un string en formato yyyy-MM-dd
+  // (setteado por streakManager.js en el backend)
+  const lastActiveDay = streakData.value.lastActiveDay;
 
   // La racha solo está "encendida" si hay actividad HOY
-  console.log("Comparing lastActiveDay:", lastActiveDay, "with today:", today);
+  console.log(
+    "🔥 [STREAK] Comparing lastActiveDay:",
+    lastActiveDay,
+    "with today:",
+    today
+  );
+  console.log("🔥 [STREAK] Current streak:", streakData.value.current);
+
   return lastActiveDay === today;
 });
 

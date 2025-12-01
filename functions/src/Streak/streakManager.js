@@ -245,7 +245,7 @@ async function updateStreakContextualizada({
 
   // ⚠️ CRÍTICO: No contar dos veces el mismo día
   if (lastActiveDay === day) {
-    log('⏭️ [STREAK] Ya se contó este día');
+    log('⏭️ [STREAK] Ya se contó este día - lastActiveDay:', lastActiveDay, 'day:', day);
 
     // Si el día ya está cerrado, actualizar copilotAssistedSessions si aplica
     const hasClosure = summaryDoc.hasClosure === true;
@@ -287,7 +287,8 @@ async function updateStreakContextualizada({
     newCurrent = (gap <= allowedGap) ? (Number(streak.current || 0) + 1) : 1;
 
     log('🟢 [STREAK] Gap:', gap, 'días (permitido:', allowedGap + ')');
-    log('🟢 [STREAK] Nueva racha:', newCurrent);
+    log('🟢 [STREAK] Incrementando racha de', streak.current, 'a', newCurrent);
+    logAlways(`🔥 [STREAK] INCREMENT - Business: ${businessId}, Day: ${day}, Gap: ${gap}, Prev: ${streak.current} → New: ${newCurrent}`);
   } else {
     log('🆕 [STREAK] Primera actividad registrada');
   }

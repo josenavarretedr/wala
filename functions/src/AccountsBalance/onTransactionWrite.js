@@ -37,16 +37,39 @@ module.exports = functions.firestore
   .document('businesses/{businessId}/transactions/{txId}')
   .onWrite(async (change, context) => {
     const { businessId, txId } = context.params;
+    const after = change.after.exists ? change.after.data() : null;
+    const before = change.before.exists ? change.before.data() : null;
 
     console.log(`📝 Transaction write detected: ${txId} in business ${businessId}`);
 
-    // Obtener documento (after si existe, before si fue eliminado)
-    const doc = change.after.exists ? change.after.data() : (change.before.exists ? change.before.data() : null);
-
-    if (!doc) {
-      console.log('⚠️  No document data found, skipping');
+    // ✅ IGNORAR: Eliminaciones
+    if (!after) {
+      console.log('⏭️ Transaction deleted, skipping streak update');
       return null;
     }
+
+    // ✅ IGNORAR: Actualizaciones que solo agregan pagos al array payments[]
+    const isUpdate = before !== null;
+    const isPaymentArrayUpdate = isUpdate &&
+      after.payments &&
+      before.payments &&
+      after.payments.length > before.payments.length &&
+      after.type === 'income'; // Solo para ventas
+
+    if (isPaymentArrayUpdate) {
+      console.log('⏭️ Payment added to existing transaction, skipping (payment transaction will be processed separately)');
+      console.log('📊 Updated transaction:', {
+        uuid: after.uuid,
+        type: after.type,
+        createdAt: after.createdAt,
+        paymentsCount: after.payments.length,
+        totalPaid: after.totalPaid,
+        balance: after.balance
+      });
+      return null;
+    }
+
+    const doc = after;
 
     if (!doc.createdAt) {
       console.warn(`⚠️  Transaction ${txId} missing createdAt, skipping aggregation`);
@@ -65,6 +88,13 @@ module.exports = functions.firestore
 
     const day = dayFromTimestamp(doc.createdAt, tz);
     console.log(`📅 Processing day: ${day} (tz: ${tz})`);
+    console.log(`📝 Transaction details:`, {
+      txId,
+      type: doc.type,
+      createdAt: doc.createdAt,
+      calculatedDay: day,
+      relatedTransactionId: doc.relatedTransactionId || 'N/A'
+    });
 
     // Calcular agregados completos (estructura de accountsBalanceStore)
     const agg = await getDayAggregates(db, businessId, day, tz);

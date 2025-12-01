@@ -1,302 +1,360 @@
 <template>
-  <div class="client-details-wrapper">
+  <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <div class="header-section">
-      <div class="header-content">
-        <button @click="goBack" class="back-button">
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+    <div class="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+        <!-- Header principal -->
+        <div class="flex items-center gap-3 sm:gap-4">
+          <!-- Botón volver -->
+          <button
+            @click="goBack"
+            class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors shrink-0"
+            title="Volver"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
-
-        <div v-if="loading" class="loading-header">
-          <div
-            class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-          ></div>
-          <span class="text-gray-500">Cargando cliente...</span>
-        </div>
-
-        <div v-else-if="client" class="client-header-info">
-          <div class="flex-1">
-            <h1 class="client-name">{{ client.name }}</h1>
-            <a
-              v-if="client.phone"
-              :href="getWhatsAppLink(client.phone, `Hola ${client.name}!`)"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="phone-link"
-              @click.stop
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                <path
-                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
-                />
-              </svg>
-              <span>{{ formatPhone(client.phone) }}</span>
-            </a>
-            <!-- DNI (nuevo) -->
-            <p v-if="client.dni" class="text-sm text-gray-500 mt-1">
-              DNI: {{ client.dni }}
-            </p>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
+
+          <!-- Loading -->
+          <div v-if="loading" class="flex items-center gap-3 flex-1">
+            <SpinnerIcon size="sm" class="text-blue-600" />
+            <span class="text-sm text-gray-500">Cargando cliente...</span>
           </div>
 
-          <div class="flex items-center space-x-3">
-            <!-- Botones de acción (nuevo) -->
+          <!-- Info del cliente -->
+          <div v-else-if="client" class="flex-1 min-w-0">
+            <!-- Nombre -->
+            <h1
+              class="text-xl sm:text-2xl font-bold text-gray-900 truncate mb-2"
+            >
+              {{ client.name }}
+            </h1>
+
+            <!-- Badges e info en la misma fila debajo del nombre -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <!-- Badge de estado -->
+              <div
+                v-if="client.pendingBalance > 0"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-red-50 text-red-700 border border-red-200"
+              >
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span>Con Deuda</span>
+              </div>
+              <div
+                v-else
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-green-50 text-green-700 border border-green-200"
+              >
+                <svg
+                  class="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span>Al día</span>
+              </div>
+
+              <!-- WhatsApp -->
+              <a
+                v-if="client.phone"
+                :href="getWhatsAppLink(client.phone, `Hola ${client.name}!`)"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-green-50 text-green-700 border border-green-200 hover:bg-green-100 hover:border-green-300 transition-all duration-200"
+                @click.stop
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"
+                  />
+                </svg>
+                <span>{{ formatPhone(client.phone) }}</span>
+              </a>
+
+              <!-- DNI -->
+              <div
+                v-if="client.dni"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs bg-gray-50 text-gray-600 border border-gray-200"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
+                  />
+                </svg>
+                <span class="font-medium">{{ client.dni }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Botones de acción -->
+          <div
+            v-if="client && !loading"
+            class="flex items-center gap-2 shrink-0"
+          >
             <button
               @click="openEditModal"
-              class="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors"
+              class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+              title="Editar cliente"
             >
               <IconoirEditPencil class="w-5 h-5" />
-              <span>Editar</span>
             </button>
             <button
               @click="confirmDelete"
-              class="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors"
+              class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+              title="Eliminar cliente"
             >
               <IconoirTrash class="w-5 h-5" />
-              <span>Eliminar</span>
             </button>
-            <!-- Badge de deuda -->
-            <div v-if="client.pendingBalance > 0" class="debt-badge">
-              <svg
-                class="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>Con deuda</span>
-            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Contenido principal -->
-    <div v-if="!loading && client" class="main-content">
+    <div v-if="!loading && client" class="max-w-7xl mx-auto px-3 sm:px-4 py-4">
       <!-- Tabs -->
-      <div class="tabs-container">
+      <div class="flex gap-2 mb-4 overflow-x-auto pb-2 hide-scrollbar">
         <button
           v-for="tab in tabs"
           :key="tab.value"
           @click="currentTab = tab.value"
           :class="[
-            'tab-button',
-            currentTab === tab.value ? 'tab-active' : 'tab-inactive',
+            'inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all shrink-0',
+            currentTab === tab.value
+              ? 'bg-blue-50 text-blue-700 border border-blue-200'
+              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
           ]"
         >
-          <svg
-            v-if="tab.icon === 'chart-bar'"
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
-          <svg
-            v-if="tab.icon === 'clipboard'"
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          <svg
-            v-if="tab.icon === 'chart-line'"
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
+          <component :is="getTabIcon(tab.icon)" class="w-4 h-4" />
           <span>{{ tab.label }}</span>
         </button>
       </div>
 
       <!-- Tab Content -->
-      <div class="tab-content">
+      <div class="tab-content-wrapper">
         <!-- Tab: Resumen -->
-        <div v-show="currentTab === 'resumen'" class="tab-panel">
-          <ClientStats :financial-stats="financialStats" />
-        </div>
+        <Transition name="fade" mode="out-in">
+          <div v-if="currentTab === 'resumen'" class="space-y-4">
+            <ClientStats :financial-stats="financialStats" />
+          </div>
+        </Transition>
 
         <!-- Tab: Transacciones -->
-        <div v-show="currentTab === 'transacciones'" class="tab-panel">
-          <ClientTransactionsList
-            :transactions="transactions"
-            :loading="loading"
-          />
-        </div>
+        <Transition name="fade" mode="out-in">
+          <div v-if="currentTab === 'transacciones'">
+            <ClientTransactionsList
+              :transactions="transactions"
+              :loading="loading"
+            />
+          </div>
+        </Transition>
 
         <!-- Tab: Estadísticas -->
-        <div v-show="currentTab === 'estadisticas'" class="tab-panel">
-          <div class="stats-grid">
+        <Transition name="fade" mode="out-in">
+          <div v-if="currentTab === 'estadisticas'" class="space-y-4">
             <!-- Compras por mes -->
-            <div class="chart-card">
-              <h3 class="chart-title">Compras por Mes (Últimos 12 meses)</h3>
-              <div class="chart-container">
-                <div
-                  v-if="purchasesByMonth.every((m) => m.amount === 0)"
-                  class="empty-chart"
+            <div
+              class="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
+            >
+              <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+                Compras por Mes
+              </h3>
+
+              <div
+                v-if="purchasesByMonth.every((m) => m.amount === 0)"
+                class="flex flex-col items-center justify-center py-12 text-gray-400"
+              >
+                <svg
+                  class="w-12 h-12 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    class="w-12 h-12 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p class="text-sm text-gray-500 mt-2">
-                    Sin datos para mostrar
-                  </p>
-                </div>
-                <div v-else class="bar-chart">
-                  <div
-                    v-for="(month, index) in purchasesByMonth"
-                    :key="index"
-                    class="bar-item"
-                  >
-                    <div class="bar-container">
-                      <div
-                        class="bar"
-                        :style="{ height: getBarHeight(month.amount) }"
-                        :title="`S/ ${month.amount.toFixed(2)}`"
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <p class="text-sm">Sin datos para mostrar</p>
+              </div>
+
+              <div v-else class="flex items-end justify-between h-64 gap-2">
+                <div
+                  v-for="(month, index) in purchasesByMonth"
+                  :key="index"
+                  class="flex-1 flex flex-col items-center gap-2"
+                >
+                  <div class="w-full flex flex-col items-center flex-1">
+                    <div
+                      class="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg hover:from-blue-600 hover:to-blue-500 transition-all cursor-pointer relative group"
+                      :style="{ height: getBarHeight(month.amount) }"
+                      :title="`S/ ${month.amount.toFixed(2)}`"
+                    >
+                      <span
+                        class="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap"
                       >
-                        <span class="bar-value"
-                          >S/ {{ month.amount.toFixed(0) }}</span
-                        >
-                      </div>
+                        S/ {{ month.amount.toFixed(0) }}
+                      </span>
                     </div>
-                    <div class="bar-label">{{ month.month }}</div>
                   </div>
+                  <span class="text-xs text-gray-500 text-center">{{
+                    month.month
+                  }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Top 5 Productos -->
-            <div class="chart-card">
-              <h3 class="chart-title">Top 5 Productos Más Comprados</h3>
-              <div class="chart-container">
-                <div v-if="topProducts.length === 0" class="empty-chart">
-                  <svg
-                    class="w-12 h-12 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                    />
-                  </svg>
-                  <p class="text-sm text-gray-500 mt-2">
-                    Sin productos comprados
-                  </p>
-                </div>
-                <div v-else class="products-list">
+            <div
+              class="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
+            >
+              <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4">
+                Top 5 Productos Más Comprados
+              </h3>
+
+              <div
+                v-if="topProducts.length === 0"
+                class="flex flex-col items-center justify-center py-12 text-gray-400"
+              >
+                <svg
+                  class="w-12 h-12 mb-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  />
+                </svg>
+                <p class="text-sm">Sin productos comprados</p>
+              </div>
+
+              <div v-else class="space-y-3">
+                <div
+                  v-for="(product, index) in topProducts"
+                  :key="index"
+                  class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <!-- Ranking -->
                   <div
-                    v-for="(product, index) in topProducts"
-                    :key="index"
-                    class="product-item"
+                    class="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg font-bold text-sm text-white"
+                    :class="getRankingColor(index)"
                   >
-                    <div class="product-rank">
-                      <span class="rank-number">{{ index + 1 }}</span>
+                    {{ index + 1 }}
+                  </div>
+
+                  <!-- Info del producto -->
+                  <div class="flex-1 min-w-0">
+                    <p class="font-semibold text-gray-900 truncate">
+                      {{ product.name }}
+                    </p>
+                    <div
+                      class="flex items-center gap-3 text-xs text-gray-500 mt-0.5"
+                    >
+                      <span>{{ product.quantity }} unidades</span>
+                      <span class="font-bold text-green-600">
+                        S/ {{ product.totalAmount.toFixed(2) }}
+                      </span>
                     </div>
-                    <div class="product-info">
-                      <p class="product-name">{{ product.name }}</p>
-                      <div class="product-stats-row">
-                        <span class="product-quantity">
-                          {{ product.quantity }} unidades
-                        </span>
-                        <span class="product-amount">
-                          S/ {{ product.totalAmount.toFixed(2) }}
-                        </span>
-                      </div>
-                    </div>
-                    <div class="product-bar">
-                      <div
-                        class="product-bar-fill"
-                        :style="{
-                          width: getProductBarWidth(product.totalAmount),
-                        }"
-                      ></div>
-                    </div>
+                  </div>
+
+                  <!-- Barra visual -->
+                  <div
+                    class="hidden sm:block w-24 h-2 bg-gray-200 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-500"
+                      :style="{
+                        width: getProductBarWidth(product.totalAmount),
+                      }"
+                    ></div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </Transition>
       </div>
     </div>
 
     <!-- Error state -->
-    <div v-if="error && !loading" class="error-state">
-      <svg
-        class="w-16 h-16 text-red-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
+    <div
+      v-if="error && !loading"
+      class="flex flex-col items-center justify-center min-h-[60vh] px-4"
+    >
+      <div
+        class="bg-white rounded-xl shadow-sm border border-red-100 p-8 text-center max-w-md"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-        />
-      </svg>
-      <h3 class="text-lg font-semibold text-gray-900 mt-4">
-        Error al cargar cliente
-      </h3>
-      <p class="text-sm text-gray-500 mt-2">{{ error }}</p>
-      <button
-        @click="goBack"
-        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-      >
-        Volver
-      </button>
+        <svg
+          class="w-16 h-16 text-red-400 mx-auto mb-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
+        </svg>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">
+          Error al cargar cliente
+        </h3>
+        <p class="text-sm text-gray-500 mb-4">{{ error }}</p>
+        <button
+          @click="goBack"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Volver
+        </button>
+      </div>
     </div>
 
     <!-- Modal de edición -->
@@ -321,6 +379,7 @@ import {
 import ClientStats from "@/components/Clients/ClientStats.vue";
 import ClientTransactionsList from "@/components/Clients/ClientTransactionsList.vue";
 import EditClientModal from "@/components/Clients/EditClientModal.vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -362,6 +421,12 @@ const tabs = [
   },
 ];
 
+// Función helper para obtener el componente de icono
+function getTabIcon(iconName) {
+  // Retorna el nombre del icono para usar con svg inline
+  return iconName;
+}
+
 onMounted(async () => {
   await initialize();
 });
@@ -385,7 +450,6 @@ async function confirmDelete() {
     try {
       await deleteClient(client.value.uuid);
       console.log("✅ Cliente eliminado exitosamente");
-      // Regresar al listado
       router.push(`/business/${route.params.businessId}/clients`);
     } catch (error) {
       console.error("❌ Error al eliminar cliente:", error);
@@ -396,7 +460,6 @@ async function confirmDelete() {
 
 function handleClientUpdated() {
   console.log("Cliente actualizado, recargando datos...");
-  // Recargar datos del cliente
   initialize();
 }
 
@@ -416,7 +479,7 @@ function getBarHeight(amount) {
   const maxAmount = Math.max(...purchasesByMonth.value.map((m) => m.amount));
   if (maxAmount === 0) return "0%";
   const percentage = (amount / maxAmount) * 100;
-  return `${Math.max(percentage, 5)}%`; // Mínimo 5% para visibilidad
+  return `${Math.max(percentage, 5)}%`;
 }
 
 // Calcular ancho de barra para top productos
@@ -425,397 +488,53 @@ function getProductBarWidth(amount) {
   const maxAmount = Math.max(...topProducts.value.map((p) => p.totalAmount));
   if (maxAmount === 0) return "0%";
   const percentage = (amount / maxAmount) * 100;
-  return `${Math.max(percentage, 10)}%`; // Mínimo 10% para visibilidad
+  return `${Math.max(percentage, 10)}%`;
+}
+
+// Obtener color del ranking
+function getRankingColor(index) {
+  const colors = [
+    "bg-gradient-to-br from-yellow-400 to-yellow-500", // 1st - Oro
+    "bg-gradient-to-br from-gray-400 to-gray-500", // 2nd - Plata
+    "bg-gradient-to-br from-orange-400 to-orange-500", // 3rd - Bronce
+    "bg-gradient-to-br from-blue-400 to-blue-500", // 4th
+    "bg-gradient-to-br from-blue-400 to-blue-500", // 5th
+  ];
+  return colors[index] || colors[4];
 }
 </script>
 
 <style scoped>
-.client-details-wrapper {
-  min-height: 100vh;
-  background: #f9fafb;
+/* Fade transition para tabs */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-/* Header */
-.header-section {
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
 }
 
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
-.back-button {
-  padding: 0.5rem;
-  color: #6b7280;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+/* Ocultar scrollbar pero mantener funcionalidad */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.back-button:hover {
-  background: #f3f4f6;
-  color: #1f2937;
-}
-
-.loading-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.client-header-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.client-name {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.phone-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  color: #25d366;
-  text-decoration: none;
-  background: #dcfce7;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.phone-link:hover {
-  background: #bbf7d0;
-  color: #16a34a;
-}
-
-.debt-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-/* Main Content */
-.main-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
-}
-
-/* Tabs */
-.tabs-container {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.5rem;
-}
-
-.tab-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-
-.tab-active {
-  background: #3b82f6;
-  color: white;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.tab-inactive {
-  background: white;
-  color: #6b7280;
-  border: 1px solid #e5e7eb;
-}
-
-.tab-inactive:hover {
-  background: #f9fafb;
-  color: #1f2937;
-}
-
-/* Tab Content */
-.tab-content {
-  min-height: 400px;
-}
-
-.tab-panel {
-  animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Stats Grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  gap: 1.5rem;
-}
-
-.chart-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.chart-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1.5rem;
-}
-
-.chart-container {
-  min-height: 300px;
-}
-
-/* Empty Chart */
-.empty-chart {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
-}
-
-/* Bar Chart */
-.bar-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  height: 300px;
-  padding: 1rem 0.5rem;
-  gap: 0.5rem;
-}
-
-.bar-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.bar-container {
-  flex: 1;
-  width: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.bar {
-  width: 100%;
-  max-width: 50px;
-  background: linear-gradient(to top, #3b82f6, #60a5fa);
-  border-radius: 4px 4px 0 0;
-  position: relative;
-  transition: all 0.3s;
-  cursor: pointer;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 0.25rem;
-}
-
-.bar:hover {
-  background: linear-gradient(to top, #2563eb, #3b82f6);
-  transform: scaleY(1.05);
-}
-
-.bar-value {
-  font-size: 0.625rem;
-  font-weight: 600;
-  color: white;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-}
-
-.bar-label {
-  font-size: 0.625rem;
-  color: #6b7280;
-  text-align: center;
-  max-width: 100%;
-  word-wrap: break-word;
-}
-
-/* Products List */
-.products-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.product-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.product-item:hover {
-  background: #f3f4f6;
-}
-
-.product-rank {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #60a5fa);
-  color: white;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.875rem;
-  flex-shrink: 0;
-}
-
-.product-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.product-name {
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.product-stats-row {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.product-quantity {
-  font-weight: 500;
-}
-
-.product-amount {
-  font-weight: 700;
-  color: #16a34a;
-}
-
-.product-bar {
-  flex: 1;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.product-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #3b82f6, #60a5fa);
-  border-radius: 4px;
-  transition: width 0.5s ease;
-}
-
-/* Error State */
-.error-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  text-align: center;
-  padding: 2rem;
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .bar-chart {
-    gap: 0.25rem;
-  }
-
-  .bar {
-    max-width: 30px;
-  }
-
-  .bar-label {
-    font-size: 0.5rem;
-  }
-}
-
 @media (max-width: 640px) {
-  .client-name {
-    font-size: 1.25rem;
-  }
-
-  .tabs-container {
-    gap: 0.25rem;
-  }
-
-  .tab-button {
-    padding: 0.625rem 1rem;
-    font-size: 0.8rem;
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  .space-y-4 > * + * {
+    margin-top: 1rem;
   }
 }
 </style>
