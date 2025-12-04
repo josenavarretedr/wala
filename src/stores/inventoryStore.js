@@ -227,9 +227,10 @@ export function useInventoryStore() {
 
         const stockLogId = await addStockLogInInventory(stockLogData, 'buy');
 
-        // Mapear el material UUID con su stockLogId
+        // Mapear el material UUID con su stockLogId y productId
         materialStockLogMap.push({
           materialUuid: material.uuid,
+          productId: productId, // ✅ Agregar productId para reversión
           stockLogId: stockLogId
         });
 
@@ -283,8 +284,11 @@ export function useInventoryStore() {
         }
       );
 
-      await createStockLog(stockLog, typeStockLog);
+      // ✅ RETORNAR el UUID del stockLog creado
+      const stockLogUuid = await createStockLog(stockLog, typeStockLog);
       console.log('✅ Stock log added with traceId:', traceId);
+
+      return stockLogUuid; // ✅ RETORNAR el UUID para poder guardarlo en el expense
 
     } catch (error) {
       console.error('❌ Error adding stock log:', error);

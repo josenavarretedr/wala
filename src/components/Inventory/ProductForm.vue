@@ -5,8 +5,9 @@
       <div class="text-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Datos Básicos</h2>
         <p class="text-sm text-gray-500 mt-2">
-          Define el nombre, tipo y unidad del producto
+          Define el nombre, tipo y unidad del producto/servicio
         </p>
+        <pre>          {{ localFormData }}        </pre>
       </div>
 
       <!-- Nombre del Producto -->
@@ -788,7 +789,7 @@ const props = defineProps({
       price: 0,
       cost: null,
       unit: "uni",
-      trackStock: false,
+      trackStock: true,
       type: "MERCH",
     }),
   },

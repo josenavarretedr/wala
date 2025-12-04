@@ -227,12 +227,6 @@
         class="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex gap-3 rounded-b-2xl"
       >
         <button
-          @click="closeModal"
-          class="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
           @click="handleRegisterPayment"
           :disabled="!isValid || isLoading"
           class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all"

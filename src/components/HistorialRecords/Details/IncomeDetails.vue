@@ -116,12 +116,12 @@
                   <span
                     :class="[
                       'px-2 py-0.5 rounded text-xs',
-                      payment.account === 'cash'
+                      payment.method === 'cash'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-purple-100 text-purple-700',
                     ]"
                   >
-                    {{ payment.account === "cash" ? "Efectivo" : "Digital" }}
+                    {{ payment.method === "cash" ? "Efectivo" : "Digital" }}
                   </span>
                 </div>
                 <span class="font-semibold text-gray-800">

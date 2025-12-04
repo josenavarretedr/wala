@@ -59,19 +59,28 @@
     <!-- Actions -->
     <div v-if="transactionData && !isLoading" class="flex gap-4 mt-6">
       <button
-        @click="deleteRegister()"
+        @click="openDeleteModal()"
         :disabled="isDisabled"
         class="flex-1 py-3 border-2 border-red-500 text-red-500 font-semibold rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
       >
         <Trash class="w-4 h-4" />
-        Eliminar
+        {{ deleteButtonLabel }}
       </button>
     </div>
+
+    <!-- Modal de confirmación de eliminación -->
+    <DeleteTransactionModal
+      :is-open="showDeleteModal"
+      :transaction="transactionData"
+      :related-payments="relatedPayments"
+      @close="showDeleteModal = false"
+      @confirm="handleDeleteConfirm"
+    />
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useCashClosureStore } from "@/stores/cashClosureStore";
 import { Edit, Trash, Xmark } from "@iconoir/vue";
@@ -86,9 +95,11 @@ import IncomeDetails from "@/components/HistorialRecords/Details/IncomeDetails.v
 import ExpenseDetails from "@/components/HistorialRecords/Details/ExpenseDetails.vue";
 import TransferDetails from "@/components/HistorialRecords/Details/TransferDetails.vue";
 import AccountsBalanceDetails from "@/components/HistorialRecords/Details/AccountsBalanceDetails.vue";
+import PaymentDetails from "@/components/HistorialRecords/Details/PaymentDetails.vue";
 
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import DeleteTransactionModal from "@/components/Transactions/DeleteTransactionModal.vue";
 
 import { useCashEventStore } from "@/stores/cashEventStore";
 
@@ -96,6 +107,8 @@ const cashEventStore = useCashEventStore();
 const businessStore = useBusinessStore();
 
 const isLoading = ref(true);
+const showDeleteModal = ref(false);
+const relatedPayments = ref([]);
 
 const hasClosureToday = computed(() => {
   return transactionStore.hasClosureToday();
@@ -110,9 +123,20 @@ const isDisabled = computed(() => {
     if (transactionData.value.type === "closure") {
       return false;
     }
+    // Los payments pueden eliminarse siempre (no están restringidos por cierre)
+    if (transactionData.value.type === "payment") {
+      return false;
+    }
   }
   // Deshabilitar si ya hay cierre hoy (para otros tipos de transacción)
   return hasClosureToday.value;
+});
+
+const deleteButtonLabel = computed(() => {
+  if (transactionData.value?.type === "payment") {
+    return "Eliminar Pago";
+  }
+  return "Eliminar";
 });
 
 const route = useRoute();
@@ -129,6 +153,7 @@ const componentMap = {
   transfer: TransferDetails,
   opening: AccountsBalanceDetails,
   closure: AccountsBalanceDetails,
+  payment: PaymentDetails,
 };
 
 // Configuración del botón cerrar
@@ -136,10 +161,13 @@ const closeBtnConfig = computed(() => ({
   // Agregar configuración si es necesaria
 }));
 
-onMounted(async () => {
+// Función para cargar la transacción
+async function loadTransaction(transactionId) {
   isLoading.value = true;
+  transactionData.value = null;
+  dynamicComponent.value = null;
+
   try {
-    const transactionId = route.params.registerId;
     console.log("🔍 [RecordsDetails] Buscando transacción:", transactionId);
 
     // Primero intentar obtener del store
@@ -212,14 +240,94 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+}
+
+// Cargar la transacción inicial
+onMounted(() => {
+  const transactionId = route.params.registerId;
+  loadTransaction(transactionId);
 });
 
-async function deleteRegister() {
+// Observar cambios en el parámetro de la ruta para recargar cuando cambie
+watch(
+  () => route.params.registerId,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      console.log("🔄 [RecordsDetails] Parámetro cambió, recargando:", newId);
+      loadTransaction(newId);
+    }
+  }
+);
+
+function openDeleteModal() {
+  // Buscar payments relacionados si es una transacción income
+  if (transactionData.value?.type === "income") {
+    // Asegurarse de que transactionsInStore sea un array antes de filtrar
+    const transactions = Array.isArray(transactionStore.transactionsInStore)
+      ? transactionStore.transactionsInStore
+      : [];
+
+    relatedPayments.value = transactions.filter(
+      (t) =>
+        t.type === "payment" &&
+        t.relatedTransactionId === transactionData.value.uuid
+    );
+  } else {
+    relatedPayments.value = [];
+  }
+
+  showDeleteModal.value = true;
+}
+
+async function handleDeleteConfirm() {
   try {
-    await transactionStore.deleteOneTransactionByID(route.params.registerId);
-    navigateToDashboard();
+    // Si es un payment (transacción tipo 'payment'), eliminarlo del array de la venta original
+    if (transactionData.value?.type === "payment") {
+      const confirmDelete = window.confirm(
+        "¿Estás seguro de eliminar este pago?\n\n" +
+          `Monto: S/ ${transactionData.value.amount?.toFixed(2) || "0.00"}\n` +
+          `Venta relacionada: S/ ${
+            transactionData.value.relatedTransactionTotal?.toFixed(2) || "0.00"
+          }\n\n` +
+          "Esta acción aumentará el saldo pendiente de la venta original."
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      console.log("🗑️ Eliminando payment:", {
+        paymentUuid: transactionData.value.uuid,
+        relatedTransactionId: transactionData.value.relatedTransactionId,
+      });
+
+      // Usar la función específica para eliminar del array payments[]
+      const result = await transactionStore.deletePaymentFromIncomeTransaction(
+        transactionData.value.uuid,
+        transactionData.value.relatedTransactionId
+      );
+
+      if (result.success) {
+        console.log("✅ Payment eliminado del array exitosamente");
+        showDeleteModal.value = false;
+        navigateToDashboard();
+      }
+    } else {
+      // Para otros tipos de transacciones, usar el flujo normal
+      const result = await transactionStore.deleteOneTransactionByID(
+        route.params.registerId,
+        // Callback que se resuelve inmediatamente porque ya confirmamos con el modal
+        () => Promise.resolve(true)
+      );
+
+      if (result.success) {
+        showDeleteModal.value = false;
+        navigateToDashboard();
+      }
+    }
   } catch (error) {
     console.error("Error eliminando transacción: ", error);
+    alert("Error al eliminar la transacción: " + error.message);
   }
 }
 

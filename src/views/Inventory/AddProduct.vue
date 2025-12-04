@@ -158,7 +158,7 @@ const formData = ref({
   price: 0,
   cost: null,
   unit: "uni",
-  trackStock: false,
+  trackStock: true,
   type: "MERCH",
 });
 
@@ -191,7 +191,7 @@ const handleNewProductRequested = ({ description }) => {
     price: 0,
     cost: null,
     unit: "uni",
-    trackStock: false,
+    trackStock: true,
     type: "MERCH",
   };
 
@@ -241,7 +241,7 @@ const goBack = () => {
       price: 0,
       cost: null,
       unit: "uni",
-      trackStock: false,
+      trackStock: true,
       type: "MERCH",
     };
   } else {

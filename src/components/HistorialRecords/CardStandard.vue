@@ -56,10 +56,10 @@
         <router-link
           :to="{
             name: 'DetailsRecords',
-            params: { registerId: record.relatedTransactionId },
+            params: { registerId: record.uuid },
           }"
           class="p-1 text-emerald-400 hover:text-emerald-600 rounded-md transition-colors"
-          title="Ver venta original"
+          title="Ver detalles del pago"
         >
           <InfoCircle class="w-4 h-4" />
         </router-link>

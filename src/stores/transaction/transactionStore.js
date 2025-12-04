@@ -61,7 +61,7 @@ const itemToAddInTransaction = ref({
   selectedProductUuid: null,
   unit: null,
   stock: null,
-  trackStock: false,
+  trackStock: true, // ✅ true por defecto para productos MERCH
   proceedAnyway: false, // Flag para indicar que se procedió con stock insuficiente
 });
 
@@ -130,8 +130,24 @@ export function useTransactionStore() {
             // El ajuste de stock se hace en updateStock() de useInventory
             quantity: item.quantity,
             // Pasar también la cantidad máxima disponible para el ajuste
-            quantityForStock: item.quantityForStock
+            quantityForStock: item.quantityForStock,
+            // ✅ CAMPOS NECESARIOS PARA CREAR PRODUCTO NUEVO AUTOMÁTICAMENTE
+            oldOrNewProduct: item.oldOrNewProduct,
+            description: item.description,
+            unit: item.unit,
+            price: item.price,
+            trackStock: item.trackStock !== undefined ? item.trackStock : true, // ✅ true para MERCH
+            productType: 'MERCH' // Tipo por defecto para productos de venta
           };
+
+          console.log('📦 Procesando item para stockLog:', {
+            uuid: itemWithTransaction.uuid,
+            description: itemWithTransaction.description,
+            oldOrNewProduct: itemWithTransaction.oldOrNewProduct,
+            quantity: itemWithTransaction.quantity,
+            price: itemWithTransaction.price,
+            trackStock: itemWithTransaction.trackStock
+          });
 
           // Log de advertencia si se vendió con stock insuficiente
           if (item.proceedAnyway && item.requestedQuantity > item.actualQuantity) {
@@ -182,7 +198,14 @@ export function useTransactionStore() {
               return material;
             });
 
+            // ✅ GUARDAR materialItemsAndStockLogs para reversión futura
+            transactionToAdd.value.materialItemsAndStockLogs = materialStockLogMap.map(m => ({
+              itemUuid: m.productId, // ID del producto en la colección products
+              stockLogUuid: m.stockLogId // ID del stockLog
+            }));
+
             console.log('✅ Materials procesados en inventario con stockLogIds:', materialStockLogMap);
+            console.log('✅ materialItemsAndStockLogs guardado:', transactionToAdd.value.materialItemsAndStockLogs);
           }
 
 
@@ -823,7 +846,7 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.selectedProductUuid = product.selectedProductUuid;
     itemToAddInTransaction.value.unit = product.unit;
     itemToAddInTransaction.value.stock = product.stock ?? null;
-    itemToAddInTransaction.value.trackStock = product.trackStock ?? false;
+    itemToAddInTransaction.value.trackStock = product.trackStock ?? true;
   }
 
   const modifyItemToAddInExpenseMaterial = (material) => {
@@ -851,7 +874,7 @@ export function useTransactionStore() {
       selectedProductUuid: null,
       unit: null,
       stock: null,
-      trackStock: false,
+      trackStock: true, // ✅ true por defecto para productos MERCH
       proceedAnyway: false,
     };
   }
@@ -884,6 +907,19 @@ export function useTransactionStore() {
 
   const addItemToTransaction = () => {
     const item = { ...itemToAddInTransaction.value };
+
+    // ✅ GENERAR UUID PARA PRODUCTOS NUEVOS
+    if (item.oldOrNewProduct === 'new' && !item.selectedProductUuid) {
+      item.uuid = uuidv4();
+      item.selectedProductUuid = item.uuid; // Mantener consistencia
+      console.log('🆕 UUID generado para producto nuevo:', {
+        description: item.description,
+        uuid: item.uuid
+      });
+    } else if (item.oldOrNewProduct === 'old' && item.selectedProductUuid) {
+      // Para productos existentes, usar el UUID del producto seleccionado
+      item.uuid = item.selectedProductUuid;
+    }
 
     // Si el producto tiene seguimiento de stock y se marcó "proceder de todos modos"
     if (item.trackStock && item.proceedAnyway) {
@@ -920,7 +956,7 @@ export function useTransactionStore() {
       selectedProductUuid: null,
       unit: null,
       stock: null,
-      trackStock: false,
+      trackStock: true, // ✅ true por defecto para productos MERCH
       proceedAnyway: false,
     };
   }
@@ -986,39 +1022,691 @@ export function useTransactionStore() {
     }
   }
 
-  const deleteOneTransactionByID = async (transactionID) => {
+  /**
+   * Genera mensaje de advertencia para el modal de confirmación
+   */
+  const getDeleteWarningMessage = (transaction) => {
+    const warnings = [];
+
+    switch (transaction.type) {
+      case 'income':
+        warnings.push('⚠️ Esta acción revertirá el stock vendido');
+        warnings.push(`📦 Se sumarán ${transaction.items?.length || 0} productos al inventario`);
+
+        if (transaction.payments && transaction.payments.length > 1) {
+          warnings.push(`💰 Esta venta tiene ${transaction.payments.length} pagos registrados`);
+        }
+
+        if (transaction.clientId && transaction.clientId !== ANONYMOUS_CLIENT_ID) {
+          warnings.push(`👤 Se actualizará la información del cliente: ${transaction.clientName}`);
+        }
+
+        // Buscar payments relacionados
+        const relatedPayments = transactionsInStore.value.filter(
+          t => t.type === 'payment' && t.relatedTransactionId === transaction.uuid
+        );
+
+        if (relatedPayments.length > 0) {
+          warnings.push(`🔗 Se eliminarán ${relatedPayments.length} pagos asociados`);
+        }
+        break;
+
+      case 'expense':
+        if (transaction.category === 'materials') {
+          warnings.push('⚠️ Esta acción revertirá el stock de materiales');
+          warnings.push(`📦 Se restarán ${transaction.materialItems?.length || 0} productos del inventario`);
+        }
+        warnings.push(`📊 Se eliminará el log del gasto: ${transaction.description || 'Sin descripción'}`);
+        break;
+
+      case 'payment':
+        warnings.push('⚠️ Esta acción modificará el balance de la venta original');
+        warnings.push(`💰 Se recalcularán los pagos y el saldo pendiente`);
+        break;
+
+      case 'transfer':
+        warnings.push('⚠️ Se eliminará el registro de transferencia entre cuentas');
+        break;
+    }
+
+    warnings.push('');
+    warnings.push('⏱️ El dailySummary se recalculará automáticamente');
+    warnings.push('');
+    warnings.push('❓ ¿Está seguro de eliminar esta transacción?');
+
+    return warnings.join('\n');
+  };
+
+  /**
+   * Elimina una transacción tipo income y revierte todos sus efectos
+   */
+  const deleteIncomeTransaction = async (transactionToDelete) => {
+    const { getFirestore, doc, updateDoc, getDoc } = await import('firebase/firestore');
+    const { useClientStore } = await import('@/stores/clientStore');
+    const { useInventory } = await import('@/composables/useInventory');
+    const { useBusinessStore } = await import('@/stores/businessStore');
+
+    const db = getFirestore();
+    const clientStore = useClientStore();
+    const businessStore = useBusinessStore();
+    const businessId = businessStore.getBusinessId;
+    const { getProductById } = useInventory();
+
+    console.log('🗑️ [DELETE INCOME] Iniciando eliminación de venta:', transactionToDelete.uuid);
+
+    // 1. REVERTIR STOCK - Sumar lo que se vendió
+    if (transactionToDelete.itemsAndStockLogs && transactionToDelete.itemsAndStockLogs.length > 0) {
+      for (const itemLog of transactionToDelete.itemsAndStockLogs) {
+        const { itemUuid, stockLogUuid } = itemLog;
+
+        console.log(`  📦 Revirtiendo stock para producto ${itemUuid}, stockLog ${stockLogUuid}`);
+
+        try {
+          // a) Obtener el producto
+          const productRef = doc(db, `businesses/${businessId}/products`, itemUuid);
+          const productDoc = await getDoc(productRef);
+
+          if (!productDoc.exists()) {
+            console.warn(`  ⚠️ Producto ${itemUuid} no encontrado, saltando...`);
+            continue;
+          }
+
+          const productData = productDoc.data();
+
+          // b) Encontrar el stockLog específico
+          const stockLog = productData.stockLog?.find(log => log.uuid === stockLogUuid);
+
+          if (!stockLog) {
+            console.warn(`  ⚠️ StockLog ${stockLogUuid} no encontrado, saltando...`);
+            continue;
+          }
+
+          // c) Sumar la cantidad vendida al stock actual
+          const newStock = (productData.stock || 0) + (stockLog.quantity || 0);
+
+          // d) Eliminar el stockLog del array
+          const updatedStockLogs = productData.stockLog.filter(log => log.uuid !== stockLogUuid);
+
+          await updateDoc(productRef, {
+            stock: newStock,
+            stockLog: updatedStockLogs
+          });
+
+          console.log(`  ✅ Stock revertido: ${productData.stock} + ${stockLog.quantity} = ${newStock}`);
+
+          // e) Log de trazabilidad por item
+          await logInventoryOperation('revert', itemUuid, {
+            reason: 'income_transaction_deleted',
+            stockLogId: stockLogUuid,
+            quantityReverted: stockLog.quantity,
+            previousStock: productData.stock,
+            newStock
+          });
+        } catch (itemError) {
+          console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
+          // Continuar con los demás items
+        }
+      }
+    }
+
+    // 2. ELIMINAR PAGOS ASOCIADOS TIPO 'payment'
+    const relatedPayments = transactionsInStore.value.filter(
+      t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
+    );
+
+    if (relatedPayments.length > 0) {
+      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados`);
+      for (const payment of relatedPayments) {
+        await deleteTransactionByID(payment.uuid);
+        console.log(`    ✅ Payment ${payment.uuid} eliminado`);
+      }
+    }
+
+    // 3. ELIMINAR LA TRANSACCIÓN (ANTES de actualizar metadata)
+    await deleteTransactionByID(transactionToDelete.uuid);
+    console.log(`  🗑️ Transacción eliminada de Firestore`);
+
+    // 4. ACTUALIZAR METADATA DEL CLIENTE (DESPUÉS de eliminar para que el recálculo sea correcto)
+    if (transactionToDelete.clientId && transactionToDelete.clientId !== ANONYMOUS_CLIENT_ID) {
+      console.log(`  👤 Actualizando metadata del cliente ${transactionToDelete.clientId}`);
+      await clientStore.updateClientMetadata(transactionToDelete.clientId);
+    }
+
+    // 5. LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_income_transaction_deletion',
+      severity: 'high',
+      tags: ['transaction_delete', 'income', 'stock_reverted', 'client_affected'],
+      relatedEntities: [
+        ...(transactionToDelete.itemsAndStockLogs || []).map(il => ({
+          type: 'stockLog',
+          id: il.stockLogUuid,
+          relationship: 'deleted',
+          impact: 'high'
+        })),
+        {
+          type: 'client',
+          id: transactionToDelete.clientId,
+          relationship: 'metadata_recalculated',
+          impact: 'medium'
+        }
+      ],
+      component: 'TransactionStore.deleteIncomeTransaction'
+    });
+
+    console.log('✅ [DELETE INCOME] Venta eliminada exitosamente');
+  };
+
+  /**
+   * Elimina una transacción tipo expense (materials) y revierte stock
+   */
+  const deleteMaterialExpenseTransaction = async (transactionToDelete) => {
+    const { getFirestore, doc, updateDoc, getDoc } = await import('firebase/firestore');
+    const { useBusinessStore } = await import('@/stores/businessStore');
+    const { useExpenses } = await import('@/composables/useExpenses');
+
+    const db = getFirestore();
+    const businessStore = useBusinessStore();
+    const businessId = businessStore.getBusinessId;
+    const { getExpenseById, updateExpenseMetadata } = useExpenses();
+
+    console.log('🗑️ [DELETE MATERIAL EXPENSE] Iniciando eliminación de compra de materiales:', transactionToDelete.uuid);
+
+    // 1. REVERTIR STOCK DE MATERIALES - Restar lo que se compró
+    // Usar materialItemsAndStockLogs si existe, sino usar materialItems (fallback para transacciones antiguas)
+    const stockLogsToRevert = transactionToDelete.materialItemsAndStockLogs && transactionToDelete.materialItemsAndStockLogs.length > 0
+      ? transactionToDelete.materialItemsAndStockLogs
+      : (transactionToDelete.materialItems || []).map(item => ({
+        itemUuid: item.productId,
+        stockLogUuid: item.stockLogId
+      })).filter(log => log.itemUuid && log.stockLogUuid);
+
+    console.log(`  📦 StockLogs a revertir: ${stockLogsToRevert.length}`, stockLogsToRevert);
+
+    if (stockLogsToRevert.length > 0) {
+      for (const materialLog of stockLogsToRevert) {
+        const { itemUuid, stockLogUuid } = materialLog;
+
+        console.log(`  📦 Revirtiendo stock de material ${itemUuid}, stockLog ${stockLogUuid}`);
+
+        try {
+          const productRef = doc(db, `businesses/${businessId}/products`, itemUuid);
+          const productDoc = await getDoc(productRef);
+
+          if (!productDoc.exists()) {
+            console.warn(`  ⚠️ Producto ${itemUuid} no encontrado, saltando...`);
+            continue;
+          }
+
+          const productData = productDoc.data();
+          const stockLog = productData.stockLog?.find(log => log.uuid === stockLogUuid);
+
+          if (!stockLog) {
+            console.warn(`  ⚠️ StockLog ${stockLogUuid} no encontrado, saltando...`);
+            continue;
+          }
+
+          // Restar la cantidad comprada del stock actual
+          const newStock = Math.max((productData.stock || 0) - (stockLog.quantity || 0), 0);
+
+          // Eliminar el stockLog del array
+          const updatedStockLogs = productData.stockLog.filter(log => log.uuid !== stockLogUuid);
+
+          await updateDoc(productRef, {
+            stock: newStock,
+            stockLog: updatedStockLogs
+          });
+
+          console.log(`  ✅ Stock revertido: ${productData.stock} - ${stockLog.quantity} = ${newStock}`);
+
+          await logInventoryOperation('revert', itemUuid, {
+            reason: 'material_expense_deleted',
+            stockLogId: stockLogUuid,
+            quantityReverted: stockLog.quantity,
+            previousStock: productData.stock,
+            newStock
+          });
+        } catch (itemError) {
+          console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
+        }
+      }
+    }
+
+    // 2. ELIMINAR LOG DEL EXPENSE
+    const expenseId = transactionToDelete.expenseId;
+
+    if (expenseId) {
+      console.log(`  📊 Eliminando log del expense ${expenseId}`);
+
+      try {
+        const expense = await getExpenseById(expenseId);
+
+        if (expense && expense.logs) {
+          // Filtrar el log que referencia esta transacción
+          const updatedLogs = expense.logs.filter(
+            log => log.transactionRef !== transactionToDelete.uuid
+          );
+
+          const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+
+          // Si no quedan logs, podríamos considerar eliminar el expense completo
+          if (updatedLogs.length === 0) {
+            console.log(`  🗑️ No quedan logs, eliminando expense completo`);
+            const { deleteDoc } = await import('firebase/firestore');
+            await deleteDoc(expenseRef);
+          } else {
+            await updateDoc(expenseRef, { logs: updatedLogs });
+
+            // 3. ACTUALIZAR METADATA DEL EXPENSE
+            await updateExpenseMetadata(expenseId);
+          }
+        }
+      } catch (expenseError) {
+        console.error(`  ❌ Error actualizando expense ${expenseId}:`, expenseError);
+      }
+    }
+
+    // 4. ELIMINAR LA TRANSACCIÓN
+    await deleteTransactionByID(transactionToDelete.uuid);
+
+    // 5. LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_expense_transaction_deletion',
+      severity: 'high',
+      tags: ['transaction_delete', 'expense', 'expense_materials', 'stock_reverted'],
+      relatedEntities: [
+        {
+          type: 'expense',
+          id: expenseId,
+          relationship: 'log_removed_metadata_updated',
+          impact: 'high'
+        },
+        ...(transactionToDelete.materialItems || []).map(m => ({
+          type: 'product',
+          id: m.productId,
+          relationship: 'stock_reverted',
+          impact: 'high'
+        }))
+      ],
+      component: 'TransactionStore.deleteMaterialExpenseTransaction'
+    });
+
+    console.log('✅ [DELETE MATERIAL EXPENSE] Compra de materiales eliminada exitosamente');
+  };
+
+  /**
+   * Elimina una transacción tipo expense (otros) sin stock
+   */
+  const deleteOtherExpenseTransaction = async (transactionToDelete) => {
+    const { getFirestore, doc, updateDoc } = await import('firebase/firestore');
+    const { useBusinessStore } = await import('@/stores/businessStore');
+    const { useExpenses } = await import('@/composables/useExpenses');
+
+    const db = getFirestore();
+    const businessStore = useBusinessStore();
+    const businessId = businessStore.getBusinessId;
+    const { getExpenseById, updateExpenseMetadata } = useExpenses();
+
+    console.log('🗑️ [DELETE OTHER EXPENSE] Iniciando eliminación de gasto:', transactionToDelete.uuid);
+
+    // 1. ELIMINAR LOG DEL EXPENSE
+    const expenseId = transactionToDelete.expenseId;
+
+    if (expenseId) {
+      console.log(`  📊 Eliminando log del expense ${expenseId}`);
+
+      try {
+        const expense = await getExpenseById(expenseId);
+
+        if (expense && expense.logs) {
+          const updatedLogs = expense.logs.filter(
+            log => log.transactionRef !== transactionToDelete.uuid
+          );
+
+          const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+
+          if (updatedLogs.length === 0) {
+            console.log(`  🗑️ No quedan logs, eliminando expense completo`);
+            const { deleteDoc } = await import('firebase/firestore');
+            await deleteDoc(expenseRef);
+          } else {
+            await updateDoc(expenseRef, { logs: updatedLogs });
+
+            // 2. ACTUALIZAR METADATA
+            await updateExpenseMetadata(expenseId);
+          }
+        }
+      } catch (expenseError) {
+        console.error(`  ❌ Error actualizando expense ${expenseId}:`, expenseError);
+      }
+    }
+
+    // 3. ELIMINAR TRANSACCIÓN
+    await deleteTransactionByID(transactionToDelete.uuid);
+
+    // 4. LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_expense_transaction_deletion',
+      severity: 'high',
+      tags: ['transaction_delete', 'expense', `expense_${transactionToDelete.category}`, 'no_stock_impact'],
+      relatedEntities: [
+        {
+          type: 'expense',
+          id: expenseId,
+          relationship: 'log_removed_metadata_updated',
+          impact: 'high'
+        }
+      ],
+      component: 'TransactionStore.deleteOtherExpenseTransaction'
+    });
+
+    console.log('✅ [DELETE OTHER EXPENSE] Gasto eliminado exitosamente');
+  };
+
+  /**
+   * Elimina un payment específico del array payments[] de una transacción income
+   * Sin eliminar la transacción payment completa de Firestore
+   * @param {string} paymentUuid - UUID del payment en el array payments[]
+   * @param {string} incomeTransactionId - UUID de la transacción income original
+   */
+  const deletePaymentFromIncomeTransaction = async (paymentUuid, incomeTransactionId) => {
+    const { useClientStore } = await import('@/stores/clientStore');
+    const clientStore = useClientStore();
+
+    console.log('🗑️ [DELETE PAYMENT FROM ARRAY] Iniciando eliminación de payment:', {
+      paymentUuid,
+      incomeTransactionId
+    });
+
+    // 1. OBTENER TRANSACCIÓN INCOME ORIGINAL
+    const incomeTransaction = transactionsInStore.value.find(
+      t => t.uuid === incomeTransactionId
+    );
+
+    if (!incomeTransaction) {
+      throw new Error('⚠️ Transacción income no encontrada');
+    }
+
+    console.log(`  📝 Transacción income encontrada: ${incomeTransaction.uuid}`);
+
+    // 2. ELIMINAR PAYMENT DEL ARRAY payments[]
+    const updatedPayments = (incomeTransaction.payments || []).filter(
+      p => p.uuid !== paymentUuid
+    );
+
+    console.log(`  🔄 Payments actualizados: ${incomeTransaction.payments?.length || 0} → ${updatedPayments.length}`);
+
+    // 3. RECALCULAR ESTADO DE PAGO
+    const updatedStatus = calculatePaymentStatus({
+      ...incomeTransaction,
+      payments: updatedPayments
+    });
+
+    console.log(`  💰 Estado recalculado:`, {
+      paymentStatus: updatedStatus.paymentStatus,
+      totalPaid: updatedStatus.totalPaid,
+      balance: updatedStatus.balance
+    });
+
+    // 4. ACTUALIZAR TRANSACCIÓN INCOME
+    await updateTransaction(incomeTransaction.uuid, {
+      payments: updatedPayments,
+      paymentStatus: updatedStatus.paymentStatus,
+      totalPaid: updatedStatus.totalPaid,
+      balance: updatedStatus.balance
+    });
+
+    console.log(`  ✅ Transacción income actualizada`);
+
+    // 4.5. ELIMINAR LA TRANSACCIÓN PAYMENT DE FIRESTORE
+    await deleteTransactionByID(paymentUuid);
+    console.log(`  🗑️ Payment eliminado de Firestore`);
+
+    // 5. ACTUALIZAR METADATA DEL CLIENTE
+    if (incomeTransaction.clientId && incomeTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
+      console.log(`  👤 Actualizando metadata del cliente ${incomeTransaction.clientId}`);
+      await clientStore.updateClientMetadata(incomeTransaction.clientId);
+    }
+
+    // 6. LOG DE TRAZABILIDAD
+    await logTransactionOperation('update', incomeTransaction.uuid, incomeTransaction, {
+      reason: 'payment_removed_from_array',
+      severity: 'high',
+      tags: ['payment_delete', 'income_updated', 'balance_recalculated'],
+      relatedEntities: [
+        {
+          type: 'payment',
+          id: paymentUuid,
+          relationship: 'removed_from_payments_array',
+          impact: 'high'
+        },
+        {
+          type: 'client',
+          id: incomeTransaction.clientId,
+          relationship: 'metadata_recalculated',
+          impact: 'medium'
+        }
+      ],
+      component: 'TransactionStore.deletePaymentFromIncomeTransaction'
+    });
+
+    console.log('✅ [DELETE PAYMENT FROM ARRAY] Payment eliminado del array exitosamente');
+
+    return {
+      success: true,
+      updatedTransaction: {
+        ...incomeTransaction,
+        payments: updatedPayments,
+        ...updatedStatus
+      }
+    };
+  };
+
+  /**
+   * Elimina una transacción tipo payment y actualiza la venta original
+   */
+  const deletePaymentTransaction = async (transactionToDelete) => {
+    const { useClientStore } = await import('@/stores/clientStore');
+    const clientStore = useClientStore();
+
+    console.log('🗑️ [DELETE PAYMENT] Iniciando eliminación de pago:', transactionToDelete.uuid);
+
+    // 1. OBTENER VENTA ORIGINAL
+    const originalTransaction = transactionsInStore.value.find(
+      t => t.uuid === transactionToDelete.relatedTransactionId
+    );
+
+    if (!originalTransaction) {
+      console.warn('⚠️ Venta original no encontrada, solo eliminando payment');
+      await deleteTransactionByID(transactionToDelete.uuid);
+      return;
+    }
+
+    console.log(`  📝 Venta original encontrada: ${originalTransaction.uuid}`);
+
+    // 2. ELIMINAR PAYMENT DEL ARRAY payments[]
+    const updatedPayments = (originalTransaction.payments || []).filter(
+      p => p.uuid !== transactionToDelete.uuid
+    );
+
+    console.log(`  🔄 Payments actualizados: ${originalTransaction.payments?.length || 0} → ${updatedPayments.length}`);
+
+    // 3. RECALCULAR ESTADO DE PAGO
+    const updatedStatus = calculatePaymentStatus({
+      ...originalTransaction,
+      payments: updatedPayments
+    });
+
+    console.log(`  💰 Estado recalculado:`, {
+      paymentStatus: updatedStatus.paymentStatus,
+      totalPaid: updatedStatus.totalPaid,
+      balance: updatedStatus.balance
+    });
+
+    // 4. ACTUALIZAR VENTA ORIGINAL
+    await updateTransaction(originalTransaction.uuid, {
+      payments: updatedPayments,
+      paymentStatus: updatedStatus.paymentStatus,
+      totalPaid: updatedStatus.totalPaid,
+      balance: updatedStatus.balance
+    });
+
+    // 5. ELIMINAR TRANSACCIÓN PAYMENT (ANTES de actualizar metadata)
+    await deleteTransactionByID(transactionToDelete.uuid);
+    console.log(`  🗑️ Payment eliminado de Firestore`);
+
+    // 6. ACTUALIZAR METADATA DEL CLIENTE (DESPUÉS de eliminar para que el recálculo sea correcto)
+    if (originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
+      console.log(`  👤 Actualizando metadata del cliente ${originalTransaction.clientId}`);
+      await clientStore.updateClientMetadata(originalTransaction.clientId);
+    }
+
+    // 7. LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_payment_transaction_deletion',
+      severity: 'high',
+      tags: ['transaction_delete', 'payment', 'income_recalculated'],
+      relatedEntities: [
+        {
+          type: 'transaction',
+          id: transactionToDelete.relatedTransactionId,
+          relationship: 'payment_removed_balance_recalculated',
+          impact: 'high'
+        },
+        {
+          type: 'client',
+          id: originalTransaction.clientId,
+          relationship: 'metadata_recalculated',
+          impact: 'medium'
+        }
+      ],
+      component: 'TransactionStore.deletePaymentTransaction'
+    });
+
+    console.log('✅ [DELETE PAYMENT] Pago eliminado exitosamente');
+  };
+
+  /**
+   * Elimina una transacción tipo transfer
+   */
+  const deleteTransferTransaction = async (transactionToDelete) => {
+    console.log('🗑️ [DELETE TRANSFER] Iniciando eliminación de transferencia:', transactionToDelete.uuid);
+
+    // NO REQUIERE REVERSIÓN DE DATOS
+    await deleteTransactionByID(transactionToDelete.uuid);
+
+    // LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_transfer_transaction_deletion',
+      severity: 'medium',
+      tags: ['transaction_delete', 'transfer'],
+      component: 'TransactionStore.deleteTransferTransaction'
+    });
+
+    console.log('✅ [DELETE TRANSFER] Transferencia eliminada exitosamente');
+  };
+
+  /**
+   * Función principal de eliminación con integridad referencial
+   * @param {string} transactionID - UUID de la transacción a eliminar
+   * @param {Function} confirmCallback - Función callback que devuelve una promesa de confirmación
+   * @returns {Promise<Object>} Resultado de la operación: { success: true } o { cancelled: true }
+   */
+  const deleteOneTransactionByID = async (transactionID, confirmCallback = null) => {
     try {
-      // Obtener la transacción antes de eliminarla para trazabilidad
+      // 0. OBTENER TRANSACCIÓN
       const transactionToDelete = transactionsInStore.value.find(t => t.uuid === transactionID);
 
       if (!transactionToDelete) {
         throw new Error(`Transaction with ID ${transactionID} not found in store`);
       }
 
-      // === TRAZABILIDAD: Log de eliminación ===
-      const traceId = await logTransactionOperation(
+      console.log('🗑️ [DELETE] Iniciando eliminación de transacción:', {
+        uuid: transactionID,
+        type: transactionToDelete.type,
+        createdAt: transactionToDelete.createdAt?.toDate?.()?.toISOString?.() || 'unknown'
+      });
+
+      // 1. VALIDAR TIPO (No eliminar opening/closure)
+      if (transactionToDelete.type === 'opening' || transactionToDelete.type === 'closure') {
+        throw new Error(`❌ No se pueden eliminar transacciones de tipo "${transactionToDelete.type}"`);
+      }
+
+      // 2. MOSTRAR MODAL DE CONFIRMACIÓN (si se proporciona callback)
+      if (confirmCallback) {
+        // Buscar payments relacionados para income
+        const relatedPayments = transactionToDelete.type === 'income'
+          ? transactionsInStore.value.filter(
+            t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
+          )
+          : [];
+
+        const confirmed = await confirmCallback({
+          transaction: transactionToDelete,
+          relatedPayments
+        });
+
+        if (!confirmed) {
+          console.log('❌ Usuario canceló la eliminación');
+          return { cancelled: true };
+        }
+      }
+
+      // 3. EJECUTAR ELIMINACIÓN SEGÚN TIPO
+      console.log(`🔄 Ejecutando eliminación para tipo: ${transactionToDelete.type}`);
+
+      switch (transactionToDelete.type) {
+        case 'income':
+          await deleteIncomeTransaction(transactionToDelete);
+          break;
+
+        case 'expense':
+          if (transactionToDelete.category === 'materials') {
+            await deleteMaterialExpenseTransaction(transactionToDelete);
+          } else {
+            await deleteOtherExpenseTransaction(transactionToDelete);
+          }
+          break;
+
+        case 'payment':
+          await deletePaymentTransaction(transactionToDelete);
+          break;
+
+        case 'transfer':
+          await deleteTransferTransaction(transactionToDelete);
+          break;
+
+        default:
+          throw new Error(`Unknown transaction type: ${transactionToDelete.type}`);
+      }
+
+      // 4. LOG DE TRAZABILIDAD GENERAL
+      await logTransactionOperation(
         'delete',
         transactionID,
         transactionToDelete,
         {
-          reason: 'user_transaction_deletion',
+          reason: 'user_transaction_deletion_completed',
           severity: 'high',
-          tags: ['transaction_delete', 'data_removal'],
+          tags: ['transaction_delete', `type_${transactionToDelete.type}`, 'data_removal'],
           component: 'TransactionStore.deleteOneTransactionByID'
         }
       );
 
-      // Eliminar de Firebase
-      await deleteTransactionByID(transactionID);
-      console.log('✅ Transaction deleted successfully in FIRESTORE with traceId:', traceId);
+      console.log('✅ [DELETE] Transaction deleted successfully with data integrity maintained');
 
-      // Actualizar el store local
+      // 5. REFRESCAR STORE LOCAL
       await getTransactions();
 
-    } catch (error) {
-      console.error('❌ Error deleting transaction: ', error);
+      // 6. EL dailySummary SE RECALCULARÁ AUTOMÁTICAMENTE
+      // por el onTransactionWrite de Firebase Functions
 
-      // === TRAZABILIDAD: Log de error ===
+      return { success: true };
+
+    } catch (error) {
+      console.error('❌ [DELETE] Error deleting transaction: ', error);
+
+      // Log de error
       await logTransactionOperation(
         'error',
         transactionID,
@@ -1033,9 +1721,7 @@ export function useTransactionStore() {
 
       throw error;
     }
-  };
-
-  const getSteps = () => {
+  }; const getSteps = () => {
     const baseSteps = [
       "IncomeOrExpense",
       "CashOrBank",
@@ -1261,9 +1947,12 @@ export function useTransactionStore() {
       const previousBalance = currentStatus.balance;
       const newBalance = Math.max(previousBalance - paymentData.amount, 0);
 
+
+      const paymentTransactionUuid = crypto.randomUUID(); // ✅ UUID único
+
       // 4. Crear el objeto payment para agregar al array
       const newPaymentEntry = {
-        uuid: crypto.randomUUID(),
+        uuid: paymentTransactionUuid,
         amount: paymentData.amount,
         date: Timestamp.now(),
         method: paymentData.account,
@@ -1272,7 +1961,6 @@ export function useTransactionStore() {
       };
 
       // 5. Crear la transacción tipo 'payment'
-      const paymentTransactionUuid = crypto.randomUUID(); // ✅ UUID único
 
       const paymentTransaction = {
         uuid: paymentTransactionUuid,
@@ -1442,6 +2130,7 @@ export function useTransactionStore() {
     addPayment,
     setClientInfo,
     setPaymentInfo,
-    createPaymentTransaction
+    createPaymentTransaction,
+    deletePaymentFromIncomeTransaction
   };
 }

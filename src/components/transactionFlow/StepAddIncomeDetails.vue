@@ -3,14 +3,14 @@
     <!-- Título mejorado -->
     <div class="text-center space-y-2">
       <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
-        Agregar Productos
+        Agregar Productos/Servicios
       </h1>
       <p class="text-sm text-gray-500 max-w-md mx-auto">
-        Selecciona productos y define cantidades para tu transacción
+        Selecciona productos/servicios y define cantidades para tu transacción
       </p>
     </div>
 
-    <!-- Buscador de productos -->
+    <!-- Buscador de productos/Servicios -->
     <div
       class="space-y-4"
       v-if="!transactionStore.itemToAddInTransaction.value.description"
@@ -18,9 +18,9 @@
       <h2 class="text-lg font-semibold text-gray-800">
         Buscar
         <span v-if="transactionStore.transactionToAdd.value.items.length === 0"
-          >producto</span
+          >producto/servicio</span
         >
-        <span v-else>otros productos</span>
+        <span v-else>otros productos/servicios</span>
       </h2>
       <Suspense>
         <template #default>
@@ -123,9 +123,12 @@
               <p class="text-xs text-gray-500">Ingresa la cantidad a vender</p>
               <p
                 v-if="
+                  transactionStore.itemToAddInTransaction.value
+                    .oldOrNewProduct !== 'new' &&
                   transactionStore.itemToAddInTransaction.value.trackStock &&
                   transactionStore.itemToAddInTransaction.value.stock > 0
                 "
+                |
                 class="text-xs text-blue-600 font-medium"
               >
                 📦 Stock disponible:
@@ -136,6 +139,8 @@
               </p>
               <p
                 v-else-if="
+                  transactionStore.itemToAddInTransaction.value
+                    .oldOrNewProduct !== 'new' &&
                   transactionStore.itemToAddInTransaction.value.trackStock &&
                   transactionStore.itemToAddInTransaction.value.stock <= 0
                 "

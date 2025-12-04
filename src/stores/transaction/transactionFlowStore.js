@@ -1,6 +1,4 @@
 import { defineStore } from 'pinia';
-import { useInventoryStore } from '@/stores/InventoryStore';
-import { useTransactionStore } from '@/stores/transaction/transactionStore';
 
 // Importa los componentes de los pasos
 import StepIncomeOrExpense from '@/components/transactionFlow/StepIncomeOrExpense.vue';
@@ -47,89 +45,15 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
   },
   actions: {
     async nextStep() {
-
-      this.transactionLoading = true;
-
       // Obtener el step actual por su label
       const currentStepConfig = this.steps[this.currentStep];
 
       console.log('🔄 nextStep - Step actual:', currentStepConfig?.label);
       console.log('🔄 nextStep - Índice actual:', this.currentStep);
 
-      // Si estamos en el step de detalles, procesar el inventario
-      if (currentStepConfig?.label === 'Detalles ingreso' || currentStepConfig?.label === 'Detalles egreso') {
-        console.log('📦 Procesando inventario...');
-
-        try {
-          const inventoryStore = useInventoryStore();
-          const transactionStore = useTransactionStore();
-
-          // ========================================
-          // PROCESAR INGRESOS (ventas)
-          // ========================================
-          if (currentStepConfig?.label === 'Detalles ingreso') {
-            const items = transactionStore.transactionToAdd.value.items;
-            console.log('📦 Items de venta a procesar:', items);
-
-            if (items && items.length > 0) {
-              await inventoryStore.addItemToInventoryFromArryOfItemsNewOrOld(items);
-              console.log('✅ Inventario procesado exitosamente (ventas)');
-            } else {
-              console.warn('⚠️ No hay items para procesar en el inventario (ventas)');
-            }
-          }
-
-          // ========================================
-          // PROCESAR EGRESOS DE TIPO MATERIALS (compras)
-          // ========================================
-          if (currentStepConfig?.label === 'Detalles egreso') {
-            const category = transactionStore.transactionToAdd.value.category;
-
-            if (category === 'materials') {
-              const materialItems = transactionStore.transactionToAdd.value.materialItems;
-              console.log('🛒 Materiales de compra a procesar:', materialItems);
-
-              if (materialItems && materialItems.length > 0) {
-                // Procesar cada material y crear los productos/stockLogs necesarios
-                const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(materialItems);
-
-                console.log('✅ Inventario procesado exitosamente (compra de materiales)');
-                console.log('📋 Mapeo de stockLogs:', materialStockLogMap);
-
-                // Actualizar materialItems con sus stockLogIds correspondientes
-                if (materialStockLogMap && materialStockLogMap.length > 0) {
-                  transactionStore.transactionToAdd.value.materialItemsAndStockLogs = materialStockLogMap;
-
-                  // Actualizar cada material item con su stockLogId
-                  materialItems.forEach(material => {
-                    const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
-                    if (mapping) {
-                      material.stockLogId = mapping.stockLogId;
-                      console.log(`🔗 Material ${material.description} vinculado a stockLog ${mapping.stockLogId}`);
-                    }
-                  });
-                }
-              } else {
-                console.warn('⚠️ No hay materiales para procesar en el inventario');
-              }
-            } else {
-              // Para labor/overhead no se procesa inventario
-              console.log('ℹ️ Gasto tipo labor/overhead, no requiere procesamiento de inventario');
-            }
-          }
-
-          this.transactionLoading = false;
-
-        } catch (error) {
-          console.error('❌ Error procesando inventario:', error);
-          this.transactionLoading = false;
-          this.transactionError = error;
-          throw error; // Re-lanzar el error para que el componente lo maneje
-        }
-      } else {
-        // Si no es un step de detalles de ingreso/egreso, resetear el loading
-        this.transactionLoading = false;
-      }
+      // ⚠️ NO PROCESAR INVENTARIO AQUÍ
+      // El inventario se procesa ÚNICAMENTE en transactionStore.addTransaction()
+      // Este flujo solo debe validar y navegar entre pasos
 
       // Avanzar al siguiente step
       if (this.currentStep < this.steps.length - 1) {

@@ -136,6 +136,16 @@ export function useInventory() {
     }
   };
 
+  const createService = async (serviceData) => {
+    return await createProduct({
+      ...serviceData,
+      type: 'SERVICE',
+      trackStock: false,
+    });
+  }
+
+
+
   const createStockLog = async (item, typeStockLog = 'sell') => {
     try {
       const businessId = ensureBusinessId();
@@ -191,24 +201,57 @@ export function useInventory() {
       const productDoc = await getDoc(productRef);
 
       if (!productDoc.exists()) {
-        console.error('❌ Error: El producto no existe en Firestore', {
-          productId: item.uuid,
-          businessId,
-          productDescription: item.description || 'N/A',
-          typeStockLog,
-          itemData: item
-        });
-        throw new Error(
-          `El producto "${item.description || item.uuid}" no existe en Firestore.\n` +
-          `ID: ${item.uuid}\n` +
-          `Business: ${businessId}\n\n` +
-          `Posibles causas:\n` +
-          `1. El producto fue marcado como "old" pero nunca fue creado\n` +
-          `2. El producto fue eliminado previamente\n` +
-          `3. Error en la sincronización de datos\n\n` +
-          `Solución: Verifica que el producto exista antes de crear stock logs, ` +
-          `o márcalo como "new" si es la primera vez que se usa.`
-        );
+        // ✅ CREACIÓN AUTOMÁTICA DE PRODUCTO NUEVO
+        if (item.oldOrNewProduct === 'new') {
+          console.log('🆕 Producto nuevo detectado, creando automáticamente:', {
+            productId: item.uuid,
+            description: item.description,
+            type: typeStockLog
+          });
+
+          // Crear el producto antes de registrar el stockLog
+          const productPayload = {
+            description: (item.description || '').trim().toUpperCase(),
+            price: item.price !== undefined && item.price !== null ? Number(item.price) : 0,
+            cost: item.cost !== undefined && item.cost !== null ? Number(item.cost) : 0,
+            stock: 0, // Stock inicial es 0, se ajustará con el stockLog
+            unit: item.unit || 'uni',
+            type: item.productType || 'MERCH',
+            trackStock: item.trackStock !== undefined ? item.trackStock : true,
+            stockLog: [],
+            createdAt: serverTimestamp(),
+          };
+
+          await setDoc(productRef, productPayload);
+
+          console.log('✅ Producto creado exitosamente antes del stockLog:', {
+            id: item.uuid,
+            description: productPayload.description,
+            trackStock: productPayload.trackStock
+          });
+        } else {
+          // ❌ ERROR: Producto marcado como "old" pero no existe
+          console.error('❌ Error: El producto no existe en Firestore', {
+            productId: item.uuid,
+            businessId,
+            productDescription: item.description || 'N/A',
+            typeStockLog,
+            oldOrNewProduct: item.oldOrNewProduct,
+            itemData: item
+          });
+          throw new Error(
+            `El producto "${item.description || item.uuid}" no existe en Firestore.\n` +
+            `ID: ${item.uuid}\n` +
+            `Business: ${businessId}\n` +
+            `Marcado como: ${item.oldOrNewProduct || 'desconocido'}\n\n` +
+            `Posibles causas:\n` +
+            `1. El producto fue marcado como "old" pero nunca fue creado\n` +
+            `2. El producto fue eliminado previamente\n` +
+            `3. Error en la sincronización de datos\n\n` +
+            `Solución: Verifica que el producto exista antes de crear stock logs, ` +
+            `o márcalo como "new" si es la primera vez que se usa.`
+          );
+        }
       }
 
       await updateDoc(productRef, {
@@ -475,6 +518,7 @@ export function useInventory() {
   return {
     createItem,
     createProduct,
+    createService,
     createStockLog,
     deleteStockLog,
     getAllItemsInInventory,

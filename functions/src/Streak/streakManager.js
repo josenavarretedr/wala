@@ -229,25 +229,63 @@ async function updateStreakContextualizada({
     rachaAnterior: streak.current
   });
 
-  if (!canCount) {
-    log('🔴 [STREAK] Día no cuenta para racha');
-    await streakRef.set({
-      streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
-    }, { merge: true });
-    return {
-      updated: false,
-      streak: { ...streak, mode, medianGap, allowedGap },
-      reason: 'not-counting'
-    };
-  }
-
   const lastActiveDay = streak.lastActiveDay || null;
 
-  // ⚠️ CRÍTICO: No contar dos veces el mismo día
+  // ⚠️ CRÍTICO: Verificar si día ya fue contado PRIMERO
   if (lastActiveDay === day) {
-    log('⏭️ [STREAK] Ya se contó este día - lastActiveDay:', lastActiveDay, 'day:', day);
+    log('⏭️ [STREAK] Este día ya se había contado - lastActiveDay:', lastActiveDay, 'day:', day);
 
-    // Si el día ya está cerrado, actualizar copilotAssistedSessions si aplica
+    // CASO 1: Día ya contado pero ahora es INACTIVO (se eliminó la última transacción)
+    if (!canCount) {
+      log('🔴 [STREAK] Día ya contado pero ahora inactivo - Revirtiendo racha');
+
+      // Necesitamos encontrar el día activo anterior
+      const prevCurrent = Math.max(0, Number(streak.current || 1) - 1);
+
+      // Buscar el último día activo antes de este
+      let prevActiveDay = null;
+      if (prevCurrent > 0) {
+        // Buscar hacia atrás hasta encontrar un día con transacciones
+        const db = admin.firestore();
+        const businessRef = db.collection('businesses').doc(businessId);
+
+        // Buscar los últimos 30 días para encontrar el día activo anterior
+        const daysToCheck = 30;
+        for (let i = 1; i <= daysToCheck; i++) {
+          const checkDay = DateTime.fromISO(day, { zone: tz })
+            .minus({ days: i })
+            .toFormat('yyyy-MM-dd');
+
+          const summaryRef = businessRef.collection('dailySummaries').doc(checkDay);
+          const summaryDoc = await summaryRef.get();
+
+          if (summaryDoc.exists && isActiveDay(summaryDoc)) {
+            prevActiveDay = checkDay;
+            log('✅ [STREAK] Encontrado día activo anterior:', prevActiveDay);
+            break;
+          }
+        }
+      }
+
+      await streakRef.set({
+        streak: {
+          ...streak,
+          current: prevCurrent,
+          lastActiveDay: prevActiveDay,
+          lastUpdated: FieldValue.serverTimestamp()
+        }
+      }, { merge: true });
+
+      logAlways(`🔥 [STREAK] REVERT - Business: ${businessId}, Day: ${day}, Prev: ${streak.current} → New: ${prevCurrent}, LastActiveDay: ${prevActiveDay}`);
+
+      return {
+        updated: true,
+        streak: { ...streak, current: prevCurrent, lastActiveDay: prevActiveDay, mode, medianGap, allowedGap },
+        reason: 'streak-reverted-transaction-deleted'
+      };
+    }
+
+    // CASO 2: Día sigue activo - Si ya está cerrado, actualizar copilotAssistedSessions
     const hasClosure = summaryDoc.hasClosure === true;
     if (hasClosure && copilotClosed) {
       const updatedCopilotSessions = Number(streak.copilotAssistedSessions || 0) + 1;
@@ -269,6 +307,7 @@ async function updateStreakContextualizada({
       };
     }
 
+    // CASO 3: Día sigue activo y ya se contó - No hacer nada
     await streakRef.set({
       streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
     }, { merge: true });
@@ -277,6 +316,19 @@ async function updateStreakContextualizada({
       updated: false,
       streak: { ...streak, mode, medianGap, allowedGap },
       reason: 'already-counted-today'
+    };
+  }
+
+  // Si NO puede contar y NO es el día ya contado, simplemente no hacer nada
+  if (!canCount) {
+    log('🔴 [STREAK] Día no cuenta para racha (día diferente al último activo)');
+    await streakRef.set({
+      streak: { ...streak, lastUpdated: FieldValue.serverTimestamp() }
+    }, { merge: true });
+    return {
+      updated: false,
+      streak: { ...streak, mode, medianGap, allowedGap },
+      reason: 'not-counting'
     };
   }
 

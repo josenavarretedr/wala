@@ -42,9 +42,69 @@ module.exports = functions.firestore
 
     console.log(`📝 Transaction write detected: ${txId} in business ${businessId}`);
 
-    // ✅ IGNORAR: Eliminaciones
+    // ✅ PROCESAR: Eliminaciones (necesario para recalcular dailySummary)
+    if (!after && before) {
+      console.log('🗑️ Transaction deleted, recalculating dailySummary...');
+
+      if (!before.createdAt) {
+        console.warn(`⚠️  Deleted transaction ${txId} missing createdAt, skipping aggregation`);
+        return null;
+      }
+
+      // Obtener timezone del negocio
+      const businessDoc = await db.doc(`businesses/${businessId}`).get();
+      const tz = (businessDoc.exists && businessDoc.data().timezone) || DEFAULT_TZ;
+
+      if (!businessDoc.exists) {
+        console.log(`⚠️  Business ${businessId} no longer exists, skipping aggregation`);
+        return null;
+      }
+
+      const day = dayFromTimestamp(before.createdAt, tz);
+      console.log(`📅 Recalculating day: ${day} (tz: ${tz}) after deletion`);
+
+      // Recalcular agregados del día
+      const agg = await getDayAggregates(db, businessId, day, tz);
+      console.log(`📊 Day aggregates recalculated after deletion`);
+
+      // Actualizar dailySummary
+      await upsertDailySummary(db, businessId, day, {
+        ...agg,
+        lastUpdated: FieldValue.serverTimestamp()
+      });
+
+      console.log(`✅ Daily summary updated for ${day} after deletion`);
+
+      // ✅ ACTUALIZAR RACHA después de eliminación
+      // Si el día ya no tiene transacciones (solo opening), la racha debe recalcularse
+      if (agg.hasOpening) {
+        console.log(`🔥 Recalculating streak after deletion...`);
+        console.log(`📊 Day state after deletion:`, {
+          hasOpening: agg.hasOpening,
+          hasTxn: agg.hasTxn,
+          hasClosure: agg.hasClosure
+        });
+
+        await updateStreakContextualizada({
+          db,
+          businessId,
+          day,
+          summary: agg,
+          tz,
+          autoClosePolicy: 'lenient' // Siempre valorar esfuerzo
+        }).catch(err => {
+          console.error('❌ Error updating streak after deletion:', err);
+        });
+      } else {
+        console.log(`⏭️ Day has no opening after deletion - Skipping streak update`);
+      }
+
+      return null;
+    }
+
+    // Si no hay after ni before, es un evento inválido
     if (!after) {
-      console.log('⏭️ Transaction deleted, skipping streak update');
+      console.warn('⚠️ Transaction write event without after or before data, skipping');
       return null;
     }
 
