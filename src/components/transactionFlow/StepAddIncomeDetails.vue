@@ -128,7 +128,6 @@
                   transactionStore.itemToAddInTransaction.value.trackStock &&
                   transactionStore.itemToAddInTransaction.value.stock > 0
                 "
-                |
                 class="text-xs text-blue-600 font-medium"
               >
                 📦 Stock disponible:
@@ -380,6 +379,10 @@ const proceedAnyway = ref(false);
  * Solo aplica si el producto tiene trackStock = true
  */
 const hasStockWarning = computed(() => {
+  if (transactionStore.itemToAddInTransaction.value.oldOrNewProduct === "new") {
+    return false;
+  }
+
   const item = transactionStore.itemToAddInTransaction.value;
 
   // Si no hay producto o cantidad seleccionada

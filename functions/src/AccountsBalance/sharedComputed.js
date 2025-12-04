@@ -175,7 +175,8 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         // Usar el método del primer pago
         const firstPayment = tx.payments[0];
         const paymentAmount = parseMoneyNumber(firstPayment.amount || 0);
-        const paymentAccount = firstPayment.account || 'cash';
+        // ✅ Soportar "account" O "method" (fallback para transacciones antiguas)
+        const paymentAccount = firstPayment.account || firstPayment.method || 'cash';
 
         if (paymentAccount === 'cash') {
           ingresosCash = addMoney(ingresosCash, paymentAmount);

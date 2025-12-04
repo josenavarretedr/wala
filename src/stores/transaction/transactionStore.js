@@ -346,7 +346,7 @@ export function useTransactionStore() {
             uuid: crypto.randomUUID(),
             amount: totalAmount,
             date: Timestamp.now(),
-            method: transactionToAdd.value.account || 'cash',
+            account: transactionToAdd.value.account || 'cash',
             notes: 'Pago completo al registrar',
             registeredBy: transactionToAdd.value.userId || 'unknown'
           }];
@@ -1848,7 +1848,7 @@ export function useTransactionStore() {
         uuid: crypto.randomUUID(),
         amount: partialAmount,
         date: Timestamp.now(),
-        method: paymentMethod,
+        account: paymentMethod,
         notes: 'Pago inicial',
         registeredBy: transactionToAdd.value.userId || 'unknown'
       }];
@@ -1955,7 +1955,7 @@ export function useTransactionStore() {
         uuid: paymentTransactionUuid,
         amount: paymentData.amount,
         date: Timestamp.now(),
-        method: paymentData.account,
+        account: paymentData.account,
         notes: paymentData.notes || `Pago registrado el ${new Date().toLocaleDateString('es-PE')}`,
         registeredBy: currentUser.uid
       };
