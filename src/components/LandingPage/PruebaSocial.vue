@@ -72,7 +72,8 @@
             </div>
             <p class="text-sm font-semibold text-gray-900">COPEME</p>
             <p class="text-xs text-gray-500 mt-1">
-              Consorcio de Organizaciones Privadas
+              Consorcio de Organizaciones Privadas de Promoción al Desarollo de
+              la Micro y Pequeña Empresa
             </p>
           </div>
 

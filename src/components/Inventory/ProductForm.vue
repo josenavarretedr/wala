@@ -7,7 +7,6 @@
         <p class="text-sm text-gray-500 mt-2">
           Define el nombre, tipo y unidad del producto/servicio
         </p>
-        <pre>          {{ localFormData }}        </pre>
       </div>
 
       <!-- Nombre del Producto -->
