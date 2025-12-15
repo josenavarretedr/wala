@@ -1,72 +1,38 @@
 <template>
-  <section
-    id="planes-section"
-    class="py-16 sm:py-20 px-4 relative overflow-hidden"
-  >
+  <section id="planes-section" class="py-16 lg:py-24 px-4 sm:px-6 lg:px-8">
     <div class="max-w-6xl mx-auto">
-      <!-- Contenedor principal tipo card (estilo HistorialRecords) -->
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 transition-all duration-200 hover:shadow-md hover:border-gray-200 mb-8"
-      >
-        <!-- Badge superior -->
-        <div class="flex justify-center mb-6">
-          <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
-          >
-            <!-- <span class="text-2xl">💸</span> -->
-            <span class="text-sm font-medium">Planes y Precios</span>
-          </div>
-        </div>
-
+      <!-- Cabecera -->
+      <div class="mb-12 lg:mb-16">
         <!-- Título Principal -->
         <h2
-          class="text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
+          class="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 text-center"
         >
           Empieza <span class="text-emerald-600">gratis</span> y crece
           <span class="text-purple-600">a tu ritmo</span>
         </h2>
 
-        <!-- Subtítulo -->
+        <!-- Subtítulo ajustado -->
         <p
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 text-center font-normal leading-relaxed max-w-4xl mx-auto"
+          class="text-lg lg:text-xl text-gray-600 text-center max-w-3xl mx-auto leading-relaxed"
         >
-          Sin letra pequeña. Tú decides
-          <span class="font-medium text-gray-800"
-            >cuándo dar el siguiente paso</span
-          >.
+          Sin letra pequeña. Tú decides cuándo dar el siguiente paso.
         </p>
       </div>
 
       <!-- Grid de planes (3 columnas) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <!-- Plan 1: Gratis (Core) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-10">
+        <!-- Plan 1: Básico -->
         <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all duration-200 hover:shadow-lg hover:border-emerald-300 hover:-translate-y-1 relative"
+          class="bg-white rounded-xl border border-gray-200 p-8 transition-all duration-200 hover:border-emerald-300 relative"
         >
-          <!-- Badge del plan -->
-          <!-- <div class="flex justify-center mb-4">
-            <div
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700"
-            >
-              <span class="text-lg">🟢</span>
-              <span class="text-xs font-semibold uppercase tracking-wide"
-                >Gratis</span
-              >
-            </div>
-          </div> -->
-
           <!-- Nombre del plan -->
-          <h3
-            class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center"
-          >
+          <h3 class="text-2xl font-bold text-gray-900 mb-2 text-center">
             Básico
           </h3>
 
           <!-- Precio -->
           <div class="text-center mb-6">
-            <span class="text-4xl sm:text-5xl font-bold text-emerald-600"
-              >S/. 0</span
-            >
+            <span class="text-5xl font-bold text-emerald-600">S/. 0</span>
             <span class="text-base text-gray-500">/mes</span>
           </div>
 
@@ -125,50 +91,42 @@
 
           <!-- CTA -->
           <button
-            @click="selectPlan('gratis')"
-            class="w-full bg-emerald-600 text-white px-6 py-3 rounded-lg font-semibold text-base shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-700"
+            @click="selectPlan('basic')"
+            class="w-full bg-emerald-600 text-white px-6 py-3 rounded-xl font-semibold text-base transition-all duration-200 hover:bg-emerald-700"
           >
-            Empezar gratis
+            Empieza sin costo
           </button>
         </div>
 
-        <!-- Plan 2: Emprendedor (Premium) - DESTACADO -->
+        <!-- Plan 2: Emprendedor (EL CORAZÓN DEL NEGOCIO) -->
         <div
-          class="bg-white rounded-xl shadow-lg border-2 border-purple-300 p-8 transition-all duration-200 hover:shadow-xl hover:-translate-y-1 relative"
+          class="bg-white rounded-xl border-2 border-purple-300 shadow-md p-8 transition-all duration-200 hover:shadow-lg relative"
         >
           <!-- Badge destacado -->
-          <div
-            class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-md"
-          >
-            ⭐ Más popular
+          <div class="flex justify-center mb-4">
+            <div
+              class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-600 text-white"
+            >
+              <span class="text-base">⭐</span>
+              <span class="text-sm font-bold">Más popular</span>
+            </div>
           </div>
 
-          <!-- Badge del plan -->
-          <!-- <div class="flex justify-center mb-4 mt-2">
-            <div
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
-            >
-              <span class="text-lg">🟣</span>
-              <span class="text-xs font-semibold uppercase tracking-wide"
-                >Pro</span
-              >
-            </div>
-          </div> -->
-
           <!-- Nombre del plan -->
-          <h3
-            class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center"
-          >
+          <h3 class="text-2xl font-bold text-gray-900 mb-2 text-center">
             Emprendedor
           </h3>
 
           <!-- Precio -->
-          <div class="text-center mb-6">
-            <span class="text-4xl sm:text-5xl font-bold text-purple-600"
-              >S/. 29</span
-            >
+          <div class="text-center mb-3">
+            <span class="text-5xl font-bold text-purple-600">S/. 29</span>
             <span class="text-base text-gray-500">/mes</span>
           </div>
+
+          <!-- Subtítulo clave -->
+          <p class="text-sm text-gray-600 text-center mb-6">
+            Para quienes quieren control real de su negocio
+          </p>
 
           <!-- Separador -->
           <div class="border-t border-gray-200 mb-6"></div>
@@ -228,41 +186,32 @@
           <!-- CTA -->
           <button
             @click="selectPlan('premium')"
-            class="w-full bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-lg font-semibold text-base shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:from-purple-600 hover:to-purple-700"
+            class="w-full bg-purple-600 text-white px-6 py-4 rounded-xl font-bold text-base transition-all duration-200 hover:bg-purple-700 mb-2"
           >
             Probar 15 días gratis
           </button>
-          <p class="text-xs text-center text-gray-500 mt-2">
+          <p class="text-xs text-center text-gray-500">
             Sin tarjeta de crédito
           </p>
         </div>
 
-        <!-- Plan 3: Institucional -->
+        <!-- Plan 3: Empresarial (INSTITUCIONAL) -->
         <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 transition-all duration-200 hover:shadow-lg hover:border-orange-300 hover:-translate-y-1 relative"
+          class="bg-white rounded-xl border border-gray-200 p-8 transition-all duration-200 hover:border-gray-300 relative"
         >
-          <!-- Badge del plan -->
-          <!-- <div class="flex justify-center mb-4">
-            <div
-              class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700"
-            >
-              <span class="text-lg">🟠</span>
-              <span class="text-xs font-semibold uppercase tracking-wide"
-                >Institucional</span
-              >
-            </div>
-          </div> -->
-
           <!-- Nombre del plan -->
-          <h3
-            class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-center"
-          >
+          <h3 class="text-2xl font-bold text-gray-900 mb-2 text-center">
             Empresarial
           </h3>
 
+          <!-- Subtítulo -->
+          <p class="text-sm text-gray-600 text-center mb-4">
+            Soluciones para instituciones y programas
+          </p>
+
           <!-- Precio -->
           <div class="text-center mb-6">
-            <span class="text-3xl sm:text-4xl font-bold text-orange-600"
+            <span class="text-3xl font-bold text-orange-600"
               >Personalizado</span
             >
           </div>
@@ -325,88 +274,25 @@
           <!-- CTA -->
           <button
             @click="contactSales"
-            class="w-full bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold text-base shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-orange-700"
+            class="w-full border-2 border-orange-600 text-orange-600 px-6 py-3 rounded-xl font-semibold text-base transition-all duration-200 hover:bg-orange-50"
           >
             Contactar ventas
           </button>
         </div>
       </div>
 
-      <!-- Card destacada con beneficios universales -->
-      <div
-        class="rounded-xl p-8 mb-8 transition-all duration-200 hover:shadow-md"
-      >
-        <div class="text-center mb-6">
-          <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-            Todos los planes incluyen
-          </h3>
-          <p class="text-base sm:text-lg text-gray-700">
-            Beneficios garantizados sin importar el plan que elijas
-          </p>
-        </div>
+      <!-- Micro-trust line -->
+      <div class="text-center mb-8">
+        <p class="text-sm text-gray-500">
+          ✔ Acceso desde celular • ✔ Datos seguros • ✔ Soporte humano
+        </p>
+      </div>
 
-        <!-- Grid de beneficios universales -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div
-            class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <Phone class="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-gray-900">
-                Acceso desde celular
-              </p>
-              <p class="text-xs text-gray-500">iOS y Android</p>
-            </div>
-          </div>
-
-          <div
-            class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <Shield class="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-gray-900">Datos seguros</p>
-              <p class="text-xs text-gray-500">Encriptación total</p>
-            </div>
-          </div>
-
-          <div
-            class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-10 h-10 bg-purple-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <MessageText class="w-5 h-5 text-purple-600" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-gray-900">Soporte básico</p>
-              <p class="text-xs text-gray-500">Chat y email</p>
-            </div>
-          </div>
-
-          <div
-            class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-10 h-10 bg-orange-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <CloudSync class="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <p class="text-sm font-semibold text-gray-900">
-                Sincronización automática
-              </p>
-              <p class="text-xs text-gray-500">Offline y online</p>
-            </div>
-          </div>
-        </div>
+      <!-- CTA final suave -->
+      <div class="text-center">
+        <p class="text-lg text-gray-700 leading-relaxed">
+          Empieza hoy. Registra tu primer día. Decide después.
+        </p>
       </div>
     </div>
   </section>
@@ -414,7 +300,7 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import { Check, Phone, Shield, MessageText, CloudSync } from "@iconoir/vue";
+import { Check } from "@iconoir/vue";
 
 const router = useRouter();
 
@@ -430,71 +316,20 @@ const contactSales = () => {
     "_blank"
   );
 };
-
-const createAccount = () => {
-  router.push("/auth/login");
-};
 </script>
 
 <style scoped>
-/* Estilos coherentes con Hero, Pain, Solution, Funcionalidades, PruebaSocial, FAQ y HistorialRecords */
+/* Estilos coherentes con Solution.vue y Benefits.vue */
 
-/* Animación de entrada para las cards */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Aplicar animación escalonada a los planes */
-.grid > div:nth-child(1) {
-  animation: fadeInUp 0.5s ease-out 0.1s backwards;
-}
-
-.grid > div:nth-child(2) {
-  animation: fadeInUp 0.5s ease-out 0.2s backwards;
-}
-
-.grid > div:nth-child(3) {
-  animation: fadeInUp 0.5s ease-out 0.3s backwards;
-}
+<style scoped>
+/* Estilos coherentes con Solution.vue y Benefits.vue */
 
 /* Transiciones suaves */
-button,
-.hover\:shadow-md,
-.hover\:shadow-lg,
-.hover\:shadow-xl {
+button {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button:active {
   transform: translateY(0);
-}
-
-/* Efecto especial para el plan destacado */
-@keyframes pulse-border {
-  0%,
-  100% {
-    border-color: rgb(216, 180, 254);
-  }
-  50% {
-    border-color: rgb(192, 132, 252);
-  }
-}
-
-.border-purple-300 {
-  animation: pulse-border 3s ease-in-out infinite;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  h2 {
-    line-height: 1.2;
-  }
 }
 </style>

@@ -1,57 +1,70 @@
 <template>
   <section
-    class="hero-section min-h-screen bg-white flex items-center justify-center px-4 py-16"
+    class="hero-section min-h-screen bg-white flex items-center justify-center px-4 py-16 md:py-24"
   >
-    <div class="max-w-6xl mx-auto">
-      <!-- Contenedor principal con diseño tipo card coherente -->
+    <div class="max-w-7xl mx-auto w-full">
+      <!-- Logo WALA pequeño arriba (mobile y desktop) -->
+      <div class="flex justify-center mb-10 md:mb-14">
+        <img
+          src="@/assets/logoWala2.png"
+          alt="WALA"
+          class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 animate-fadeInScale"
+        />
+      </div>
+
+      <!-- Layout: Mobile = columna | Desktop = 2 columnas -->
       <div
-        class="bg-white p-6 sm:p-8 md:p-12 transition-all duration-200 hover:border-gray-200"
+        class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 lg:gap-16 items-center"
       >
-        <!-- Logo WALA prominente -->
-        <div class="flex justify-center mb-8">
-          <div class="text-center">
-            <!-- Logo image -->
-            <img
-              src="@/assets/logoWala2.png"
-              alt="WALA - Tu copiloto digital para negocios"
-              class="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64 lg:w-72 lg:h-72 mx-auto animate-fadeInScale"
-            />
-          </div>
-        </div>
-
-        <!-- Título Principal (H1) -->
-        <h1
-          class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
-        >
-          <span class="text-blue-600">Copiloto</span> de tu
-          <span class="text-orange-600">negocio</span>
-        </h1>
-
-        <!-- Subtítulo (H2) -->
-        <!-- <h2
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 text-center font-normal leading-relaxed max-w-4xl mx-auto"
-        >
-          WALA te ayuda a organizar tus ventas, gastos y clientes sin
-          complicaciones.
-          <span class="font-medium text-gray-800"
-            >Simple, confiable y pensado para ti.</span
+        <!-- COLUMNA IZQUIERDA: Contenido de texto -->
+        <div class="text-center md:text-left space-y-6 md:space-y-10">
+          <!-- Título Principal (H1) -->
+          <h1
+            class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-gray-900 font-extrabold leading-[1.1] tracking-tight"
           >
-        </h2> -->
+            Entiende tu negocio
+            <span class="text-orange-500">día a día</span>.
+          </h1>
 
-        <!-- Grid de beneficios (estilo ResumenDay) -->
-        <div
-          class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-8 max-w-4xl mx-auto"
-        >
-          <!-- Beneficio 1 -->
+          <!-- Subtítulo (H2) -->
+          <h2
+            class="text-xl sm:text-2xl md:text-3xl text-gray-600 font-normal leading-relaxed max-w-2xl mx-auto md:mx-0"
+          >
+            Registra ingresos y egresos de forma simple para saber si estás
+            <span class="font-semibold text-gray-800"
+              >ganando o perdiendo dinero</span
+            >.
+          </h2>
+
+          <!-- CTAs -->
           <div
-            class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center"
+            class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center pt-4"
           >
-            <div class="flex justify-center mb-2">
-              <div
-                class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center"
-              >
+            <!-- CTA Primario -->
+            <button
+              class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-5 rounded-xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-orange-600 hover:to-orange-700"
+              @click="$router.push({ name: 'Login' })"
+            >
+              Empieza gratis por 15 días
+            </button>
+
+            <!-- CTA Secundario -->
+            <button
+              class="w-full sm:w-auto bg-transparent text-gray-600 px-6 py-3 rounded-xl font-medium text-base transition-all duration-200 hover:text-gray-900 underline decoration-gray-300 hover:decoration-gray-600 underline-offset-4"
+              @click="scrollToPainSection"
+            >
+              Ver cómo funciona
+            </button>
+          </div>
+
+          <!-- Microcopy de confianza -->
+          <div class="text-center md:text-left pt-1">
+            <p
+              class="text-sm text-gray-500 flex items-center justify-center md:justify-start gap-3"
+            >
+              <span class="flex items-center gap-1.5">
                 <svg
-                  class="w-5 h-5 text-blue-600"
+                  class="w-3.5 h-3.5 text-emerald-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -63,22 +76,12 @@
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-              </div>
-            </div>
-            <p class="text-sm font-medium text-blue-800">Simple</p>
-            <p class="text-xs text-blue-600 mt-1">Fácil de usar</p>
-          </div>
-
-          <!-- Beneficio 2 -->
-          <div
-            class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-center"
-          >
-            <div class="flex justify-center mb-2">
-              <div
-                class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center"
-              >
+                Sin tarjeta
+              </span>
+              <span class="text-gray-300">·</span>
+              <span class="flex items-center gap-1.5">
                 <svg
-                  class="w-5 h-5 text-emerald-600"
+                  class="w-3.5 h-3.5 text-emerald-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -87,122 +90,162 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-              </div>
-            </div>
-            <p class="text-sm font-medium text-emerald-800">Confiable</p>
-            <p class="text-xs text-emerald-600 mt-1">Datos seguros</p>
-          </div>
-
-          <!-- Beneficio 3 -->
-          <div
-            class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-center"
-          >
-            <div class="flex justify-center mb-2">
-              <div
-                class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center"
-              >
-                <svg
-                  class="w-5 h-5 text-purple-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
-                  />
-                </svg>
-              </div>
-            </div>
-            <p class="text-sm font-medium text-purple-800">Para ti</p>
-            <p class="text-xs text-purple-600 mt-1">Hecho a tu medida</p>
+                Sin compromiso
+              </span>
+            </p>
           </div>
         </div>
 
-        <!-- CTAs Mobile-First -->
-        <div
-          class="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6"
-        >
-          <!-- CTA Primario -->
-          <button
-            class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:from-orange-600 hover:to-orange-700"
-            @click="$router.push({ name: 'Login' })"
-          >
-            🔸 Comienza gratis por 15 días
-          </button>
-
-          <!-- CTA Secundario -->
-          <button
-            class="w-full sm:w-auto bg-white text-gray-700 px-8 py-4 rounded-xl font-medium text-lg shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-blue-300 hover:-translate-y-0.5 hover:bg-blue-50"
-            @click="scrollToPainSection"
-          >
-            Ver cómo funciona
-          </button>
-        </div>
-
-        <!-- Microcopy de confianza -->
-        <div class="text-center">
-          <p
-            class="text-sm text-gray-500 flex items-center justify-center gap-2"
-          >
-            <svg
-              class="w-4 h-4 text-emerald-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+        <!-- COLUMNA DERECHA: Visual UI abstracto (solo ≥ md) -->
+        <div class="hidden md:block relative">
+          <div class="relative w-full max-w-lg mx-auto">
+            <!-- Card Principal: Resumen del día -->
+            <div
+              class="bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 mb-8 animate-floatSlow"
+              style="animation-delay: 0s"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Sin tarjeta. Sin compromiso.
-          </p>
+              <div class="flex items-center justify-between mb-5">
+                <h3 class="text-xl font-bold text-gray-800">Resumen del día</h3>
+                <span class="text-xs text-gray-400 font-medium">Hoy</span>
+              </div>
+
+              <div class="space-y-3">
+                <!-- Ingresos -->
+                <div
+                  class="flex items-center justify-between p-3 bg-emerald-50 rounded-lg border border-emerald-100"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-5 h-5 text-emerald-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M7 11l5-5m0 0l5 5m-5-5v12"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-600"
+                      >Ingresos</span
+                    >
+                  </div>
+                  <span class="text-xl font-bold text-emerald-700"
+                    >S/ 1,250</span
+                  >
+                </div>
+
+                <!-- Gastos -->
+                <div
+                  class="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-5 h-5 text-orange-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M17 13l-5 5m0 0l-5-5m5 5V6"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-sm font-medium text-gray-600"
+                      >Gastos</span
+                    >
+                  </div>
+                  <span class="text-xl font-bold text-orange-700">S/ 680</span>
+                </div>
+
+                <!-- Resultado -->
+                <div
+                  class="flex items-center justify-between p-5 bg-blue-50 rounded-xl border-2 border-blue-200 mt-4"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-6 h-6 text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <span class="text-base font-bold text-blue-800"
+                      >Ganas hoy</span
+                    >
+                  </div>
+                  <span class="text-2xl font-bold text-blue-700">S/ 570</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Secundaria: Racha -->
+            <div
+              class="bg-white rounded-xl shadow-md border border-gray-100 p-4 ml-auto w-2/3 animate-floatSlow"
+              style="animation-delay: 0.3s"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-gray-500 mb-1 font-medium">Tu racha</p>
+                  <p class="text-xl font-bold text-purple-600">Día 12 / 30</p>
+                </div>
+                <div
+                  class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center"
+                >
+                  <svg
+                    class="w-6 h-6 text-purple-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 10V3L4 14h7v7l9-11h-7z"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <!-- Barra de progreso -->
+              <div class="mt-3 bg-purple-50 rounded-full h-1.5 overflow-hidden">
+                <div
+                  class="bg-gradient-to-r from-purple-400 to-purple-600 h-full rounded-full"
+                  style="width: 40%"
+                ></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-
-      <!-- Sección de imagen/mockup (placeholder) -->
-      <!-- <div class="mt-8">
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200"
-        >
-          <div
-            class="aspect-video bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 rounded-lg flex items-center justify-center"
-          >
-            <div class="text-center px-4">
-              <svg
-                class="w-16 h-16 text-gray-300 mx-auto mb-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <p class="text-sm text-gray-400 font-medium">
-                Mockup de dashboard con métricas simples
-              </p>
-              <p class="text-xs text-gray-400 mt-1">
-                (App financiera WALA para emprendedores en Latinoamérica)
-              </p>
-            </div>
-          </div>
-        </div>
-      </div> -->
     </div>
 
-    <!-- Sombras sutiles de fondo (mantener minimalistas) -->
+    <!-- Sombras sutiles de fondo -->
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
@@ -230,21 +273,9 @@ const scrollToPainSection = () => {
 </script>
 
 <style scoped>
-/* Estilos coherentes con HistorialRecords */
+/* Estilos coherentes con la identidad WALA */
 .hero-section {
   position: relative;
-}
-
-/* Animación sutil de entrada */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 /* Animación especial para el logo */
@@ -266,25 +297,34 @@ const scrollToPainSection = () => {
   animation: fadeInScale 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Aplicar animación al contenedor principal */
-.bg-white.rounded-xl {
-  animation: fadeInUp 0.6s ease-out;
+/* Animación flotante suave para las cards del visual */
+@keyframes floatSlow {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
-/* Animación del badge superior */
-.inline-flex.items-center.gap-2 {
-  animation: fadeInUp 0.8s ease-out;
+.animate-floatSlow {
+  animation: floatSlow 4s ease-in-out infinite;
 }
 
-/* Hover effects consistentes con HistorialRecords */
+/* Transiciones suaves para todos los elementos interactivos */
+button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 button:active {
   transform: translateY(0);
 }
 
-/* Responsive adjustments coherentes */
+/* Responsive adjustments */
 @media (max-width: 640px) {
   h1 {
-    line-height: 1.2;
+    line-height: 1.1;
   }
 
   h2 {
@@ -292,25 +332,16 @@ button:active {
   }
 }
 
-/* Transiciones suaves para todos los elementos interactivos */
-button,
-a,
-.hover\:shadow-md {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Efecto pulse para el badge indicator */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
+/* Hover effects para las cards del visual */
+@media (min-width: 768px) {
+  .hidden.md\:block > div > div {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
-  50% {
-    opacity: 0.5;
-  }
-}
 
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  .hidden.md\:block > div > div:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+      0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
 }
 </style>

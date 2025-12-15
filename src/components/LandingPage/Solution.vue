@@ -1,70 +1,85 @@
 <template>
   <section
     id="solution-section"
-    class="py-16 sm:py-20 px-4 bg-gray-50 relative overflow-hidden"
+    class="pt-24 md:pt-40 pb-20 md:pb-32 px-4 relative overflow-hidden bg-gradient-to-br from-blue-50/30 via-purple-50/20 to-orange-50/30"
   >
-    <!-- Sombras sutiles de fondo (coherente con Hero y Pain) -->
+    <!-- Sombras sutiles de fondo -->
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
       <div
-        class="absolute top-0 left-0 w-80 h-80 bg-blue-50 rounded-full filter blur-3xl opacity-20"
+        class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-100 rounded-full filter blur-3xl opacity-20"
       ></div>
       <div
-        class="absolute bottom-0 right-0 w-80 h-80 bg-orange-50 rounded-full filter blur-3xl opacity-20"
+        class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-100 rounded-full filter blur-3xl opacity-20"
       ></div>
     </div>
 
     <div class="max-w-6xl mx-auto">
-      <!-- Contenedor principal tipo card (estilo HistorialRecords) -->
+      <!-- Bloque principal: Eyebrow + H2 + Subtexto -->
       <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 transition-all duration-200 hover:shadow-md hover:border-gray-200 mb-8"
+        class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-12 md:p-16 mb-12 md:mb-20 text-center transition-all duration-200"
       >
-        <!-- Badge superior -->
-        <div class="flex justify-center mb-6">
+        <!-- Eyebrow -->
+        <div class="flex justify-center mb-8">
           <div
             class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-700"
           >
-            <span class="text-2xl">💡</span>
-            <QuestionMark class="w-5 h-5 text-orange-600" />
+            <svg
+              class="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              />
+            </svg>
             <span class="text-sm font-medium">La solución</span>
           </div>
         </div>
 
-        <!-- Título Principal -->
+        <!-- Título Principal (H2) -->
         <h2
-          class="text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
+          class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight mb-8"
         >
-          Con <span class="text-orange-600">WALA</span>, todo está en
-          <span class="text-blue-600">un solo lugar</span>
+          Un copiloto
+          <span class="text-blue-600">simple</span> para entender tu
+          <span class="text-orange-500">negocio</span>
         </h2>
 
-        <!-- Subtítulo -->
+        <!-- Subtexto -->
         <p
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 text-center font-normal leading-relaxed max-w-4xl mx-auto"
+          class="text-xl sm:text-2xl md:text-3xl text-gray-600 leading-relaxed md:leading-relaxed max-w-4xl mx-auto"
+          style="line-height: 1.6"
         >
-          Registra tus ventas y gastos, controla tu inventario y recibe
-          <span class="font-medium text-gray-800">recomendaciones simples</span>
-          para mejorar tu negocio.
+          WALA te acompaña día a día para que
+          <span class="font-semibold text-gray-800"
+            >registres tu información</span
+          >,
+          <span class="font-semibold text-gray-800">entiendas tus números</span>
+          y
+          <span class="font-semibold text-gray-800"
+            >tomes decisiones con más control y tranquilidad</span
+          >.
         </p>
+      </div>
 
-        <!-- Separador decorativo -->
-        <div class="flex justify-center mb-8">
-          <div
-            class="w-32 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"
-          ></div>
-        </div>
-
-        <!-- Copy complementario en card destacado -->
+      <!-- Trinomio WALA: 3 pilares -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
+        <!-- Pilar 1: Registro simple -->
         <div
-          class="bg-blue-50 border border-blue-200 rounded-lg p-6 max-w-3xl mx-auto"
+          class="bg-white rounded-2xl shadow-md border border-emerald-100 p-8 transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
         >
-          <div class="flex items-start gap-4">
+          <div class="flex justify-center mb-8">
             <div
-              class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center shrink-0 mt-1"
+              class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center"
             >
               <svg
-                class="w-5 h-5 text-blue-600"
+                class="w-8 h-8 text-emerald-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -73,171 +88,95 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
             </div>
-            <div>
-              <p class="text-base sm:text-lg text-gray-700 leading-relaxed">
-                <span class="font-medium text-blue-800"
-                  >No necesitas saber de finanzas:</span
-                >
-                WALA traduce tus números en claridad.
-              </p>
+          </div>
+          <h3
+            class="text-2xl font-bold text-gray-900 mb-4 text-center leading-tight"
+          >
+            Registro simple
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed text-center">
+            Registra ingresos y egresos sin complicaciones, desde tu celular y
+            en minutos.
+          </p>
+        </div>
+
+        <!-- Pilar 2: Entendimiento claro -->
+        <div
+          class="bg-white rounded-2xl shadow-md border border-blue-100 p-8 transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+        >
+          <div class="flex justify-center mb-8">
+            <div
+              class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 text-blue-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
             </div>
           </div>
+          <h3
+            class="text-2xl font-bold text-gray-900 mb-4 text-center leading-tight"
+          >
+            Entendimiento claro
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed text-center">
+            Visualiza si estás ganando o perdiendo y en qué se va tu dinero, sin
+            tecnicismos.
+          </p>
+        </div>
+
+        <!-- Pilar 3: Acompañamiento diario -->
+        <div
+          class="bg-white rounded-2xl shadow-md border border-purple-100 p-8 transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+        >
+          <div class="flex justify-center mb-8">
+            <div
+              class="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 text-purple-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+          </div>
+          <h3
+            class="text-2xl font-bold text-gray-900 mb-4 text-center leading-tight"
+          >
+            Acompañamiento diario
+          </h3>
+          <p class="text-base text-gray-600 leading-relaxed text-center">
+            Crea el hábito, mantén tu progreso y entiende tu negocio con el
+            tiempo.
+          </p>
         </div>
       </div>
 
-      <!-- Grid de beneficios con íconos (estilo HistorialRecords) -->
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8"
-      >
-        <!-- Beneficio 1: Finanzas -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-blue-200"
-        >
-          <div class="text-center">
-            <div class="flex justify-center mb-4">
-              <div
-                class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center"
-              >
-                <Cash class="w-8 h-8 text-blue-600" />
-              </div>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">
-              Control financiero
-            </h3>
-            <p class="text-sm text-gray-600 leading-relaxed">
-              Ventas, gastos y caja diaria automática en tiempo real
-            </p>
-          </div>
-        </div>
-
-        <!-- Beneficio 2: Inventario -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-emerald-200"
-        >
-          <div class="text-center">
-            <div class="flex justify-center mb-4">
-              <div
-                class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center"
-              >
-                <Package class="w-8 h-8 text-emerald-600" />
-              </div>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">
-              Inventario inteligente
-            </h3>
-            <p class="text-sm text-gray-600 leading-relaxed">
-              Alertas automáticas antes de quedarte sin stock
-            </p>
-          </div>
-        </div>
-
-        <!-- Beneficio 3: Recomendaciones -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-purple-200"
-        >
-          <div class="text-center">
-            <div class="flex justify-center mb-4">
-              <div
-                class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center"
-              >
-                <BrainResearch class="w-8 h-8 text-purple-600" />
-              </div>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-900 mb-2">
-              Recomendaciones IA
-            </h3>
-            <p class="text-sm text-gray-600 leading-relaxed">
-              Consejos personalizados para mejorar tu negocio
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Mockup/Visual del dashboard -->
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-8 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-gray-200"
-      >
-        <div
-          class="aspect-video bg-gradient-to-br from-blue-50 via-purple-50 to-orange-50 rounded-lg flex items-center justify-center relative overflow-hidden"
-        >
-          <!-- Iconos flotantes ilustrativos -->
-          <div class="absolute inset-0 overflow-hidden">
-            <!-- Icono flotante 1 - Finanzas -->
-            <div
-              class="absolute top-8 left-8 floating-icon"
-              style="animation-delay: 0s"
-            >
-              <div
-                class="w-12 h-12 bg-white rounded-lg shadow-md flex items-center justify-center"
-              >
-                <Cash class="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-
-            <!-- Icono flotante 2 - Inventario -->
-            <div
-              class="absolute top-12 right-12 floating-icon"
-              style="animation-delay: 0.5s"
-            >
-              <div
-                class="w-12 h-12 bg-white rounded-lg shadow-md flex items-center justify-center"
-              >
-                <Package class="w-6 h-6 text-emerald-600" />
-              </div>
-            </div>
-
-            <!-- Icono flotante 3 - Clientes -->
-            <div
-              class="absolute bottom-12 left-16 floating-icon"
-              style="animation-delay: 1s"
-            >
-              <div
-                class="w-12 h-12 bg-white rounded-lg shadow-md flex items-center justify-center"
-              >
-                <User class="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-
-            <!-- Icono flotante 4 - Reportes -->
-            <div
-              class="absolute bottom-8 right-8 floating-icon"
-              style="animation-delay: 1.5s"
-            >
-              <div
-                class="w-12 h-12 bg-white rounded-lg shadow-md flex items-center justify-center"
-              >
-                <Reports class="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Mensaje central -->
-          <div class="text-center z-10 px-4 relative">
-            <div class="text-6xl mb-4">📱</div>
-            <p class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">
-              Dashboard limpio y simple
-            </p>
-            <p class="text-sm sm:text-base text-gray-600">
-              Todo lo que necesitas, nada de lo que no
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- CTA principal -->
-      <div class="text-center">
-        <button
-          class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 text-white px-12 py-4 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:from-orange-600 hover:to-orange-700"
-          @click="$router.push({ name: 'Login' })"
-        >
-          🔸 Probar WALA gratis
-        </button>
-        <p class="text-sm text-gray-500 mt-4">
-          Sin tarjeta. Sin compromiso. Empieza hoy mismo.
+      <!-- Línea final -->
+      <div class="text-center mt-4">
+        <p class="text-base text-gray-400 font-normal">
+          Esto es WALA hoy. Nada más. Nada menos.
         </p>
       </div>
     </div>
@@ -245,11 +184,23 @@
 </template>
 
 <script setup>
-import { Cash, Package, BrainResearch, User, Reports } from "@iconoir/vue";
+// No se necesitan imports adicionales si usamos SVG inline
 </script>
 
 <style scoped>
-/* Estilos coherentes con Hero, Pain y HistorialRecords */
+/* Estilos coherentes con Hero */
+
+/* Transiciones suaves para cards */
+.grid > div {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  h2 {
+    line-height: 1.1;
+  }
+}
 
 /* Animación de entrada para las cards */
 @keyframes fadeInUp {
@@ -263,49 +214,15 @@ import { Cash, Package, BrainResearch, User, Reports } from "@iconoir/vue";
   }
 }
 
-/* Aplicar animación escalonada a las cards del grid */
 .grid > div:nth-child(1) {
-  animation: fadeInUp 0.5s ease-out 0.1s backwards;
+  animation: fadeInUp 0.6s ease-out 0.1s backwards;
 }
 
 .grid > div:nth-child(2) {
-  animation: fadeInUp 0.5s ease-out 0.2s backwards;
+  animation: fadeInUp 0.6s ease-out 0.3s backwards;
 }
 
 .grid > div:nth-child(3) {
-  animation: fadeInUp 0.5s ease-out 0.3s backwards;
-}
-
-/* Animación flotante para los iconos del mockup */
-@keyframes floatSolution {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-.floating-icon {
-  animation: floatSolution 3s ease-in-out infinite;
-}
-
-/* Hover effects consistentes */
-button:active {
-  transform: translateY(0);
-}
-
-/* Transiciones suaves */
-button,
-.hover\:shadow-md {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  h2 {
-    line-height: 1.2;
-  }
+  animation: fadeInUp 0.6s ease-out 0.5s backwards;
 }
 </style>
