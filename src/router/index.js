@@ -176,6 +176,36 @@ const routes = [
         meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
       },
 
+      // ✨ NUEVO: Módulo Juntos (Programas)
+      {
+        path: 'programs',
+        name: 'ProgramsHub',
+        component: () => import('@/views/business/programs/ProgramsHub.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Juntos - Programas'
+        }
+      },
+      {
+        path: 'programs/create',
+        name: 'CreateProgram',
+        component: () => import('@/views/business/programs/CreateProgram.vue'),
+        meta: {
+          requiresAuth: true,
+          role: 'gerente',
+          title: 'Crear Programa'
+        }
+      },
+      {
+        path: 'programs/:programId',
+        name: 'ProgramDetail',
+        component: () => import('@/views/business/programs/ProgramDetail.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Programa'
+        }
+      },
+
       // Ruta para testing del sistema de trazabilidad (solo para desarrollo)
       {
         path: 'testing/traceability',

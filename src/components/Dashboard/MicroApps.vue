@@ -29,6 +29,8 @@
               'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
             item.color === 'orange' &&
               'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+            item.color === 'teal' &&
+              'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
             !item.available && 'opacity-60 hover:shadow-sm',
           ]"
           @click="handleAppClick(item)"
@@ -79,6 +81,16 @@
             ]"
           >
             {{ item.name }}
+            <!-- <span
+              v-if="
+                item.badge && typeof item.badge === 'function'
+                  ? item.badge()
+                  : item.badge
+              "
+              class="ml-1 text-green-500 text-xs font-bold"
+            >
+              ●
+            </span> -->
           </div>
           <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
             Próximamente
@@ -118,6 +130,8 @@
             'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
           item.color === 'orange' &&
             'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+          item.color === 'teal' &&
+            'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
           !item.available && 'opacity-60 hover:shadow-sm',
         ]"
         @click="handleAppClick(item)"
@@ -166,6 +180,16 @@
           ]"
         >
           {{ item.name }}
+          <!-- <span
+            v-if="
+              item.badge && typeof item.badge === 'function'
+                ? item.badge()
+                : item.badge
+            "
+            class="ml-1 text-green-500 text-sm font-bold"
+          >
+            ●
+          </span> -->
         </div>
         <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
           Próximamente
@@ -240,6 +264,8 @@
                   'hover:border-indigo-300 hover:bg-indigo-50',
                 item.color === 'orange' &&
                   'hover:border-orange-300 hover:bg-orange-50',
+                item.color === 'teal' &&
+                  'hover:border-teal-300 hover:bg-teal-50',
                 item.color === 'gray' &&
                   'hover:border-gray-300 hover:bg-gray-50',
               ]"
@@ -262,6 +288,16 @@
                 class="text-sm sm:text-base text-gray-600 text-center px-2 font-medium"
               >
                 {{ item.name }}
+                <!-- <span
+                  v-if="
+                    item.badge && typeof item.badge === 'function'
+                      ? item.badge()
+                      : item.badge
+                  "
+                  class="ml-1 text-green-500 font-bold"
+                >
+                  ●
+                </span> -->
               </div>
             </div>
           </div>
@@ -314,7 +350,15 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import StreakWidget from "./StreakWidget.vue";
-import { GraphUp, BoxIso, GraphDown, Reports, Group } from "@iconoir/vue";
+import {
+  GraphUp,
+  BoxIso,
+  GraphDown,
+  Reports,
+  Group,
+  Community,
+} from "@iconoir/vue";
+import { useProgramStore } from "@/stores/programStore";
 
 // Props
 const props = defineProps({
@@ -326,6 +370,9 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(["navigateToApp"]);
+
+// Store de programas
+const programStore = useProgramStore();
 
 // Estado del modal
 const showModal = ref(false);
@@ -386,6 +433,16 @@ const allMicroApps = ref([
     isComponent: true,
     color: "orange",
   },
+  {
+    id: 7,
+    name: "Juntos",
+    route: "/programs",
+    available: true,
+    icon: Community,
+    isComponent: true,
+    color: "teal",
+    // badge: computed(() => (programStore.hasActiveProgram ? "●" : null)),
+  },
 ]);
 
 // Función helper para obtener la clase de color del icono
@@ -421,7 +478,7 @@ const getIconHoverColor = (color) => {
 // Computed properties
 const visibleApps = computed(() => {
   // Mostrar 6 apps principales (ya que el widget ocupa 2 espacios en grid de 8)
-  return allMicroApps.value.slice(0, 6);
+  return allMicroApps.value.slice(0, 7);
 });
 
 const availableApps = computed(() => {

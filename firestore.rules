@@ -3,6 +3,215 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ═════════════════════════════════════════════════════════════
+    // FUNCIONES HELPER
+    // ═════════════════════════════════════════════════════════════
+    
+    // Verificar si es staff del programa
+    function isProgramStaff(programId) {
+      return exists(/databases/$(database)/documents/programs/$(programId)/staff/$(request.auth.uid));
+    }
+
+    // Obtener rol de staff
+    function getProgramStaffRole(programId) {
+      return get(/databases/$(database)/documents/programs/$(programId)/staff/$(request.auth.uid)).data.role;
+    }
+
+    // Verificar si el usuario tiene acceso al business
+    function hasBusinessAccess(businessId) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.activo == true;
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // ✨ MÓDULO JUNTOS (PROGRAMAS)
+    // ═════════════════════════════════════════════════════════════
+
+    // PROGRAMAS (Raíz)
+    match /programs/{programId} {
+      // Lectura: Solo programas activos (público)
+      allow read: if resource.data.isActive == true;
+      
+      // Escritura: Solo backend (Cloud Functions)
+      allow write: if false;
+
+      // INVITES (Códigos de invitación)
+      match /invites/{inviteId} {
+        // No legibles desde cliente (seguridad)
+        allow read: if false;
+        
+        // Solo backend
+        allow write: if false;
+      }
+
+      // STAFF (Facilitadores y Admins)
+      match /staff/{staffUid} {
+        // Staff puede leer su propio documento
+        allow read: if request.auth.uid == staffUid;
+        
+        // Program admins pueden leer todo el staff
+        allow read: if isProgramStaff(programId) 
+          && getProgramStaffRole(programId) == 'program_admin';
+        
+        // Solo backend puede escribir
+        allow write: if false;
+      }
+
+      // MEMBERSHIPS (Afiliaciones de Businesses)
+      match /memberships/{businessId} {
+        
+        // Lectura:
+        // - Usuario propietario del business
+        // - Staff del programa
+        allow read: if hasBusinessAccess(businessId)
+          || isProgramStaff(programId);
+        
+        // Creación: Solo backend (Cloud Function)
+        allow create: if false;
+        
+        // Actualización: Solo para opt-out
+        // El usuario puede cambiar status a 'left' y establecer leftAt
+        allow update: if hasBusinessAccess(businessId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'leftAt'])
+          && request.resource.data.status == 'left'
+          && request.resource.data.leftAt != null;
+        
+        // Eliminación: No permitida
+        allow delete: if false;
+
+        // ASSESSMENTS (Evaluaciones)
+        match /assessments/{assessmentId} {
+          
+          // Lectura:
+          // - Usuario propietario del business
+          // - Staff del programa
+          allow read: if hasBusinessAccess(businessId)
+            || isProgramStaff(programId);
+          
+          // Creación:
+          // - Staff del programa (facilitadores)
+          // - Usuario propietario (si auto-evaluación habilitada)
+          allow create: if isProgramStaff(programId)
+            || hasBusinessAccess(businessId);
+          
+          // Actualización: Solo staff
+          allow update: if isProgramStaff(programId);
+          
+          // Eliminación: Solo program_admin
+          allow delete: if isProgramStaff(programId) 
+            && getProgramStaffRole(programId) == 'program_admin';
+        }
+      }
+
+      // REPORTS (Snapshots)
+      match /reports/{reportId} {
+        // Solo staff
+        allow read: if isProgramStaff(programId);
+        
+        // Solo backend
+        allow write: if false;
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // 👤 USUARIOS
+    // ═════════════════════════════════════════════════════════════
+
+    // PERFIL DE USUARIO
+    match /users/{uid} {
+      // Usuario puede leer su propio perfil
+      allow read: if request.auth.uid == uid;
+      
+      // Usuario puede crear/actualizar su propio perfil
+      allow create, update: if request.auth.uid == uid;
+      
+      // No se permite eliminar perfiles
+      allow delete: if false;
+    }
+
+    // NEGOCIOS DEL USUARIO (relación usuario-business)
+    match /users/{uid}/businesses/{businessId} {
+      // Usuario puede leer sus propias relaciones
+      allow read: if request.auth.uid == uid;
+      
+      // Usuario puede actualizar solo ciertos campos
+      allow update: if request.auth.uid == uid
+        && request.resource.data.businessId == resource.data.businessId
+        && request.resource.data.rol == resource.data.rol;
+      
+      // Creación/Eliminación: Solo backend o gerentes
+      allow create, delete: if request.auth.uid == uid;
+    }
+
+    // ÍNDICE DE PROGRAMAS EN USERS (para queries eficientes)
+    match /users/{uid}/programs/{programId} {
+      // Usuario puede leer sus propios programas
+      allow read: if request.auth.uid == uid;
+      
+      // Creación/Eliminación: Solo backend
+      allow create, delete: if false;
+      
+      // Actualización: Solo para opt-out (sincronizado con membership)
+      allow update: if request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'leftAt'])
+        && request.resource.data.status == 'left'
+        && request.resource.data.leftAt != null;
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // 🏪 NEGOCIOS (BUSINESSES)
+    // ═════════════════════════════════════════════════════════════
+
+    // DATOS DEL NEGOCIO
+    match /businesses/{businessId} {
+      // Lectura: Miembros del negocio
+      allow read: if hasBusinessAccess(businessId);
+      
+      // Escritura completa: Solo gerentes del negocio
+      allow write: if hasBusinessAccess(businessId)
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.rol == 'gerente';
+      
+      // Actualización específica de programs: Permitir que usuarios autenticados agreguen programIds
+      // (usado cuando se unen a un programa)
+      allow update: if request.auth != null
+        && hasBusinessAccess(businessId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['programs'])
+        && request.resource.data.programs is list;
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // ✅ CRÍTICO: PROTECCIÓN DE DATOS FINANCIEROS
+    // ═════════════════════════════════════════════════════════════
+    
+    // Transacciones: Solo miembros del negocio
+    match /businesses/{businessId}/transactions/{txId} {
+      allow read: if hasBusinessAccess(businessId);
+      
+      allow write: if hasBusinessAccess(businessId)
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.permissions.crearMovimientos == true;
+    }
+
+    // Productos: Solo miembros del negocio
+    match /businesses/{businessId}/products/{productId} {
+      allow read: if hasBusinessAccess(businessId);
+      
+      allow write: if hasBusinessAccess(businessId);
+    }
+
+    // Clientes: Solo miembros del negocio
+    match /businesses/{businessId}/clients/{clientId} {
+      allow read: if hasBusinessAccess(businessId);
+      
+      allow write: if hasBusinessAccess(businessId);
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // ⚠️ REGLA TEMPORAL DE DESARROLLO - COMENTADA PARA PRODUCCIÓN
+    // ═════════════════════════════════════════════════════════════
+    // ⚠️ IMPORTANTE: Esta regla permite acceso total a Firestore
+    // Solo descomentar temporalmente para debugging en desarrollo local
+    // NUNCA dejar activa en producción
+    // ═════════════════════════════════════════════════════════════
     match /{document=**} {
       allow read, write: if true;
     }

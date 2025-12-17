@@ -12,7 +12,7 @@
             <div
               class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center"
             >
-              <IconoirWarningTriangle class="w-5 h-5 text-red-600" />
+              <WarningTriangle class="w-5 h-5 text-red-600" />
             </div>
             <h3 class="text-xl font-bold text-gray-900">
               Eliminar {{ transactionTypeLabel }}
@@ -146,7 +146,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import {
-  WarningTriangle as IconoirWarningTriangle,
+  WarningTriangle as WarningTriangle,
   Xmark as IconoirXmark,
   InfoCircle as IconoirInfoCircle,
   Package as IconoirPackage,

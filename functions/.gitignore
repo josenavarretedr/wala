@@ -1,2 +1,10 @@
 node_modules/
 *.local
+
+# ═══════════════════════════════════════════════════════════
+# Firebase Admin SDK - Service Account (credenciales sensibles)
+# ═══════════════════════════════════════════════════════════
+# ⚠️ NUNCA subir estos archivos a Git
+wala-lat-firebase-adminsdk.json
+*-firebase-adminsdk*.json
+serviceAccountKey.json

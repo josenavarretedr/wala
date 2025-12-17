@@ -110,7 +110,7 @@
           :disabled="loading || !isFormValid"
           class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl font-medium hover:shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
         >
-          <IconoirCheck v-if="!loading" class="w-5 h-5" />
+          <Check v-if="!loading" class="w-5 h-5" />
           <div
             v-else
             class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"
@@ -127,7 +127,7 @@ import { ref, computed } from "vue";
 import {
   UserPlus as IconoirUserPlus,
   Xmark as IconoirXmark,
-  Check as IconoirCheck,
+  Check as Check,
 } from "@iconoir/vue";
 import { useClients } from "@/composables/useClients";
 

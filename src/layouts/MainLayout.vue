@@ -58,6 +58,7 @@ import SidebarContent from "@/components/layout/SidebarContent.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useProgramStore } from "@/stores/programStore";
 
 // Imports de componentes
 import SidebarSection from "@/components/layout/SidebarSection.vue";
@@ -69,14 +70,24 @@ const route = useRoute();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore(); // ✅ BusinessStore para datos completos del negocio
+const programStore = useProgramStore(); // ✨ ProgramStore para módulo Juntos
 
 // Estado reactivo
 const sidebarOpen = ref(false);
 const showBusinessSelector = ref(false);
 
 // Sidebar siempre empieza cerrado
-onMounted(() => {
+onMounted(async () => {
   sidebarOpen.value = false;
+
+  // ✨ NUEVO: Cargar programas activos si hay business seleccionado
+  if (currentBusinessId.value) {
+    try {
+      await programStore.loadActivePrograms();
+    } catch (err) {
+      console.error("Error cargando programas:", err);
+    }
+  }
 });
 
 // Cerrar sidebar después de navegar (en todos los tamaños de pantalla)
@@ -120,6 +131,14 @@ const mainItems = computed(() => {
       icon: "dashboard",
       label: "Dashboard",
       to: `/business/${businessId}/dashboard`,
+      permission: null,
+    },
+    {
+      icon: "groups",
+      label: "Juntos",
+      to: `/business/${businessId}/programs`,
+      badge: programStore.hasActiveProgram ? "●" : null,
+      badgeColor: "text-green-500",
       permission: null,
     },
   ];

@@ -21,7 +21,8 @@ exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 // exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');
 // exports.classifyProduct = require('./src/Inventory/classifyProductCallable');
 
-
+// ✨ PROGRAMAS (MÓDULO JUNTOS)
+exports.joinProgramByCode = require('./src/Programs/joinProgramByCode').joinProgramByCode;
 
 // FUNCIÓN DE PRUEBA (remover en producción)
 // exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');

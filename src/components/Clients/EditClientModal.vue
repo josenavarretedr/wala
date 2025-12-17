@@ -114,7 +114,7 @@
           :disabled="loading || !isFormValid || !hasChanges"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          <IconoirCheck v-if="!loading" class="w-4 h-4" />
+          <Check v-if="!loading" class="w-4 h-4" />
           <div
             v-else
             class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
@@ -131,7 +131,7 @@ import { ref, computed, watch } from "vue";
 import {
   EditPencil as IconoirEditPencil,
   Xmark as IconoirXmark,
-  Check as IconoirCheck,
+  Check as Check,
 } from "@iconoir/vue";
 import { useClients } from "@/composables/useClients";
 

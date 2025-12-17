@@ -1,25 +1,21 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
+    class="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-md w-full space-y-8">
       <!-- Header -->
       <div class="text-center">
-        <div
-          class="mx-auto w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-4"
-        >
-          <span class="text-2xl font-bold text-white">W</span>
+        <div class="flex justify-center mb-6">
+          <img src="@/assets/logoWala2.png" alt="WALA" class="h-16 w-auto" />
         </div>
-        <h2 class="text-3xl font-bold text-gray-900 mb-2">
-          Bienvenido a Walla
-        </h2>
-        <p class="text-gray-600">
-          Ingresa a tu cuenta para gestionar tu negocio
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Bienvenido a WALA</h2>
+        <p class="text-base text-gray-600">
+          Ingresa a tu cuenta para entender tu negocio
         </p>
       </div>
 
       <!-- Formulario -->
-      <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
         <form @submit.prevent="handleLogin" class="space-y-6">
           <!-- Email -->
           <div>
@@ -29,21 +25,14 @@
             >
               Correo electrónico
             </label>
-            <div class="relative">
-              <div
-                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                <span class="text-gray-400 text-sm">📧</span>
-              </div>
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                required
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="tu.email@empresa.com"
-              />
-            </div>
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              placeholder="tu.email@empresa.com"
+            />
           </div>
 
           <!-- Password -->
@@ -54,31 +43,46 @@
             >
               Contraseña
             </label>
-            <div class="relative">
-              <div
-                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
-              >
-                <span class="text-gray-400 text-sm">🔒</span>
-              </div>
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                required
-                class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                placeholder="Tu contraseña"
-              />
-            </div>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              placeholder="Tu contraseña"
+            />
           </div>
 
           <!-- Botón de login -->
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full flex justify-center py-3 px-4 rounded-xl text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-white font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            <span v-if="!isLoading">🚀 Iniciar sesión</span>
-            <span v-else>🔄 Ingresando...</span>
+            <template v-if="!isLoading"> Iniciar sesión </template>
+            <template v-else>
+              <svg
+                class="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>Ingresando...</span>
+            </template>
           </button>
 
           <!-- Enlace al registro -->
@@ -99,8 +103,7 @@
             v-if="error"
             class="bg-red-50 border border-red-200 rounded-xl p-4"
           >
-            <span class="text-red-400 mr-2">⚠️</span>
-            <span class="text-sm text-red-700">{{ error }}</span>
+            <p class="text-sm text-red-700">{{ error }}</p>
           </div>
         </form>
       </div>
