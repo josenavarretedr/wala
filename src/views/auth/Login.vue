@@ -158,7 +158,17 @@ const handleLogin = async () => {
     // 2. Cargar perfil y negocios del usuario
     await userStore.loadUserProfile(uid);
 
-    // 3. Verificar cantidad de negocios
+    // 3. Verificar el rol del usuario
+    const userRole = userStore.userProfile?.rol;
+    console.log("👤 Rol del usuario:", userRole);
+
+    // 4. Si es facilitador, redirigir a /programs
+    if (userRole === "facilitator") {
+      console.log("🔄 Usuario facilitador, redirigiendo a /programs");
+      return router.push("/programs");
+    }
+
+    // 5. Para business owners: verificar cantidad de negocios
     const userBusinesses = userStore.userBusinesses;
 
     console.log(`📊 Usuario tiene ${userBusinesses.length} negocios`);
@@ -223,8 +233,20 @@ const handleGoogleLogin = async () => {
 
     console.log("✅ Google login exitoso, iniciando flujo post-login");
 
-    // Mismo flujo que login normal
+    // Cargar perfil del usuario
     await userStore.loadUserProfile(uid);
+
+    // Verificar el rol del usuario
+    const userRole = userStore.userProfile?.rol;
+    console.log("👤 Rol del usuario:", userRole);
+
+    // Si es facilitador, redirigir a /programs
+    if (userRole === "facilitator") {
+      console.log("🔄 Usuario facilitador, redirigiendo a /programs");
+      return router.push("/programs");
+    }
+
+    // Para business owners: verificar cantidad de negocios
     const userBusinesses = userStore.userBusinesses;
 
     if (userBusinesses.length === 0) {

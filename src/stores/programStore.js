@@ -451,7 +451,107 @@ export const useProgramStore = defineStore('program', () => {
   }
 
   /**
-   * ✅ ACCIÓN 7: Limpiar estado
+   * ✅ ACCIÓN 8: Cargar programas donde el usuario es facilitador
+   * 
+   * Busca todos los programas y filtra localmente los que contengan al usuario con role: "facilitator"
+   * (Firestore no permite array-contains con objetos complejos)
+   */
+  async function loadFacilitatorPrograms() {
+    const authStore = useAuthStore()
+
+    if (!authStore.user?.uid) {
+      console.warn('⚠️  Usuario no autenticado')
+      activePrograms.value = []
+      return
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`🔍 Cargando programas donde soy facilitador (userId: ${authStore.user.uid})`)
+
+      // Obtener todos los programas activos
+      const programsRef = collection(db, 'programs')
+      const q = query(programsRef, where('isActive', '!=', false))
+
+      const querySnapshot = await getDocs(q)
+      const programs = []
+
+      // Filtrar programas donde el usuario es facilitador
+      querySnapshot.forEach((doc) => {
+        const programData = doc.data()
+
+        // Buscar si el usuario está en members[] con role: "facilitator"
+        const isFacilitator = programData.members?.some(
+          member =>
+            member.userId === authStore.user.uid &&
+            member.role === 'facilitator' &&
+            member.status === 'active'
+        )
+
+        if (isFacilitator) {
+          programs.push({
+            id: doc.id,
+            ...programData
+          })
+          console.log(`✅ Programa encontrado: ${programData.name || programData.organizationName}`)
+        }
+      })
+
+      activePrograms.value = programs
+      console.log(`✅ Total de ${programs.length} programas como facilitador`)
+
+    } catch (err) {
+      console.error('❌ Error cargando programas del facilitador:', err)
+      error.value = err.message
+      activePrograms.value = []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * ✅ ACCIÓN 9: Cargar programa actual (usado por FacilitatorLayout)
+   */
+  async function loadCurrentProgram(programId) {
+    if (!programId) {
+      currentProgram.value = null
+      return
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`🔍 Cargando programa actual: ${programId}`)
+
+      const programRef = doc(db, 'programs', programId)
+      const programSnap = await getDoc(programRef)
+
+      if (!programSnap.exists()) {
+        throw new Error('Programa no encontrado')
+      }
+
+      currentProgram.value = {
+        id: programSnap.id,
+        ...programSnap.data()
+      }
+
+      console.log(`✅ Programa actual cargado: ${currentProgram.value.name || currentProgram.value.organizationName}`)
+
+    } catch (err) {
+      console.error('❌ Error cargando programa actual:', err)
+      error.value = err.message
+      currentProgram.value = null
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * ✅ ACCIÓN 10: Limpiar estado
    */
   function clearProgramData() {
     activePrograms.value = []
@@ -479,7 +579,9 @@ export const useProgramStore = defineStore('program', () => {
 
     // Actions
     loadActivePrograms,
+    loadFacilitatorPrograms,
     loadProgram,
+    loadCurrentProgram,
     joinProgramByCode,
     leaveProgram,
     loadAssessments,

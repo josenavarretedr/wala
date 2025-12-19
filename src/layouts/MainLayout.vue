@@ -121,10 +121,34 @@ const currentPageTitle = computed(() => {
   return route.meta?.title || "Dashboard";
 });
 
-// Configuración de elementos del menú - ✅ Solo retornar items si tenemos un businessId válido
+// Configuración de elementos del menú - ✅ Mostrar items básicos cuando no hay businessId
 const mainItems = computed(() => {
   const businessId = currentBusinessId.value;
-  if (!businessId) return [];
+
+  // Si no hay businessId, mostrar opciones de configuración inicial
+  if (!businessId) {
+    const items = [];
+
+    // Si el usuario no tiene negocios, mostrar opción de crear uno
+    if (userStore.userBusinesses.length === 0) {
+      items.push({
+        icon: "add_business",
+        label: "Crear Negocio",
+        to: "/onboarding",
+        permission: null,
+      });
+    } else {
+      // Si tiene negocios, mostrar opción de seleccionar uno
+      items.push({
+        icon: "business",
+        label: "Seleccionar Negocio",
+        to: "/select-business",
+        permission: null,
+      });
+    }
+
+    return items;
+  }
 
   return [
     {
@@ -170,7 +194,9 @@ const accountItems = computed(() => [
 
 // ✅ Computed properties para items filtrados que se revalúan automáticamente
 const filteredAdminItems = computed(() => {
-  if (!currentBusiness.value || !isManager.value) return [];
+  // No mostrar items de admin si no hay businessId o negocio actual
+  if (!currentBusinessId.value || !currentBusiness.value || !isManager.value)
+    return [];
   return adminItems.value.filter(hasAccess);
 });
 

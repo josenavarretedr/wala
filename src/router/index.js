@@ -36,28 +36,28 @@ const routes = [
     ]
   },
 
-  // ✅ NUEVO: Onboarding para usuarios sin negocios
+  // Layout principal para rutas autenticadas (incluye onboarding y selector)
   {
-    path: '/onboarding',
-    name: 'BusinessOnboarding',
-    component: () => import('@/views/onboarding/BusinessOnboarding.vue'),
-    meta: { requiresAuth: true }
-  },
+    path: '/',
+    component: () => import('@/layouts/MainLayout.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      // ✅ Onboarding para usuarios sin negocios
+      {
+        path: 'onboarding',
+        name: 'BusinessOnboarding',
+        component: () => import('@/views/onboarding/BusinessOnboarding.vue'),
+        meta: { title: 'Onboarding' }
+      },
 
-  // ✅ NUEVO: Selector de negocios para usuarios multi-negocio
-  {
-    path: '/select-business',
-    name: 'BusinessSelector',
-    component: () => import('@/views/business/BusinessSelector.vue'),
-    meta: { requiresAuth: true }
-  },
-
-  // Configuración inicial del negocio (LEGACY - mantener por compatibilidad)
-  {
-    path: '/setup/business/:tempId',
-    name: 'BusinessSetup',
-    component: () => import('@/views/business/BusinessSetup.vue'),
-    meta: { requiresAuth: true, role: 'gerente' }
+      // ✅ Selector de negocios para usuarios multi-negocio
+      {
+        path: 'select-business',
+        name: 'BusinessSelector',
+        component: () => import('@/views/business/BusinessSelector.vue'),
+        meta: { title: 'Seleccionar Negocio' }
+      },
+    ]
   },
 
   // Dashboard principal del negocio
@@ -315,6 +315,62 @@ const routes = [
     meta: { requiresAuth: true, title: 'Seguridad' }
   },
 
+  // ═════════════════════════════════════════════════════════════
+  // 👨‍💼 RUTAS PARA FACILITADORES/CONSULTORES
+  // ═════════════════════════════════════════════════════════════
+
+  // Hub principal de programas para facilitadores
+  {
+    path: '/programs',
+    component: () => import('@/layouts/FacilitatorLayout.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresFacilitatorRole: true
+    },
+    children: [
+      {
+        path: '',
+        name: 'FacilitatorProgramsHub',
+        component: () => import('@/views/facilitator/ProgramsHub.vue'),
+        meta: {
+          title: 'Mis Programas - Facilitador'
+        }
+      },
+      {
+        path: ':programId',
+        name: 'FacilitatorProgramDetail',
+        component: () => import('@/views/facilitator/ProgramDetail.vue'),
+        meta: {
+          title: 'Programa - Facilitador'
+        }
+      },
+      {
+        path: ':programId/participants',
+        name: 'ProgramParticipants',
+        component: () => import('@/views/facilitator/ProgramParticipants.vue'),
+        meta: {
+          title: 'Participantes del Programa'
+        }
+      },
+      {
+        path: ':programId/assessments',
+        name: 'ProgramAssessments',
+        component: () => import('@/views/facilitator/ProgramAssessments.vue'),
+        meta: {
+          title: 'Evaluaciones del Programa'
+        }
+      },
+      {
+        path: ':programId/reports',
+        name: 'ProgramReports',
+        component: () => import('@/views/facilitator/ProgramReports.vue'),
+        meta: {
+          title: 'Reportes del Programa'
+        }
+      }
+    ]
+  },
+
   // Página de acceso no autorizado
   {
     path: '/unauthorized',
@@ -379,16 +435,53 @@ router.beforeEach(async (to, from, next) => {
     return next('/auth/login')
   }
 
+  // Verificar rol de facilitador para rutas específicas
+  if (to.meta.requiresFacilitatorRole && authStore.user) {
+    // Cargar perfil del usuario si no está cargado
+    if (!userStore.userProfile) {
+      await userStore.loadUserProfile(authStore.user.uid)
+    }
+
+    const userRole = userStore.userProfile?.rol
+
+    if (userRole !== 'facilitator') {
+      console.log('❌ Acceso denegado - Se requiere rol de facilitador')
+      console.log('👤 Rol del usuario:', userRole)
+
+      // Redirigir según el rol actual
+      if (userRole === 'business_owner') {
+        return next('/select-business')
+      } else {
+        return next('/unauthorized')
+      }
+    }
+
+    console.log('✅ Usuario tiene rol de facilitador')
+  }
+
   // Si el usuario está autenticado y va a rutas de invitado
   if (to.meta.requiresGuest && authStore.user) {
     console.log('🔄 Usuario ya autenticado, redirigiendo...')
 
-    // Cargar negocios del usuario si no están cargados
+    // Cargar perfil del usuario si no está cargado
+    if (!userStore.userProfile) {
+      await userStore.loadUserProfile(authStore.user.uid)
+    }
+
+    const userRole = userStore.userProfile?.rol
+
+    // Si es facilitador, redirigir a /programs
+    if (userRole === 'facilitator') {
+      console.log('🔄 Usuario facilitador, redirigiendo a /programs')
+      return next('/programs')
+    }
+
+    // Para business owners: cargar negocios
     if (!userStore.userBusinesses || userStore.userBusinesses.length === 0) {
       await userStore.loadUserBusinesses(authStore.user.uid)
     }
 
-    // Lógica de redirección inteligente
+    // Lógica de redirección inteligente para business owners
     if (userStore.userBusinesses.length === 0) {
       return next('/onboarding')
     } else if (userStore.userBusinesses.length === 1) {

@@ -25,15 +25,8 @@
     <!-- Logo / Nombre del negocio - Centro -->
     <div class="absolute left-1/2 transform -translate-x-1/2">
       <component
-        :is="currentBusinessId ? 'RouterLink' : 'div'"
-        :to="
-          currentBusinessId
-            ? {
-                name: 'BusinessDashboard',
-                params: { businessId: currentBusinessId },
-              }
-            : undefined
-        "
+        :is="logoLinkComponent"
+        :to="logoLinkRoute"
         class="flex items-center gap-3 group cursor-pointer"
         @click="handleLogoClick"
       >
@@ -66,6 +59,22 @@ import BtnLogout from "@/components/Auth/BtnLogout.vue";
 import { Folder } from "@iconoir/vue";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 
+// ✅ Definir props opcionales
+const props = defineProps({
+  contextName: {
+    type: String,
+    default: null,
+  },
+  facilitatorMode: {
+    type: Boolean,
+    default: false,
+  },
+  facilitatorHomeRoute: {
+    type: String,
+    default: "/programs",
+  },
+});
+
 // ✅ Definir el emit para comunicarse con el componente padre
 const emit = defineEmits(["toggle-sidebar"]);
 
@@ -96,6 +105,28 @@ const currentBusinessId = computed(() => {
   return id;
 });
 
+// Computed para el componente del logo (RouterLink o div)
+const logoLinkComponent = computed(() => {
+  if (props.facilitatorMode) {
+    return "RouterLink";
+  }
+  return currentBusinessId.value ? "RouterLink" : "div";
+});
+
+// Computed para la ruta del logo
+const logoLinkRoute = computed(() => {
+  if (props.facilitatorMode) {
+    return props.facilitatorHomeRoute;
+  }
+  if (currentBusinessId.value) {
+    return {
+      name: "BusinessDashboard",
+      params: { businessId: currentBusinessId.value },
+    };
+  }
+  return undefined;
+});
+
 // ✅ Función para manejar el click en el logo - mantiene @click.stop y agrega reset
 const handleLogoClick = (event) => {
   event.stopPropagation(); // Equivalente a @click.stop
@@ -115,7 +146,8 @@ watch(
     if (!newUser) {
       displayName.value = "WALA";
     } else {
-      displayName.value = businessName.value || "WALA";
+      // Si viene contextName desde props (FacilitatorLayout), usarlo
+      displayName.value = props.contextName || businessName.value || "WALA";
     }
   },
   { immediate: true }
@@ -126,8 +158,19 @@ watch(
   () => businessStore.business,
   () => {
     if (authStore.user) {
-      displayName.value = businessName.value || "WALA";
+      displayName.value = props.contextName || businessName.value || "WALA";
     }
   }
+);
+
+// Observar cambios en contextName (para FacilitatorLayout)
+watch(
+  () => props.contextName,
+  (newName) => {
+    if (newName) {
+      displayName.value = newName;
+    }
+  },
+  { immediate: true }
 );
 </script>

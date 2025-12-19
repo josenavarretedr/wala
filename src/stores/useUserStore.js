@@ -77,6 +77,7 @@ export const useUserStore = defineStore('user', {
             email: userData.email,
             nombre: userData.nombre,
             apellidos: userData.apellidos,
+            rol: userData.rol || 'business_owner', // ← AGREGADO: Incluir rol
             fechaRegistro: userData.fechaRegistro || new Date(),
             activo: userData.activo !== false,
             configuracion: userData.configuracion || {
@@ -97,6 +98,7 @@ export const useUserStore = defineStore('user', {
             email: null, // Se llenará desde Firebase Auth
             nombre: '',
             apellidos: '',
+            rol: 'business_owner', // ← AGREGADO: Rol por defecto
             fechaRegistro: new Date(),
             activo: true,
             configuracion: {
@@ -109,8 +111,13 @@ export const useUserStore = defineStore('user', {
           localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
         }
 
-        // ✅ NUEVO: Cargar negocios del usuario
-        await this.loadUserBusinesses(uid)
+        // ✅ NUEVO: Cargar negocios del usuario (solo si NO es facilitador)
+        if (this.userProfile.rol !== 'facilitator') {
+          await this.loadUserBusinesses(uid)
+        } else {
+          console.log('👨‍💼 Usuario facilitador, omitiendo carga de negocios')
+          this.userBusinesses = []
+        }
 
         // Establecer negocio por defecto
         if (this.userBusinesses.length > 0) {
@@ -307,6 +314,7 @@ export const useUserStore = defineStore('user', {
           email: userData.email,
           nombre: userData.nombre || '',
           apellidos: userData.apellidos || '',
+          rol: userData.rol || 'business_owner', // ← AGREGADO: Guardar rol (default: business_owner)
           fechaRegistro: userData.fechaRegistro || new Date(),
           activo: true,
           configuracion: userData.configuracion || {
@@ -320,7 +328,7 @@ export const useUserStore = defineStore('user', {
         this.userProfile = userProfile
         localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
 
-        console.log('✅ Perfil de usuario creado:', userProfile.email)
+        console.log('✅ Perfil de usuario creado:', userProfile.email, 'Rol:', userProfile.rol)
         return userProfile
 
       } catch (error) {

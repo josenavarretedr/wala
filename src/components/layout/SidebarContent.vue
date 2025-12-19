@@ -117,7 +117,7 @@ import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
 import SidebarSection from "@/components/layout/SidebarSection.vue";
 
-defineProps({
+const props = defineProps({
   currentBusiness: Object,
   mainItems: Array,
   adminItems: Array,
@@ -134,12 +134,14 @@ const businessInitial = computed(() => {
   const business = businessStore.business;
   const userBusiness = userStore.currentBusiness;
 
+  // Prioridad: 1. prop current-business, 2. businessStore, 3. userStore
   const name =
+    props.currentBusiness?.businessName ||
     business?.nombre ||
     business?.name ||
     userBusiness?.businessName ||
     "Sin negocio";
-  return name.charAt(0).toUpperCase() || "N";
+  return name.charAt(0).toUpperCase() || "W";
 });
 
 const businessDisplayName = computed(() => {
@@ -147,6 +149,7 @@ const businessDisplayName = computed(() => {
   const userBusiness = userStore.currentBusiness;
 
   return (
+    props.currentBusiness?.businessName ||
     business?.nombre ||
     business?.name ||
     userBusiness?.businessName ||
@@ -159,7 +162,10 @@ const businessDepartment = computed(() => {
   const userBusiness = userStore.currentBusiness;
 
   return (
-    business?.departamento || userBusiness?.departamento || "Negocio activo"
+    props.currentBusiness?.departamento ||
+    business?.departamento ||
+    userBusiness?.departamento ||
+    "Negocio activo"
   );
 });
 </script>
