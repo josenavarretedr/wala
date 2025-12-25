@@ -10,7 +10,9 @@
         class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-2xl"
       >
         <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold text-gray-900">Nueva Actividad</h2>
+          <h2 class="text-2xl font-bold text-gray-900">
+            {{ editMode ? "Editar Actividad" : "Nueva Actividad" }}
+          </h2>
           <button
             @click="$emit('close')"
             class="text-gray-400 hover:text-gray-600 transition-colors"
@@ -43,12 +45,14 @@
             <button
               v-for="type in activityTypes"
               :key="type.value"
-              @click="form.type = type.value"
+              @click="!editMode && (form.type = type.value)"
+              :disabled="editMode"
               :class="[
                 'p-4 border-2 rounded-lg text-left transition-all',
                 form.type === type.value
                   ? 'border-green-500 bg-green-50'
                   : 'border-gray-200 hover:border-gray-300',
+                editMode ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer',
               ]"
             >
               <div
@@ -123,6 +127,37 @@
             </button>
           </div>
 
+          <div v-if="form.type === 'event'" class="mb-3 flex flex-wrap gap-2">
+            <button
+              @click="prefillEvent('feria')"
+              type="button"
+              class="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              ✨ Feria/Exposición
+            </button>
+            <button
+              @click="prefillEvent('taller')"
+              type="button"
+              class="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              ✨ Taller/Workshop
+            </button>
+            <button
+              @click="prefillEvent('conferencia')"
+              type="button"
+              class="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              ✨ Conferencia
+            </button>
+            <button
+              @click="prefillEvent('networking')"
+              type="button"
+              class="text-xs px-3 py-1.5 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
+            >
+              ✨ Networking
+            </button>
+          </div>
+
           <input
             v-model="form.title"
             type="text"
@@ -150,34 +185,15 @@
           </p>
         </div>
 
-        <!-- Fase -->
-        <div v-if="program?.metadata?.phases?.length">
+        <!-- Link de Google Drive (solo para Sesión y Evento) -->
+        <div v-if="form.type === 'session' || form.type === 'event'">
           <label class="block text-sm font-medium text-gray-700 mb-2">
-            Fase
-          </label>
-          <select
-            v-model="form.phase"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          >
-            <option value="">Sin fase asignada</option>
-            <option
-              v-for="phase in program.metadata.phases"
-              :key="phase"
-              :value="phase"
-            >
-              {{ phase }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Fecha Programada -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Fecha Programada
+            Link de Google Drive (opcional)
           </label>
           <input
-            v-model="form.scheduledDate"
-            type="date"
+            v-model="form.driveLink"
+            type="url"
+            placeholder="https://drive.google.com/..."
             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
@@ -193,68 +209,6 @@
           <label for="isRequired" class="text-sm font-medium text-gray-700">
             Actividad obligatoria
           </label>
-        </div>
-
-        <!-- Campos específicos para Sesión -->
-        <div
-          v-if="form.type === 'session'"
-          class="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200"
-        >
-          <h3 class="text-sm font-semibold text-blue-900">
-            Configuración de Sesión
-          </h3>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Duración (minutos)
-              </label>
-              <input
-                v-model.number="form.sessionConfig.duration"
-                type="number"
-                min="15"
-                placeholder="60"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Máx. Participantes
-              </label>
-              <input
-                v-model.number="form.sessionConfig.maxParticipants"
-                type="number"
-                min="1"
-                placeholder="30"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Ubicación
-            </label>
-            <input
-              v-model="form.sessionConfig.location"
-              type="text"
-              placeholder="Ej: Sala de capacitación"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Link de Reunión (opcional)
-            </label>
-            <input
-              v-model="form.sessionConfig.meetingLink"
-              type="url"
-              placeholder="https://zoom.us/j/..."
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
         </div>
 
         <!-- Campos específicos para Monitoreo -->
@@ -292,17 +246,56 @@
           </div>
         </div>
 
-        <!-- Campos específicos para Evaluación -->
+        <!-- Campos específicos para Evento -->
         <div
-          v-if="form.type === 'assessment'"
+          v-if="form.type === 'event'"
           class="space-y-4 p-4 bg-orange-50 rounded-lg border border-orange-200"
         >
           <h3 class="text-sm font-semibold text-orange-900">
-            Configuración de Evaluación
+            Configuración de Evento
           </h3>
-          <p class="text-sm text-gray-600">
-            Las evaluaciones se configurarán en una versión futura del sistema.
-          </p>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de inicio *
+            </label>
+            <input
+              v-model="form.startDate"
+              type="date"
+              :min="getTodayDate()"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <p v-if="errors.startDate" class="text-red-600 text-sm mt-1">
+              {{ errors.startDate }}
+            </p>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input
+              id="isSingleDay"
+              v-model="form.isSingleDay"
+              type="checkbox"
+              class="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+            />
+            <label for="isSingleDay" class="text-sm font-medium text-gray-700">
+              Evento de un solo día
+            </label>
+          </div>
+
+          <div v-if="!form.isSingleDay">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de cierre *
+            </label>
+            <input
+              v-model="form.endDate"
+              type="date"
+              :min="form.startDate"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
+            <p v-if="errors.endDate" class="text-red-600 text-sm mt-1">
+              {{ errors.endDate }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -325,7 +318,15 @@
             v-if="submitting"
             class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
           ></div>
-          <span>{{ submitting ? "Creando..." : "Crear Actividad" }}</span>
+          <span>{{
+            submitting
+              ? editMode
+                ? "Guardando..."
+                : "Creando..."
+              : editMode
+              ? "Guardar Cambios"
+              : "Crear Actividad"
+          }}</span>
         </button>
       </div>
     </div>
@@ -333,9 +334,8 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from "vue";
+import { ref, reactive, computed, watch } from "vue";
 import { useActivities } from "@/composables/useActivities";
-import { Timestamp } from "firebase/firestore";
 
 const props = defineProps({
   program: {
@@ -346,11 +346,19 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  editMode: {
+    type: Boolean,
+    default: false,
+  },
+  activityToEdit: {
+    type: Object,
+    default: null,
+  },
 });
 
 const emit = defineEmits(["close", "created"]);
 
-const { createActivity } = useActivities();
+const { createActivity, updateActivity } = useActivities();
 
 const submitting = ref(false);
 const errors = ref({});
@@ -373,12 +381,12 @@ const activityTypes = [
       "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4",
   },
   {
-    value: "assessment",
-    label: "Evaluación",
+    value: "event",
+    label: "Evento",
     bgClass: "bg-orange-100",
     iconClass: "text-orange-600",
     iconPath:
-      "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
+      "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z",
   },
 ];
 
@@ -386,16 +394,13 @@ const form = reactive({
   type: "session",
   title: "",
   description: "",
-  phase: "",
-  scheduledDate: "",
   isRequired: false,
-  sessionConfig: {
-    duration: 60,
-    location: "",
-    meetingLink: "",
-    maxParticipants: null,
-  },
+  driveLink: "",
   requiredEvidence: false,
+  // Campos para eventos
+  startDate: "",
+  endDate: "",
+  isSingleDay: true,
 });
 
 // Calcular el número de la próxima sesión
@@ -405,6 +410,72 @@ const nextSessionNumber = computed(() => {
   );
   return sessionActivities.length + 1;
 });
+
+// Obtener fecha de hoy en formato YYYY-MM-DD
+function getTodayDate() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Limpiar campos del formulario
+function clearFormFields() {
+  form.title = "";
+  form.description = "";
+  form.driveLink = "";
+  form.isRequired = false;
+  form.requiredEvidence = false;
+  form.startDate = "";
+  form.endDate = "";
+  form.isSingleDay = true;
+  errors.value = {};
+}
+
+// Observar cambios en el tipo de actividad para limpiar el formulario
+watch(
+  () => form.type,
+  () => {
+    if (!props.editMode) {
+      clearFormFields();
+    }
+  }
+);
+
+// Inicializar formulario en modo edición
+watch(
+  () => props.activityToEdit,
+  (activity) => {
+    if (props.editMode && activity) {
+      form.type = activity.type;
+      form.title = activity.title || "";
+      form.description = activity.description || "";
+      form.isRequired = activity.isRequired || false;
+      form.driveLink = activity.driveLink || "";
+      form.requiredEvidence = activity.requiredEvidence || false;
+
+      // Campos específicos para eventos
+      if (activity.type === "event") {
+        // Convertir Timestamp a formato de fecha si es necesario
+        if (activity.startDate) {
+          const startDate = activity.startDate.toDate
+            ? activity.startDate.toDate()
+            : new Date(activity.startDate);
+          form.startDate = startDate.toISOString().split("T")[0];
+        }
+        if (activity.endDate) {
+          const endDate = activity.endDate.toDate
+            ? activity.endDate.toDate()
+            : new Date(activity.endDate);
+          form.endDate = endDate.toISOString().split("T")[0];
+        }
+        form.isSingleDay = activity.isSingleDay || false;
+      }
+    }
+  },
+  { immediate: true }
+);
 
 // Pre-llenar sesión numerada
 function prefillSession() {
@@ -442,6 +513,42 @@ function prefillMonitoring(type) {
   }
 }
 
+// Pre-llenar eventos predefinidos
+function prefillEvent(type) {
+  const templates = {
+    feria: {
+      title: "Feria de Emprendedores",
+      description:
+        "Evento de exposición y venta donde los participantes presentan sus productos y servicios al público.",
+    },
+    taller: {
+      title: "Taller de Desarrollo Empresarial",
+      description:
+        "Taller práctico para el desarrollo de habilidades específicas de emprendimiento y gestión empresarial.",
+    },
+    conferencia: {
+      title: "Conferencia Motivacional",
+      description:
+        "Charla inspiracional con expertos del sector para motivar y compartir experiencias de éxito.",
+    },
+    networking: {
+      title: "Encuentro de Networking",
+      description:
+        "Evento de conexión entre emprendedores para generar alianzas, colaboraciones y oportunidades de negocio.",
+    },
+  };
+
+  const template = templates[type];
+  if (template) {
+    form.title = template.title;
+    form.description = template.description;
+    form.isRequired = false;
+    form.startDate = getTodayDate();
+    form.endDate = getTodayDate();
+    form.isSingleDay = true;
+  }
+}
+
 function validateForm() {
   errors.value = {};
 
@@ -451,6 +558,27 @@ function validateForm() {
 
   if (!form.description.trim()) {
     errors.value.description = "La descripción es obligatoria";
+  }
+
+  // Validaciones específicas para eventos
+  if (form.type === "event") {
+    if (!form.startDate) {
+      errors.value.startDate = "La fecha de inicio es obligatoria";
+    }
+
+    if (!form.isSingleDay && !form.endDate) {
+      errors.value.endDate = "La fecha de cierre es obligatoria";
+    }
+
+    if (
+      !form.isSingleDay &&
+      form.startDate &&
+      form.endDate &&
+      new Date(form.endDate) < new Date(form.startDate)
+    ) {
+      errors.value.endDate =
+        "La fecha de cierre debe ser posterior a la fecha de inicio";
+    }
   }
 
   return Object.keys(errors.value).length === 0;
@@ -468,37 +596,51 @@ async function handleSubmit() {
       type: form.type,
       title: form.title.trim(),
       description: form.description.trim(),
-      phase: form.phase || null,
       isRequired: form.isRequired,
     };
 
-    // Agregar fecha si está definida
-    if (form.scheduledDate) {
-      const date = new Date(form.scheduledDate + "T00:00:00");
-      activityData.scheduledDate = Timestamp.fromDate(date);
+    // Agregar driveLink si está definido (solo para session y event)
+    if (
+      (form.type === "session" || form.type === "event") &&
+      form.driveLink.trim()
+    ) {
+      activityData.driveLink = form.driveLink.trim();
     }
 
-    // Agregar configuración específica según tipo
-    if (form.type === "session") {
-      activityData.sessionConfig = {
-        duration: form.sessionConfig.duration || 60,
-        location: form.sessionConfig.location || "",
-        meetingLink: form.sessionConfig.meetingLink || null,
-        maxParticipants: form.sessionConfig.maxParticipants || null,
-      };
-    } else if (form.type === "monitoring") {
+    // Agregar configuración específica para monitoring
+    if (form.type === "monitoring") {
       activityData.requiredEvidence = form.requiredEvidence;
     }
 
-    const createdActivity = await createActivity(
-      props.program.id,
-      activityData
-    );
+    // Agregar configuración específica para eventos
+    if (form.type === "event") {
+      activityData.startDate = form.startDate;
+      activityData.endDate = form.isSingleDay ? form.startDate : form.endDate;
+      activityData.isSingleDay = form.isSingleDay;
+    }
 
-    emit("created", createdActivity);
+    let result;
+    if (props.editMode && props.activityToEdit) {
+      // Modo edición: actualizar actividad existente
+      await updateActivity(
+        props.program.id,
+        props.activityToEdit.id,
+        activityData
+      );
+      result = { ...props.activityToEdit, ...activityData };
+    } else {
+      // Modo creación: crear nueva actividad
+      result = await createActivity(props.program.id, activityData);
+    }
+
+    emit("created", result);
   } catch (error) {
-    console.error("Error al crear actividad:", error);
-    alert("Error al crear la actividad. Por favor intenta de nuevo.");
+    console.error("Error al guardar actividad:", error);
+    alert(
+      `Error al ${
+        props.editMode ? "actualizar" : "crear"
+      } la actividad. Por favor intenta de nuevo.`
+    );
   } finally {
     submitting.value = false;
   }

@@ -16,7 +16,6 @@ export function useActivities() {
     loading,
     error,
     activitiesByType,
-    activitiesByPhase,
     sessionActivities,
     monitoringActivities,
     userParticipations
@@ -48,7 +47,6 @@ export function useActivities() {
 
     // Getters
     activitiesByType,
-    activitiesByPhase,
     sessionActivities,
     monitoringActivities,
     userParticipations,

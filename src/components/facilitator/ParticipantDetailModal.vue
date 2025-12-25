@@ -120,6 +120,8 @@
                     {{
                       participation.activityType === "session"
                         ? "📅 Sesión"
+                        : participation.activityType === "event"
+                        ? "⭐ Evento"
                         : "📋 Monitoreo"
                     }}
                   </span>
@@ -624,6 +626,11 @@ section h3 {
   .badge-monitoring {
     background: #ede9fe;
     color: #5b21b6;
+  }
+
+  .badge-event {
+    background: #fed7aa;
+    color: #c2410c;
   }
   display: flex;
   align-items: center;

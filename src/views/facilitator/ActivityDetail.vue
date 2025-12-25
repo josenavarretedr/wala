@@ -2,28 +2,19 @@
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
     <div class="bg-white border-b border-gray-200">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
         <button
           @click="goBack"
-          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          class="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 transition-colors"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-          <span class="text-sm font-medium">Volver a Actividades</span>
+          <NavArrowLeft class="w-4 h-4 sm:w-5 sm:h-5" />
+          <span class="text-xs sm:text-sm font-medium">Volver a Programa</span>
         </button>
 
-        <div v-if="activity" class="flex items-start justify-between">
+        <div
+          v-if="activity"
+          class="flex items-start justify-between gap-3 sm:gap-4"
+        >
           <div class="flex-1">
             <div class="flex items-center gap-3 mb-3">
               <span
@@ -47,26 +38,23 @@
             <p class="text-gray-600">{{ activity.description }}</p>
           </div>
 
-          <button
-            v-if="activity.type === 'monitoring'"
-            @click="showMonitoringForm = true"
-            class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <!-- Botones de Acción -->
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <button
+              @click="handleEdit"
+              class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            <span class="font-medium">Nuevo Monitoreo</span>
-          </button>
+              <Edit class="w-5 h-5" />
+              <span class="hidden sm:inline font-medium">Editar</span>
+            </button>
+            <button
+              @click="handleDelete"
+              class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <Trash class="w-5 h-5" />
+              <span class="hidden sm:inline font-medium">Eliminar</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -84,51 +72,46 @@
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div
+          class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6"
+        >
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500 mb-1">Participantes</p>
-              <p class="text-3xl font-bold text-gray-900">
+              <p class="text-xs sm:text-sm text-gray-500 mb-1">Participantes</p>
+              <p class="text-2xl sm:text-3xl font-bold text-gray-900">
                 {{ activity.metadata?.totalParticipants || 0 }}
               </p>
             </div>
             <div
-              class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"
+              class="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"
             >
-              <svg
-                class="w-6 h-6 text-blue-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+              <Community class="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
         <div
-          v-if="activity.scheduledDate"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
+          v-if="activity.driveLink"
+          class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6"
         >
           <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500 mb-1">Fecha Programada</p>
-              <p class="text-lg font-bold text-gray-900">
-                {{ formatDate(activity.scheduledDate) }}
-              </p>
+            <div class="flex-1 mr-4">
+              <p class="text-xs sm:text-sm text-gray-500 mb-1">Archivos</p>
+              <a
+                :href="activity.driveLink"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-xs sm:text-sm text-green-600 hover:text-green-700 underline break-all"
+              >
+                Ver en Google Drive
+              </a>
             </div>
             <div
-              class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"
+              class="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"
             >
               <svg
-                class="w-6 h-6 text-green-600"
+                class="w-5 h-5 sm:w-6 sm:h-6 text-green-600"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -137,38 +120,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div
-          v-if="activity.phase"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm text-gray-500 mb-1">Fase</p>
-              <p class="text-lg font-bold text-gray-900">
-                {{ activity.phase }}
-              </p>
-            </div>
-            <div
-              class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
-            >
-              <svg
-                class="w-6 h-6 text-purple-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                  d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                 />
               </svg>
             </div>
@@ -176,13 +128,13 @@
         </div>
       </div>
 
-      <!-- Sesión: Tabla de Asistencia -->
+      <!-- Sesión/Evento: Cards de Asistencia -->
       <div
-        v-if="activity.type === 'session'"
-        class="bg-white rounded-xl shadow-sm border border-gray-200"
+        v-if="activity.type === 'session' || activity.type === 'event'"
+        class="bg-white rounded-lg shadow-sm border border-gray-100 mb-24"
       >
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+          <h2 class="text-base sm:text-lg font-bold text-gray-900">
             Registro de Asistencia
           </h2>
           <p class="text-sm text-gray-600 mt-1">
@@ -190,86 +142,35 @@
           </p>
         </div>
 
-        <div class="p-6">
-          <!-- Tabla de participantes del programa -->
+        <div class="p-4 sm:p-6">
+          <!-- Loading -->
           <div v-if="loadingParticipants" class="text-center py-8">
             <div
               class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"
             ></div>
           </div>
 
+          <!-- Empty State -->
           <div v-else-if="!participants.length" class="text-center py-12">
             <p class="text-gray-500">
               No hay participantes inscritos en el programa
             </p>
           </div>
 
-          <div v-else class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Participante
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Negocio
-                  </th>
-                  <th
-                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Asistencia
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                  >
-                    Notas
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr
-                  v-for="participant in participants"
-                  :key="participant.userId"
-                >
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ participant.userName }}
-                    </div>
-                    <div class="text-sm text-gray-500">
-                      {{ participant.userEmail }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">
-                      {{ participant.businessName }}
-                    </div>
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-center">
-                    <input
-                      type="checkbox"
-                      :checked="getAttendanceStatus(participant.userId)"
-                      @change="toggleAttendance(participant)"
-                      class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                    />
-                  </td>
-                  <td class="px-6 py-4">
-                    <input
-                      type="text"
-                      :value="getAttendanceNotes(participant.userId)"
-                      @blur="
-                        updateAttendanceNotes(participant, $event.target.value)
-                      "
-                      placeholder="Notas opcionales"
-                      class="w-full px-3 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <!-- Lista de Cards de Asistencia -->
+          <div v-else class="space-y-3">
+            <AttendanceCard
+              v-for="participant in participants"
+              :key="participant.userId"
+              :participant="participant"
+              :attendance="
+                attendanceMap[participant.userId] || {
+                  attended: false,
+                  notes: '',
+                }
+              "
+              @update="handleAttendanceUpdate"
+            />
           </div>
         </div>
       </div>
@@ -277,16 +178,18 @@
       <!-- Monitoreo: Lista de Monitoreos Realizados -->
       <div
         v-if="activity.type === 'monitoring'"
-        class="bg-white rounded-xl shadow-sm border border-gray-200"
+        class="bg-white rounded-lg shadow-sm border border-gray-100 mb-24"
       >
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-xl font-bold text-gray-900">Monitoreos Realizados</h2>
-          <p class="text-sm text-gray-600 mt-1">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+          <h2 class="text-base sm:text-lg font-bold text-gray-900">
+            Monitoreos Realizados
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 mt-1">
             Registro de todos los monitoreos completados para esta actividad
           </p>
         </div>
 
-        <div class="p-6">
+        <div class="p-4 sm:p-6">
           <div v-if="!participations.length" class="text-center py-12">
             <p class="text-gray-500">No se han realizado monitoreos aún</p>
           </div>
@@ -391,6 +294,103 @@
       @close="showMonitoringForm = false"
       @submitted="handleMonitoringSubmitted"
     />
+
+    <!-- Edit Activity Modal -->
+    <CreateActivityModal
+      v-if="showEditModal"
+      :program="{ id: programId }"
+      :activities="[]"
+      :edit-mode="true"
+      :activity-to-edit="activity"
+      @close="showEditModal = false"
+      @created="handleActivityUpdated"
+    />
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-4 sm:p-6">
+        <div class="flex items-center gap-3 mb-3 sm:mb-4">
+          <div
+            class="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0"
+          >
+            <WarningTriangle class="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
+          </div>
+          <h3 class="text-base sm:text-lg font-bold text-gray-900">
+            Eliminar Actividad
+          </h3>
+        </div>
+        <p class="text-xs sm:text-sm text-gray-600 mb-4 sm:mb-6">
+          ¿Estás seguro de que deseas eliminar la actividad "{{
+            activity?.title
+          }}"? Esta acción no se puede deshacer.
+        </p>
+        <div class="flex gap-3">
+          <button
+            @click="showDeleteModal = false"
+            class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+          >
+            Cancelar
+          </button>
+          <button
+            @click="confirmDelete"
+            :disabled="deleting"
+            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span v-if="deleting">Eliminando...</span>
+            <span v-else>Eliminar</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Button Fixed Bottom -->
+    <ActionBtnActivity
+      v-if="activity"
+      :type="activity.type"
+      :pending-changes="pendingChanges"
+      :saving="savingAttendance"
+      @save="saveAllAttendances"
+      @new-monitoring="showMonitoringForm = true"
+    />
+
+    <!-- Toast de Éxito -->
+    <transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 translate-y-4 scale-95"
+      enter-to-class="opacity-100 translate-y-0 scale-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0 scale-100"
+      leave-to-class="opacity-0 translate-y-4 scale-95"
+    >
+      <div
+        v-if="showSuccessToast"
+        class="fixed bottom-24 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 backdrop-blur-sm border border-green-500"
+      >
+        <div
+          class="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2.5"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+        </div>
+        <span class="font-semibold text-sm"
+          >Asistencias guardadas exitosamente</span
+        >
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -401,6 +401,16 @@ import { useActivities } from "@/composables/useActivities";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import MonitoringForm from "@/components/activities/MonitoringForm.vue";
+import AttendanceCard from "@/components/activities/AttendanceCard.vue";
+import ActionBtnActivity from "@/components/activities/ActionBtnActivity.vue";
+import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
+import {
+  NavArrowLeft,
+  Community,
+  Edit,
+  Trash,
+  WarningTriangle,
+} from "@iconoir/vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -411,6 +421,7 @@ const {
   loadActivityParticipations,
   participations,
   markAttendance,
+  deleteActivity,
 } = useActivities();
 
 const programId = computed(() => route.params.programId);
@@ -420,12 +431,19 @@ const loadingParticipants = ref(false);
 const participants = ref([]);
 const showMonitoringForm = ref(false);
 const attendanceMap = ref({}); // userId -> { attended, notes }
+const originalAttendanceMap = ref({}); // Para comparar cambios
+const pendingChanges = ref({}); // userId -> { attended, notes }
+const savingAttendance = ref(false);
+const showSuccessToast = ref(false);
+const showEditModal = ref(false);
+const showDeleteModal = ref(false);
+const deleting = ref(false);
 
 function getTypeBadgeClass(type) {
   const classes = {
     session: "bg-blue-100 text-blue-700",
     monitoring: "bg-purple-100 text-purple-700",
-    assessment: "bg-orange-100 text-orange-700",
+    event: "bg-orange-100 text-orange-700",
   };
   return classes[type] || "bg-gray-100 text-gray-700";
 }
@@ -434,7 +452,7 @@ function getTypeLabel(type) {
   const labels = {
     session: "Sesión",
     monitoring: "Monitoreo",
-    assessment: "Evaluación",
+    event: "Evento",
   };
   return labels[type] || type;
 }
@@ -471,61 +489,63 @@ function formatDate(timestamp) {
   });
 }
 
-function getAttendanceStatus(userId) {
-  return attendanceMap.value[userId]?.attended || false;
-}
+function handleAttendanceUpdate(data) {
+  const { userId, attended, notes } = data;
 
-function getAttendanceNotes(userId) {
-  return attendanceMap.value[userId]?.notes || "";
-}
+  // Actualizar mapa local
+  attendanceMap.value[userId] = { attended, notes };
 
-async function toggleAttendance(participant) {
-  const userId = participant.userId;
-  const currentStatus = attendanceMap.value[userId]?.attended || false;
-  const newStatus = !currentStatus;
+  // Detectar cambios comparando con el original
+  const original = originalAttendanceMap.value[userId] || {
+    attended: false,
+    notes: "",
+  };
+  const hasChanged = original.attended !== attended || original.notes !== notes;
 
-  try {
-    await markAttendance(
-      programId.value,
-      activityId.value,
-      userId,
-      participant,
-      newStatus,
-      attendanceMap.value[userId]?.notes || ""
-    );
-
-    // Actualizar mapa local
-    attendanceMap.value[userId] = {
-      ...attendanceMap.value[userId],
-      attended: newStatus,
-    };
-  } catch (error) {
-    console.error("Error al marcar asistencia:", error);
-    alert("Error al guardar la asistencia");
+  if (hasChanged) {
+    // Agregar a cambios pendientes
+    pendingChanges.value[userId] = { attended, notes };
+  } else {
+    // Remover de cambios pendientes si volvió al estado original
+    delete pendingChanges.value[userId];
   }
 }
 
-async function updateAttendanceNotes(participant, notes) {
-  const userId = participant.userId;
-  const attended = attendanceMap.value[userId]?.attended || false;
+async function saveAllAttendances(changes) {
+  savingAttendance.value = true;
 
   try {
-    await markAttendance(
-      programId.value,
-      activityId.value,
-      userId,
-      participant,
-      attended,
-      notes
-    );
+    // Guardar todos los cambios en paralelo
+    const savePromises = Object.entries(changes).map(([userId, data]) => {
+      const participant = participants.value.find((p) => p.userId === userId);
+      if (!participant) return Promise.resolve();
 
-    // Actualizar mapa local
-    attendanceMap.value[userId] = {
-      ...attendanceMap.value[userId],
-      notes,
-    };
+      return markAttendance(
+        programId.value,
+        activityId.value,
+        userId,
+        participant,
+        data.attended,
+        data.notes
+      );
+    });
+
+    await Promise.all(savePromises);
+
+    // Actualizar el mapa original y limpiar cambios pendientes
+    originalAttendanceMap.value = { ...attendanceMap.value };
+    pendingChanges.value = {};
+
+    // Mostrar toast de éxito
+    showSuccessToast.value = true;
+    setTimeout(() => {
+      showSuccessToast.value = false;
+    }, 3000);
   } catch (error) {
-    console.error("Error al actualizar notas:", error);
+    console.error("Error al guardar asistencias:", error);
+    alert("Error al guardar las asistencias");
+  } finally {
+    savingAttendance.value = false;
   }
 }
 
@@ -564,7 +584,44 @@ async function handleMonitoringSubmitted() {
 }
 
 function goBack() {
-  router.push(`/programs/${programId.value}/activities`);
+  router.push(`/programs/${programId.value}`);
+}
+
+function handleEdit() {
+  showEditModal.value = true;
+}
+
+function handleDelete() {
+  showDeleteModal.value = true;
+}
+
+async function confirmDelete() {
+  deleting.value = true;
+
+  try {
+    await deleteActivity(programId.value, activityId.value);
+
+    // Redirigir a la lista de actividades
+    router.push(`/programs/${programId.value}/activities`);
+  } catch (error) {
+    console.error("Error al eliminar actividad:", error);
+    alert("Error al eliminar la actividad");
+    deleting.value = false;
+  }
+}
+
+async function handleActivityUpdated() {
+  showEditModal.value = false;
+
+  // Recargar la actividad actualizada
+  await loadActivity(programId.value, activityId.value);
+  await loadActivityParticipations(programId.value, activityId.value);
+
+  // Mostrar toast de éxito
+  showSuccessToast.value = true;
+  setTimeout(() => {
+    showSuccessToast.value = false;
+  }, 3000);
 }
 
 onMounted(async () => {
@@ -575,8 +632,11 @@ onMounted(async () => {
     // Cargar participaciones
     await loadActivityParticipations(programId.value, activityId.value);
 
-    // Si es sesión, cargar participantes del programa
-    if (activity.value?.type === "session") {
+    // Si es sesión o evento, cargar participantes del programa
+    if (
+      activity.value?.type === "session" ||
+      activity.value?.type === "event"
+    ) {
       await loadProgramParticipants();
 
       // Construir mapa de asistencia desde participations
@@ -588,6 +648,11 @@ onMounted(async () => {
           };
         }
       });
+
+      // Guardar estado original para detectar cambios
+      originalAttendanceMap.value = JSON.parse(
+        JSON.stringify(attendanceMap.value)
+      );
     }
   } catch (error) {
     console.error("Error al cargar datos:", error);

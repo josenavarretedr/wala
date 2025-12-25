@@ -36,11 +36,6 @@ export const useActivitiesStore = defineStore('activities', () => {
     return activities.value.filter(a => a.type === type)
   })
 
-  const activitiesByPhase = computed(() => (phase) => {
-    if (!phase || phase === 'all') return activities.value
-    return activities.value.filter(a => a.phase === phase)
-  })
-
   const sessionActivities = computed(() => {
     return activities.value.filter(a => a.type === 'session')
   })
@@ -132,9 +127,6 @@ export const useActivitiesStore = defineStore('activities', () => {
       // Aplicar filtros
       if (filters.type) {
         q = query(activitiesRef, where('type', '==', filters.type), orderBy('createdAt', 'desc'))
-      }
-      if (filters.phase) {
-        q = query(activitiesRef, where('phase', '==', filters.phase), orderBy('createdAt', 'desc'))
       }
 
       const snapshot = await getDocs(q)
@@ -547,7 +539,6 @@ export const useActivitiesStore = defineStore('activities', () => {
 
     // Getters
     activitiesByType,
-    activitiesByPhase,
     sessionActivities,
     monitoringActivities,
     userParticipations,

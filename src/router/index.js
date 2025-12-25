@@ -345,6 +345,14 @@ const routes = [
         }
       },
       {
+        path: ':programId/info',
+        name: 'ProgramInfo',
+        component: () => import('@/views/facilitator/ProgramInfo.vue'),
+        meta: {
+          title: 'Información del Programa'
+        }
+      },
+      {
         path: ':programId/activities',
         name: 'ProgramActivities',
         component: () => import('@/views/facilitator/ProgramActivities.vue'),
@@ -366,14 +374,6 @@ const routes = [
         component: () => import('@/views/facilitator/ProgramParticipants.vue'),
         meta: {
           title: 'Participantes del Programa'
-        }
-      },
-      {
-        path: ':programId/assessments',
-        name: 'ProgramAssessments',
-        component: () => import('@/views/facilitator/ProgramAssessments.vue'),
-        meta: {
-          title: 'Evaluaciones del Programa'
         }
       },
       {
