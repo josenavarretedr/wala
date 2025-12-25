@@ -5,10 +5,13 @@ import {
   doc,
   getDoc,
   getDocs,
+  setDoc,
   query,
   where,
   addDoc,
   updateDoc,
+  arrayUnion,
+  increment,
   serverTimestamp,
   orderBy,
   Timestamp
@@ -156,8 +159,8 @@ export const useProgramStore = defineStore('program', () => {
     const authStore = useAuthStore()
     const userStore = useUserStore()
 
-    if (!authStore.user?.uid || !userStore.currentBusiness?.businessId) {
-      throw new Error('Usuario o business no disponible')
+    if (!authStore.user?.uid) {
+      throw new Error('Usuario no disponible')
     }
 
     loading.value = true
@@ -179,24 +182,28 @@ export const useProgramStore = defineStore('program', () => {
         ...programSnap.data()
       }
 
-      // Cargar membership del business actual
-      const membershipRef = doc(
-        db,
-        'programs',
-        programId,
-        'memberships',
-        userStore.currentBusiness.businessId
-      )
-      const membershipSnap = await getDoc(membershipRef)
+      // Cargar membership del business actual (solo si hay business seleccionado)
+      if (userStore.currentBusiness?.businessId) {
+        const membershipRef = doc(
+          db,
+          'programs',
+          programId,
+          'memberships',
+          userStore.currentBusiness.businessId
+        )
+        const membershipSnap = await getDoc(membershipRef)
 
-      if (membershipSnap.exists()) {
-        programData.membership = {
-          id: membershipSnap.id,
-          ...membershipSnap.data()
+        if (membershipSnap.exists()) {
+          programData.membership = {
+            id: membershipSnap.id,
+            ...membershipSnap.data()
+          }
+          console.log(`✅ Membership encontrada (status: ${programData.membership.status})`)
+        } else {
+          console.warn(`⚠️  No se encontró membership para este business`)
         }
-        console.log(`✅ Membership encontrada (status: ${programData.membership.status})`)
       } else {
-        console.warn(`⚠️  No se encontró membership para este business`)
+        console.log('ℹ️  No hay business seleccionado (modo facilitador)')
       }
 
       currentProgram.value = programData
@@ -214,7 +221,10 @@ export const useProgramStore = defineStore('program', () => {
   }
 
   /**
-   * ✅ ACCIÓN 3: Unirse a un programa por código
+   * ✅ ACCIÓN 3: Unirse a un programa por código (NUEVA ESTRUCTURA centrada en USUARIO)
+   * 
+   * Crea documento en programs/{programId}/participants/{userId}
+   * Ya NO usa array members[]
    */
   async function joinProgramByCode(code) {
     const authStore = useAuthStore()
@@ -222,6 +232,10 @@ export const useProgramStore = defineStore('program', () => {
 
     if (!code || !code.trim()) {
       throw new Error('Debes ingresar un código de invitación')
+    }
+
+    if (!authStore.user?.uid) {
+      throw new Error('Debes iniciar sesión para continuar')
     }
 
     if (!userStore.currentBusiness) {
@@ -234,16 +248,7 @@ export const useProgramStore = defineStore('program', () => {
     try {
       console.log(`🔐 Intentando unirse con código: ${code}`)
 
-      // Verificación local: el business debe existir en userBusinesses
-      const businessExists = userStore.userBusinesses.some(
-        b => b.businessId === userStore.currentBusiness.businessId && b.activo
-      )
-
-      if (!businessExists) {
-        throw new Error('No tienes acceso a este negocio')
-      }
-
-      // Verificar que sea gerente
+      // 1. Verificar que sea gerente
       const currentBusiness = userStore.userBusinesses.find(
         b => b.businessId === userStore.currentBusiness.businessId
       )
@@ -256,38 +261,212 @@ export const useProgramStore = defineStore('program', () => {
         throw new Error('Solo los gerentes pueden unir el negocio a programas')
       }
 
-      // Llamar a Cloud Function
-      const joinFunction = httpsCallable(functions, 'joinProgramByCode')
+      const codeUpper = code.trim().toUpperCase()
 
-      const result = await joinFunction({
-        code: code.trim().toUpperCase(),
-        businessId: userStore.currentBusiness.businessId
+      // 2. Buscar programa por código (codUser para participantes)
+      const programsRef = collection(db, 'programs')
+      const q = query(
+        programsRef,
+        where('codUser', '==', codeUpper),
+        where('isActive', '==', true)
+      )
+
+      const querySnapshot = await getDocs(q)
+
+      if (querySnapshot.empty) {
+        throw new Error('Código no válido o programa inactivo')
+      }
+
+      const programDoc = querySnapshot.docs[0]
+      const programId = programDoc.id
+      const programData = programDoc.data()
+
+      console.log(`✅ Programa encontrado: ${programData.name}`)
+
+      const userId = authStore.user.uid
+      const businessId = userStore.currentBusiness.businessId
+
+      // 3. 🆕 Verificar si ya está inscrito (en la nueva estructura)
+      const participantRef = doc(db, 'programs', programId, 'participants', userId)
+      const participantSnap = await getDoc(participantRef)
+
+      if (participantSnap.exists()) {
+        const existingData = participantSnap.data()
+        if (existingData.status === 'active') {
+          throw new Error('Ya estás inscrito en este programa')
+        }
+        // Si había salido antes, se puede reactivar
+        console.log('⚠️ Usuario existía previamente, reactivando...')
+      }
+
+      // 4. 🆕 Crear documento en participants/{userId}
+      const participantData = {
+        userId,
+        userEmail: authStore.user.email || '',
+        userName: userStore.userProfile?.nombre || authStore.user.displayName || 'Usuario',
+        businessId,
+        businessName: userStore.currentBusiness.razonSocial || 'Sin nombre',
+        role: 'participant',
+        status: 'active',
+        joinedAt: serverTimestamp(),
+        currentPhase: programData.currentPhase || 'baseline',
+        metadata: {
+          totalActivitiesCompleted: 0,
+          lastActivityAt: null,
+          progressPercentage: 0,
+          attendanceRate: 0
+        }
+      }
+
+      await setDoc(participantRef, participantData, { merge: true })
+
+      console.log(`✅ Participante creado en programs/${programId}/participants/${userId}`)
+
+      // 5. Actualizar metadata del programa
+      const programRef = doc(db, 'programs', programId)
+      await updateDoc(programRef, {
+        'metadata.totalParticipants': increment(1)
       })
 
-      console.log(`✅ Respuesta de Cloud Function:`, result.data)
+      // 6. Actualizar documento del business con el programId
+      const businessRef = doc(db, 'businesses', businessId)
+      const businessSnap = await getDoc(businessRef)
+
+      if (businessSnap.exists()) {
+        const currentPrograms = businessSnap.data().programs || []
+        if (!currentPrograms.includes(programId)) {
+          await updateDoc(businessRef, {
+            programs: arrayUnion(programId)
+          })
+          console.log(`✅ ProgramId agregado a businesses/${businessId}.programs`)
+        }
+      }
+
+      console.log(`🎉 Te has unido exitosamente a "${programData.name}"`)
 
       // Recargar programas activos
       await loadActivePrograms()
 
-      return result.data
+      return {
+        success: true,
+        programId,
+        programName: programData.name,
+        organizationName: programData.organizationName
+      }
 
     } catch (err) {
       console.error('❌ Error uniéndose al programa:', err)
 
       // Extraer mensaje de error legible
-      let errorMessage = 'Error al unirse al programa'
+      let errorMessage = err.message || 'Error al unirse al programa'
 
-      if (err.code === 'functions/unauthenticated') {
-        errorMessage = 'Debes iniciar sesión para continuar'
-      } else if (err.code === 'functions/permission-denied') {
-        errorMessage = err.message || 'No tienes permisos suficientes'
-      } else if (err.code === 'functions/not-found') {
-        errorMessage = err.message || 'Código inválido'
-      } else if (err.code === 'functions/already-exists') {
-        errorMessage = err.message || 'Ya estás en este programa'
-      } else if (err.message) {
-        errorMessage = err.message
+      error.value = errorMessage
+      throw new Error(errorMessage)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * ✅ ACCIÓN 3B: Unirse a un programa como FACILITADOR (NUEVA ESTRUCTURA)
+   * 
+   * Crea documento en programs/{programId}/facilitators/{userId}
+   */
+  async function joinProgramAsFacilitator(code) {
+    const authStore = useAuthStore()
+    const userStore = useUserStore()
+
+    if (!code || !code.trim()) {
+      throw new Error('Debes ingresar un código de facilitador')
+    }
+
+    if (!authStore.user?.uid) {
+      throw new Error('Debes iniciar sesión para continuar')
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`🔐 Intentando unirse como facilitador con código: ${code}`)
+
+      const codeUpper = code.trim().toUpperCase()
+
+      // 1. Buscar programa por código (codTeam para facilitadores)
+      const programsRef = collection(db, 'programs')
+      const q = query(
+        programsRef,
+        where('codTeam', '==', codeUpper),
+        where('isActive', '==', true)
+      )
+
+      const querySnapshot = await getDocs(q)
+
+      if (querySnapshot.empty) {
+        throw new Error('Código de facilitador no válido o programa inactivo')
       }
+
+      const programDoc = querySnapshot.docs[0]
+      const programId = programDoc.id
+      const programData = programDoc.data()
+
+      console.log(`✅ Programa encontrado: ${programData.name}`)
+
+      const userId = authStore.user.uid
+
+      // 2. 🆕 Verificar si ya está inscrito como facilitador
+      const facilitatorRef = doc(db, 'programs', programId, 'facilitators', userId)
+      const facilitatorSnap = await getDoc(facilitatorRef)
+
+      if (facilitatorSnap.exists()) {
+        const existingData = facilitatorSnap.data()
+        if (existingData.status === 'active') {
+          throw new Error('Ya estás inscrito como facilitador en este programa')
+        }
+        console.log('⚠️ Facilitador existía previamente, reactivando...')
+      }
+
+      // 3. 🆕 Crear documento en facilitators/{userId}
+      const facilitatorData = {
+        userId,
+        userEmail: authStore.user.email || '',
+        userName: userStore.userProfile?.nombre || authStore.user.displayName || 'Facilitador',
+        role: 'facilitator',
+        status: 'active',
+        joinedAt: serverTimestamp(),
+        permissions: {
+          canCreateActivities: true,
+          canGradeActivities: true,
+          canManageParticipants: true
+        }
+      }
+
+      await setDoc(facilitatorRef, facilitatorData, { merge: true })
+
+      console.log(`✅ Facilitador creado en programs/${programId}/facilitators/${userId}`)
+
+      // 4. Actualizar metadata del programa
+      const programRef = doc(db, 'programs', programId)
+      await updateDoc(programRef, {
+        'metadata.totalFacilitators': increment(1)
+      })
+
+      console.log(`🎉 Te has unido como facilitador a "${programData.name}"`)
+
+      // Recargar programas (si aplica para facilitadores)
+      await loadFacilitatorPrograms()
+
+      return {
+        success: true,
+        programId,
+        programName: programData.name,
+        organizationName: programData.organizationName
+      }
+
+    } catch (err) {
+      console.error('❌ Error uniéndose como facilitador:', err)
+
+      let errorMessage = err.message || 'Error al unirse como facilitador'
 
       error.value = errorMessage
       throw new Error(errorMessage)
@@ -451,10 +630,9 @@ export const useProgramStore = defineStore('program', () => {
   }
 
   /**
-   * ✅ ACCIÓN 8: Cargar programas donde el usuario es facilitador
+   * ✅ ACCIÓN 8: Cargar programas donde el usuario es facilitador (NUEVA ESTRUCTURA)
    * 
-   * Busca todos los programas y filtra localmente los que contengan al usuario con role: "facilitator"
-   * (Firestore no permite array-contains con objetos complejos)
+   * Busca en programs/{programId}/facilitators/{userId}
    */
   async function loadFacilitatorPrograms() {
     const authStore = useAuthStore()
@@ -469,35 +647,43 @@ export const useProgramStore = defineStore('program', () => {
     error.value = null
 
     try {
-      console.log(`🔍 Cargando programas donde soy facilitador (userId: ${authStore.user.uid})`)
+      const userId = authStore.user.uid
+      console.log(`🔍 Cargando programas donde soy facilitador (userId: ${userId})`)
 
-      // Obtener todos los programas activos
+      // 1. Obtener todos los programas activos
       const programsRef = collection(db, 'programs')
       const q = query(programsRef, where('isActive', '!=', false))
 
       const querySnapshot = await getDocs(q)
       const programs = []
 
-      // Filtrar programas donde el usuario es facilitador
-      querySnapshot.forEach((doc) => {
-        const programData = doc.data()
+      // 2. Para cada programa, verificar si el usuario está en facilitators/
+      for (const programDoc of querySnapshot.docs) {
+        const programId = programDoc.id
+        const programData = programDoc.data()
 
-        // Buscar si el usuario está en members[] con role: "facilitator"
-        const isFacilitator = programData.members?.some(
-          member =>
-            member.userId === authStore.user.uid &&
-            member.role === 'facilitator' &&
-            member.status === 'active'
-        )
+        try {
+          // 🆕 Verificar en la nueva estructura facilitators/{userId}
+          const facilitatorRef = doc(db, 'programs', programId, 'facilitators', userId)
+          const facilitatorSnap = await getDoc(facilitatorRef)
 
-        if (isFacilitator) {
-          programs.push({
-            id: doc.id,
-            ...programData
-          })
-          console.log(`✅ Programa encontrado: ${programData.name || programData.organizationName}`)
+          if (facilitatorSnap.exists()) {
+            const facilitatorData = facilitatorSnap.data()
+
+            // Solo incluir si está activo
+            if (facilitatorData.status === 'active') {
+              programs.push({
+                id: programId,
+                ...programData,
+                facilitatorInfo: facilitatorData // Incluir info del facilitador
+              })
+              console.log(`✅ Programa encontrado: ${programData.name || programData.organizationName}`)
+            }
+          }
+        } catch (err) {
+          console.warn(`⚠️ Error verificando facilitador en programa ${programId}:`, err)
         }
-      })
+      }
 
       activePrograms.value = programs
       console.log(`✅ Total de ${programs.length} programas como facilitador`)
@@ -551,7 +737,244 @@ export const useProgramStore = defineStore('program', () => {
   }
 
   /**
-   * ✅ ACCIÓN 10: Limpiar estado
+   * ✅ ACCIÓN 10: Cargar participantes de un programa (para facilitadores)
+   * 
+   * Obtiene la lista de negocios participantes con información enriquecida
+   */
+  async function loadProgramParticipants(programId) {
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`👥 Cargando participantes del programa: ${programId}`)
+
+      // 1. Obtener el programa para ver el array de members
+      const programRef = doc(db, 'programs', programId)
+      const programSnap = await getDoc(programRef)
+
+      if (!programSnap.exists()) {
+        throw new Error('Programa no encontrado')
+      }
+
+      const programData = programSnap.data()
+      const members = programData.members || []
+
+      // 2. Filtrar solo participantes (role: "participant")
+      const participantMembers = members.filter(m => m.role === 'participant')
+
+      console.log(`📋 Encontrados ${participantMembers.length} participantes`)
+
+      // 3. Para cada participante, cargar datos enriquecidos
+      const participants = []
+
+      for (const member of participantMembers) {
+        const businessId = member.businessId
+
+        if (!businessId) {
+          console.warn('⚠️ Participante sin businessId:', member)
+          continue
+        }
+
+        // Obtener datos completos del negocio
+        const businessRef = doc(db, 'businesses', businessId)
+        const businessSnap = await getDoc(businessRef)
+
+        let businessData = {}
+        if (businessSnap.exists()) {
+          businessData = businessSnap.data()
+        }
+
+        // Contar evaluaciones (usando memberships subcollection)
+        let totalAssessments = 0
+        let assessmentsData = []
+
+        try {
+          const membershipRef = doc(db, 'programs', programId, 'memberships', businessId)
+          const membershipSnap = await getDoc(membershipRef)
+
+          if (membershipSnap.exists()) {
+            const assessmentsRef = collection(db, 'programs', programId, 'memberships', businessId, 'assessments')
+            const assessmentsSnap = await getDocs(assessmentsRef)
+            totalAssessments = assessmentsSnap.size
+            assessmentsData = assessmentsSnap.docs.map(doc => doc.data())
+          }
+        } catch (err) {
+          console.warn('⚠️ Error contando evaluaciones:', err)
+        }
+
+        // Calcular progreso y score
+        let progress = 0
+        let score = 0
+
+        if (totalAssessments > 0) {
+          // Calcular score promedio si existe
+          const scores = assessmentsData
+            .map(a => a.score)
+            .filter(s => s !== undefined && s !== null)
+
+          if (scores.length > 0) {
+            score = Math.round(
+              scores.reduce((a, b) => a + b, 0) / scores.length
+            )
+          }
+
+          // Progreso: (evaluaciones completadas / total esperado) * 100
+          const expectedAssessments = programData.expectedAssessments || 4
+          progress = Math.min(
+            Math.round((totalAssessments / expectedAssessments) * 100),
+            100
+          )
+        }
+
+        // Obtener nombre del gerente
+        let managerName = member.businessName || 'No especificado'
+
+        if (member.userId) {
+          try {
+            const userRef = doc(db, 'users', member.userId)
+            const userSnap = await getDoc(userRef)
+            if (userSnap.exists()) {
+              const userData = userSnap.data()
+              managerName = userData.nombre || userData.displayName || managerName
+            }
+          } catch (err) {
+            console.warn('⚠️ Error obteniendo datos del gerente:', err)
+          }
+        }
+
+        participants.push({
+          id: businessId,
+          businessId: businessId,
+          businessName: businessData.nombreNegocio || member.businessName || 'Sin nombre',
+          businessType: businessData.tipo || 'No especificado',
+          managerName: managerName,
+          managerEmail: member.userEmail || '',
+          managerId: member.userId || '',
+          status: member.status || 'active',
+          joinedAt: member.joinedAt,
+          leftAt: member.leftAt,
+          currentPhase: member.currentPhase || 'baseline',
+          totalAssessments,
+          score,
+          progress
+        })
+      }
+
+      console.log(`✅ ${participants.length} participantes cargados con datos completos`)
+      return participants
+
+    } catch (err) {
+      console.error('❌ Error cargando participantes:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * ✅ ACCIÓN 11: Cargar detalle completo de un participante
+   * 
+   * Obtiene información detallada incluyendo historial de evaluaciones
+   */
+  async function loadParticipantDetail(programId, businessId) {
+    loading.value = true
+    error.value = null
+
+    try {
+      console.log(`🔍 Cargando detalle del participante: ${businessId}`)
+
+      // 1. Obtener datos del programa
+      const programRef = doc(db, 'programs', programId)
+      const programSnap = await getDoc(programRef)
+
+      if (!programSnap.exists()) {
+        throw new Error('Programa no encontrado')
+      }
+
+      const programData = programSnap.data()
+      const members = programData.members || []
+      const memberData = members.find(m => m.businessId === businessId)
+
+      if (!memberData) {
+        throw new Error('Participante no encontrado en el programa')
+      }
+
+      // 2. Obtener datos completos del negocio
+      const businessRef = doc(db, 'businesses', businessId)
+      const businessSnap = await getDoc(businessRef)
+
+      let businessDetails = {}
+      if (businessSnap.exists()) {
+        businessDetails = businessSnap.data()
+      }
+
+      // 3. Obtener evaluaciones completas con ordenamiento
+      let assessments = []
+
+      try {
+        const assessmentsRef = collection(
+          db,
+          'programs',
+          programId,
+          'memberships',
+          businessId,
+          'assessments'
+        )
+        const assessmentsQ = query(assessmentsRef, orderBy('submittedAt', 'desc'))
+        const assessmentsSnap = await getDocs(assessmentsQ)
+
+        assessments = assessmentsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+      } catch (err) {
+        console.warn('⚠️ Error cargando evaluaciones:', err)
+      }
+
+      // 4. Obtener datos del gerente
+      let managerDetails = {}
+      if (memberData.userId) {
+        try {
+          const userRef = doc(db, 'users', memberData.userId)
+          const userSnap = await getDoc(userRef)
+          if (userSnap.exists()) {
+            managerDetails = userSnap.data()
+          }
+        } catch (err) {
+          console.warn('⚠️ Error obteniendo datos del gerente:', err)
+        }
+      }
+
+      console.log(`✅ Detalle del participante cargado (${assessments.length} evaluaciones)`)
+
+      return {
+        membership: {
+          id: businessId,
+          ...memberData
+        },
+        business: {
+          id: businessId,
+          ...businessDetails
+        },
+        manager: {
+          id: memberData.userId,
+          ...managerDetails
+        },
+        assessments
+      }
+
+    } catch (err) {
+      console.error('❌ Error cargando detalle del participante:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
+   * ✅ ACCIÓN 12: Limpiar estado
    */
   function clearProgramData() {
     activePrograms.value = []
@@ -583,9 +1006,12 @@ export const useProgramStore = defineStore('program', () => {
     loadProgram,
     loadCurrentProgram,
     joinProgramByCode,
+    joinProgramAsFacilitator,
     leaveProgram,
     loadAssessments,
     submitAssessment,
+    loadProgramParticipants,
+    loadParticipantDetail,
     clearProgramData
   }
 })

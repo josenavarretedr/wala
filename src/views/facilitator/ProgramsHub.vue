@@ -188,18 +188,14 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "@/firebaseInit";
-import { useAuthStore } from "@/stores/authStore";
+import { usePrograms } from "@/composables/usePrograms";
 import { useUserStore } from "@/stores/useUserStore";
 import JoinProgramModalFacilitator from "@/components/programs/JoinProgramModalFacilitator.vue";
 
 const router = useRouter();
-const authStore = useAuthStore();
+const { activePrograms, loading, loadPrograms } = usePrograms();
 const userStore = useUserStore();
 
-const programs = ref([]);
-const loading = ref(false);
 const showJoinModal = ref(false);
 
 const userName = computed(() => {
@@ -216,48 +212,27 @@ const userInitials = computed(() => {
     .slice(0, 2);
 });
 
+// Usar activePrograms del store en lugar de programs local
+const programs = computed(() => activePrograms.value);
+
 onMounted(async () => {
   await loadFacilitatorPrograms();
 });
 
 async function loadFacilitatorPrograms() {
-  loading.value = true;
-
   try {
-    console.log("🔍 Cargando programas del facilitador...");
+    console.log("🔍 Cargando programas del facilitador desde el store...");
 
-    // Buscar programas donde el usuario es facilitador usando codTeam
-    const programsRef = collection(db, "programs");
-    const q = query(programsRef, where("isActive", "==", true));
+    // Importar la función del store directamente
+    const { useProgramStore } = await import("@/stores/programStore");
+    const programStore = useProgramStore();
 
-    const snapshot = await getDocs(q);
+    // Llamar a la función actualizada del store
+    await programStore.loadFacilitatorPrograms();
 
-    const facilitatorPrograms = [];
-
-    snapshot.forEach((doc) => {
-      const programData = doc.data();
-
-      // Verificar si el usuario es miembro con rol de facilitador
-      const isFacilitator = programData.members?.some(
-        (m) =>
-          m.userId === authStore.user.uid &&
-          (m.role === "facilitator" || m.role === "admin")
-      );
-
-      if (isFacilitator) {
-        facilitatorPrograms.push({
-          id: doc.id,
-          ...programData,
-        });
-      }
-    });
-
-    programs.value = facilitatorPrograms;
-    console.log(`✅ ${facilitatorPrograms.length} programas cargados`);
+    console.log(`✅ ${activePrograms.value.length} programas cargados`);
   } catch (error) {
     console.error("❌ Error cargando programas:", error);
-  } finally {
-    loading.value = false;
   }
 }
 

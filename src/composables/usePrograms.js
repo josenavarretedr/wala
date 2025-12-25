@@ -49,6 +49,20 @@ export function usePrograms() {
   }
 
   /**
+   * Unirse a un programa como facilitador
+   */
+  async function joinAsFacilitator(code) {
+    console.log('🔍 DEBUG: programStore.joinProgramAsFacilitator existe?', typeof programStore.joinProgramAsFacilitator)
+    console.log('🔍 DEBUG: Métodos disponibles en programStore:', Object.keys(programStore))
+
+    if (typeof programStore.joinProgramAsFacilitator !== 'function') {
+      throw new Error('La función joinProgramAsFacilitator no está disponible. Recarga la página (Ctrl+Shift+R).')
+    }
+
+    return await programStore.joinProgramAsFacilitator(code)
+  }
+
+  /**
    * Salirse de un programa (con confirmación)
    */
   async function leaveProgram(programId) {
@@ -77,6 +91,20 @@ export function usePrograms() {
    */
   async function submitAssessment(programId, data) {
     return await programStore.submitAssessment(programId, data)
+  }
+
+  /**
+   * Cargar participantes del programa (para facilitadores)
+   */
+  async function loadParticipants(programId) {
+    return await programStore.loadProgramParticipants(programId)
+  }
+
+  /**
+   * Cargar detalle completo de un participante
+   */
+  async function loadParticipantDetail(programId, businessId) {
+    return await programStore.loadParticipantDetail(programId, businessId)
   }
 
   /**
@@ -116,8 +144,11 @@ export function usePrograms() {
     loadPrograms,
     loadProgram,
     joinByCode,
+    joinAsFacilitator,
     leaveProgram,
     loadAssessments,
-    submitAssessment
+    submitAssessment,
+    loadParticipants,
+    loadParticipantDetail
   }
 }

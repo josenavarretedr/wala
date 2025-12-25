@@ -339,26 +339,15 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
-import { db } from "@/firebaseInit";
-import { useAuthStore } from "@/stores/authStore";
+import { usePrograms } from "@/composables/usePrograms";
 import { useUserStore } from "@/stores/useUserStore";
 
 const emit = defineEmits(["close", "joined"]);
 
-const authStore = useAuthStore();
+const { joinByCode, loading, error: storeError } = usePrograms();
 const userStore = useUserStore();
 
 const code = ref("");
-const loading = ref(false);
 const validating = ref(false);
 const error = ref(null);
 const success = ref(null);
@@ -392,7 +381,13 @@ async function validateCode() {
   try {
     const codeUpper = code.value.trim().toUpperCase();
 
-    console.log("🔍 Buscando programa con código:", codeUpper);
+    console.log("🔍 Validando código:", codeUpper);
+
+    // Importar firebase directamente para validación
+    const { collection, query, where, getDocs } = await import(
+      "firebase/firestore"
+    );
+    const { db } = await import("@/firebaseInit");
 
     // Buscar programa por codUser
     const programsRef = collection(db, "programs");
@@ -415,19 +410,6 @@ async function validateCode() {
 
     console.log("✅ Programa encontrado:", programData);
 
-    // Verificar si ya está inscrito
-    const currentUserId = authStore.user?.uid;
-    const currentBusinessId = userStore.currentBusiness?.businessId;
-
-    if (
-      programData.members?.some(
-        (m) => m.userId === currentUserId && m.businessId === currentBusinessId
-      )
-    ) {
-      error.value = "Ya estás inscrito en este programa con este negocio.";
-      return;
-    }
-
     programFound.value = programData;
   } catch (err) {
     console.error("❌ Error validando código:", err);
@@ -441,71 +423,30 @@ async function validateCode() {
 async function handleSubmit() {
   if (!programFound.value || !dataAuthorized.value) return;
 
-  // Validar autenticación y negocio actual
-  if (!authStore.user?.uid) {
-    error.value = "Debes iniciar sesión para unirte a un programa.";
-    return;
-  }
-
-  if (!userStore.currentBusiness?.businessId) {
-    error.value =
-      "No se encontró el negocio actual. Intenta recargar la página.";
-    return;
-  }
-
-  loading.value = true;
   error.value = null;
   success.value = null;
 
   try {
-    const memberData = {
-      userId: authStore.user.uid,
-      businessId: userStore.currentBusiness.businessId,
-      businessName: userStore.currentBusiness.razonSocial || "Sin nombre",
-      joinedAt: new Date(),
-      role: "participant", // participant, facilitator, admin
-      status: "active",
-    };
+    console.log("📝 Uniéndose al programa...");
 
-    console.log("📝 Agregando miembro al programa:", memberData);
+    // Llamar al composable que usa el store
+    const result = await joinByCode(code.value);
 
-    // 1. Actualizar documento del programa
-    const programRef = doc(db, "programs", programFound.value.id);
-    await updateDoc(programRef, {
-      members: arrayUnion(memberData),
-      "metadata.totalParticipants":
-        (programFound.value.metadata?.totalParticipants || 0) + 1,
-    });
+    console.log("✅ Resultado:", result);
 
-    console.log("✅ Miembro agregado al programa");
-
-    // 2. Actualizar documento del business con el programId
-    const businessRef = doc(
-      db,
-      "businesses",
-      userStore.currentBusiness.businessId
-    );
-    await updateDoc(businessRef, {
-      programs: arrayUnion(programFound.value.id),
-    });
-
-    console.log("✅ ProgramId agregado a businesses/{businessId}.programs");
-
-    success.value = `¡Te has unido exitosamente a "${programFound.value.name}"!`;
+    success.value = `¡Te has unido exitosamente a "${result.programName}"!`;
 
     // Esperar 1.5 segundos para que el usuario vea el mensaje de éxito
     setTimeout(() => {
       emit("joined", {
-        programId: programFound.value.id,
-        programName: programFound.value.name,
+        programId: result.programId,
+        programName: result.programName,
       });
     }, 1500);
   } catch (err) {
-    console.error("❌ Error al unirse al programa:", err);
+    console.error("❌ Error al unirse:", err);
     error.value =
       err.message || "Error al unirse al programa. Intenta nuevamente.";
-  } finally {
-    loading.value = false;
   }
 }
 </script>

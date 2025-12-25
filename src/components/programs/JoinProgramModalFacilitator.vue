@@ -224,26 +224,15 @@
 
 <script setup>
 import { ref } from "vue";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
-import { db } from "@/firebaseInit";
-import { useAuthStore } from "@/stores/authStore";
+import { usePrograms } from "@/composables/usePrograms";
 import { useUserStore } from "@/stores/useUserStore";
 
 const emit = defineEmits(["close", "joined"]);
 
-const authStore = useAuthStore();
+const { joinAsFacilitator, loading, error: storeError } = usePrograms();
 const userStore = useUserStore();
 
 const code = ref("");
-const loading = ref(false);
 const validating = ref(false);
 const error = ref(null);
 const success = ref(null);
@@ -267,9 +256,15 @@ async function validateCode() {
   try {
     const codeUpper = code.value.trim().toUpperCase();
 
-    console.log("🔍 Buscando programa con código de facilitador:", codeUpper);
+    console.log("🔍 Validando código de facilitador:", codeUpper);
 
-    // Buscar programa por codTeam
+    // Importar firebase directamente para validación
+    const { collection, query, where, getDocs } = await import(
+      "firebase/firestore"
+    );
+    const { db } = await import("@/firebaseInit");
+
+    // Buscar programa por codTeam (código para facilitadores)
     const programsRef = collection(db, "programs");
     const q = query(
       programsRef,
@@ -281,7 +276,7 @@ async function validateCode() {
 
     if (querySnapshot.empty) {
       error.value =
-        "Código no válido o programa inactivo. Verifica el código e intenta nuevamente.";
+        "Código de facilitador no válido o programa inactivo. Verifica el código e intenta nuevamente.";
       return;
     }
 
@@ -289,18 +284,6 @@ async function validateCode() {
     const programData = { id: programDoc.id, ...programDoc.data() };
 
     console.log("✅ Programa encontrado:", programData);
-
-    // Verificar si ya está inscrito
-    const currentUserId = authStore.user?.uid;
-
-    if (
-      programData.members?.some(
-        (m) => m.userId === currentUserId && m.role === "facilitator"
-      )
-    ) {
-      error.value = "Ya estás inscrito como facilitador en este programa.";
-      return;
-    }
 
     programFound.value = programData;
   } catch (err) {
@@ -315,51 +298,30 @@ async function validateCode() {
 async function handleSubmit() {
   if (!programFound.value) return;
 
-  // Validar autenticación
-  if (!authStore.user?.uid) {
-    error.value = "Debes iniciar sesión para unirte a un programa.";
-    return;
-  }
-
-  loading.value = true;
   error.value = null;
   success.value = null;
 
   try {
-    const memberData = {
-      userId: authStore.user.uid,
-      userEmail: authStore.user.email,
-      userName: userStore.userProfile?.nombre || "Facilitador",
-      joinedAt: new Date(),
-      role: "facilitator", // rol de facilitador
-      status: "active",
-    };
+    console.log("📝 Uniéndose como facilitador...");
 
-    console.log("📝 Agregando facilitador al programa:", memberData);
+    // Llamar al composable que usa el store
+    const result = await joinAsFacilitator(code.value);
 
-    // Actualizar documento del programa
-    const programRef = doc(db, "programs", programFound.value.id);
-    await updateDoc(programRef, {
-      members: arrayUnion(memberData),
-    });
+    console.log("✅ Resultado:", result);
 
-    console.log("✅ Te has unido como facilitador exitosamente!");
-
-    success.value = `¡Te has unido como facilitador a "${programFound.value.name}"!`;
+    success.value = `¡Te has unido como facilitador a "${result.programName}"!`;
 
     // Esperar 1.5 segundos para que el usuario vea el mensaje de éxito
     setTimeout(() => {
       emit("joined", {
-        programId: programFound.value.id,
-        programName: programFound.value.name,
+        programId: result.programId,
+        programName: result.programName,
       });
     }, 1500);
   } catch (err) {
-    console.error("❌ Error al unirse al programa:", err);
+    console.error("❌ Error al unirse:", err);
     error.value =
-      err.message || "Error al unirse al programa. Intenta nuevamente.";
-  } finally {
-    loading.value = false;
+      err.message || "Error al unirse como facilitador. Intenta nuevamente.";
   }
 }
 </script>

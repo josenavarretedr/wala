@@ -62,7 +62,7 @@
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <!-- Quick Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div class="flex items-center justify-between">
             <div>
@@ -146,20 +146,62 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Descripción -->
-      <div
+      <!-- <div
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8"
       >
         <h2 class="text-lg font-semibold text-gray-900 mb-4">
           Descripción del Programa
         </h2>
         <p class="text-gray-600 leading-relaxed">{{ program.description }}</p>
-      </div>
+      </div> -->
 
       <!-- Acciones Rápidas -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <button
+          @click="goToActivities"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all text-left group"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <div
+              class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center"
+            >
+              <svg
+                class="w-6 h-6 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <svg
+              class="w-5 h-5 text-gray-400 group-hover:text-orange-600 transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Actividades</h3>
+          <p class="text-sm text-gray-500">
+            Gestionar sesiones, monitoreos y evaluaciones
+          </p>
+        </button>
+
         <button
           @click="goToParticipants"
           class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all text-left group"
@@ -329,6 +371,10 @@ async function loadProgram() {
 
 function goBack() {
   router.push("/programs");
+}
+
+function goToActivities() {
+  router.push(`/programs/${route.params.programId}/activities`);
 }
 
 function goToParticipants() {
