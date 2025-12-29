@@ -198,11 +198,47 @@ const routes = [
       },
       {
         path: 'programs/:programId',
-        name: 'ProgramDetail',
-        component: () => import('@/views/business/programs/ProgramDetail.vue'),
+        name: 'ProgramDashboard',
+        component: () => import('@/views/business/programs/ProgramDashboard.vue'),
         meta: {
           requiresAuth: true,
           title: 'Detalle de Programa'
+        }
+      },
+      {
+        path: 'programs/:programId/info',
+        name: 'program-info',
+        component: () => import('@/views/business/programs/ProgramInfo.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Información del Programa'
+        }
+      },
+      {
+        path: 'programs/:programId/session-participation/:activityId',
+        name: 'session-participation',
+        component: () => import('@/views/business/programs/SessionParticipation.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Sesión'
+        }
+      },
+      {
+        path: 'programs/:programId/monitoring-participation/:activityId',
+        name: 'monitoring-participation',
+        component: () => import('@/views/business/programs/MonitoringParticipation.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Monitoreo'
+        }
+      },
+      {
+        path: 'programs/:programId/event-participation/:activityId',
+        name: 'event-participation',
+        component: () => import('@/views/business/programs/EventParticipation.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Evento'
         }
       },
 
@@ -366,6 +402,14 @@ const routes = [
         component: () => import('@/views/facilitator/ActivityDetail.vue'),
         meta: {
           title: 'Detalle de Actividad'
+        }
+      },
+      {
+        path: ':programId/activities/:activityId/participations/:participationId',
+        name: 'ParticipationDetail',
+        component: () => import('@/views/facilitator/ParticipationDetail.vue'),
+        meta: {
+          title: 'Detalle de Monitoreo'
         }
       },
       {

@@ -383,17 +383,16 @@ export const useActivitiesStore = defineStore('activities', () => {
     try {
       const participationsRef = collection(db, 'programs', programId, 'participations')
 
-      // Calcular scores por categoría
+      // Calcular scores por categoría (sumatoria de las 3 preguntas)
       const categoryScores = {}
       Object.keys(monitoringData.responses).forEach(category => {
         const responses = monitoringData.responses[category]
         const total = Object.values(responses).reduce((sum, val) => sum + val, 0)
-        const count = Object.keys(responses).length
-        categoryScores[category] = count > 0 ? (total / count) : 0
+        categoryScores[category] = total // Sumatoria directa, no promedio
       })
 
-      // Calcular score general
-      const overallScore = Object.values(categoryScores).reduce((sum, val) => sum + val, 0) / Object.keys(categoryScores).length
+      // Calcular score general (sumatoria de todas las categorías)
+      const overallScore = Object.values(categoryScores).reduce((sum, val) => sum + val, 0)
 
       const newParticipation = {
         activityId,
@@ -407,8 +406,9 @@ export const useActivitiesStore = defineStore('activities', () => {
           monitoringDate: monitoringData.monitoringDate,
           facilitatorId: authStore.user.uid,
           responses: monitoringData.responses,
+          categoryComments: monitoringData.categoryComments || {},
           categoryScores,
-          overallScore: Math.round(overallScore * 100) / 100,
+          overallScore,
           evidenceUrls: monitoringData.evidenceUrls || [],
           additionalComments: monitoringData.additionalComments || ''
         },

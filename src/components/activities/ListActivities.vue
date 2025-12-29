@@ -128,7 +128,15 @@ function getParticipantStatus(activity) {
 
   // Para monitoreos
   if (activity.type === "monitoring") {
-    return participation.overallScore ? "completed" : "pending";
+    // Verificar si existe monitoringData y overallScore
+    if (participation.monitoringData?.overallScore !== undefined) {
+      return "completed";
+    }
+    // Fallback para estructura antigua
+    if (participation.overallScore !== undefined) {
+      return "completed";
+    }
+    return "pending";
   }
 
   return "pending";

@@ -1,8 +1,50 @@
 <template>
   <div
     @click="handleClick"
-    class="bg-white rounded-xl shadow-sm border border-orange-100 p-4 transition-all duration-200 hover:shadow-md hover:border-orange-200 cursor-pointer"
+    class="bg-white rounded-xl shadow-sm border border-orange-100 p-4 transition-all duration-200 hover:shadow-md hover:border-orange-200 cursor-pointer relative"
   >
+    <!-- Badge de Estado Grande (solo para participantes) -->
+    <div
+      v-if="userRole === 'participant'"
+      class="absolute -top-2 -right-2 z-10"
+    >
+      <div
+        :class="[
+          'w-10 h-10 rounded-full border-4 border-white shadow-md flex items-center justify-center',
+          participantStatus === 'completed' ? 'bg-green-500' : 'bg-amber-500',
+        ]"
+      >
+        <svg
+          v-if="participantStatus === 'completed'"
+          class="w-5 h-5 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="3"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+        <svg
+          v-else
+          class="w-5 h-5 text-white"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="3"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="flex items-start justify-between gap-3 mb-3">
       <div class="flex items-center gap-2 flex-wrap flex-1">
@@ -32,19 +74,6 @@
           class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200"
         >
           Obligatoria
-        </div>
-
-        <!-- Badge Estado Participante -->
-        <div
-          v-if="userRole === 'participant' && activity.isRequired"
-          :class="[
-            'inline-flex items-center px-2 py-1 rounded-md text-xs font-medium',
-            participantStatus === 'attended'
-              ? 'bg-green-50 text-green-700 border border-green-200'
-              : 'bg-yellow-50 text-yellow-700 border border-yellow-200',
-          ]"
-        >
-          {{ participantStatus === "attended" ? "Asistió" : "Pendiente" }}
         </div>
       </div>
     </div>

@@ -283,8 +283,14 @@ async function handleMonitoringSubmitted() {
 }
 
 function handleViewMonitoringDetails(monitoring) {
-  console.log("Ver detalles de monitoreo:", monitoring);
-  // TODO: Implementar modal o navegación a vista de detalles
+  router.push({
+    name: "ParticipationDetail",
+    params: {
+      programId: programId.value,
+      activityId: activityId.value,
+      participationId: monitoring.id,
+    },
+  });
 }
 
 function handleDeleteMonitoring(monitoring) {

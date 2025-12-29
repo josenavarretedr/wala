@@ -106,6 +106,73 @@
           </div>
         </div>
 
+        <!-- Rating Legend -->
+        <div
+          class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-5 border border-purple-200"
+        >
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="text-sm font-semibold text-gray-900 mb-3">
+                Escala de Evaluación
+              </h4>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-sm text-gray-700"
+                  >
+                    0
+                  </div>
+                  <span class="text-xs text-gray-600">Sin conocimiento</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-sm text-gray-700"
+                  >
+                    1
+                  </div>
+                  <span class="text-xs text-gray-600">Conocimiento mínimo</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-sm text-gray-700"
+                  >
+                    2
+                  </div>
+                  <span class="text-xs text-gray-600">Buen conocimiento</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div
+                    class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center font-bold text-sm text-gray-700"
+                  >
+                    3
+                  </div>
+                  <span class="text-xs text-gray-600">Aplicación completa</span>
+                </div>
+              </div>
+            </div>
+            <button
+              @click="prefillForm"
+              class="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium flex items-center gap-2"
+              title="Rellenar formulario para pruebas"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
+              </svg>
+              Prefill
+            </button>
+          </div>
+        </div>
+
         <!-- Categorías y Preguntas -->
         <div
           v-for="category in categories"
@@ -138,9 +205,10 @@
               <!-- Rating Scale -->
               <div class="flex items-center gap-2">
                 <button
-                  v-for="rating in [1, 2, 3, 4, 5]"
+                  v-for="rating in [0, 1, 2, 3]"
                   :key="rating"
                   @click="setRating(category.key, index, rating)"
+                  :title="getRatingTooltip(rating)"
                   :class="[
                     'w-12 h-12 rounded-lg font-semibold text-sm transition-all',
                     getRating(category.key, index) === rating
@@ -152,6 +220,19 @@
                 </button>
               </div>
             </div>
+          </div>
+
+          <!-- Category Comments -->
+          <div v-if="hasCategoryResponses(category.key)" class="px-6 pb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Comentarios sobre {{ category.label }} (opcional)
+            </label>
+            <textarea
+              v-model="form.categoryComments[category.key]"
+              rows="2"
+              :placeholder="`Observaciones específicas sobre ${category.label}...`"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm"
+            ></textarea>
           </div>
         </div>
 
@@ -231,7 +312,7 @@
             >
               <p class="text-xs text-gray-600 mb-1">{{ category.label }}</p>
               <p class="text-2xl font-bold text-purple-600">
-                {{ calculateCategoryScore(category.key).toFixed(1) }}
+                {{ calculateCategoryScore(category.key) }}
               </p>
             </div>
           </div>
@@ -239,7 +320,7 @@
           <div class="bg-white rounded-lg p-4 text-center">
             <p class="text-sm text-gray-600 mb-1">Score General</p>
             <p class="text-4xl font-bold text-purple-600">
-              {{ calculateOverallScore().toFixed(1) }}
+              {{ calculateOverallScore() }}
             </p>
           </div>
         </div>
@@ -256,26 +337,17 @@
           Cancelar
         </button>
 
-        <div class="flex items-center gap-3">
-          <button
-            @click="handleSubmit(true)"
-            :disabled="submitting"
-            class="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Guardar Borrador
-          </button>
-          <button
-            @click="handleSubmit(false)"
-            :disabled="submitting"
-            class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            <div
-              v-if="submitting"
-              class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
-            ></div>
-            <span>{{ submitting ? "Enviando..." : "Enviar Monitoreo" }}</span>
-          </button>
-        </div>
+        <button
+          @click="handleSubmit()"
+          :disabled="submitting"
+          class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <div
+            v-if="submitting"
+            class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
+          ></div>
+          <span>{{ submitting ? "Enviando..." : "Enviar Monitoreo" }}</span>
+        </button>
       </div>
     </div>
   </div>
@@ -309,16 +381,16 @@ const participants = ref([]);
 
 const categories = [
   {
-    key: "negocio",
-    label: "Negocio",
-    description: "Evaluación general del negocio",
+    key: "negocioFamilia",
+    label: "Negocio y Familia",
+    description: "Separación entre negocio y finanzas familiares",
     bgClass: "bg-blue-50",
     textClass: "text-blue-900",
     descClass: "text-blue-700",
     questions: [
-      "¿El negocio tiene claridad sobre su propuesta de valor?",
-      "¿Se identifica claramente el público objetivo?",
-      "¿El modelo de negocio está bien definido?",
+      "¿El participante se asigna un salario personal del negocio?",
+      "¿Los familiares que trabajan en el negocio reciben un salario definido?",
+      "¿Evita retirar dinero del negocio para gastos personales sin registro?",
     ],
   },
   {
@@ -329,9 +401,9 @@ const categories = [
     textClass: "text-green-900",
     descClass: "text-green-700",
     questions: [
-      "¿Utiliza canales digitales para promocionar el negocio?",
-      "¿Tiene estrategias activas de captación de clientes?",
-      "¿Mide la efectividad de sus acciones de marketing?",
+      "¿Identifica y comprende las necesidades de sus clientes y las oportunidades de mercado?",
+      "¿Implementa acciones para promocionar el negocio y sus productos?",
+      "¿Establece precios de forma competitiva y estratégica basándose en costos y márgenes?",
     ],
   },
   {
@@ -368,9 +440,9 @@ const categories = [
     textClass: "text-red-900",
     descClass: "text-red-700",
     questions: [
-      "¿Conoce el costo de cada producto o servicio?",
-      "¿Calcula sus márgenes de utilidad?",
-      "¿Ajusta precios basándose en análisis de costos?",
+      "¿Calcula y controla los costos de materiales directos utilizados en la producción?",
+      "¿Determina los costos de mano de obra directa involucrada en sus productos o servicios?",
+      "¿Identifica y asigna los costos indirectos del negocio?",
     ],
   },
   {
@@ -381,22 +453,22 @@ const categories = [
     textClass: "text-indigo-900",
     descClass: "text-indigo-700",
     questions: [
-      "¿Mantiene registros ordenados de ventas?",
-      "¿Guarda comprobantes y facturas de manera organizada?",
-      "¿Utiliza algún sistema digital para sus registros?",
+      "¿Mantiene libros de registro actualizados y comprensibles?",
+      "¿Lleva un control de las cuentas de sus clientes?",
+      "¿Calcula las ganancias y pérdidas del negocio de manera regular?",
     ],
   },
   {
     key: "planificacion",
     label: "Planificación",
-    description: "Metas y objetivos",
+    description: "Proyección y estrategia",
     bgClass: "bg-pink-50",
     textClass: "text-pink-900",
     descClass: "text-pink-700",
     questions: [
-      "¿Tiene metas claras para su negocio?",
-      "¿Planifica acciones para alcanzar sus objetivos?",
-      "¿Revisa periódicamente el avance de sus planes?",
+      "¿Realiza proyecciones de ventas y costos futuros?",
+      "¿Planifica el flujo de efectivo del negocio?",
+      "¿Da seguimiento a su plan de negocios y lo ajusta cuando es necesario?",
     ],
   },
 ];
@@ -409,13 +481,22 @@ const form = reactive({
   modality: "",
   monitoringDate: "",
   responses: {
-    negocio: {},
+    negocioFamilia: {},
     marketing: {},
     controlStock: {},
     compras: {},
     costeo: {},
     mantenimientoRegistros: {},
     planificacion: {},
+  },
+  categoryComments: {
+    negocioFamilia: "",
+    marketing: "",
+    controlStock: "",
+    compras: "",
+    costeo: "",
+    mantenimientoRegistros: "",
+    planificacion: "",
   },
   evidenceFiles: [],
   additionalComments: "",
@@ -428,7 +509,54 @@ const hasAnyRating = computed(() => {
 });
 
 function getRating(categoryKey, questionIndex) {
-  return form.responses[categoryKey]?.[questionIndex] || null;
+  return form.responses[categoryKey]?.[questionIndex] !== undefined
+    ? form.responses[categoryKey][questionIndex]
+    : null;
+}
+
+function hasCategoryResponses(categoryKey) {
+  const responses = form.responses[categoryKey];
+  return responses && Object.keys(responses).length > 0;
+}
+
+function getRatingTooltip(rating) {
+  const tooltips = {
+    0: "Sin conocimiento",
+    1: "Conocimiento mínimo y aplicación mínima del conocimiento",
+    2: "Mucho conocimiento y cierta aplicación del conocimiento",
+    3: "Aplicación del conocimiento",
+  };
+  return tooltips[rating];
+}
+
+function prefillForm() {
+  // Seleccionar primer participante si hay
+  if (participants.value.length > 0) {
+    form.userId = participants.value[0].userId;
+    handleParticipantChange();
+  }
+
+  // Llenar modalidad y fecha
+  form.modality = "presencial";
+  form.monitoringDate = new Date().toISOString().split("T")[0];
+
+  // Llenar respuestas aleatorias para todas las categorías
+  categories.forEach((category) => {
+    category.questions.forEach((_, index) => {
+      const randomRating = Math.floor(Math.random() * 4); // 0-3
+      setRating(category.key, index, randomRating);
+    });
+    // Agregar comentario de ejemplo
+    form.categoryComments[
+      category.key
+    ] = `Comentario de prueba para ${category.label}`;
+  });
+
+  // Agregar comentarios adicionales
+  form.additionalComments =
+    "Este es un comentario adicional de prueba para verificar el funcionamiento del formulario.";
+
+  console.log("✅ Formulario prellenado para pruebas");
 }
 
 function setRating(categoryKey, questionIndex, rating) {
@@ -438,24 +566,23 @@ function setRating(categoryKey, questionIndex, rating) {
   form.responses[categoryKey][questionIndex] = rating;
 }
 
-function calculateCategoryScore(categoryKey) {
+const calculateCategoryScore = (categoryKey) => {
   const responses = form.responses[categoryKey];
   if (!responses || Object.keys(responses).length === 0) return 0;
 
   const values = Object.values(responses);
+  // Sumatoria directa de las 3 preguntas (rango 0-9 por categoría)
   const sum = values.reduce((acc, val) => acc + val, 0);
-  return sum / values.length;
-}
+  return sum;
+};
 
-function calculateOverallScore() {
-  const scores = categories.map((cat) => calculateCategoryScore(cat.key));
-  const validScores = scores.filter((s) => s > 0);
-
-  if (validScores.length === 0) return 0;
-
-  const sum = validScores.reduce((acc, val) => acc + val, 0);
-  return sum / validScores.length;
-}
+const calculateOverallScore = () => {
+  // Sumatoria total de todas las categorías (máximo 7 × 9 = 63)
+  const sum = categories.reduce((total, category) => {
+    return total + calculateCategoryScore(category.key);
+  }, 0);
+  return sum;
+};
 
 function handleParticipantChange() {
   const participant = participants.value.find((p) => p.userId === form.userId);
@@ -507,7 +634,7 @@ function validateForm() {
   return Object.keys(errors.value).length === 0;
 }
 
-async function handleSubmit(isDraft = false) {
+async function handleSubmit() {
   if (!validateForm()) {
     return;
   }
@@ -527,6 +654,7 @@ async function handleSubmit(isDraft = false) {
       modality: form.modality,
       monitoringDate: Timestamp.fromDate(new Date(form.monitoringDate)),
       responses: form.responses,
+      categoryComments: form.categoryComments,
       evidenceUrls,
       additionalComments: form.additionalComments,
     };
