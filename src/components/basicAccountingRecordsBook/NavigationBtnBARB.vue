@@ -25,18 +25,19 @@
       <button
         v-if="flow.isLastStep"
         @click="finalizarRegistro"
-        :disabled="!isNextButtonEnabled"
+        :disabled="!isNextButtonEnabled || isFinalizando"
         :class="[
           'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
-          flow.transactionLoading || !isNextButtonEnabled
+          flow.transactionLoading || !isNextButtonEnabled || isFinalizando
             ? 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 shadow-gray-400/15 cursor-not-allowed opacity-70'
             : 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-green-500/25 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/35 hover:scale-[1.02] active:scale-[0.98] opacity-100 cursor-pointer',
         ]"
       >
-        <Check class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-        <span class="font-bold tracking-wide text-sm sm:text-base"
-          >Finalizar</span
-        >
+        <SpinnerIcon v-if="isFinalizando" size="md" class="flex-shrink-0" />
+        <Check v-else class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+        <span class="font-bold tracking-wide text-sm sm:text-base">
+          {{ isFinalizando ? "Procesando..." : "Finalizar" }}
+        </span>
       </button>
 
       <button
@@ -85,6 +86,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast de notificación -->
+  <ToastNotification
+    :show="showToast"
+    :message="toastMessage"
+    type="success"
+    @update:show="showToast = $event"
+  />
 </template>
 
 <script setup>
@@ -93,12 +102,19 @@ import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowSto
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
-import { computed } from "vue";
+import { computed, ref } from "vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import ToastNotification from "@/components/ui/ToastNotification.vue";
 
 const flow = useTransactionFlowStore();
 const businessStore = useBusinessStore();
 const transactionStore = useTransactionStore();
 const router = useRouter();
+
+// Estados para el loading y toast
+const isFinalizando = ref(false);
+const showToast = ref(false);
+const toastMessage = ref("");
 
 // Función para validar si el botón "Siguiente" debe estar habilitado
 const isNextButtonEnabled = computed(() => {
@@ -233,6 +249,7 @@ const getValidationMessage = () => {
 
 const finalizarRegistro = async () => {
   // Lógica para finalizar el registro de la transacción
+  isFinalizando.value = true;
   flow.transactionLoading = true;
 
   try {
@@ -250,22 +267,53 @@ const finalizarRegistro = async () => {
 
     console.log("✅ Transacción guardada exitosamente");
 
-    let businessId = businessStore.getBusinessId;
+    const businessId = businessStore.getBusinessId;
 
-    // Resetear el flujo y el store
-    flow.resetFlow();
-    transactionStore.resetTransactionToAdd();
-
+    // NO resetear loading aquí, mantener el botón deshabilitado hasta navegar
     flow.transactionLoading = false;
+    // isFinalizando.value sigue en true para mantener botón deshabilitado
 
-    console.log("🏠 Redirigiendo al dashboard...");
-    router.push({
-      name: "BusinessDashboard",
-      params: { businessId },
-    });
+    // Primer toast: Éxito
+    toastMessage.value = "Se ha registrado la transacción correctamente";
+    showToast.value = true;
+
+    // Esperar 2.5 segundos para que se vea el primer toast
+    setTimeout(() => {
+      // Ocultar el primer toast
+      showToast.value = false;
+
+      // Esperar 300ms antes de mostrar el segundo toast
+      setTimeout(() => {
+        // Iniciar cuenta regresiva desde 3
+        let countdown = 3;
+        toastMessage.value = `Será redirigido al dashboard en ${countdown}`;
+        showToast.value = true;
+
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          if (countdown > 0) {
+            toastMessage.value = `Será redirigido al dashboard en ${countdown}`;
+          } else {
+            clearInterval(countdownInterval);
+            showToast.value = false;
+
+            // Resetear y navegar
+            flow.resetFlow();
+            transactionStore.resetTransactionToAdd();
+            isFinalizando.value = false;
+
+            router.replace({
+              name: "BusinessDashboard",
+              params: { businessId },
+            });
+          }
+        }, 850);
+      }, 100);
+    }, 1500); //
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);
     flow.transactionLoading = false;
+    isFinalizando.value = false;
     throw error;
   }
 };

@@ -15,6 +15,7 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
 
     ],
     accountBalanceLoading: false,
+    stepLoading: false,
     accountBalanceError: null,
     // Estado para almacenar los datos de cada paso
     stepsData: {
@@ -101,6 +102,10 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
       // Actualizar los datos del paso correspondiente
       Object.assign(this.stepsData, data);
       console.log(`📝 Datos del paso "${stepLabel}" actualizados:`, this.stepsData);
+    },
+    // Actualizar estado de loading del step actual
+    setStepLoading(loading) {
+      this.stepLoading = loading;
     },
     // defineDynamicSteps(accountType) {
     //   // Limpia pasos previos dinámicos

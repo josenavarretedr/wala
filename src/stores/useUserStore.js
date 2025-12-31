@@ -56,6 +56,20 @@ export const useUserStore = defineStore('user', {
     // Verificar si tiene al menos un negocio
     hasBusinesses: (state) => {
       return state.userBusinesses.length > 0;
+    },
+
+    // Obtener organizationName del programa más reciente del negocio actual
+    currentBusinessProgramName: (state) => {
+      // Si no hay negocio actual, retornar fallback
+      if (!state.currentBusiness?.programs || state.currentBusiness.programs.length === 0) {
+        return 'Asesoria Wala';
+      }
+
+      // Obtener el programa más reciente (último del array)
+      const programs = state.currentBusiness.programs;
+      const latestProgram = programs[programs.length - 1];
+
+      return latestProgram?.organizationName.toUpperCase() || 'Asesoria Wala';
     }
   },
 
@@ -200,9 +214,39 @@ export const useUserStore = defineStore('user', {
             console.log(`📊 businessDoc.exists(): ${businessDoc.exists()}`)
 
             if (businessDoc.exists()) {
-              validBusinesses.push(userBusiness)
+              const businessData = businessDoc.data()
+              const programIds = businessData.programs || []
+
+              // ✅ NUEVO: Cargar datos completos de los programas
+              const programsData = []
+              for (const programId of programIds) {
+                try {
+                  const programRef = doc(db, 'programs', programId)
+                  const programSnap = await getDoc(programRef)
+
+                  if (programSnap.exists()) {
+                    const programData = programSnap.data()
+                    programsData.push({
+                      id: programSnap.id,
+                      organizationName: programData.organizationName,
+                      name: programData.name,
+                      isActive: programData.isActive
+                    })
+                  }
+                } catch (programError) {
+                  console.error(`❌ Error cargando programa ${programId}:`, programError)
+                }
+              }
+
+              // Agregar negocio con programas completos
+              validBusinesses.push({
+                ...userBusiness,
+                programs: programsData // Array de objetos con datos del programa
+              })
+
               console.log(`✅ Negocio válido encontrado:`, businessDoc.data())
               console.log(`✅ Negocio válido: ${userBusiness.businessName} (Document ID: ${userBusiness.id}, Business ID: ${userBusiness.businessId})`)
+              console.log(`📚 Programas encontrados: ${programsData.length}`)
             } else {
               invalidBusinesses.push(userBusiness)
               console.log(`❌ Negocio NO encontrado en colección 'businesses': ${userBusiness.businessId}`)

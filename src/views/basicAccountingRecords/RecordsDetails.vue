@@ -115,28 +115,42 @@ const hasClosureToday = computed(() => {
 });
 
 const isDisabled = computed(() => {
-  // Deshabilitar si es apertura o cierre
-  if (transactionData.value) {
-    if (transactionData.value.type === "opening") {
-      return true;
-    }
-    if (transactionData.value.type === "closure") {
-      return false;
-    }
-    // Los payments pueden eliminarse siempre (no están restringidos por cierre)
-    if (transactionData.value.type === "payment") {
-      return false;
-    }
+  if (!transactionData.value) return true;
+
+  // Opening SIEMPRE bloqueado (inmutable)
+  if (transactionData.value.type === "opening") {
+    return true;
   }
-  // Deshabilitar si ya hay cierre hoy (para otros tipos de transacción)
+
+  // Closure solo se puede eliminar si es del día actual
+  if (transactionData.value.type === "closure") {
+    return !transactionStore.isTransactionFromToday(transactionData.value);
+  }
+
+  // Payments pueden eliminarse siempre (no están restringidos por cierre)
+  if (transactionData.value.type === "payment") {
+    return false;
+  }
+
+  // Otras transacciones: deshabilitar si ya hay cierre hoy
   return hasClosureToday.value;
 });
 
 const deleteButtonLabel = computed(() => {
-  if (transactionData.value?.type === "payment") {
-    return "Eliminar Pago";
+  if (!transactionData.value) return "Eliminar";
+
+  switch (transactionData.value.type) {
+    case "payment":
+      return "Eliminar Pago";
+    case "opening":
+      return "Apertura Inmutable";
+    case "closure":
+      return transactionStore.isTransactionFromToday(transactionData.value)
+        ? "Eliminar Cierre"
+        : "Cierre Protegido";
+    default:
+      return "Eliminar";
   }
-  return "Eliminar";
 });
 
 const route = useRoute();

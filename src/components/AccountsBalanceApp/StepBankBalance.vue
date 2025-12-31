@@ -391,6 +391,10 @@ const setupBalanceStore = async () => {
 // Inicialización
 onMounted(async () => {
   try {
+    // Iniciar el loading y sincronizar con el store
+    isLoading.value = true;
+    flowStore.setStepLoading(true);
+
     // Cargar transacciones del día si no están cargadas
     dailySummary.value = await getTodayDailySummary();
 
@@ -408,6 +412,7 @@ onMounted(async () => {
     console.error("Error en inicialización de StepBankBalance:", error);
   } finally {
     isLoading.value = false;
+    flowStore.setStepLoading(false);
   }
 });
 </script>

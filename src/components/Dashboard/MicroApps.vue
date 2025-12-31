@@ -31,7 +31,7 @@
               'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
             item.color === 'teal' &&
               'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
-            !item.available && 'opacity-60 hover:shadow-sm',
+            !getValue(item.available) && 'opacity-60 hover:shadow-sm',
           ]"
           @click="handleAppClick(item)"
         >
@@ -42,8 +42,10 @@
             :class="[
               'mb-1 transition-all duration-200',
               'w-6 h-6 sm:w-8 sm:h-8',
-              item.available ? getIconColor(item.color) : 'text-gray-400',
-              item.available && getIconHoverColor(item.color),
+              getValue(item.available)
+                ? getIconColor(item.color)
+                : 'text-gray-400',
+              getValue(item.available) && getIconHoverColor(item.color),
             ]"
           />
           <!-- Icono SVG para 'receipt' -->
@@ -52,8 +54,10 @@
             :class="[
               'mb-1 transition-all duration-200',
               'w-6 h-6 sm:w-8 sm:h-8',
-              item.available ? getIconColor(item.color) : 'text-gray-400',
-              item.available && getIconHoverColor(item.color),
+              getValue(item.available)
+                ? getIconColor(item.color)
+                : 'text-gray-400',
+              getValue(item.available) && getIconHoverColor(item.color),
             ]"
             fill="none"
             stroke="currentColor"
@@ -76,11 +80,13 @@
           <div
             :class="[
               'text-center px-1',
-              item.available ? 'text-gray-600 font-medium' : 'text-gray-400',
+              getValue(item.available)
+                ? 'text-gray-600 font-medium'
+                : 'text-gray-400',
               'text-xs',
             ]"
           >
-            {{ item.name }}
+            {{ getValue(item.name) }}
             <!-- <span
               v-if="
                 item.badge && typeof item.badge === 'function'
@@ -92,7 +98,10 @@
               ●
             </span> -->
           </div>
-          <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
+          <div
+            v-if="!getValue(item.available)"
+            class="text-xs text-gray-400 mt-1"
+          >
             Próximamente
           </div>
         </div>
@@ -132,7 +141,7 @@
             'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
           item.color === 'teal' &&
             'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
-          !item.available && 'opacity-60 hover:shadow-sm',
+          !getValue(item.available) && 'opacity-60 hover:shadow-sm',
         ]"
         @click="handleAppClick(item)"
       >
@@ -142,8 +151,10 @@
           :is="item.icon"
           :class="[
             'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-            item.available ? getIconColor(item.color) : 'text-gray-400',
-            item.available && getIconHoverColor(item.color),
+            getValue(item.available)
+              ? getIconColor(item.color)
+              : 'text-gray-400',
+            getValue(item.available) && getIconHoverColor(item.color),
           ]"
         />
         <!-- Icono SVG para 'receipt' -->
@@ -151,8 +162,10 @@
           v-else-if="item.icon === 'receipt'"
           :class="[
             'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-            item.available ? getIconColor(item.color) : 'text-gray-400',
-            item.available && getIconHoverColor(item.color),
+            getValue(item.available)
+              ? getIconColor(item.color)
+              : 'text-gray-400',
+            getValue(item.available) && getIconHoverColor(item.color),
           ]"
           fill="none"
           stroke="currentColor"
@@ -175,11 +188,13 @@
         <div
           :class="[
             'text-center px-1',
-            item.available ? 'text-gray-600 font-medium' : 'text-gray-400',
+            getValue(item.available)
+              ? 'text-gray-600 font-medium'
+              : 'text-gray-400',
             'text-sm xl:text-base',
           ]"
         >
-          {{ item.name }}
+          {{ getValue(item.name) }}
           <!-- <span
             v-if="
               item.badge && typeof item.badge === 'function'
@@ -191,7 +206,10 @@
             ●
           </span> -->
         </div>
-        <div v-if="!item.available" class="text-xs text-gray-400 mt-1">
+        <div
+          v-if="!getValue(item.available)"
+          class="text-xs text-gray-400 mt-1"
+        >
           Próximamente
         </div>
       </div>
@@ -359,6 +377,7 @@ import {
   Community,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
+import { useUserStore } from "@/stores/useUserStore";
 
 // Props
 const props = defineProps({
@@ -371,8 +390,9 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(["navigateToApp"]);
 
-// Store de programas
+// Stores
 const programStore = useProgramStore();
+const userStore = useUserStore();
 
 // Estado del modal
 const showModal = ref(false);
@@ -435,13 +455,23 @@ const allMicroApps = ref([
   },
   {
     id: 7,
-    name: "Juntos",
-    route: "/programs",
-    available: true,
+    name: computed(() => userStore.currentBusinessProgramName),
+    route: computed(() => {
+      // Obtener el programa más reciente
+      const programs = userStore.currentBusiness?.programs || [];
+      if (programs.length > 0) {
+        const latestProgram = programs[programs.length - 1];
+        return `/programs/${latestProgram.id}`;
+      }
+      return "/programs"; // Fallback a ProgramsHub si no hay programas
+    }),
+    available: computed(() => {
+      // Solo disponible si hay al menos un programa
+      return userStore.currentBusiness?.programs?.length > 0;
+    }),
     icon: Community,
     isComponent: true,
     color: "teal",
-    // badge: computed(() => (programStore.hasActiveProgram ? "●" : null)),
   },
 ]);
 
@@ -475,6 +505,11 @@ const getIconHoverColor = (color) => {
   return colorMap[color] || "group-hover:text-gray-700";
 };
 
+// Función helper para evaluar propiedades que pueden ser computed
+const getValue = (value) => {
+  return typeof value === "function" ? value.value : value;
+};
+
 // Computed properties
 const visibleApps = computed(() => {
   // Mostrar 6 apps principales (ya que el widget ocupa 2 espacios en grid de 8)
@@ -482,21 +517,32 @@ const visibleApps = computed(() => {
 });
 
 const availableApps = computed(() => {
-  return allMicroApps.value.filter((app) => app.available);
+  return allMicroApps.value.filter((app) => getValue(app.available));
 });
 
 const upcomingApps = computed(() => {
-  return allMicroApps.value.filter((app) => !app.available);
+  return allMicroApps.value.filter((app) => !getValue(app.available));
 });
 
 // Funciones
 const handleAppClick = (app) => {
-  if (app.available) {
-    emit("navigateToApp", app);
+  const isAvailable = getValue(app.available);
+  const appName = getValue(app.name);
+  const appRoute = getValue(app.route);
+
+  if (isAvailable) {
+    // Crear objeto con valores evaluados para emit
+    const appData = {
+      ...app,
+      name: appName,
+      route: appRoute,
+      available: isAvailable,
+    };
+    emit("navigateToApp", appData);
     showModal.value = false;
   } else {
     // Mostrar mensaje de próximamente
-    alert(`${app.name} estará disponible próximamente`);
+    alert(`${appName} estará disponible próximamente`);
   }
 };
 

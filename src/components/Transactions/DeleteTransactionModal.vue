@@ -48,7 +48,7 @@
         </div>
 
         <!-- Transaction Details -->
-        <div v-if="transaction" class="bg-gray-50 rounded-lg p-4 space-y-2">
+        <!-- <div v-if="transaction" class="bg-gray-50 rounded-lg p-4 space-y-2">
           <div class="flex justify-between items-center">
             <span class="text-sm font-medium text-gray-600">Tipo:</span>
             <span class="text-sm font-bold text-gray-900">{{
@@ -79,7 +79,7 @@
               formatDate(transaction.createdAt)
             }}</span>
           </div>
-        </div>
+        </div> -->
 
         <!-- Impact List -->
         <div v-if="impactMessages.length > 0" class="space-y-3">
@@ -279,6 +279,29 @@ const impactMessages = computed(() => {
       messages.push({
         type: "info",
         text: "Se eliminará el registro de transferencia entre cuentas",
+      });
+      break;
+
+    case "closure":
+      messages.push({
+        type: "critical",
+        text: "Se eliminará el cierre del día actual",
+      });
+      messages.push({
+        type: "warning",
+        text: "El día quedará abierto para nuevas transacciones",
+      });
+      messages.push({
+        type: "info",
+        text: "Podrás realizar un nuevo cierre cuando lo necesites",
+      });
+      break;
+
+    case "opening":
+      // Este caso no debería ocurrir por validación previa
+      messages.push({
+        type: "critical",
+        text: "Las aperturas son inmutables y no se pueden eliminar",
       });
       break;
   }

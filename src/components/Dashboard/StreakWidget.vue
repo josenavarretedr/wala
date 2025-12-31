@@ -58,7 +58,15 @@
       <div class="space-y-1.5 lg:space-y-2">
         <!-- Apertura -->
         <div class="flex items-center gap-2">
+          <SpinnerIcon
+            v-if="updating"
+            :class="[
+              'w-3 h-3',
+              hasOpeningToday ? 'text-red-400' : 'text-gray-300',
+            ]"
+          />
           <div
+            v-else
             :class="[
               'w-2 h-2 rounded-full',
               hasOpeningToday ? 'bg-red-500' : 'bg-gray-300',
@@ -76,7 +84,12 @@
 
         <!-- Transacciones -->
         <div class="flex items-center gap-2">
+          <SpinnerIcon
+            v-if="updating"
+            :class="['w-3 h-3', hasTxnToday ? 'text-red-400' : 'text-gray-300']"
+          />
           <div
+            v-else
             :class="[
               'w-2 h-2 rounded-full',
               hasTxnToday ? 'bg-red-500' : 'bg-gray-300',
@@ -96,7 +109,15 @@
 
         <!-- Cierre -->
         <div class="flex items-center gap-2">
+          <SpinnerIcon
+            v-if="updating"
+            :class="[
+              'w-3 h-3',
+              hasClosureToday ? 'text-red-400' : 'text-gray-300',
+            ]"
+          />
           <div
+            v-else
             :class="[
               'w-2 h-2 rounded-full',
               hasClosureToday ? 'bg-red-500' : 'bg-gray-300',
@@ -142,6 +163,7 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { FireFlame, SnowFlake } from "@iconoir/vue";
 import { useDailySummary } from "@/composables/useDailySummary";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 // Props
 const props = defineProps({
@@ -163,7 +185,9 @@ const dailySummary = ref(null);
 const loading = ref(true);
 const error = ref(null);
 const showModal = ref(false);
+const updating = ref(false);
 let unsubscribeDailySummary = null;
+let updateTimeout = null;
 
 // Computed properties
 const businessId = computed(() => route.params.businessId);
@@ -220,6 +244,21 @@ const isStreakActiveToday = computed(() => {
   return lastActiveDay === today;
 });
 
+// Mostrar indicador de actualización brevemente
+const showUpdatingIndicator = () => {
+  updating.value = true;
+
+  // Limpiar timeout anterior si existe
+  if (updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+
+  // Ocultar el indicador después de 600ms
+  updateTimeout = setTimeout(() => {
+    updating.value = false;
+  }, 600);
+};
+
 // Formatear fecha
 const formatDate = (timestamp) => {
   if (!timestamp) return "N/A";
@@ -268,6 +307,11 @@ const loadStreakData = () => {
         };
 
         console.log("📊 Streak data loaded:", streakData.value);
+
+        // Mostrar indicador de actualización (excepto en carga inicial)
+        if (!loading.value) {
+          showUpdatingIndicator();
+        }
       } else {
         console.warn("Business document not found");
         streakData.value = null;
@@ -287,6 +331,11 @@ const loadStreakData = () => {
     (summary) => {
       dailySummary.value = summary;
       console.log("📊 DailySummary actualizado:", summary);
+
+      // Mostrar indicador de actualización (excepto en carga inicial)
+      if (!loading.value) {
+        showUpdatingIndicator();
+      }
     }
   );
 
@@ -304,6 +353,7 @@ onMounted(() => {
   // Guardar cleanup para usar en onUnmounted
   onUnmounted(() => {
     if (cleanup) cleanup();
+    if (updateTimeout) clearTimeout(updateTimeout);
   });
 });
 

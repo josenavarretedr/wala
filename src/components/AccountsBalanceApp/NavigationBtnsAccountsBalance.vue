@@ -25,27 +25,28 @@
       <button
         v-if="flow.isLastStep"
         @click="finalizarRegistro"
-        :disabled="!isNextButtonEnabled2"
+        :disabled="!isNextButtonEnabled || isFinalizando"
         :class="[
           'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
-          flow.transactionLoading || !isNextButtonEnabled2
+          flow.transactionLoading || !isNextButtonEnabled || isFinalizando
             ? 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 shadow-gray-400/15 cursor-not-allowed opacity-70'
             : 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-green-500/25 hover:from-green-700 hover:to-green-800 hover:shadow-green-500/35 hover:scale-[1.02] active:scale-[0.98] opacity-100 cursor-pointer',
         ]"
       >
-        <Check class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-        <span class="font-bold tracking-wide text-sm sm:text-base"
-          >Finalizar</span
-        >
+        <SpinnerIcon v-if="isFinalizando" size="md" class="flex-shrink-0" />
+        <Check v-else class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+        <span class="font-bold tracking-wide text-sm sm:text-base">
+          {{ isFinalizando ? "Procesando..." : "Finalizar" }}
+        </span>
       </button>
 
       <button
         v-else
         @click="flow.nextStep"
-        :disabled="!isNextButtonEnabled2"
+        :disabled="!isNextButtonEnabled"
         :class="[
           'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 transform flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
-          isNextButtonEnabled2
+          isNextButtonEnabled
             ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-blue-500/25 hover:from-blue-700 hover:to-blue-800 hover:shadow-blue-500/35 hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
             : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 shadow-gray-400/15 cursor-not-allowed',
         ]"
@@ -58,7 +59,7 @@
 
       <!-- Tooltip de ayuda cuando el botón está deshabilitado -->
       <div
-        v-if="!isNextButtonEnabled2 && !flow.isLastStep"
+        v-if="!isNextButtonEnabled && !flow.isLastStep"
         class="absolute z-20 w-56 px-3 py-2 text-xs text-white bg-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
       >
         <div class="text-center">
@@ -85,6 +86,14 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast de notificación -->
+  <ToastNotification
+    :show="showToast"
+    :message="toastMessage"
+    type="success"
+    @update:show="showToast = $event"
+  />
 </template>
 
 <script setup>
@@ -98,6 +107,8 @@ import { computed, ref } from "vue";
 import { generateUUID } from "@/utils/generateUUID";
 import { useDailySummary } from "@/composables/useDailySummary";
 import { useTransaccion } from "@/composables/useTransaction";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import ToastNotification from "@/components/ui/ToastNotification.vue";
 
 const { getTodayDailySummary } = useDailySummary();
 const { getTransactionByID } = useTransaccion();
@@ -116,6 +127,14 @@ const isNextButtonEnabled = computed(() => {
 
   console.log("=== DEBUG isNextButtonEnabled ===");
   console.log("currentStepLabel:", currentStepLabel);
+  console.log("stepLoading:", flow.stepLoading);
+
+  // Si hay un step cargando datos, deshabilitar el botón
+  if (flow.stepLoading) {
+    console.log("Botón deshabilitado: step está cargando");
+    console.log("===========================");
+    return false;
+  }
 
   let result = false;
 
@@ -126,13 +145,19 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Cash Balance":
-      // Verificar que se haya seleccionado una opción de efectivo
-      result = stepsData.selectedCashOption !== null;
+      // ✅ Validar que exista un valor válido, sin importar si fue modificado manualmente
+      result =
+        stepsData.realCashBalance !== null &&
+        stepsData.realCashBalance !== undefined &&
+        stepsData.realCashBalance >= 0;
       break;
 
     case "Bank Balance":
-      // Verificar que se haya seleccionado una opción de banco
-      result = stepsData.selectedBankOption !== null;
+      // ✅ Validar que exista un valor válido, sin importar si fue modificado manualmente
+      result =
+        stepsData.realBankBalance !== null &&
+        stepsData.realBankBalance !== undefined &&
+        stepsData.realBankBalance >= 0;
       break;
 
     default:
@@ -146,23 +171,31 @@ const isNextButtonEnabled = computed(() => {
   return result;
 });
 
-const isNextButtonEnabled2 = true;
-
 const dailySummary = ref(null);
 // Obtener la apertura del día
 const openingData = ref(null);
 
+// Estados para el loading y toast
+const isFinalizando = ref(false);
+const showToast = ref(false);
+const toastMessage = ref("");
+
 // Función para obtener el mensaje de validación apropiado
 const getValidationMessage = () => {
+  // Si está cargando, mostrar mensaje de carga
+  if (flow.stepLoading) {
+    return "Cargando datos...";
+  }
+
   const currentStepConfig = flow.currentStepConfig;
   const currentStepLabel = currentStepConfig?.label;
 
   switch (currentStepLabel) {
     case "Cash Balance":
-      return "Debes seleccionar una opción para el efectivo";
+      return "Esperando un valor válido para el efectivo";
 
     case "Bank Balance":
-      return "Debes seleccionar una opción para el banco/digital";
+      return "Esperando un valor válido para el banco/digital";
 
     default:
       return "Completa los campos requeridos";
@@ -176,6 +209,7 @@ const isOpeningMode = computed(() => {
 
 const finalizarRegistro = async () => {
   try {
+    isFinalizando.value = true;
     flow.accountBalanceLoading = true;
     console.log("🔄 Iniciando finalización de registro...");
 
@@ -487,13 +521,23 @@ const finalizarRegistro = async () => {
     transactionStore.resetTransactionToAdd();
     accountsBalanceStore.reset();
 
-    // Redirigir al dashboard
+    // Mostrar toast de éxito
+    toastMessage.value = isOpeningMode.value
+      ? "La apertura se realizó correctamente"
+      : "El cierre se realizó correctamente";
+    showToast.value = true;
+
+    // Redirigir al dashboard después de un breve delay para que se vea el toast
     const businessId = businessStore.getBusinessId;
     flow.accountBalanceLoading = false;
-    router.push({
-      name: "BusinessDashboard",
-      params: { businessId },
-    });
+    isFinalizando.value = false;
+
+    setTimeout(() => {
+      router.push({
+        name: "BusinessDashboard",
+        params: { businessId },
+      });
+    }, 1500);
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);
     alert(
@@ -502,6 +546,7 @@ const finalizarRegistro = async () => {
       } la caja. Por favor, intenta nuevamente.`
     );
     flow.accountBalanceLoading = false;
+    isFinalizando.value = false;
   }
 };
 </script>

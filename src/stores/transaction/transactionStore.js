@@ -1067,6 +1067,18 @@ export function useTransactionStore() {
       case 'transfer':
         warnings.push('⚠️ Se eliminará el registro de transferencia entre cuentas');
         break;
+
+      case 'closure':
+        warnings.push('⚠️ Estás eliminando el CIERRE del día actual');
+        warnings.push('📊 El día quedará abierto para registrar nuevas transacciones');
+        warnings.push('🔄 El dailySummary se actualizará automáticamente');
+        warnings.push('💡 Podrás realizar un nuevo cierre cuando lo necesites');
+        break;
+
+      case 'opening':
+        // Este caso nunca debería llegar aquí por la validación previa
+        warnings.push('❌ Las aperturas son inmutables y no se pueden eliminar');
+        break;
     }
 
     warnings.push('');
@@ -1607,6 +1619,27 @@ export function useTransactionStore() {
   };
 
   /**
+   * Elimina una transacción tipo closure (solo del día actual)
+   * Opening es inmutable y nunca se puede eliminar
+   */
+  const deleteClosureTransaction = async (transactionToDelete) => {
+    console.log('🗑️ [DELETE CLOSURE] Iniciando eliminación de cierre del día actual:', transactionToDelete.uuid);
+
+    // ELIMINAR TRANSACCIÓN
+    await deleteTransactionByID(transactionToDelete.uuid);
+
+    // LOG DE TRAZABILIDAD CRÍTICA
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: 'user_closure_deletion_current_day',
+      severity: 'critical',
+      tags: ['transaction_delete', 'closure', 'same_day_operation', 'reopening_day'],
+      component: 'TransactionStore.deleteClosureTransaction'
+    });
+
+    console.log('✅ [DELETE CLOSURE] Cierre eliminado exitosamente - El día queda abierto');
+  };
+
+  /**
    * Función principal de eliminación con integridad referencial
    * @param {string} transactionID - UUID de la transacción a eliminar
    * @param {Function} confirmCallback - Función callback que devuelve una promesa de confirmación
@@ -1627,9 +1660,25 @@ export function useTransactionStore() {
         createdAt: transactionToDelete.createdAt?.toDate?.()?.toISOString?.() || 'unknown'
       });
 
-      // 1. VALIDAR TIPO (No eliminar opening/closure)
-      if (transactionToDelete.type === 'opening' || transactionToDelete.type === 'closure') {
-        throw new Error(`❌ No se pueden eliminar transacciones de tipo "${transactionToDelete.type}"`);
+      // 1. VALIDAR TIPO (opening inmutable, closure solo del día actual)
+      if (transactionToDelete.type === 'opening') {
+        throw new Error(
+          '❌ No se pueden eliminar transacciones de tipo "opening".\n\n' +
+          'Las aperturas son inmutables para mantener la integridad contable.'
+        );
+      }
+
+      if (transactionToDelete.type === 'closure') {
+        const isFromToday = isTransactionFromToday(transactionToDelete);
+
+        if (!isFromToday) {
+          throw new Error(
+            '❌ No se pueden eliminar cierres de días anteriores.\n\n' +
+            'Solo puedes eliminar el cierre del día actual para mantener la integridad contable.'
+          );
+        }
+
+        console.log('⚠️ Eliminando cierre del día actual - Validación aprobada');
       }
 
       // 2. MOSTRAR MODAL DE CONFIRMACIÓN (si se proporciona callback)
@@ -1674,6 +1723,11 @@ export function useTransactionStore() {
 
         case 'transfer':
           await deleteTransferTransaction(transactionToDelete);
+          break;
+
+        case 'closure':
+          // Solo se permite eliminar closure del día actual (validación ya hecha arriba)
+          await deleteClosureTransaction(transactionToDelete);
           break;
 
         default:

@@ -4,7 +4,9 @@
     <div class="mb-8">
       <div class="flex items-center justify-between">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Juntos</h1>
+          <h1 class="text-3xl font-bold text-gray-900">
+            Te acompañamos, Juntos!
+          </h1>
           <p class="mt-1 text-sm text-gray-500">
             Programas de acompañamiento para tu negocio
           </p>
@@ -12,7 +14,7 @@
 
         <div class="flex items-center gap-3">
           <!-- Botón Crear Programa (solo gerentes) -->
-          <button
+          <!-- <button
             v-if="canJoinPrograms"
             @click="goToCreateProgram"
             class="inline-flex items-center px-4 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors shadow-sm"
@@ -31,7 +33,7 @@
               />
             </svg>
             Crear Programa
-          </button>
+          </button> -->
 
           <!-- Botón Unirse a Programa -->
           <button

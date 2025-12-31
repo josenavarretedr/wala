@@ -147,6 +147,7 @@ import {
 import { ref, computed, onMounted } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
 import { useDailySummary } from "@/composables/useDailySummary";
 import { useTransaccion } from "@/composables/useTransaction";
 
@@ -154,6 +155,7 @@ const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 const { getTodayDailySummary } = useDailySummary();
 const { getTransactionByID } = useTransaccion();
+const flowStore = useAccountsBalanceFlowStore();
 
 // Estados reactivos
 const isLoading = ref(true);
@@ -229,6 +231,10 @@ const findOpeningToday = async () => {
 // Inicialización
 onMounted(async () => {
   try {
+    // Iniciar el loading y sincronizar con el store
+    isLoading.value = true;
+    flowStore.setStepLoading(true);
+
     // Cargar transacciones del día si no están cargadas
     dailySummary.value = await getTodayDailySummary();
 
@@ -243,6 +249,7 @@ onMounted(async () => {
     console.error("Error en inicialización de StepLastReference:", error);
   } finally {
     isLoading.value = false;
+    flowStore.setStepLoading(false);
   }
 });
 </script>
