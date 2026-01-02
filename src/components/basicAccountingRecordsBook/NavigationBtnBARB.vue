@@ -102,7 +102,7 @@ import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowSto
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ToastNotification from "@/components/ui/ToastNotification.vue";
 
@@ -190,6 +190,51 @@ const isNextButtonEnabled = computed(() => {
       result = true;
       break;
 
+    case "Método de pago":
+      // Verificar el estado de pago
+      const paymentStatus = transactionData.paymentStatus;
+
+      if (paymentStatus === "completed") {
+        // Pago completo: verificar que tenga método en account o payments
+        const hasAccount =
+          transactionData.account !== null &&
+          transactionData.account !== undefined;
+        const hasPayments =
+          transactionData.payments && transactionData.payments.length > 0;
+        result = hasAccount || hasPayments;
+      } else if (paymentStatus === "pending" || paymentStatus === "partial") {
+        // Pago parcial: verificar que haya monto válido
+        const totalPaid = transactionData.totalPaid || 0;
+        const total = transactionStore.getTransactionToAddTotal();
+        const hasPayments =
+          transactionData.payments && transactionData.payments.length > 0;
+
+        // Debe tener payments, y el monto debe ser mayor a 0 y menor que el total
+        result = hasPayments && totalPaid > 0 && totalPaid < total;
+      } else {
+        // Sin estado definido
+        result = false;
+      }
+      break;
+
+    case "Adjuntar cliente":
+      // Verificar si hay cliente seleccionado
+      const hasClient =
+        transactionData.clientId && transactionData.clientId !== null;
+      const clientPaymentStatus = transactionData.paymentStatus;
+
+      // Si es pago parcial, DEBE tener un cliente
+      if (
+        clientPaymentStatus === "pending" ||
+        clientPaymentStatus === "partial"
+      ) {
+        result = hasClient;
+      } else {
+        // Si es pago completo, siempre puede avanzar (cliente es opcional)
+        result = true;
+      }
+      break;
+
     case "Preview egreso":
       // Para preview de egresos, siempre permitir finalizar
       result = true;
@@ -238,6 +283,12 @@ const getValidationMessage = () => {
 
     case "Detalles transferencia":
       return "Completa cuenta origen, destino y monto de transferencia";
+
+    case "Método de pago":
+      return "Selecciona un método de pago y tipo válido";
+
+    case "Adjuntar cliente":
+      return "Debes seleccionar un cliente para continuar con un pago parcial";
 
     case "Preview transferencia":
       return "Los datos de la transferencia están incompletos";
@@ -317,4 +368,43 @@ const finalizarRegistro = async () => {
     throw error;
   }
 };
+
+// Handler para la tecla Enter
+const handleEnterKey = (event) => {
+  // Solo activar en la tecla Enter
+  if (event.key !== "Enter") return;
+
+  // Evitar activación si hay un modal abierto o input con foco
+  const activeElement = document.activeElement;
+  const isInputFocused =
+    activeElement.tagName === "INPUT" ||
+    activeElement.tagName === "TEXTAREA" ||
+    activeElement.isContentEditable;
+
+  // No activar si hay un input con foco (pueden tener su propio handler)
+  if (isInputFocused) return;
+
+  // Verificar si el botón está habilitado
+  if (!isNextButtonEnabled.value) return;
+
+  // Ejecutar la acción correspondiente
+  if (flow.isLastStep) {
+    if (!isFinalizando.value) {
+      finalizarRegistro();
+    }
+  } else {
+    flow.nextStep();
+  }
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  // Agregar listener para la tecla Enter
+  window.addEventListener("keydown", handleEnterKey);
+});
+
+onUnmounted(() => {
+  // Limpiar listener al desmontar
+  window.removeEventListener("keydown", handleEnterKey);
+});
 </script>

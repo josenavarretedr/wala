@@ -178,6 +178,7 @@
             >S/</span
           >
           <input
+            ref="partialAmountInput"
             v-model.number="partialAmount"
             type="number"
             step="0.01"
@@ -185,6 +186,8 @@
             :max="totalAmount"
             class="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:outline-none text-lg font-semibold"
             placeholder="0.00"
+            @input="handlePartialAmountInput"
+            @keydown.enter="handleEnterKey"
           />
         </div>
 
@@ -257,11 +260,20 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast de notificación -->
+  <ToastNotification
+    :show="showToast"
+    :message="toastMessage"
+    :type="toastType"
+    @update:show="showToast = $event"
+  />
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import ToastNotification from "@/components/ui/ToastNotification.vue";
 
 const transactionStore = useTransactionStore();
 
@@ -270,6 +282,10 @@ const selectedMethod = ref(null);
 const paymentType = ref("complete"); // 'complete' | 'partial'
 const partialAmount = ref(0);
 const validationError = ref("");
+const showToast = ref(false);
+const toastMessage = ref("");
+const toastType = ref("info");
+const partialAmountInput = ref(null);
 
 // Labels para mostrar
 const methodLabels = {
@@ -301,18 +317,57 @@ function setPaymentType(type) {
   paymentType.value = type;
   validationError.value = "";
 
-  if (type === "complete") {
-    partialAmount.value = 0;
+  // NO resetear partialAmount para mantener el valor si el usuario quiere volver
+}
+
+function handlePartialAmountInput() {
+  // Limitar automáticamente al máximo permitido
+  if (partialAmount.value > totalAmount.value) {
+    partialAmount.value = totalAmount.value;
+
+    // Mostrar notificación de límite
+    toastMessage.value = `El máximo posible es S/ ${totalAmount.value.toFixed(
+      2
+    )}`;
+    toastType.value = "warning";
+    showToast.value = true;
   }
 }
 
-// Validación en tiempo real
+function handleEnterKey() {
+  // Activar el botón "Siguiente" si está habilitado
+  const btnNext = document.querySelector("#btn-next button");
+  if (btnNext && !btnNext.disabled) {
+    btnNext.click();
+  }
+}
+
+// Validación en tiempo real con auto-cambio a pago completo
 watch([partialAmount, paymentType], () => {
   if (paymentType.value === "partial") {
     if (!partialAmount.value || partialAmount.value <= 0) {
       validationError.value = "El monto del abono debe ser mayor a 0";
     } else if (partialAmount.value >= totalAmount.value) {
-      validationError.value = "El abono no puede ser mayor o igual al total";
+      // Auto-cambiar a pago completo y ajustar el monto para mejor UX
+      paymentType.value = "complete";
+      validationError.value = "";
+
+      // Reducir el partialAmount en 1 para que si el usuario vuelve a "Pago Parcial"
+      // tenga un valor válido y no se dispare la validación automáticamente
+      partialAmount.value = Math.max(0, totalAmount.value - 1);
+
+      // Mostrar toast informativo con delay para asegurar visibilidad
+      nextTick(() => {
+        toastMessage.value = "Cambiado a Pago Completo automáticamente";
+        toastType.value = "success";
+        showToast.value = true;
+
+        console.log("🔔 Toast mostrado:", {
+          message: toastMessage.value,
+          type: toastType.value,
+          show: showToast.value,
+        });
+      });
     } else {
       validationError.value = "";
     }

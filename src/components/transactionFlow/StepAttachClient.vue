@@ -61,7 +61,10 @@
     </div>
 
     <!-- Búsqueda de Cliente -->
-    <div class="max-w-lg mx-auto space-y-4">
+    <div
+      v-if="!selectedClient || isAnonymousSelected"
+      class="max-w-lg mx-auto space-y-4"
+    >
       <div class="relative">
         <div
           class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
@@ -335,10 +338,12 @@
                 Nombre completo <span class="text-red-500">*</span>
               </label>
               <input
+                ref="nameInputRef"
                 v-model="newClient.name"
                 type="text"
                 placeholder="Ej: Juan Pérez"
                 class="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
+                @keydown.enter.prevent="handleEnterInName"
               />
             </div>
 
@@ -347,10 +352,12 @@
                 Teléfono (opcional)
               </label>
               <input
+                ref="phoneInputRef"
                 v-model="newClient.phone"
                 type="tel"
                 placeholder="Ej: 999888777"
                 class="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
+                @keydown.enter.prevent="handleEnterInPhone"
               />
             </div>
           </div>
@@ -404,6 +411,9 @@ const newClient = ref({
   phone: "",
 });
 
+const nameInputRef = ref(null);
+const phoneInputRef = ref(null);
+
 // Computed
 const isPartialPayment = computed(() => {
   const status = transactionStore.transactionToAdd.value.paymentStatus;
@@ -446,6 +456,7 @@ function selectAnonymousClient() {
     uuid: ANONYMOUS_CLIENT_ID,
     name: "Cliente Anónimo",
   };
+  searchQuery.value = "";
   transactionStore.setClientInfo(ANONYMOUS_CLIENT_ID, "Cliente Anónimo");
 }
 
@@ -456,12 +467,15 @@ function selectClient(client) {
 }
 
 function clearSelectedClient() {
-  if (isPartialPayment.value) {
-    // Si es pago parcial, no permitir limpiar sin seleccionar otro
-    return;
-  }
   selectedClient.value = null;
-  selectAnonymousClient();
+
+  if (isPartialPayment.value) {
+    // Si es pago parcial, limpiar el cliente del store para forzar selección
+    transactionStore.setClientInfo(null, null);
+  } else {
+    // Si es pago completo, volver a cliente anónimo
+    selectAnonymousClient();
+  }
 }
 
 function clearSearch() {
@@ -471,6 +485,22 @@ function clearSearch() {
 function openCreateClientModal() {
   showCreateModal.value = true;
   createError.value = "";
+  // Autofocus en el siguiente tick
+  setTimeout(() => {
+    nameInputRef.value?.focus();
+  }, 100);
+}
+
+function handleEnterInName() {
+  // Mover al campo de teléfono
+  phoneInputRef.value?.focus();
+}
+
+function handleEnterInPhone() {
+  // Crear cliente si el nombre no está vacío
+  if (newClient.value.name && !creatingClient.value) {
+    createNewClient();
+  }
 }
 
 function closeCreateClientModal() {
