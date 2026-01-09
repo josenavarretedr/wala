@@ -86,7 +86,7 @@
           </h3>
           <p class="text-gray-600 mb-6">
             Crea tu primera actividad para comenzar a gestionar sesiones y
-            monitoreos
+            asesorías
           </p>
           <button
             @click="showCreateModal = true"

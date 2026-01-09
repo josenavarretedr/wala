@@ -32,8 +32,8 @@
         :total-participants="activity.metadata?.totalParticipants || 0"
         :drive-link="activity.driveLink"
       />
-      <MonitoringStats
-        v-if="activity.type === 'monitoring'"
+      <ConsultingStats
+        v-if="activity.type === 'consulting' || activity.type === 'monitoring'"
         :total-monitoreos="participations.length"
         :average-score="calculateAverageScore()"
       />
@@ -47,21 +47,21 @@
         @update="handleAttendanceUpdate"
       />
 
-      <MonitoringList
-        v-if="activity.type === 'monitoring'"
+      <ConsultingList
+        v-if="activity.type === 'consulting' || activity.type === 'monitoring'"
         :participations="participations"
         @view-details="handleViewMonitoringDetails"
         @delete="handleDeleteMonitoring"
       />
     </div>
 
-    <!-- Monitoring Form Modal -->
-    <MonitoringForm
-      v-if="showMonitoringForm && activity"
+    <!-- Consulting Form Modal -->
+    <ConsultingForm
+      v-if="showConsultingForm && activity"
       :program-id="programId"
       :activity="activity"
-      @close="showMonitoringForm = false"
-      @submitted="handleMonitoringSubmitted"
+      @close="showConsultingForm = false"
+      @submitted="handleConsultingSubmitted"
     />
 
     <!-- Edit Activity Modal -->
@@ -91,7 +91,7 @@
       :pending-changes="pendingChanges"
       :saving="savingAttendance"
       @save="saveAllAttendances"
-      @new-monitoring="showMonitoringForm = true"
+      @new-consulting="showConsultingForm = true"
     />
 
     <!-- Toast de Éxito -->
@@ -139,11 +139,11 @@ import { db } from "@/firebaseInit";
 import ActivityDetailHeader from "@/components/activities/detail/ActivityDetailHeader.vue";
 import SessionStats from "@/components/activities/detail/SessionStats.vue";
 import EventStats from "@/components/activities/detail/EventStats.vue";
-import MonitoringStats from "@/components/activities/detail/MonitoringStats.vue";
+import ConsultingStats from "@/components/activities/detail/ConsultingStats.vue";
 import AttendanceList from "@/components/activities/detail/AttendanceList.vue";
-import MonitoringList from "@/components/activities/detail/MonitoringList.vue";
+import ConsultingList from "@/components/activities/detail/ConsultingList.vue";
 import DeleteActivityModal from "@/components/activities/detail/DeleteActivityModal.vue";
-import MonitoringForm from "@/components/activities/MonitoringForm.vue";
+import ConsultingForm from "@/components/activities/ConsultingForm.vue";
 import ActionBtnActivity from "@/components/activities/ActionBtnActivity.vue";
 import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
 
@@ -164,7 +164,7 @@ const activityId = computed(() => route.params.activityId);
 
 const loadingParticipants = ref(false);
 const participants = ref([]);
-const showMonitoringForm = ref(false);
+const showConsultingForm = ref(false);
 const attendanceMap = ref({}); // userId -> { attended, notes }
 const originalAttendanceMap = ref({}); // Para comparar cambios
 const pendingChanges = ref({}); // userId -> { attended, notes }
@@ -179,7 +179,7 @@ function calculateAverageScore() {
   if (!participations.value.length) return null;
 
   const scores = participations.value
-    .map((p) => p.monitoringData?.overallScore)
+    .map((p) => (p.consultingData || p.monitoringData)?.overallScore)
     .filter((score) => score != null);
 
   if (!scores.length) return null;
@@ -276,8 +276,8 @@ async function loadProgramParticipants() {
   }
 }
 
-async function handleMonitoringSubmitted() {
-  showMonitoringForm.value = false;
+async function handleConsultingSubmitted() {
+  showConsultingForm.value = false;
   // Recargar participaciones
   await loadActivityParticipations(programId.value, activityId.value);
 }

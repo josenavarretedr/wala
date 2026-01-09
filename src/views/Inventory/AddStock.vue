@@ -157,7 +157,13 @@ const finalizarRegistro = async () => {
   try {
     loading.value = true;
 
-    const { productId, quantity, cost, account } = flow.addStockData;
+    const {
+      productId,
+      quantity,
+      cost,
+      account,
+      productData: product,
+    } = flow.addStockData;
     const businessId = route.params.businessId;
 
     console.log("🟢 Finalizando registro de compra:", flow.addStockData);
@@ -167,43 +173,58 @@ const finalizarRegistro = async () => {
     transactionStore.modifyTransactionToAddAccount(account);
 
     // Establecer descripción del gasto
-    const description = `Compra de ${productData.value.description}`;
+    const description = `Compra de ${product.description}`;
     transactionStore.transactionToAdd.value.description = description;
 
     // Establecer categoría como material
     transactionStore.transactionToAdd.value.category = "materials";
 
-    // Establecer el monto total de la compra
+    // 🔥 CREAR MATERIALITEMS ARRAY - Requerido para el flujo de transactionStore
+    const materialItem = {
+      uuid: productId,
+      selectedProductUuid: productId, // También incluir este campo
+      description: product.description,
+      quantity: quantity,
+      cost: cost,
+      unit: product.unit || "uni",
+      oldOrNewProduct: "old", // El producto ya existe en inventario
+      trackStock: product.trackStock ?? true,
+      // Campos adicionales que pueden ser útiles
+      code: product.code,
+      type: product.type || "MERCH",
+      totalCost: quantity * cost,
+    };
+
+    // Asignar materialItems al transactionToAdd
+    transactionStore.transactionToAdd.value.materialItems = [materialItem];
+
+    // Calcular el monto total de la compra
     const totalAmount = quantity * cost;
     transactionStore.transactionToAdd.value.amount = totalAmount;
 
-    console.log(
-      "💰 Transacción de compra preparada:",
-      transactionStore.transactionToAdd.value
-    );
+    console.log("💰 Transacción de compra preparada con materialItems:", {
+      transaction: transactionStore.transactionToAdd.value,
+      materialItems: transactionStore.transactionToAdd.value.materialItems,
+      totalAmount,
+    });
 
     // 2. Crear la transacción de expense
+    // ✅ El flujo de addTransaction() detectará category === 'materials' y:
+    //    - Llamará a inventoryStore.addMaterialItemsToInventoryForPurchase()
+    //    - Creará los stockLogs automáticamente
+    //    - Actualizará materialItemsAndStockLogs
     await transactionStore.addTransaction();
     const transactionId = transactionStore.transactionToAdd.value.uuid;
 
-    console.log("✅ Transacción de compra creada:", transactionId);
-
-    // 3. Crear el stock log con tipo 'buy' (esto también actualiza el stock y el costo)
-    const stockLog = {
-      uuid: productId,
-      quantity: quantity,
-      cost: cost, // Incluir el costo para actualizar el producto
-      transactionId: transactionId,
-      account: account,
-      price: cost,
-      businessId: businessId,
-      timestamp: new Date().toISOString(),
-    };
-
-    await inventoryStore.addStockLogInInventory(stockLog, "buy");
-
-    console.log("✅ Stock log de compra creado, stock y costo actualizados");
-    console.log("📦 StockLog creado con transactionId:", transactionId);
+    console.log(
+      "✅ Transacción de compra creada con materialItems y stockLogs:",
+      {
+        transactionId,
+        materialItems: transactionStore.transactionToAdd.value.materialItems,
+        materialItemsAndStockLogs:
+          transactionStore.transactionToAdd.value.materialItemsAndStockLogs,
+      }
+    );
 
     // Resetear el flujo
     flow.resetFlow();

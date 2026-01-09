@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
   >
     <div
       class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
@@ -101,25 +101,25 @@
           </div>
 
           <div
-            v-if="form.type === 'monitoring'"
+            v-if="form.type === 'consulting'"
             class="mb-3 flex flex-wrap gap-2"
           >
             <button
-              @click="prefillMonitoring('pre')"
+              @click="prefillConsulting('pre')"
               type="button"
               class="text-xs px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
             >
               ✨ Pre capacitación
             </button>
             <button
-              @click="prefillMonitoring('post')"
+              @click="prefillConsulting('post')"
               type="button"
               class="text-xs px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
             >
               ✨ Post capacitación
             </button>
             <button
-              @click="prefillMonitoring('impact')"
+              @click="prefillConsulting('impact')"
               type="button"
               class="text-xs px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
             >
@@ -211,13 +211,13 @@
           </label>
         </div>
 
-        <!-- Campos específicos para Monitoreo -->
+        <!-- Campos específicos para Asesoría -->
         <div
-          v-if="form.type === 'monitoring'"
+          v-if="form.type === 'consulting'"
           class="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200"
         >
           <h3 class="text-sm font-semibold text-purple-900">
-            Configuración de Monitoreo
+            Configuración de Asesoría
           </h3>
 
           <div class="flex items-center gap-3">
@@ -236,7 +236,7 @@
           </div>
 
           <div class="text-sm text-gray-600 bg-white p-3 rounded-lg">
-            <p class="font-medium mb-1">El formulario de monitoreo incluye:</p>
+            <p class="font-medium mb-1">El formulario de asesoría incluye:</p>
             <ul class="list-disc list-inside space-y-1">
               <li>7 categorías de evaluación</li>
               <li>21 preguntas en total (3 por categoría)</li>
@@ -373,8 +373,8 @@ const activityTypes = [
       "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
   },
   {
-    value: "monitoring",
-    label: "Monitoreo",
+    value: "consulting",
+    label: "Asesoría",
     bgClass: "bg-purple-100",
     iconClass: "text-purple-600",
     iconPath:
@@ -484,8 +484,8 @@ function prefillSession() {
   form.isRequired = true;
 }
 
-// Pre-llenar monitoreos predefinidos
-function prefillMonitoring(type) {
+// Pre-llenar asesorías predefinidas
+function prefillConsulting(type) {
   const templates = {
     pre: {
       title: "Evaluación de pre capacitación",
@@ -607,8 +607,8 @@ async function handleSubmit() {
       activityData.driveLink = form.driveLink.trim();
     }
 
-    // Agregar configuración específica para monitoring
-    if (form.type === "monitoring") {
+    // Agregar configuración específica para consulting
+    if (form.type === "consulting") {
       activityData.requiredEvidence = form.requiredEvidence;
     }
 

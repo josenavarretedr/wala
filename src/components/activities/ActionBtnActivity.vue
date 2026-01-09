@@ -42,10 +42,10 @@
       <span v-else>Sin cambios pendientes</span>
     </button>
 
-    <!-- Botón para Monitoreo: Nuevo Monitoreo -->
+    <!-- Botón para Asesoría: Nueva Asesoría -->
     <button
-      v-else-if="type === 'monitoring'"
-      @click="handleNewMonitoring"
+      v-else-if="type === 'consulting'"
+      @click="handleNewConsulting"
       class="w-full py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-all duration-200 shadow-sm flex items-center justify-center gap-2"
     >
       <svg
@@ -61,7 +61,7 @@
           d="M12 4v16m8-8H4"
         />
       </svg>
-      <span>Nuevo Monitoreo</span>
+      <span>Nueva Asesoría</span>
     </button>
   </div>
 </template>
@@ -73,7 +73,7 @@ const props = defineProps({
   type: {
     type: String,
     required: true,
-    validator: (value) => ["session", "event", "monitoring"].includes(value),
+    validator: (value) => ["session", "event", "consulting"].includes(value),
   },
   pendingChanges: {
     type: Object,
@@ -85,7 +85,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["save", "new-monitoring"]);
+const emit = defineEmits(["save", "new-consulting"]);
 
 const hasPendingChanges = computed(() => {
   return Object.keys(props.pendingChanges).length > 0;
@@ -101,7 +101,7 @@ function handleSave() {
   }
 }
 
-function handleNewMonitoring() {
-  emit("new-monitoring");
+function handleNewConsulting() {
+  emit("new-consulting");
 }
 </script>

@@ -140,12 +140,12 @@
         <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4">
           <div class="flex items-center justify-between mb-2">
             <p class="text-xs sm:text-sm font-medium text-gray-500">
-              Monitoreos
+              Asesorías
             </p>
             <GraphUp class="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
           </div>
           <p class="text-xl sm:text-2xl font-bold text-gray-900">
-            {{ stats.monitorings }}
+            {{ stats.consultings }}
           </p>
         </div>
 
@@ -190,15 +190,15 @@ const programId = computed(() => route.params.programId);
 const stats = computed(() => {
   const total = activities.value.length;
   const sessions = activities.value.filter((a) => a.type === "session").length;
-  const monitorings = activities.value.filter(
-    (a) => a.type === "monitoring"
+  const consultings = activities.value.filter(
+    (a) => a.type === "consulting" || a.type === "monitoring"
   ).length;
   const events = activities.value.filter((a) => a.type === "event").length;
 
   return {
     totalActivities: total,
     sessions,
-    monitorings,
+    consultings,
     events,
   };
 });

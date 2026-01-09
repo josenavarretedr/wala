@@ -47,7 +47,7 @@
 <script setup>
 import { computed } from "vue";
 import SessionCard from "./cards/SessionCard.vue";
-import MonitoringCard from "./cards/MonitoringCard.vue";
+import ConsultingCard from "./cards/ConsultingCard.vue";
 import EventCard from "./cards/EventCard.vue";
 
 const props = defineProps({
@@ -101,7 +101,8 @@ function getTimestamp(date) {
 function getCardComponent(type) {
   const components = {
     session: SessionCard,
-    monitoring: MonitoringCard,
+    consulting: ConsultingCard,
+    // monitoring: ConsultingCard, // Compatibilidad backward
     event: EventCard,
   };
   return components[type] || SessionCard;
@@ -126,10 +127,13 @@ function getParticipantStatus(activity) {
     return "pending";
   }
 
-  // Para monitoreos
-  if (activity.type === "monitoring") {
-    // Verificar si existe monitoringData y overallScore
-    if (participation.monitoringData?.overallScore !== undefined) {
+  // Para asesorías (consulting)
+  if (activity.type === "consulting" || activity.type === "monitoring") {
+    // Verificar si existe consultingData y overallScore
+    if (
+      participation.consultingData?.overallScore !== undefined ||
+      participation.monitoringData?.overallScore !== undefined
+    ) {
       return "completed";
     }
     // Fallback para estructura antigua

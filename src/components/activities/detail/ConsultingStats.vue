@@ -1,12 +1,12 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-    <!-- Total Monitoreos -->
+    <!-- Total Asesorías -->
     <div
       class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6"
     >
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-xs sm:text-sm text-gray-500 mb-1">Total Monitoreos</p>
+          <p class="text-xs sm:text-sm text-gray-500 mb-1">Total Asesorías</p>
           <p class="text-2xl sm:text-3xl font-bold text-gray-900">
             {{ totalMonitoreos }}
           </p>

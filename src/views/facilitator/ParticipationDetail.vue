@@ -13,7 +13,7 @@
             </button>
             <div>
               <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
-                Detalle de Monitoreo
+                Detalle de Asesoría
               </h1>
               <p class="text-sm text-gray-600 mt-0.5">
                 {{ participation?.userName || "Cargando..." }}
@@ -58,7 +58,9 @@
             <p class="text-sm text-gray-600 font-medium mb-2">Score General</p>
             <div class="text-4xl font-bold text-purple-600 mb-1">
               {{
-                participation.monitoringData?.overallScore?.toFixed(0) || "0"
+                (
+                  participation.consultingData || participation.monitoringData
+                )?.overallScore?.toFixed(0) || "0"
               }}
             </div>
             <p class="text-xs text-gray-500 mb-3">de 63 puntos</p>
@@ -66,10 +68,18 @@
             <div
               :class="[
                 'inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold',
-                getCohortClass(participation.monitoringData?.overallScore),
+                getCohortClass(
+                  (participation.consultingData || participation.monitoringData)
+                    ?.overallScore
+                ),
               ]"
             >
-              {{ getCohortLabel(participation.monitoringData?.overallScore) }}
+              {{
+                getCohortLabel(
+                  (participation.consultingData || participation.monitoringData)
+                    ?.overallScore
+                )
+              }}
             </div>
           </div>
         </div>
@@ -93,16 +103,39 @@
               <div
                 :class="[
                   'inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium border mt-1',
-                  getModalityClass(participation.monitoringData?.modality),
+                  getModalityClass(
+                    (
+                      participation.consultingData ||
+                      participation.monitoringData
+                    )?.modality
+                  ),
                 ]"
               >
-                {{ getModalityLabel(participation.monitoringData?.modality) }}
+                {{
+                  getModalityLabel(
+                    (
+                      participation.consultingData ||
+                      participation.monitoringData
+                    )?.modality
+                  )
+                }}
               </div>
             </div>
             <div>
-              <p class="text-xs text-gray-500">Fecha de Monitoreo</p>
+              <p class="text-xs text-gray-500">Fecha de Asesoría</p>
               <p class="text-sm font-medium text-gray-900">
-                {{ formatDate(participation.monitoringData?.monitoringDate) }}
+                {{
+                  formatDate(
+                    (
+                      participation.consultingData ||
+                      participation.monitoringData
+                    )?.consultingDate ||
+                      (
+                        participation.consultingData ||
+                        participation.monitoringData
+                      )?.monitoringDate
+                  )
+                }}
               </p>
             </div>
             <div>
@@ -117,30 +150,18 @@
 
       <!-- Category Scores Overview -->
       <div
-        v-if="participation.monitoringData?.categoryScores"
-        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-6"
+        v-if="
+          (participation.consultingData || participation.monitoringData)
+            ?.categoryScores
+        "
+        class="mb-6"
       >
-        <h2 class="text-lg font-bold text-gray-900 mb-4">
-          Resumen por Categoría
-        </h2>
-        <div class="flex flex-wrap gap-2.5">
-          <div
-            v-for="(score, category) in participation.monitoringData
-              .categoryScores"
-            :key="category"
-            :class="[
-              'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border',
-              getCategoryColorClass(category),
-            ]"
-          >
-            <span>{{ getCategoryLabel(category) }}</span>
-            <span
-              class="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full bg-white bg-opacity-60 font-bold text-sm"
-            >
-              {{ score.toFixed(0) }}
-            </span>
-          </div>
-        </div>
+        <ConsultingDataRadar
+          :categoryScores="
+            (participation.consultingData || participation.monitoringData)
+              .categoryScores
+          "
+        />
       </div>
 
       <!-- Respuestas por Categoría -->
@@ -213,7 +234,8 @@
             <!-- Category Comments -->
             <div
               v-if="
-                participation.monitoringData?.categoryComments?.[category.key]
+                (participation.consultingData || participation.monitoringData)
+                  ?.categoryComments?.[category.key]
               "
               class="mt-4 pt-4 border-t border-gray-200"
             >
@@ -224,7 +246,8 @@
                 class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-3"
               >
                 {{
-                  participation.monitoringData.categoryComments[category.key]
+                  (participation.consultingData || participation.monitoringData)
+                    .categoryComments[category.key]
                 }}
               </p>
             </div>
@@ -234,7 +257,10 @@
 
       <!-- Comentarios Adicionales -->
       <div
-        v-if="participation.monitoringData?.additionalComments"
+        v-if="
+          (participation.consultingData || participation.monitoringData)
+            ?.additionalComments
+        "
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
       >
         <h2 class="text-lg font-bold text-gray-900 mb-3">
@@ -243,13 +269,19 @@
         <p
           class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4"
         >
-          {{ participation.monitoringData.additionalComments }}
+          {{
+            (participation.consultingData || participation.monitoringData)
+              .additionalComments
+          }}
         </p>
       </div>
 
       <!-- Evidencias -->
       <div
-        v-if="participation.monitoringData?.evidenceUrls?.length"
+        v-if="
+          (participation.consultingData || participation.monitoringData)
+            ?.evidenceUrls?.length
+        "
         class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
       >
         <h2 class="text-lg font-bold text-gray-900 mb-4">
@@ -257,7 +289,9 @@
         </h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           <div
-            v-for="(url, index) in participation.monitoringData.evidenceUrls"
+            v-for="(url, index) in (
+              participation.consultingData || participation.monitoringData
+            ).evidenceUrls"
             :key="index"
             class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
             @click="openImageModal(url)"
@@ -275,7 +309,7 @@
     <!-- Error State -->
     <div v-else class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-        <p class="text-red-800 font-medium">No se pudo cargar el monitoreo</p>
+        <p class="text-red-800 font-medium">No se pudo cargar la asesoría</p>
         <button
           @click="goBack"
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
@@ -295,7 +329,7 @@
           Confirmar Eliminación
         </h3>
         <p class="text-sm text-gray-600 mb-6">
-          ¿Estás seguro de que deseas eliminar este monitoreo? Esta acción no se
+          ¿Estás seguro de que deseas eliminar esta asesoría? Esta acción no se
           puede deshacer.
         </p>
         <div class="flex items-center gap-3 justify-end">
@@ -336,6 +370,7 @@ import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { NavArrowLeft, Trash } from "@iconoir/vue";
+import ConsultingDataRadar from "@/components/activities/detail/ConsultingDataRadar.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -349,7 +384,7 @@ const loading = ref(true);
 const showDeleteConfirm = ref(false);
 const selectedImage = ref(null);
 
-// Categorías (mismo array que MonitoringForm.vue)
+// Categorías (mismo array que ConsultingForm.vue)
 const categories = [
   {
     key: "negocioFamilia",
@@ -445,10 +480,10 @@ const categories = [
 ];
 
 const categoriesWithResponses = computed(() => {
-  if (!participation.value?.monitoringData?.responses) return [];
-  return categories.filter(
-    (cat) => participation.value.monitoringData.responses[cat.key]
-  );
+  const data =
+    participation.value?.consultingData || participation.value?.monitoringData;
+  if (!data?.responses) return [];
+  return categories.filter((cat) => data.responses[cat.key]);
 });
 
 async function loadParticipation() {
@@ -542,18 +577,17 @@ function getCohortClass(score) {
 }
 
 function getCategoryScore(categoryKey) {
-  const responses =
-    participation.value?.monitoringData?.responses?.[categoryKey];
+  const data =
+    participation.value?.consultingData || participation.value?.monitoringData;
+  const responses = data?.responses?.[categoryKey];
   if (!responses) return 0;
   return Object.values(responses).reduce((sum, val) => sum + val, 0);
 }
 
 function getQuestionRating(categoryKey, questionIndex) {
-  return (
-    participation.value?.monitoringData?.responses?.[categoryKey]?.[
-      questionIndex
-    ] ?? null
-  );
+  const data =
+    participation.value?.consultingData || participation.value?.monitoringData;
+  return data?.responses?.[categoryKey]?.[questionIndex] ?? null;
 }
 
 function getRatingClass(rating) {
@@ -618,11 +652,11 @@ async function handleDelete() {
     );
 
     await deleteDoc(participationRef);
-    console.log("✅ Monitoreo eliminado");
+    console.log("✅ Asesoría eliminada");
     goBack();
   } catch (error) {
-    console.error("Error al eliminar monitoreo:", error);
-    alert("Error al eliminar el monitoreo");
+    console.error("Error al eliminar asesoría:", error);
+    alert("Error al eliminar la asesoría");
   } finally {
     showDeleteConfirm.value = false;
   }

@@ -181,8 +181,10 @@ export function useTransactionStore() {
           console.log('🛒 Iniciando procesamiento de materials en inventario...');
 
           // Llamar a inventoryStore para crear/actualizar productos y stockLogs
+          // Pasar el transactionId para vincular los stockLogs con la transacción
           const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(
-            transactionToAdd.value.materialItems
+            transactionToAdd.value.materialItems,
+            transactionToAdd.value.uuid // Pasar el UUID de la transacción
           );
 
           // Actualizar materialItems con los stockLogIds generados

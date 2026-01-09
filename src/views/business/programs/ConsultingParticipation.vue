@@ -24,7 +24,7 @@
             <span class="font-medium">Volver</span>
           </button>
 
-          <h1 class="text-xl font-bold text-gray-900">Detalles de Monitoreo</h1>
+          <h1 class="text-xl font-bold text-gray-900">Detalles de Asesoría</h1>
           <div class="w-20"></div>
         </div>
       </div>
@@ -90,7 +90,11 @@
               <div>
                 <p class="text-xs text-gray-500">Total de Preguntas</p>
                 <p class="text-sm font-medium text-gray-900">
-                  {{ activity.monitoringConfig?.totalQuestions || 21 }}
+                  {{
+                    activity.consultingConfig?.totalQuestions ||
+                    activity.monitoringConfig?.totalQuestions ||
+                    21
+                  }}
                 </p>
               </div>
             </div>
@@ -128,8 +132,8 @@
               >
                 {{
                   hasParticipation
-                    ? "Monitoreo Completado"
-                    : "Monitoreo Pendiente"
+                    ? "Asesoría Completada"
+                    : "Asesoría Pendiente"
                 }}
               </h3>
               <p
@@ -141,7 +145,7 @@
                 {{
                   hasParticipation
                     ? `Completado el ${formatDate(participation?.submittedAt)}`
-                    : "Aún no se ha realizado tu monitoreo para esta actividad"
+                    : "Aún no se ha realizado tu asesoría pendiente."
                 }}
               </p>
 
@@ -149,7 +153,8 @@
               <div
                 v-if="
                   hasParticipation &&
-                  participation?.monitoringData?.overallScore !== undefined
+                  (participation?.consultingData?.overallScore !== undefined ||
+                    participation?.monitoringData?.overallScore !== undefined)
                 "
                 class="mt-4 flex items-center gap-3"
               >
@@ -157,10 +162,20 @@
                   <div
                     :class="[
                       'text-4xl font-bold',
-                      getCohortClass(participation.monitoringData.overallScore),
+                      getCohortClass(
+                        (
+                          participation.consultingData ||
+                          participation.monitoringData
+                        ).overallScore
+                      ),
                     ]"
                   >
-                    {{ participation.monitoringData.overallScore }}
+                    {{
+                      (
+                        participation.consultingData ||
+                        participation.monitoringData
+                      ).overallScore
+                    }}
                   </div>
                   <p class="text-xs text-green-600 font-medium mt-1">
                     / 63 puntos
@@ -170,11 +185,21 @@
                   <div
                     :class="[
                       'inline-flex px-3 py-1 rounded-full text-xs font-bold',
-                      getCohortClass(participation.monitoringData.overallScore),
+                      getCohortClass(
+                        (
+                          participation.consultingData ||
+                          participation.monitoringData
+                        ).overallScore
+                      ),
                     ]"
                   >
                     {{
-                      getCohortLabel(participation.monitoringData.overallScore)
+                      getCohortLabel(
+                        (
+                          participation.consultingData ||
+                          participation.monitoringData
+                        ).overallScore
+                      )
                     }}
                   </div>
                   <p class="text-xs text-green-600 mt-1">Nivel alcanzado</p>
@@ -183,6 +208,19 @@
             </div>
           </div>
         </div>
+
+        <!-- Gráfico Radar de Categorías -->
+        <ConsultingDataRadar
+          v-if="
+            hasParticipation &&
+            (participation?.consultingData?.categoryScores ||
+              participation?.monitoringData?.categoryScores)
+          "
+          :category-scores="
+            participation.consultingData?.categoryScores ||
+            participation.monitoringData?.categoryScores
+          "
+        />
 
         <!-- Recursos -->
         <div
@@ -208,7 +246,7 @@
             <div class="flex-1">
               <p class="font-medium text-blue-900">Ver Documentos en Drive</p>
               <p class="text-sm text-blue-600">
-                Materiales y recursos del monitoreo
+                Materiales y recursos de la asesoría
               </p>
             </div>
             <svg
@@ -288,6 +326,7 @@ import { useActivitiesStore } from "@/stores/activitiesStore";
 import { useAuthStore } from "@/stores/authStore";
 import { GraphUp, Calendar, CheckCircle, WarningCircle } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import ConsultingDataRadar from "@/components/activities/detail/ConsultingDataRadar.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -309,7 +348,7 @@ const hasParticipation = computed(() => {
 const whatsappLink = computed(() => {
   const phone = "51921492993"; // Número de WhatsApp
   const message = encodeURIComponent(
-    `Hola, quiero consultar sobre mi monitoreo "${activity.value?.title || ""}"`
+    `Hola, quiero consultar sobre mi asesoría "${activity.value?.title || ""}"`
   );
   return `https://wa.me/${phone}?text=${message}`;
 });

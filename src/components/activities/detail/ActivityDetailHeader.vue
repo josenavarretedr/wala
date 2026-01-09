@@ -75,7 +75,8 @@ defineEmits(["back", "edit", "delete"]);
 function getTypeBadgeClass(type) {
   const classes = {
     session: "bg-blue-100 text-blue-700",
-    monitoring: "bg-purple-100 text-purple-700",
+    consulting: "bg-purple-100 text-purple-700",
+    monitoring: "bg-purple-100 text-purple-700", // Backward compatibility
     event: "bg-orange-100 text-orange-700",
   };
   return classes[type] || "bg-gray-100 text-gray-700";
@@ -84,7 +85,8 @@ function getTypeBadgeClass(type) {
 function getTypeLabel(type) {
   const labels = {
     session: "Sesión",
-    monitoring: "Monitoreo",
+    consulting: "Asesoría",
+    monitoring: "Asesoría", // Backward compatibility
     event: "Evento",
   };
   return labels[type] || type;

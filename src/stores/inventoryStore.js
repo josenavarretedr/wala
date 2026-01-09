@@ -143,7 +143,7 @@ export function useInventoryStore() {
    * Procesa compras de materiales/insumos y crea/actualiza productos en inventario
    * Crea stockLogs con type: 'buy' para registrar la entrada de stock
    */
-  const addMaterialItemsToInventoryForPurchase = async (materialItems) => {
+  const addMaterialItemsToInventoryForPurchase = async (materialItems, transactionId = null) => {
     const operationChain = startOperationChain('bulk_purchase_materials');
 
     try {
@@ -223,6 +223,7 @@ export function useInventoryStore() {
           unit: material.unit,
           description: `Compra: ${material.description}`,
           createdAt: new Date(),
+          ...(transactionId && { transactionId }), // Agregar transactionId si existe
         };
 
         const stockLogId = await addStockLogInInventory(stockLogData, 'buy');

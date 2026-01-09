@@ -228,7 +228,8 @@ function goToActivity(activity) {
   // Rutas específicas por tipo de actividad
   const routeMap = {
     session: "session-participation",
-    monitoring: "monitoring-participation",
+    consulting: "consulting-participation",
+    monitoring: "consulting-participation", // Backward compatibility
     event: "event-participation",
   };
 

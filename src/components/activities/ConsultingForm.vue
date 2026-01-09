@@ -1,6 +1,6 @@
 <template>
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
   >
     <div
       class="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
@@ -12,7 +12,7 @@
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-2xl font-bold text-gray-900">
-              Formulario de Monitoreo
+              Formulario de Asesoría
             </h2>
             <p class="text-sm text-gray-600 mt-1">{{ activity.title }}</p>
           </div>
@@ -42,7 +42,7 @@
         <!-- Metadata Section -->
         <div class="bg-purple-50 rounded-lg p-6 border border-purple-200">
           <h3 class="text-lg font-semibold text-purple-900 mb-4">
-            Información del Monitoreo
+            Información de la Asesoría
           </h3>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,10 +89,10 @@
               </p>
             </div>
 
-            <!-- Fecha de Monitoreo -->
+            <!-- Fecha de Asesoría -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">
-                Fecha del Monitoreo *
+                Fecha de la Asesoría *
               </label>
               <input
                 v-model="form.monitoringDate"
@@ -245,7 +245,7 @@
             Evidencias Fotográficas
           </h3>
           <p class="text-sm text-gray-600 mb-4">
-            Sube fotos que documenten la visita de monitoreo
+            Sube fotos que documenten la visita de asesoría
           </p>
 
           <div class="space-y-3">
@@ -346,7 +346,7 @@
             v-if="submitting"
             class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"
           ></div>
-          <span>{{ submitting ? "Enviando..." : "Enviar Monitoreo" }}</span>
+          <span>{{ submitting ? "Enviando..." : "Enviar Asesoría" }}</span>
         </button>
       </div>
     </div>
@@ -618,7 +618,7 @@ function validateForm() {
   }
 
   if (!form.monitoringDate) {
-    errors.value.monitoringDate = "Selecciona la fecha del monitoreo";
+    errors.value.monitoringDate = "Selecciona la fecha de la asesoría";
   }
 
   // Validar que al menos una pregunta esté respondida
@@ -663,8 +663,8 @@ async function handleSubmit() {
 
     emit("submitted");
   } catch (error) {
-    console.error("Error al enviar monitoreo:", error);
-    alert("Error al enviar el monitoreo. Por favor intenta de nuevo.");
+    console.error("Error al enviar asesoría:", error);
+    alert("Error al enviar la asesoría. Por favor intenta de nuevo.");
   } finally {
     submitting.value = false;
   }
@@ -689,7 +689,7 @@ async function loadProgramParticipants() {
       .filter((p) => p.status === "active");
 
     console.log(
-      `✅ ${participants.value.length} participantes cargados para monitoreo`
+      `✅ ${participants.value.length} participantes cargados para asesoría`
     );
   } catch (error) {
     console.error("Error al cargar participantes:", error);

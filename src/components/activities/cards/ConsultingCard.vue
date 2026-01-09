@@ -48,24 +48,12 @@
     <!-- Header -->
     <div class="flex items-start justify-between gap-3 mb-3">
       <div class="flex items-center gap-2 flex-wrap flex-1">
-        <!-- Badge de Monitoreo -->
+        <!-- Badge de Asesoría -->
         <div
           class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200"
         >
-          <svg
-            class="w-3 h-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
-            />
-          </svg>
-          <span>Monitoreo</span>
+          <GraphUp class="w-3 h-3" />
+          <span>Asesoría</span>
         </div>
 
         <!-- Badge Obligatoria -->
@@ -164,6 +152,7 @@
 </template>
 
 <script setup>
+import { GraphUp } from "@iconoir/vue";
 const props = defineProps({
   activity: {
     type: Object,

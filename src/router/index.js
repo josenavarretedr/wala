@@ -224,12 +224,22 @@ const routes = [
         }
       },
       {
-        path: 'programs/:programId/monitoring-participation/:activityId',
-        name: 'monitoring-participation',
-        component: () => import('@/views/business/programs/MonitoringParticipation.vue'),
+        path: 'programs/:programId/consulting-participation/:activityId',
+        name: 'consulting-participation',
+        component: () => import('@/views/business/programs/ConsultingParticipation.vue'),
         meta: {
           requiresAuth: true,
-          title: 'Detalle de Monitoreo'
+          title: 'Detalle de Asesoría'
+        }
+      },
+      // Backward compatibility route
+      {
+        path: 'programs/:programId/monitoring-participation/:activityId',
+        name: 'monitoring-participation',
+        component: () => import('@/views/business/programs/ConsultingParticipation.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Asesoría'
         }
       },
       {

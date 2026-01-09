@@ -61,11 +61,11 @@
               </span>
             </th>
             <th
-              @click="sortBy('monitoringsCompleted')"
+              @click="sortBy('consultingsCompleted')"
               class="sortable text-center"
             >
-              Monitoreos
-              <span v-if="sortKey === 'monitoringsCompleted'">
+              Asesorías
+              <span v-if="sortKey === 'consultingsCompleted'">
                 {{ sortOrder === "asc" ? "▲" : "▼" }}
               </span>
             </th>
@@ -112,13 +112,13 @@
                 class="activity-badge"
                 :class="
                   getActivityBadgeClass(
-                    participant.monitoringsCompleted,
-                    participant.monitoringsRequired
+                    participant.consultingsCompleted,
+                    participant.consultingsRequired
                   )
                 "
               >
-                {{ participant.monitoringsCompleted }}/{{
-                  participant.monitoringsRequired
+                {{ participant.consultingsCompleted }}/{{
+                  participant.consultingsRequired
                 }}
               </span>
             </td>
@@ -198,17 +198,17 @@
               </span>
             </p>
             <p>
-              <strong>Monitoreos:</strong>
+              <strong>Asesorías:</strong>
               <span
                 :class="
                   getActivityBadgeClass(
-                    participant.monitoringsCompleted,
-                    participant.monitoringsRequired
+                    participant.consultingsCompleted,
+                    participant.consultingsRequired
                   )
                 "
               >
-                {{ participant.monitoringsCompleted }}/{{
-                  participant.monitoringsRequired
+                {{ participant.consultingsCompleted }}/{{
+                  participant.consultingsRequired
                 }}
               </span>
             </p>
@@ -280,8 +280,9 @@ const requiredActivities = computed(() => {
     session: activities.value.filter(
       (a) => a.type === "session" && a.isRequired
     ),
-    monitoring: activities.value.filter(
-      (a) => a.type === "monitoring" && a.isRequired
+    consulting: activities.value.filter(
+      (a) =>
+        (a.type === "consulting" || a.type === "monitoring") && a.isRequired
     ),
   };
 });
@@ -302,16 +303,19 @@ const enrichedParticipants = computed(() => {
       return activity?.type === "session" && activity?.isRequired;
     }).length;
 
-    // Contar monitoreos completados (participaciones en actividades tipo monitoring)
-    const monitoringsCompleted = userParticipations.filter((p) => {
+    // Contar asesorías completadas (participaciones en actividades tipo consulting/monitoring)
+    const consultingsCompleted = userParticipations.filter((p) => {
       const activity = activities.value.find((a) => a.id === p.activityId);
-      return activity?.type === "monitoring" && activity?.isRequired;
+      return (
+        (activity?.type === "consulting" || activity?.type === "monitoring") &&
+        activity?.isRequired
+      );
     }).length;
 
     const sessionsRequired = requiredActivities.value.session.length;
-    const monitoringsRequired = requiredActivities.value.monitoring.length;
-    const totalRequired = sessionsRequired + monitoringsRequired;
-    const totalCompleted = sessionsCompleted + monitoringsCompleted;
+    const consultingsRequired = requiredActivities.value.consulting.length;
+    const totalRequired = sessionsRequired + consultingsRequired;
+    const totalCompleted = sessionsCompleted + consultingsCompleted;
 
     // Calcular progreso general
     const overallProgress =
@@ -323,8 +327,8 @@ const enrichedParticipants = computed(() => {
       ...participant,
       sessionsCompleted,
       sessionsRequired,
-      monitoringsCompleted,
-      monitoringsRequired,
+      consultingsCompleted,
+      consultingsRequired,
       totalCompleted,
       totalRequired,
       overallProgress,
@@ -454,8 +458,8 @@ function exportParticipants() {
     "Email",
     "Sesiones Completadas",
     "Sesiones Requeridas",
-    "Monitoreos Completados",
-    "Monitoreos Requeridos",
+    "Asesorías Completadas",
+    "Asesorías Requeridas",
     "Progreso Total",
     "Estado",
   ];
@@ -464,8 +468,8 @@ function exportParticipants() {
     p.email || "",
     p.sessionsCompleted,
     p.sessionsRequired,
-    p.monitoringsCompleted,
-    p.monitoringsRequired,
+    p.consultingsCompleted,
+    p.consultingsRequired,
     p.overallProgress + "%",
     p.status === "active" ? "Activo" : "Inactivo",
   ]);

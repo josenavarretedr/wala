@@ -40,9 +40,12 @@ export const useActivitiesStore = defineStore('activities', () => {
     return activities.value.filter(a => a.type === 'session')
   })
 
-  const monitoringActivities = computed(() => {
-    return activities.value.filter(a => a.type === 'monitoring')
+  const consultingActivities = computed(() => {
+    return activities.value.filter(a => a.type === 'consulting' || a.type === 'monitoring')
   })
+
+  // Backward compatibility alias
+  const monitoringActivities = consultingActivities
 
   const userParticipations = computed(() => (userId) => {
     return participations.value.filter(p => p.userId === userId)
@@ -78,9 +81,9 @@ export const useActivitiesStore = defineStore('activities', () => {
         }
       }
 
-      // Si es monitoreo, agregar configuración por defecto
-      if (activityData.type === 'monitoring' && !activityData.monitoringConfig) {
-        newActivity.monitoringConfig = {
+      // Si es asesoría, agregar configuración por defecto
+      if ((activityData.type === 'consulting' || activityData.type === 'monitoring') && !activityData.consultingConfig && !activityData.monitoringConfig) {
+        newActivity.consultingConfig = {
           formTemplate: 'standard',
           categories: [
             'negocio',
@@ -94,6 +97,8 @@ export const useActivitiesStore = defineStore('activities', () => {
           totalQuestions: 21,
           requiredEvidence: activityData.requiredEvidence || false
         }
+        // Backward compatibility
+        newActivity.monitoringConfig = newActivity.consultingConfig
       }
 
       const docRef = await addDoc(activitiesRef, newActivity)
@@ -368,9 +373,9 @@ export const useActivitiesStore = defineStore('activities', () => {
   }
 
   /**
-   * Enviar monitoreo
+   * Enviar asesoría (consulting)
    */
-  async function submitMonitoring(programId, activityId, monitoringData) {
+  async function submitConsulting(programId, activityId, consultingData) {
     const authStore = useAuthStore()
 
     if (!authStore.user?.uid) {
@@ -385,8 +390,8 @@ export const useActivitiesStore = defineStore('activities', () => {
 
       // Calcular scores por categoría (sumatoria de las 3 preguntas)
       const categoryScores = {}
-      Object.keys(monitoringData.responses).forEach(category => {
-        const responses = monitoringData.responses[category]
+      Object.keys(consultingData.responses).forEach(category => {
+        const responses = consultingData.responses[category]
         const total = Object.values(responses).reduce((sum, val) => sum + val, 0)
         categoryScores[category] = total // Sumatoria directa, no promedio
       })
@@ -396,21 +401,33 @@ export const useActivitiesStore = defineStore('activities', () => {
 
       const newParticipation = {
         activityId,
-        activityType: 'monitoring',
-        userId: monitoringData.userId,
-        userName: monitoringData.userName || 'Usuario',
-        businessId: monitoringData.businessId || '',
-        businessName: monitoringData.businessName || '',
-        monitoringData: {
-          modality: monitoringData.modality,
-          monitoringDate: monitoringData.monitoringDate,
+        activityType: 'consulting',
+        userId: consultingData.userId,
+        userName: consultingData.userName || 'Usuario',
+        businessId: consultingData.businessId || '',
+        businessName: consultingData.businessName || '',
+        consultingData: {
+          modality: consultingData.modality,
+          consultingDate: consultingData.consultingDate || consultingData.monitoringDate, // Backward compatibility
           facilitatorId: authStore.user.uid,
-          responses: monitoringData.responses,
-          categoryComments: monitoringData.categoryComments || {},
+          responses: consultingData.responses,
+          categoryComments: consultingData.categoryComments || {},
           categoryScores,
           overallScore,
-          evidenceUrls: monitoringData.evidenceUrls || [],
-          additionalComments: monitoringData.additionalComments || ''
+          evidenceUrls: consultingData.evidenceUrls || [],
+          additionalComments: consultingData.additionalComments || ''
+        },
+        // Backward compatibility - duplicar en monitoringData
+        monitoringData: {
+          modality: consultingData.modality,
+          monitoringDate: consultingData.consultingDate || consultingData.monitoringDate,
+          facilitatorId: authStore.user.uid,
+          responses: consultingData.responses,
+          categoryComments: consultingData.categoryComments || {},
+          categoryScores,
+          overallScore,
+          evidenceUrls: consultingData.evidenceUrls || [],
+          additionalComments: consultingData.additionalComments || ''
         },
         status: 'completed',
         submittedAt: serverTimestamp()
@@ -475,26 +492,41 @@ export const useActivitiesStore = defineStore('activities', () => {
   }
 
   /**
-   * Obtener número de monitoreos realizados por un usuario
+   * Obtener número de asesorías realizadas por un usuario
    */
-  async function getUserMonitoringCount(programId, userId) {
+  async function getUserConsultingCount(programId, userId) {
     try {
       const participationsRef = collection(db, 'programs', programId, 'participations')
-      const q = query(
+
+      // Consultar ambos tipos para backward compatibility
+      const qConsulting = query(
+        participationsRef,
+        where('userId', '==', userId),
+        where('activityType', '==', 'consulting'),
+        where('status', '==', 'completed')
+      )
+
+      const qMonitoring = query(
         participationsRef,
         where('userId', '==', userId),
         where('activityType', '==', 'monitoring'),
         where('status', '==', 'completed')
       )
 
-      const snapshot = await getDocs(q)
+      const [consultingSnapshot, monitoringSnapshot] = await Promise.all([
+        getDocs(qConsulting),
+        getDocs(qMonitoring)
+      ])
 
-      return snapshot.size
+      return consultingSnapshot.size + monitoringSnapshot.size
     } catch (err) {
-      console.error('❌ Error al obtener conteo de monitoreos:', err)
+      console.error('❌ Error al obtener conteo de asesorías:', err)
       return 0
     }
   }
+
+  // Backward compatibility alias
+  const getUserMonitoringCount = getUserConsultingCount
 
   /**
    * Obtener número de sesiones a las que asistió un usuario
@@ -540,8 +572,8 @@ export const useActivitiesStore = defineStore('activities', () => {
     // Getters
     activitiesByType,
     sessionActivities,
-    monitoringActivities,
-    userParticipations,
+    consultingActivities,
+    monitoringActivities, // Backward compatibility alias
 
     // Actions
     createActivity,
@@ -551,9 +583,11 @@ export const useActivitiesStore = defineStore('activities', () => {
     deleteActivity,
     loadActivityParticipations,
     markAttendance,
-    submitMonitoring,
+    submitConsulting,
+    submitMonitoring: submitConsulting, // Backward compatibility alias
     loadUserActivities,
-    getUserMonitoringCount,
+    getUserConsultingCount,
+    getUserMonitoringCount, // Backward compatibility alias
     getUserSessionsAttended,
     $reset
   }

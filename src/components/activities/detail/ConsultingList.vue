@@ -2,10 +2,10 @@
   <div class="bg-white rounded-lg shadow-sm border border-gray-100 mb-24">
     <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
       <h2 class="text-base sm:text-lg font-bold text-gray-900">
-        Monitoreos Realizados
+        Asesorías Realizadas
       </h2>
       <p class="text-xs sm:text-sm text-gray-600 mt-1">
-        Registro de todos los monitoreos completados para esta actividad
+        Registro de todas las asesorías completadas para esta actividad
       </p>
     </div>
 
@@ -13,11 +13,11 @@
       <!-- Empty State -->
       <div v-if="!participations.length" class="text-center py-12">
         <p class="text-xs sm:text-sm text-gray-500">
-          No se han realizado monitoreos aún
+          No se han realizado asesorías aún
         </p>
       </div>
 
-      <!-- Lista de Monitoreos -->
+      <!-- Lista de Asesorías -->
       <div v-else class="space-y-4">
         <div
           v-for="monitoring in participations"
@@ -93,7 +93,7 @@
                   <!-- <button
                     @click.stop="$emit('delete', monitoring)"
                     class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Eliminar monitoreo"
+                    title="Eliminar asesoría"
                   >
                     <Trash class="w-5 h-5" />
                   </button> -->
@@ -221,7 +221,7 @@ function getCategoryLabel(category) {
 }
 
 function getCategoryColorClass(category) {
-  // Colores basados en MonitoringForm.vue categories
+  // Colores basados en ConsultingForm.vue categories
   const colorClasses = {
     negocioFamilia: "bg-blue-50 text-blue-900 border-blue-200",
     marketing: "bg-green-50 text-green-900 border-green-200",

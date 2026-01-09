@@ -17,7 +17,8 @@ export function useActivities() {
     error,
     activitiesByType,
     sessionActivities,
-    monitoringActivities,
+    consultingActivities,
+    monitoringActivities, // Backward compatibility
     userParticipations
   } = storeToRefs(store)
 
@@ -30,9 +31,11 @@ export function useActivities() {
     deleteActivity,
     loadActivityParticipations,
     markAttendance,
-    submitMonitoring,
+    submitConsulting,
+    submitMonitoring, // Backward compatibility alias
     loadUserActivities,
-    getUserMonitoringCount,
+    getUserConsultingCount,
+    getUserMonitoringCount, // Backward compatibility alias
     getUserSessionsAttended,
     $reset
   } = store
@@ -48,7 +51,9 @@ export function useActivities() {
     // Getters
     activitiesByType,
     sessionActivities,
-    monitoringActivities,
+    consultingActivities,
+    monitoringActivities, // Backward compatibility
+
     userParticipations,
 
     // Actions
@@ -59,9 +64,11 @@ export function useActivities() {
     deleteActivity,
     loadActivityParticipations,
     markAttendance,
-    submitMonitoring,
+    submitConsulting,
+    submitMonitoring, // Backward compatibility alias
     loadUserActivities,
-    getUserMonitoringCount,
+    getUserConsultingCount,
+    getUserMonitoringCount, // Backward compatibility alias
     getUserSessionsAttended,
     resetActivities: $reset
   }

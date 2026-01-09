@@ -184,11 +184,20 @@ const items = computed(() => {
       type: "filter",
     },
     {
-      id: "monitoring",
-      name: "Monitoreos",
+      id: "consulting",
+      name: "Asesorías",
       icon: GraphUp,
       color: "purple",
       type: "filter",
+    },
+    // Backward compatibility
+    {
+      id: "monitoring",
+      name: "Asesorías",
+      icon: GraphUp,
+      color: "purple",
+      type: "filter",
+      hidden: true, // Oculto, solo para compatibility
     },
     {
       id: "event",
@@ -210,14 +219,16 @@ const items = computed(() => {
     });
   }
 
-  return baseItems;
+  // Filtrar items ocultos
+  return baseItems.filter((item) => !item.hidden);
 });
 
 const isActive = (itemId) => {
   if (
     itemId === "all" ||
     itemId === "session" ||
-    itemId === "monitoring" ||
+    itemId === "consulting" ||
+    itemId === "monitoring" || // Backward compatibility
     itemId === "event"
   ) {
     return props.activeTab === itemId;
