@@ -1,6 +1,9 @@
 <template>
   <div
     class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50"
+    @keydown.esc="$emit('close')"
+    tabindex="0"
+    ref="modalContainer"
   >
     <div class="bg-white rounded-xl shadow-2xl w-full p-6 animate-fade-in">
       <!-- Header -->
@@ -338,7 +341,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { usePrograms } from "@/composables/usePrograms";
 import { useUserStore } from "@/stores/useUserStore";
 
@@ -353,6 +356,7 @@ const error = ref(null);
 const success = ref(null);
 const programFound = ref(null);
 const dataAuthorized = ref(false);
+const modalContainer = ref(null);
 
 const currentBusinessName = computed(() => {
   return (
@@ -360,6 +364,13 @@ const currentBusinessName = computed(() => {
     userStore.currentBusiness?.businessId ||
     "Mi Negocio"
   );
+});
+
+// Enfocar el modal al montarse para capturar eventos de teclado
+onMounted(() => {
+  if (modalContainer.value) {
+    modalContainer.value.focus();
+  }
 });
 
 function onCodeInput() {

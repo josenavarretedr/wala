@@ -176,6 +176,17 @@ const routes = [
         meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
       },
 
+      // ✨ NUEVO: Premium
+      {
+        path: 'premium',
+        name: 'Premium',
+        component: () => import('@/views/business/Premium.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'WALA Premium'
+        }
+      },
+
       // ✨ NUEVO: Módulo Juntos (Programas)
       {
         path: 'programs',

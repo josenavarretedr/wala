@@ -375,6 +375,7 @@ import {
   Reports,
   Group,
   Community,
+  BrightCrown,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -467,11 +468,21 @@ const allMicroApps = ref([
     }),
     available: computed(() => {
       // Solo disponible si hay al menos un programa
-      return userStore.currentBusiness?.programs?.length > 0;
+      // return userStore.currentBusiness?.programs?.length > 0;
+      return true;
     }),
     icon: Community,
     isComponent: true,
     color: "teal",
+  },
+  {
+    id: 8,
+    name: "Premium",
+    route: "/premium",
+    available: true,
+    icon: BrightCrown,
+    isComponent: true,
+    color: "orange",
   },
 ]);
 
@@ -512,8 +523,8 @@ const getValue = (value) => {
 
 // Computed properties
 const visibleApps = computed(() => {
-  // Mostrar 6 apps principales (ya que el widget ocupa 2 espacios en grid de 8)
-  return allMicroApps.value.slice(0, 7);
+  // Mostrar 7 apps principales + Premium (total 8)
+  return allMicroApps.value.slice(0, 8);
 });
 
 const availableApps = computed(() => {
