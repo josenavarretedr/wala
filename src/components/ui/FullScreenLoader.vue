@@ -2,8 +2,16 @@
   <Transition name="fade">
     <div v-if="isVisible" class="full-screen-loader">
       <div class="loader-content">
+        <!-- Icono principal -->
+        <div class="loader-icon-wrapper">
+          <div class="loader-icon-bg">
+            <DatabaseRestore class="loader-icon" />
+          </div>
+        </div>
+
         <!-- Título -->
-        <h2 class="loader-title">Cargando tu negocio… 🚀</h2>
+        <h2 class="loader-title">Cargando tu negocio</h2>
+        <p class="loader-subtitle">Preparando todo para ti</p>
 
         <!-- Pasos de carga minimalistas -->
         <div class="loading-steps">
@@ -21,7 +29,7 @@
               <div v-if="step.loading" class="mini-spinner"></div>
               <!-- Check cuando completa -->
               <Check v-else-if="step.completed" class="check-icon" />
-              <!-- Circle gris cuando está pendiente -->
+              <!-- Dot gris cuando está pendiente -->
               <div v-else class="pending-dot"></div>
             </div>
             <span class="step-label">{{ step.label }}</span>
@@ -35,23 +43,27 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { useAppLoader } from "@/composables/useAppLoader";
-import { Check } from "@iconoir/vue";
+import { Check, DatabaseRestore } from "@iconoir/vue";
 
 const { isVisible, isLoading } = useAppLoader();
 
 // Solo 3 pasos simples
 const loadingSteps = ref([
   {
-    label: "Conectando con tu información principal",
+    label: "Conectando con tu información",
     loading: false,
     completed: false,
   },
   {
-    label: "Sincronizando tus transacciones recientes",
+    label: "Sincronizando transacciones",
     loading: false,
     completed: false,
   },
-  { label: "¡Todo listo para despegar!", loading: false, completed: false },
+  {
+    label: "Finalizando carga",
+    loading: false,
+    completed: false,
+  },
 ]);
 
 let stepInterval = null;
@@ -159,7 +171,7 @@ function completeAllSteps() {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: white;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,59 +180,110 @@ function completeAllSteps() {
 
 .loader-content {
   text-align: center;
-  max-width: 600px;
+  max-width: 480px;
   padding: 48px 32px;
+}
+
+/* Icono principal animado */
+.loader-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.loader-icon-bg {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulse-scale 2s ease-in-out infinite;
+}
+
+.loader-icon {
+  width: 40px;
+  height: 40px;
+  color: #6366f1;
+  stroke-width: 1.5;
+}
+
+@keyframes pulse-scale {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15),
+      0 0 0 1px rgba(99, 102, 241, 0.1);
+  }
 }
 
 /* Título */
 .loader-title {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 600;
-  margin-bottom: 48px;
-  color: #1f2937;
+  margin-bottom: 8px;
+  color: #111827;
   letter-spacing: -0.02em;
+}
+
+.loader-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 40px;
+  font-weight: 400;
 }
 
 /* Pasos de carga */
 .loading-steps {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
 }
 
 .step-item {
   display: flex;
   align-items: center;
-  gap: 16px;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 12px;
+  padding: 8px 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .step-icon-wrapper {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   border-radius: 50%;
   background: #f3f4f6;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .step-item.step-loading .step-icon-wrapper {
   background: #e0e7ff;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
 }
 
 .step-item.step-completed .step-icon-wrapper {
   background: #10b981;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
 }
 
 /* Dot pendiente */
 .pending-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   background: #d1d5db;
   border-radius: 50%;
   transition: all 0.3s ease;
@@ -228,12 +291,12 @@ function completeAllSteps() {
 
 /* Spinner minimalista */
 .mini-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2.5px solid #e0e7ff;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e0e7ff;
   border-top-color: #6366f1;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.7s linear infinite;
 }
 
 @keyframes spin {
@@ -247,34 +310,49 @@ function completeAllSteps() {
 
 /* Icono Check */
 .check-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: white;
-  stroke-width: 3;
+  stroke-width: 2.5;
+  animation: check-pop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Label del paso */
 .step-label {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #9ca3af;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
   flex: 1;
 }
 
 .step-item.step-loading .step-label {
   color: #6366f1;
+  font-weight: 600;
 }
 
 .step-item.step-completed .step-label {
   color: #10b981;
+  font-weight: 600;
 }
 
 /* Transiciones */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity 0.4s ease;
 }
 
 .fade-enter-from,
@@ -286,20 +364,58 @@ function completeAllSteps() {
 @media (max-width: 640px) {
   .loader-content {
     max-width: 90%;
-    padding: 40px 24px;
+    padding: 32px 20px;
+  }
+
+  .loader-icon-bg {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+  }
+
+  .loader-icon {
+    width: 32px;
+    height: 32px;
   }
 
   .loader-title {
-    font-size: 24px;
-    margin-bottom: 40px;
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .loader-subtitle {
+    font-size: 13px;
+    margin-bottom: 32px;
   }
 
   .loading-steps {
-    gap: 20px;
+    gap: 12px;
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+
+  .step-item {
+    gap: 10px;
+    padding: 6px 0;
+  }
+
+  .step-icon-wrapper {
+    width: 24px;
+    height: 24px;
+  }
+
+  .mini-spinner {
+    width: 14px;
+    height: 14px;
+  }
+
+  .check-icon {
+    width: 16px;
+    height: 16px;
   }
 
   .step-label {
-    font-size: 15px;
+    font-size: 13px;
   }
 }
 </style>

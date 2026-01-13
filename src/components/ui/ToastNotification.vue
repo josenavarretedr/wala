@@ -25,11 +25,27 @@
         </div>
 
         <!-- Message -->
-        <p
+        <div
           :class="['flex-1 text-sm font-medium', textColorClasses[toast.type]]"
         >
-          {{ toast.message }}
-        </p>
+          <template v-if="toast.actionLink">
+            {{ toast.message.split(toast.actionLink.text)[0] }} <br />
+            <router-link
+              :to="toast.actionLink.route"
+              :class="[
+                'underline font-semibold hover:opacity-80',
+                textColorClasses[toast.type],
+              ]"
+              @click="removeToast(toast.id)"
+            >
+              {{ toast.actionLink.text }}
+            </router-link>
+            {{ toast.message.split(toast.actionLink.text)[1] || "" }}
+          </template>
+          <template v-else>
+            {{ toast.message }}
+          </template>
+        </div>
 
         <!-- Close Button -->
         <button

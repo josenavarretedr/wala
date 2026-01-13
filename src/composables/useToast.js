@@ -12,6 +12,7 @@ export function useToast() {
    * @param {string} options.type - Tipo de toast: 'info', 'success', 'warning', 'error', 'premium'
    * @param {number} options.duration - Duración en ms (default: 3000)
    * @param {boolean} options.closable - Si se puede cerrar manualmente (default: true)
+   * @param {Object} options.actionLink - Enlace de acción opcional {text: string, route: string}
    */
   const showToast = (options) => {
     const {
@@ -19,6 +20,7 @@ export function useToast() {
       type = 'info',
       duration = 1500,
       closable = true,
+      actionLink = null,
     } = options;
 
     const id = ++toastId;
@@ -28,6 +30,7 @@ export function useToast() {
       type,
       duration,
       closable,
+      actionLink,
       show: true,
     };
 

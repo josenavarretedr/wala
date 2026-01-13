@@ -309,12 +309,14 @@ import PaymentRegistrationModal from "@/components/AccountsReceivable/PaymentReg
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import { useToast } from "@/composables/useToast";
+import { useRoute } from "vue-router";
 
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 const accountsBalanceStore = useAccountsBalanceStore();
 const opening = computed(() => accountsBalanceStore.openingTransaction);
 import { useSubscription } from "@/composables/useSubscription";
 
+const route = useRoute();
 // Suscripción
 const { isPremium } = useSubscription();
 
@@ -380,7 +382,13 @@ function openPaymentModal(transaction) {
   }
   if (!isPremium.value) {
     premium(
-      "Deudas de clientes al día con Wala Premium. Actualiza tu plan para registrar pagos."
+      "Registra pagos parciales y gestiona mejor tus cuentas por cobrar.",
+      {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      }
     );
     return;
   }

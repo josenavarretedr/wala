@@ -112,12 +112,14 @@ import SparkLineChart from "@/components/Sales/SparkLineChart.vue";
 import SalesAccountsWidget from "@/components/Sales/SalesAccountsWidget.vue";
 import TopProductsByUnits from "@/components/Sales/TopProductsByUnits.vue";
 import TopProductsByRevenue from "@/components/Sales/TopProductsByRevenue.vue";
+import { useRoute } from "vue-router";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";
 import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
 
+const route = useRoute();
 const { getTransactionsTodayCmps, getTransactionsRange } = useTransaccion();
 const { isPremium } = useSubscription();
 const { premium } = useToast();
@@ -143,9 +145,14 @@ const selectTimeRange = (value) => {
     premium(
       `Los datos de ${
         periodLabels[value] || "períodos extendidos"
-      } pueden ser analizados con Wala Premium. Actualiza tu plan`
+      } no pueden ser analizados.`,
+      {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      }
     );
-    // Permitir el cambio visual pero los datos estarán bloqueados
   }
 
   selectedTimeRange.value = value;
@@ -163,32 +170,36 @@ const handleLockedClick = (widgetType) => {
   const messages = {
     totalSales: `Análisis de ventas totales de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Wala Premium.`,
+    } no disponible.`,
     tickets: `Análisis de tickets de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
     avgTicket: `Análisis de ticket promedio de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
     accounts: `Desglose de métodos de pago de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
     sparkline: `Gráfico de tendencias de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
     topUnits: `Top productos por unidades de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
     topRevenue: `Top productos por ingreso de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium.`,
+    } no disponible.`,
   };
 
   premium(
     messages[widgetType] ||
-      `Análisis de ${
-        periodLabels[selectedTimeRange.value]
-      } disponible con Premium.`
+      `Análisis de ${periodLabels[selectedTimeRange.value]} no disponible.`,
+    {
+      actionLink: {
+        text: "Actualiza a Wala Premium",
+        route: `/business/${route.params.businessId}/premium`,
+      },
+    }
   );
 };
 

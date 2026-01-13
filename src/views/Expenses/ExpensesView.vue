@@ -111,10 +111,12 @@ import ExpensesCategoryWidget from "@/components/Expenses/ExpensesCategoryWidget
 import SparkLineChart from "@/components/Expenses/SparkLineChart.vue";
 
 import { ref, onMounted, watch, computed } from "vue";
+import { useRoute } from "vue-router";
 import { useTransaccion } from "@/composables/useTransaction";
 import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
 
+const route = useRoute();
 const { getTransactionsTodayCmps, getTransactionsRange } = useTransaccion();
 const { isPremium } = useSubscription();
 const { premium } = useToast();
@@ -140,7 +142,13 @@ const selectTimeRange = (value) => {
     premium(
       `Los datos de ${
         periodLabels[value] || "períodos extendidos"
-      } pueden ser analizados con Wala Premium. Actualiza tu plan`
+      } no pueden ser analizados.`,
+      {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      }
     );
     // Permitir el cambio visual pero los datos estarán bloqueados
   }
@@ -160,29 +168,33 @@ const handleLockedClick = (widgetType) => {
   const messages = {
     totalExpenses: `Análisis de gastos totales de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
     tickets: `Análisis de tickets de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
     avgTicket: `Análisis de ticket promedio de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
     accounts: `Desglose de métodos de pago de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
     category: `Desglose por categoría de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
     sparkline: `Gráfico de tendencias de ${
       periodLabels[selectedTimeRange.value]
-    } disponible con Premium. Actualiza tu plan ahora`,
+    } no disponible.`,
   };
 
   premium(
     messages[widgetType] ||
-      `Análisis de ${
-        periodLabels[selectedTimeRange.value]
-      } disponible con Premium. Actualiza tu plan ahora`
+      `Análisis de ${periodLabels[selectedTimeRange.value]} no disponible.`,
+    {
+      actionLink: {
+        text: "Actualiza a Wala Premium",
+        route: `/business/${route.params.businessId}/premium`,
+      },
+    }
   );
 };
 

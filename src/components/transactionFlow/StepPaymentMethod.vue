@@ -128,7 +128,7 @@
 
           <!-- Abono / Pago Parcial -->
           <button
-            @click="setPaymentType('partial')"
+            @click="handlePartialAmountInputFocus()"
             :class="[
               'w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between',
               paymentType === 'partial'
@@ -159,7 +159,14 @@
                 </div>
               </div>
             </div>
-            <span class="text-lg font-semibold text-orange-600">Parcial</span>
+            <!-- <span class="text-lg font-semibold text-orange-600">Parcial</span> -->
+            <span
+              v-if="!isPremium"
+              class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
+            >
+              <BrightCrown class="w-4 h-4" />
+              Premium
+            </span>
           </button>
         </div>
       </div>
@@ -268,9 +275,16 @@
 import { ref, computed, watch, nextTick } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useToast } from "@/composables/useToast";
+import { useSubscription } from "@/composables/useSubscription";
+import { useRoute } from "vue-router";
+import { BrightCrown } from "@iconoir/vue";
+
+const route = useRoute();
 
 const transactionStore = useTransactionStore();
-const { warning, success } = useToast();
+const { isPremium } = useSubscription();
+
+const { warning, success, premium } = useToast();
 
 // Estado local
 const selectedMethod = ref(null);
@@ -303,6 +317,39 @@ const balance = computed(() => {
 function selectPaymentMethod(method) {
   selectedMethod.value = method;
   validationError.value = "";
+}
+
+function handlePartialAmountInputFocus() {
+  setPaymentType("partial");
+
+  if (!isPremium.value) {
+    // Auto-cambiar a pago completo y ajustar el monto para mejor UX
+    paymentType.value = "complete";
+    validationError.value = "";
+
+    // Reducir el partialAmount en 1 para que si el usuario vuelve a "Pago Parcial"
+    // tenga un valor válido y no se dispare la validación automáticamente
+    partialAmount.value = Math.max(0, totalAmount.value - 1);
+
+    // Mostrar toast informativo con delay para asegurar visibilidad
+    nextTick(() => {
+      premium("Registra abonos o pagos parciales", {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      });
+
+      console.log("🔔 Toast mostrado");
+    });
+    return;
+  }
+
+  nextTick(() => {
+    if (partialAmountInput.value) {
+      partialAmountInput.value.blur();
+    }
+  });
 }
 
 function setPaymentType(type) {

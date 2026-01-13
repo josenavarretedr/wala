@@ -52,7 +52,7 @@
           class="flex items-center gap-1.5 px-3 py-1 bg-gray-400 text-white text-xs font-semibold rounded-full"
         >
           <Crown class="w-4 h-4" />
-          Emprendedor
+          Gratis
         </span>
       </component>
     </div>

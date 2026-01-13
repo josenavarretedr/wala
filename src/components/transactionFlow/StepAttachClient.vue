@@ -225,6 +225,13 @@
           />
         </svg>
         <span class="font-medium">Crear Nuevo Cliente</span>
+        <span
+          v-if="!isPremium"
+          class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
+        >
+          <BrightCrown class="w-4 h-4" />
+          Premium
+        </span>
       </button>
     </div>
 
@@ -393,6 +400,14 @@ import { useClientStore } from "@/stores/clientStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { ANONYMOUS_CLIENT_ID } from "@/types/client";
+import { useToast } from "@/composables/useToast";
+import { useRoute } from "vue-router";
+import { useSubscription } from "@/composables/useSubscription";
+import { BrightCrown } from "@iconoir/vue";
+
+const route = useRoute();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 const clientStore = useClientStore();
 const transactionStore = useTransactionStore();
@@ -483,6 +498,16 @@ function clearSearch() {
 }
 
 function openCreateClientModal() {
+  if (!isPremium.value) {
+    premium("Gestionada tus clientes.", {
+      actionLink: {
+        text: "Actualiza a Wala Premium",
+        route: `/business/${route.params.businessId}/premium`,
+      },
+    });
+    return;
+  }
+
   showCreateModal.value = true;
   createError.value = "";
   // Autofocus en el siguiente tick
