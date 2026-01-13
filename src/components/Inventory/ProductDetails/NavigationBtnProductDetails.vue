@@ -24,7 +24,12 @@
     >
       <button
         @click="handleIngresoAction"
-        class="w-full py-2 px-3 sm:py-2.5 sm:px-4 bg-white border border-blue-600 text-blue-600 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm hover:bg-blue-600 hover:text-white hover:shadow-md hover:shadow-blue-500/20 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+        :class="[
+          'w-full py-2 px-3 sm:py-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all duration-200 transform flex items-center justify-center gap-2',
+          !opening
+            ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+            : 'bg-white border border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white hover:shadow-md hover:shadow-blue-500/20 hover:scale-[1.01] active:scale-[0.99]',
+        ]"
       >
         <Plus class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
         <span class="font-semibold tracking-wide">INGRESO</span>
@@ -37,10 +42,9 @@
     >
       <button
         @click="handleEgresoAction"
-        :disabled="trackStock && stock <= 0"
         :class="[
           'w-full py-2 px-3 sm:py-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all duration-200 transform flex items-center justify-center gap-2',
-          trackStock && stock <= 0
+          (trackStock && stock <= 0) || !opening
             ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
             : 'bg-white border border-red-600 text-red-600 hover:bg-red-600 hover:text-white hover:shadow-md hover:shadow-red-500/20 hover:scale-[1.01] active:scale-[0.99]',
         ]"
@@ -50,11 +54,22 @@
       </button>
     </div>
   </div>
+
+  <!-- Toast de notificación -->
 </template>
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
+import { ref, computed } from "vue";
 import { Plus, Minus, ClipboardCheck } from "@iconoir/vue";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useToast } from "@/composables/useToast";
+
+const accountsBalanceStore = useAccountsBalanceStore();
+const opening = computed(() => accountsBalanceStore.openingTransaction);
+
+// Toast
+const { warning } = useToast();
 
 // Props
 const props = defineProps({
@@ -92,6 +107,14 @@ const handleInventoryAction = () => {
  * Para registrar entradas/compras de productos
  */
 const handleIngresoAction = () => {
+  // Validar que exista apertura
+  if (!opening.value) {
+    warning(
+      "Debes aperturar antes de registrar transacciones en el inventario"
+    );
+    return;
+  }
+
   console.log("🔵 INGRESO: Registrando entrada de producto");
 
   // Navegar a AddStock con los parámetros actuales
@@ -109,6 +132,20 @@ const handleIngresoAction = () => {
  * Para registrar salidas/ventas de productos
  */
 const handleEgresoAction = () => {
+  // Validar que exista apertura
+  if (!opening.value) {
+    warning(
+      "Debes aperturar antes de registrar transacciones en el inventario"
+    );
+    return;
+  }
+
+  // Validar stock si trackStock está activo
+  if (props.trackStock && props.stock <= 0) {
+    warning("No hay stock suficiente para realizar un egreso");
+    return;
+  }
+
   console.log("🔴 EGRESO: Registrando salida de producto");
 
   // Navegar a RemoveStock con los parámetros actuales

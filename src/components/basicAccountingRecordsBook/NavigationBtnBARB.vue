@@ -88,12 +88,6 @@
   </div>
 
   <!-- Toast de notificación -->
-  <ToastNotification
-    :show="showToast"
-    :message="toastMessage"
-    type="success"
-    @update:show="showToast = $event"
-  />
 </template>
 
 <script setup>
@@ -104,17 +98,18 @@ import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
-import ToastNotification from "@/components/ui/ToastNotification.vue";
+import { useToast } from "@/composables/useToast";
 
 const flow = useTransactionFlowStore();
 const businessStore = useBusinessStore();
 const transactionStore = useTransactionStore();
 const router = useRouter();
 
-// Estados para el loading y toast
+// Toast
+const { success } = useToast();
+
+// Estados para el loading
 const isFinalizando = ref(false);
-const showToast = ref(false);
-const toastMessage = ref("");
 
 // Función para validar si el botón "Siguiente" debe estar habilitado
 const isNextButtonEnabled = computed(() => {
@@ -325,42 +320,24 @@ const finalizarRegistro = async () => {
     // isFinalizando.value sigue en true para mantener botón deshabilitado
 
     // Primer toast: Éxito
-    toastMessage.value = "Se ha registrado la transacción correctamente";
-    showToast.value = true;
+    success("Transacción registrada");
 
     // Esperar 2.5 segundos para que se vea el primer toast
     setTimeout(() => {
-      // Ocultar el primer toast
-      showToast.value = false;
+      success("Regresando al dashboard...");
 
-      // Esperar 300ms antes de mostrar el segundo toast
       setTimeout(() => {
-        // Iniciar cuenta regresiva desde 3
-        let countdown = 3;
-        toastMessage.value = `Será redirigido al dashboard en ${countdown}`;
-        showToast.value = true;
+        router.replace({
+          name: "BusinessDashboard",
+          params: { businessId },
+        });
 
-        const countdownInterval = setInterval(() => {
-          countdown--;
-          if (countdown > 0) {
-            toastMessage.value = `Será redirigido al dashboard en ${countdown}`;
-          } else {
-            clearInterval(countdownInterval);
-            showToast.value = false;
-
-            // Resetear y navegar
-            flow.resetFlow();
-            transactionStore.resetTransactionToAdd();
-            isFinalizando.value = false;
-
-            router.replace({
-              name: "BusinessDashboard",
-              params: { businessId },
-            });
-          }
-        }, 850);
-      }, 100);
-    }, 1500); //
+        // Resetear y navegar
+        transactionStore.resetTransactionToAdd();
+        flow.resetFlow();
+        isFinalizando.value = false;
+      }, 500); // Pequeña espera antes de navegar
+    }, 2000);
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);
     flow.transactionLoading = false;

@@ -43,15 +43,23 @@
         <h2
           class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight"
         >
-          Aún no estás en ningún <span class="text-purple-600">programa</span>
+          ¿Aún no estás en ningún
+          <span class="text-purple-600">programa de asesoría</span>?
         </h2>
 
         <!-- Descripción -->
         <p
           class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
         >
-          Únete a un programa de acompañamiento empresarial usando un código de
-          invitación proporcionado por organizaciones aliadas.
+          Algunas municipalidades, organizaciones y programas locales usan WALA
+          para brindar asesorías a emprendedores como tú.
+        </p>
+        <br />
+        <p
+          class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed"
+        >
+          Si formas parte de uno, <strong>ingresa con el código</strong> que te
+          brindaron para acceder a tu asesoría.
         </p>
       </div>
     </div>

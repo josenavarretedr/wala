@@ -422,6 +422,8 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useAccountsReceivable } from "@/composables/useAccountsReceivable";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+const accountsBalanceStore = useAccountsBalanceStore();
 
 const {
   pendingTransactions,

@@ -25,7 +25,7 @@
             class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
           >
             <Community class="w-4 h-4" />
-            <span class="text-sm font-medium">Juntos</span>
+            <span class="text-sm font-medium">Asesoría</span>
           </div>
         </div>
 
@@ -33,48 +33,90 @@
         <h2
           class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight mb-8"
         >
-          Emprender no termina cuando acaba la
-          <span class="text-purple-600">sesión</span>.
+          WALA te acompaña mientras manejas tu
+          <span class="text-purple-600">negocio</span>
         </h2>
 
         <!-- Subtexto -->
         <p
-          class="text-xl sm:text-2xl md:text-3xl text-gray-600 leading-relaxed md:leading-relaxed max-w-4xl mx-auto mb-8"
+          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed md:leading-relaxed max-w-4xl mx-auto mb-6"
           style="line-height: 1.6"
         >
-          Con WALA, el acompañamiento
-          <span class="font-semibold text-gray-800"
-            >no se queda en la capacitación</span
-          >.
+          Tu negocio no avanza solo con una clase.
+        </p>
+
+        <p
+          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed md:leading-relaxed max-w-4xl mx-auto mb-8"
+          style="line-height: 1.6"
+        >
+          Avanza con decisiones que tomas todos los días.
+        </p>
+
+        <p
+          class="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto mb-4"
+          style="line-height: 1.6"
+        >
+          Por eso, con WALA la asesoría no se queda en una sesión.
         </p>
 
         <p
           class="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto"
           style="line-height: 1.6"
         >
-          Te acompaña entre asesorías, te ayuda en tu negocio real, y te muestra
-          tu progreso,
-          <span class="font-semibold text-gray-800">no solo tu asistencia</span
-          >.
+          Continúa mientras
+          <span class="font-semibold text-gray-800"
+            >registras, revisas y entiendes</span
+          >
+          lo que pasa en tu negocio.
         </p>
       </div>
-
-      <!-- Mensaje adicional -->
-      <div class="mb-12 text-center">
+      <!-- Acompañamiento -->
+      <div class="mb-12 text-center max-w-5xl mx-auto">
         <p
-          class="text-2xl sm:text-3xl md:text-4xl text-gray-800 font-bold leading-tight mb-4"
+          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed mb-8"
+          style="line-height: 1.6"
         >
-          Aquí no solo vienes a aprender.
+          Cuando accedes a un programa o activas la Asesoría WALA, recibes
+          asesorías y seguimiento para revisar tus avances y tomar mejores
+          decisiones, con información real de tu negocio.
         </p>
+
         <p
-          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed max-w-4xl mx-auto"
+          class="text-lg sm:text-xl text-gray-600 leading-relaxed mb-4"
+          style="line-height: 1.6"
         >
-          Tienes una
-          <span class="font-semibold text-purple-600"
-            >herramienta en tu celular</span
+          La asesoría puede brindarla:
+        </p>
+
+        <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-6"
+        >
+          <div
+            class="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl border border-purple-200 p-6"
           >
-          para ordenar tu negocio, registrar lo que pasa día a día y tomar
-          mejores decisiones.
+            <p class="text-lg font-semibold text-gray-800">
+              Una organización aliada
+            </p>
+            <p class="text-sm text-gray-600 mt-2">
+              (municipalidad, ONG, programa)
+            </p>
+          </div>
+          <div
+            class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl border border-blue-200 p-6"
+          >
+            <p class="text-lg font-semibold text-gray-800">WALA</p>
+            <p class="text-sm text-gray-600 mt-2">
+              como servicio opcional de acompañamiento empresarial
+            </p>
+          </div>
+        </div>
+
+        <p
+          class="text-base sm:text-lg text-gray-600 leading-relaxed"
+          style="line-height: 1.6"
+        >
+          En ambos casos, la asesoría incluye el acceso a
+          <span class="font-semibold text-purple-600">WALA Premium</span>.
         </p>
       </div>
 
@@ -85,16 +127,15 @@
         <p
           class="text-2xl sm:text-3xl md:text-4xl text-gray-800 font-bold leading-tight mb-4"
         >
-          Porque crecer no es solo escuchar una clase.
+          Porque crecer no es solo aprender algo una vez.
         </p>
         <p
           class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed"
         >
           Es
           <span class="font-semibold text-blue-600"
-            >aplicar, revisar y mejorar</span
-          >
-          todos los días.
+            >ordenar, revisar y mejorar</span
+          >, día a día.
         </p>
       </div>
 
@@ -117,8 +158,8 @@
             ¿Estás participando en un programa de fortalecimiento?
           </h3>
           <p class="text-base text-gray-600 mb-6 text-center leading-relaxed">
-            Ingresa con el código que te brindó tu organización aliada y accede
-            a tu acompañamiento.
+            Ingresa con el código que te brindó tu organización y accede a tu
+            asesoría.
           </p>
           <div class="flex justify-center">
             <button
@@ -147,8 +188,8 @@
             ¿Aún no estás en uno?
           </h3>
           <p class="text-base text-gray-600 mb-6 text-center leading-relaxed">
-            Puedes usar WALA para organizar tu negocio o consultar si hay un
-            programa disponible en tu distrito.
+            Puedes usar WALA para organizar tu negocio o activar la Asesoría
+            WALA cuando lo necesites.
           </p>
           <div class="flex justify-center">
             <button

@@ -62,7 +62,7 @@ export const useUserStore = defineStore('user', {
     currentBusinessProgramName: (state) => {
       // Si no hay negocio actual, retornar fallback
       if (!state.currentBusiness?.programs || state.currentBusiness.programs.length === 0) {
-        return 'Wala Asesoria';
+        return 'Asesoría';
       }
 
       // Obtener el programa más reciente (último del array)

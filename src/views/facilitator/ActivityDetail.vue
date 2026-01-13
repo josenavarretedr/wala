@@ -93,40 +93,6 @@
       @save="saveAllAttendances"
       @new-consulting="showConsultingForm = true"
     />
-
-    <!-- Toast de Éxito -->
-    <transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 translate-y-4 scale-95"
-      enter-to-class="opacity-100 translate-y-0 scale-100"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0 scale-100"
-      leave-to-class="opacity-0 translate-y-4 scale-95"
-    >
-      <div
-        v-if="showSuccessToast"
-        class="fixed bottom-24 right-4 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 backdrop-blur-sm border border-green-500"
-      >
-        <div
-          class="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <span class="font-semibold text-sm">{{ toastMessage }}</span>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -146,9 +112,11 @@ import DeleteActivityModal from "@/components/activities/detail/DeleteActivityMo
 import ConsultingForm from "@/components/activities/ConsultingForm.vue";
 import ActionBtnActivity from "@/components/activities/ActionBtnActivity.vue";
 import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
+const { success } = useToast();
 const {
   currentActivity: activity,
   loading,
@@ -169,8 +137,6 @@ const attendanceMap = ref({}); // userId -> { attended, notes }
 const originalAttendanceMap = ref({}); // Para comparar cambios
 const pendingChanges = ref({}); // userId -> { attended, notes }
 const savingAttendance = ref(false);
-const showSuccessToast = ref(false);
-const toastMessage = ref("");
 const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 const deleting = ref(false);
@@ -235,11 +201,7 @@ async function saveAllAttendances(changes) {
     pendingChanges.value = {};
 
     // Mostrar toast de éxito
-    toastMessage.value = "Asistencias guardadas exitosamente";
-    showSuccessToast.value = true;
-    setTimeout(() => {
-      showSuccessToast.value = false;
-    }, 3000);
+    success("Asistencias guardadas exitosamente");
   } catch (error) {
     console.error("Error al guardar asistencias:", error);
     alert("Error al guardar las asistencias");
@@ -333,11 +295,7 @@ async function handleActivityUpdated() {
   await loadActivityParticipations(programId.value, activityId.value);
 
   // Mostrar toast de éxito
-  toastMessage.value = "Actividad actualizada exitosamente";
-  showSuccessToast.value = true;
-  setTimeout(() => {
-    showSuccessToast.value = false;
-  }, 3000);
+  success("Actividad actualizada exitosamente");
 }
 
 onMounted(async () => {

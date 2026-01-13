@@ -1,44 +1,53 @@
 <template>
-  <div
-    class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm flex flex-col"
+  <PremiumLockWrapper
+    :is-premium="isPremium"
+    :is-locked="isLocked"
+    @locked-click="$emit('locked-click')"
   >
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        <span
-          class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
-        >
-          {{ title }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Gráfico -->
-    <div class="relative flex-1 min-h-0">
-      <canvas ref="chartCanvas"></canvas>
-
-      <!-- Loading State -->
+    <template #content="{ contentClasses }">
       <div
-        v-if="isLoading"
-        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+        class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm flex flex-col"
       >
-        <SpinnerIcon size="md" class="text-red-500" />
-      </div>
+        <!-- Header (sin blur) -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span
+              class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+            >
+              {{ title }}
+            </span>
+          </div>
+        </div>
 
-      <!-- Estado vacío -->
-      <div
-        v-else-if="!hasData"
-        class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
-      >
-        Sin datos en el periodo
+        <!-- Gráfico (con blur cuando locked) -->
+        <div class="relative flex-1 min-h-0" :class="contentClasses">
+          <canvas ref="chartCanvas"></canvas>
+
+          <!-- Loading State -->
+          <div
+            v-if="isLoading"
+            class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+          >
+            <SpinnerIcon size="md" class="text-red-500" />
+          </div>
+
+          <!-- Estado vacío -->
+          <div
+            v-else-if="!hasData"
+            class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
+          >
+            Sin datos en el periodo
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </PremiumLockWrapper>
 </template>
 
 <script setup>
 import {
   defineProps,
+  defineEmits,
   ref,
   onMounted,
   onBeforeUnmount,
@@ -48,13 +57,18 @@ import {
 } from "vue";
 import Chart from "chart.js/auto";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
 
 // ---------- Props ----------
 const props = defineProps({
   transactions: { type: Array, required: true },
   title: { type: String, default: "Mix por método de pago" },
   filterType: { type: String, default: "expense" },
+  isPremium: { type: Boolean, default: true },
+  isLocked: { type: Boolean, default: false },
 });
+
+defineEmits(["locked-click"]);
 
 // ---------- Refs / estado ----------
 const chartCanvas = ref(null);

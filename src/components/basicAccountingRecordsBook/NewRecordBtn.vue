@@ -1,5 +1,5 @@
 <template>
-  <div class="relative group w-full">
+  <div class="w-full">
     <template v-if="!isDisabled">
       <!-- Botón habilitado con estilo mejorado -->
       <router-link
@@ -15,7 +15,8 @@
 
     <template v-else>
       <!-- Botón deshabilitado con estilo mejorado -->
-      <div
+      <button
+        @click="handleClick"
         class="w-full py-3 px-4 sm:py-4 sm:px-6 bg-gradient-to-r from-gray-400 to-gray-500 text-white text-base sm:text-lg font-semibold rounded-xl shadow-lg shadow-gray-500/15 cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm relative overflow-hidden"
       >
         <!-- Efecto de deshabilitado -->
@@ -44,27 +45,7 @@
             />
           </svg>
         </div>
-      </div>
-
-      <!-- Tooltip mejorado -->
-      <div
-        class="absolute z-20 w-64 sm:w-72 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-xl shadow-gray-900/25 opacity-0 group-hover:opacity-100 transition-all duration-300 -top-20 sm:-top-24 left-1/2 transform -translate-x-1/2 border border-gray-700/50 backdrop-blur-sm"
-      >
-        <!-- Flecha del tooltip -->
-        <div
-          class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"
-        ></div>
-
-        <div class="text-center">
-          <div class="flex items-center justify-center gap-2 mb-2">
-            <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-            <span class="font-medium text-yellow-200">Para registrar</span>
-          </div>
-          <p class="text-gray-300 text-xs mb-3">
-            {{ messageTooltip.detail }}
-          </p>
-        </div>
-      </div>
+      </button>
     </template>
   </div>
 </template>
@@ -73,8 +54,10 @@
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import { DatabaseScriptPlus } from "@iconoir/vue";
 import { useCashEventStore } from "@/stores/cashEventStore";
-
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useToast } from "@/composables/useToast";
+
+const { warning } = useToast();
 
 const transactionStore = useTransactionStore();
 
@@ -104,24 +87,22 @@ const isDisabled = computed(() => {
   }
 });
 
-const messageTooltip = computed(() => {
+// Manejar clic en el botón deshabilitado
+const handleClick = () => {
   if (hasBothTransactions.value) {
     const remainingTime = countdown.value;
-    const title = "Para registrar:";
-    const detail = `Eliminar tu último cierre o esperar ${remainingTime} para aperturar de nuevo.`;
-    return {
-      title,
-      detail,
-    };
+    warning(
+      `Elimina tu último cierre o espera ${remainingTime} para aperturar de nuevo.`,
+      {
+        duration: 4000,
+      }
+    );
   } else {
-    const title = "Apertura requerida";
-    const detail = "Debes aperturar.";
-    return {
-      title,
-      detail,
-    };
+    warning("Debes aperturar primero.", {
+      duration: 3000,
+    });
   }
-});
+};
 
 // Estado del contador
 const countdown = ref("00:00:00");

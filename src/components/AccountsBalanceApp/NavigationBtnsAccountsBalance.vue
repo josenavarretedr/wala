@@ -88,12 +88,6 @@
   </div>
 
   <!-- Toast de notificación -->
-  <ToastNotification
-    :show="showToast"
-    :message="toastMessage"
-    type="success"
-    @update:show="showToast = $event"
-  />
 </template>
 
 <script setup>
@@ -108,16 +102,20 @@ import { generateUUID } from "@/utils/generateUUID";
 import { useDailySummary } from "@/composables/useDailySummary";
 import { useTransaccion } from "@/composables/useTransaction";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
-import ToastNotification from "@/components/ui/ToastNotification.vue";
+import { useToast } from "@/composables/useToast";
 
 const { getTodayDailySummary } = useDailySummary();
 const { getTransactionByID } = useTransaccion();
+const { success } = useToast();
 
 const flow = useAccountsBalanceFlowStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 const businessStore = useBusinessStore();
 const transactionStore = useTransactionStore();
 const router = useRouter();
+
+// Variable reactiva para el dailySummary
+const dailySummary = ref(null);
 
 // Función para validar si el botón "Siguiente" debe estar habilitado
 const isNextButtonEnabled = computed(() => {
@@ -171,14 +169,11 @@ const isNextButtonEnabled = computed(() => {
   return result;
 });
 
-const dailySummary = ref(null);
 // Obtener la apertura del día
 const openingData = ref(null);
 
-// Estados para el loading y toast
+// Estados para el loading
 const isFinalizando = ref(false);
-const showToast = ref(false);
-const toastMessage = ref("");
 
 // Función para obtener el mensaje de validación apropiado
 const getValidationMessage = () => {
@@ -522,10 +517,10 @@ const finalizarRegistro = async () => {
     accountsBalanceStore.reset();
 
     // Mostrar toast de éxito
-    toastMessage.value = isOpeningMode.value
+    const message = isOpeningMode.value
       ? "La apertura se realizó correctamente"
       : "El cierre se realizó correctamente";
-    showToast.value = true;
+    success(message);
 
     // Redirigir al dashboard después de un breve delay para que se vea el toast
     const businessId = businessStore.getBusinessId;

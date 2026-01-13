@@ -1,64 +1,73 @@
 <template>
-  <div
-    class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm cursor-pointer flex flex-col"
+  <PremiumLockWrapper
+    :is-premium="isPremium"
+    :is-locked="isLocked"
+    @locked-click="$emit('locked-click')"
   >
-    <!-- Header compacto -->
-    <div class="flex items-center gap-2 mb-2">
+    <template #content="{ contentClasses }">
       <div
-        class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center"
+        class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm cursor-pointer flex flex-col"
       >
-        <Cash class="w-4 h-4 text-gray-600" />
-      </div>
-      <span
-        class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
-      >
-        {{ title }}
-      </span>
-    </div>
-
-    <!-- Valor -->
-    <div class="flex-1 flex flex-col justify-end">
-      <div v-if="isLoading" class="text-blue-500">
-        <SpinnerIcon size="lg" />
-      </div>
-      <template v-else>
-        <p class="text-3xl font-bold text-blue-500 tabular-nums">
-          {{ formattedTotal }}
-        </p>
-
-        <!-- Comparativo -->
-        <div v-if="comparison" class="mt-1 flex items-center gap-1">
-          <NavArrowUp
-            v-if="comparison.percentage > 0"
-            class="w-3 h-3 text-green-500"
-          />
-          <NavArrowDown
-            v-else-if="comparison.percentage < 0"
-            class="w-3 h-3 text-red-500"
-          />
-          <span
-            :class="[
-              'text-xs font-medium',
-              comparison.percentage > 0
-                ? 'text-green-600'
-                : comparison.percentage < 0
-                ? 'text-red-600'
-                : 'text-gray-500',
-            ]"
+        <!-- Header compacto (sin blur) -->
+        <div class="flex items-center gap-2 mb-2">
+          <div
+            class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center"
           >
-            {{ comparison.text }}
+            <Cash class="w-4 h-4 text-gray-600" />
+          </div>
+          <span
+            class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+          >
+            {{ title }}
           </span>
         </div>
-      </template>
-    </div>
-  </div>
+
+        <!-- Valor (con blur cuando locked) -->
+        <div class="flex-1 flex flex-col justify-end" :class="contentClasses">
+          <div v-if="isLoading" class="text-blue-500">
+            <SpinnerIcon size="lg" />
+          </div>
+          <template v-else>
+            <p class="text-3xl font-bold text-blue-500 tabular-nums">
+              {{ formattedTotal }}
+            </p>
+
+            <!-- Comparativo -->
+            <div v-if="comparison" class="mt-1 flex items-center gap-1">
+              <NavArrowUp
+                v-if="comparison.percentage > 0"
+                class="w-3 h-3 text-green-500"
+              />
+              <NavArrowDown
+                v-else-if="comparison.percentage < 0"
+                class="w-3 h-3 text-red-500"
+              />
+              <span
+                :class="[
+                  'text-xs font-medium',
+                  comparison.percentage > 0
+                    ? 'text-green-600'
+                    : comparison.percentage < 0
+                    ? 'text-red-600'
+                    : 'text-gray-500',
+                ]"
+              >
+                {{ comparison.text }}
+              </span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </PremiumLockWrapper>
 </template>
 
 <script setup>
-import { defineProps, computed, ref, watch } from "vue";
+import { defineProps, computed, ref, watch, defineEmits } from "vue";
 import { sumTransactions } from "@/utils/mathUtils";
 import { Cash, NavArrowUp, NavArrowDown } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
 
 const props = defineProps({
   transactions: {
@@ -77,7 +86,31 @@ const props = defineProps({
     type: String,
     default: "Ventas totales",
   },
+  isPremium: {
+    type: Boolean,
+    default: true,
+  },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+defineEmits(["locked-click"]);
+
+// Debug: Ver props
+watch(
+  () => [props.isPremium, props.isLocked],
+  ([premium, locked]) => {
+    console.log(
+      "📊 TotalSalesWidget - isPremium:",
+      premium,
+      "isLocked:",
+      locked
+    );
+  },
+  { immediate: true }
+);
 
 const isLoading = ref(true);
 

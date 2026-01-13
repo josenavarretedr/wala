@@ -38,6 +38,22 @@
         >
           {{ displayName }}
         </h1>
+
+        <!-- Badge Premium/Emprendedor -->
+        <span
+          v-if="isPremium"
+          class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
+        >
+          <BrightCrown class="w-4 h-4" />
+          Premium
+        </span>
+        <span
+          v-else
+          class="flex items-center gap-1.5 px-3 py-1 bg-gray-400 text-white text-xs font-semibold rounded-full"
+        >
+          <Crown class="w-4 h-4" />
+          Emprendedor
+        </span>
       </component>
     </div>
 
@@ -56,8 +72,12 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRoute } from "vue-router";
 import BtnLogout from "@/components/Auth/BtnLogout.vue";
-import { Folder } from "@iconoir/vue";
+import { Folder, BrightCrown, Crown } from "@iconoir/vue";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+
+import { useSubscription } from "@/composables/useSubscription";
+
+const { isPremium } = useSubscription();
 
 // ✅ Definir props opcionales
 const props = defineProps({

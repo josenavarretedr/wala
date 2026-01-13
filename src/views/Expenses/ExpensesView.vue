@@ -27,6 +27,9 @@
             filteredPreviousTransactionsExpensesNotAdjusted
           "
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('totalExpenses')"
           class="w-full"
         />
       </div>
@@ -39,6 +42,9 @@
             filteredPreviousTransactionsExpensesNotAdjusted
           "
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('tickets')"
           class="w-full"
         />
       </div>
@@ -51,6 +57,9 @@
             filteredPreviousTransactionsExpensesNotAdjusted
           "
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('avgTicket')"
           class="w-full"
         />
       </div>
@@ -60,6 +69,9 @@
         <ExpensesAccountsWidget
           :transactions="filteredTransactionsExpensesNotAdjusted"
           title="Mix por método de pago"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('accounts')"
         />
       </div>
 
@@ -67,6 +79,9 @@
       <div class="col-span-2 sm:col-span-2 sm:row-span-2 order-5">
         <ExpensesCategoryWidget
           :transactions="filteredTransactionsExpensesNotAdjusted"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('category')"
         />
       </div>
 
@@ -78,6 +93,9 @@
             filteredPreviousTransactionsExpensesNotAdjusted
           "
           type="expense"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('sparkline')"
         />
       </div>
     </div>
@@ -94,8 +112,12 @@ import SparkLineChart from "@/components/Expenses/SparkLineChart.vue";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
 
 const { getTransactionsTodayCmps, getTransactionsRange } = useTransaccion();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 const selectedTimeRange = ref("today");
 
@@ -109,8 +131,59 @@ const transactions = ref([]);
 const previousTransactions = ref([]);
 
 const selectTimeRange = (value) => {
+  // Si no es premium y selecciona un período que no sea "today"
+  if (!isPremium.value && value !== "today") {
+    const periodLabels = {
+      last15d: "15 días",
+      last30d: "30 días",
+    };
+    premium(
+      `Los datos de ${
+        periodLabels[value] || "períodos extendidos"
+      } pueden ser analizados con Wala Premium. Actualiza tu plan`
+    );
+    // Permitir el cambio visual pero los datos estarán bloqueados
+  }
+
   selectedTimeRange.value = value;
   console.log("Selected time range:", value);
+};
+
+// Manejar click en widgets bloqueados con mensajes contextuales
+const handleLockedClick = (widgetType) => {
+  const periodLabels = {
+    today: "hoy",
+    last15d: "últimos 15 días",
+    last30d: "últimos 30 días",
+  };
+
+  const messages = {
+    totalExpenses: `Análisis de gastos totales de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+    tickets: `Análisis de tickets de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+    avgTicket: `Análisis de ticket promedio de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+    accounts: `Desglose de métodos de pago de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+    category: `Desglose por categoría de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+    sparkline: `Gráfico de tendencias de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium. Actualiza tu plan ahora`,
+  };
+
+  premium(
+    messages[widgetType] ||
+      `Análisis de ${
+        periodLabels[selectedTimeRange.value]
+      } disponible con Premium. Actualiza tu plan ahora`
+  );
 };
 
 const filteredTransactionsExpensesNotAdjusted = computed(() => {

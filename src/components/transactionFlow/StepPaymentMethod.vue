@@ -262,29 +262,21 @@
   </div>
 
   <!-- Toast de notificación -->
-  <ToastNotification
-    :show="showToast"
-    :message="toastMessage"
-    :type="toastType"
-    @update:show="showToast = $event"
-  />
 </template>
 
 <script setup>
 import { ref, computed, watch, nextTick } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import ToastNotification from "@/components/ui/ToastNotification.vue";
+import { useToast } from "@/composables/useToast";
 
 const transactionStore = useTransactionStore();
+const { warning, success } = useToast();
 
 // Estado local
 const selectedMethod = ref(null);
 const paymentType = ref("complete"); // 'complete' | 'partial'
 const partialAmount = ref(0);
 const validationError = ref("");
-const showToast = ref(false);
-const toastMessage = ref("");
-const toastType = ref("info");
 const partialAmountInput = ref(null);
 
 // Labels para mostrar
@@ -326,11 +318,7 @@ function handlePartialAmountInput() {
     partialAmount.value = totalAmount.value;
 
     // Mostrar notificación de límite
-    toastMessage.value = `El máximo posible es S/ ${totalAmount.value.toFixed(
-      2
-    )}`;
-    toastType.value = "warning";
-    showToast.value = true;
+    warning(`El máximo posible es S/ ${totalAmount.value.toFixed(2)}`);
   }
 }
 
@@ -358,15 +346,9 @@ watch([partialAmount, paymentType], () => {
 
       // Mostrar toast informativo con delay para asegurar visibilidad
       nextTick(() => {
-        toastMessage.value = "Cambiado a Pago Completo automáticamente";
-        toastType.value = "success";
-        showToast.value = true;
+        success("Cambiado a Pago Completo automáticamente");
 
-        console.log("🔔 Toast mostrado:", {
-          message: toastMessage.value,
-          type: toastType.value,
-          show: showToast.value,
-        });
+        console.log("🔔 Toast mostrado");
       });
     } else {
       validationError.value = "";

@@ -105,8 +105,6 @@
           :key="client.uuid"
           :client="client"
           @click="goToClientDetails(client)"
-          @edit="openEditModal(client)"
-          @delete="confirmDelete(client)"
         />
       </div>
     </div>

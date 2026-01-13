@@ -127,6 +127,14 @@ import { useInventoryStore } from "@/stores/inventoryStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import CardProduct from "@/components/Inventory/CardProduct.vue";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
+
+// Suscripción
+const { isPremium } = useSubscription();
+
+// Toast
+const { premium } = useToast();
 
 // Router
 const router = useRouter();
@@ -225,6 +233,13 @@ function selectProduct(product) {
     console.error("No se encontró businessId");
     return;
   }
+
+  // if (!isPremium.value) {
+  //   premium(
+  //     "Encuentra, ordena y mejora tu inventario y más con Wala Premium. Actualiza tu plan, controla tu inventario"
+  //   );
+  //   return;
+  // }
 
   // Navegar a los detalles del producto
   router.push({

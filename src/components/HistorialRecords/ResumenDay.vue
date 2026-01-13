@@ -57,12 +57,24 @@
             </span>
           </div>
         </div>
+
+        <div></div>
+      </div>
+      <div class="text-center mb-4">
+        <div
+          class="bg-orange-50 inline-block px-3 py-1 rounded-full mt-3"
+          v-if="!opening"
+        >
+          <span class="text-sm text-orange-600 font-medium">
+            Necesitas aperturar el día
+          </span>
+        </div>
       </div>
     </div>
 
     <!-- Contenido expandible -->
     <Transition name="expand">
-      <div v-if="showResume" class="mt-6 space-y-4">
+      <div v-if="showResume && opening" class="mt-6 space-y-4">
         <!-- Grid de métricas -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <!-- Saldo inicial -->

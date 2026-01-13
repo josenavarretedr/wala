@@ -189,7 +189,12 @@
                   </router-link>
                   <button
                     @click="openPaymentModal(transaction)"
-                    class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs font-medium inline-flex items-center gap-1.5 shadow-sm hover:shadow"
+                    :class="[
+                      'px-2.5 py-1.5 rounded-lg transition-colors text-xs font-medium inline-flex items-center gap-1.5 shadow-sm',
+                      !opening
+                        ? 'bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow',
+                    ]"
                   >
                     <svg
                       class="w-3.5 h-3.5"
@@ -292,6 +297,8 @@
       @close="showPaymentModal = false"
       @success="handlePaymentSuccess"
     />
+
+    <!-- Toast de notificación -->
   </div>
 </template>
 
@@ -301,6 +308,18 @@ import { useAccountsReceivable } from "@/composables/useAccountsReceivable";
 import PaymentRegistrationModal from "@/components/AccountsReceivable/PaymentRegistrationModal.vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import { useToast } from "@/composables/useToast";
+
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+const accountsBalanceStore = useAccountsBalanceStore();
+const opening = computed(() => accountsBalanceStore.openingTransaction);
+import { useSubscription } from "@/composables/useSubscription";
+
+// Suscripción
+const { isPremium } = useSubscription();
+
+// Toast
+const { warning, premium } = useToast();
 
 const { pendingTransactions, totalReceivable, receivablesByClient } =
   useAccountsReceivable();
@@ -352,6 +371,19 @@ const filteredReceivablesByClient = computed(() => {
 
 // Methods
 function openPaymentModal(transaction) {
+  // Validar que exista apertura
+  if (!opening.value) {
+    warning(
+      "Debes aperturar antes de registrar transacciones en cuentas por cobrar"
+    );
+    return;
+  }
+  if (!isPremium.value) {
+    premium(
+      "Deudas de clientes al día con Wala Premium. Actualiza tu plan para registrar pagos."
+    );
+    return;
+  }
   selectedTransaction.value = transaction;
   showPaymentModal.value = true;
 }

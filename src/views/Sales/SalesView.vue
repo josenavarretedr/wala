@@ -25,6 +25,9 @@
           :transactions="filteredTransactionsIncomeNotAdjusted"
           :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('totalSales')"
           class="w-full"
         />
       </div>
@@ -35,6 +38,9 @@
           :transactions="filteredTransactionsIncomeNotAdjusted"
           :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('tickets')"
           class="w-full"
         />
       </div>
@@ -45,6 +51,9 @@
           :transactions="filteredTransactionsIncomeNotAdjusted"
           :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
           :periodLabel="currentPeriodLabel"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('avgTicket')"
           class="w-full"
         />
       </div>
@@ -54,6 +63,9 @@
         <SalesAccountsWidget
           :transactions="filteredTransactionsIncomeNotAdjusted"
           title="Mix por método de pago"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('accounts')"
         />
       </div>
 
@@ -63,6 +75,9 @@
           :transactions="filteredTransactionsIncomeNotAdjusted"
           :previousTransactions="filteredPreviousTransactionsIncomeNotAdjusted"
           type="income"
+          :isPremium="isPremium"
+          :isLocked="!isPremium && selectedTimeRange !== 'today'"
+          @locked-click="handleLockedClick('sparkline')"
         />
       </div>
     </div>
@@ -70,6 +85,9 @@
       :transactions="filteredTransactionsIncomeNotAdjusted"
       :limit="5"
       title="Top por unidades"
+      :isPremium="isPremium"
+      :isLocked="!isPremium && selectedTimeRange !== 'today'"
+      @locked-click="handleLockedClick('topUnits')"
       @select="(row) => goToProduct(row.key)"
     />
 
@@ -78,6 +96,9 @@
       :transactions="filteredTransactionsIncomeNotAdjusted"
       :limit="5"
       title="Top por ingreso"
+      :isPremium="isPremium"
+      :isLocked="!isPremium && selectedTimeRange !== 'today'"
+      @locked-click="handleLockedClick('topRevenue')"
       @select="(row) => goToProduct(row.key)"
     />
   </div>
@@ -94,8 +115,12 @@ import TopProductsByRevenue from "@/components/Sales/TopProductsByRevenue.vue";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
 
 const { getTransactionsTodayCmps, getTransactionsRange } = useTransaccion();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 const selectedTimeRange = ref("today");
 
@@ -109,8 +134,62 @@ const transactions = ref([]);
 const previousTransactions = ref([]);
 
 const selectTimeRange = (value) => {
+  // Si no es premium y selecciona un período que no sea "today"
+  if (!isPremium.value && value !== "today") {
+    const periodLabels = {
+      last15d: "15 días",
+      last30d: "30 días",
+    };
+    premium(
+      `Los datos de ${
+        periodLabels[value] || "períodos extendidos"
+      } pueden ser analizados con Wala Premium. Actualiza tu plan`
+    );
+    // Permitir el cambio visual pero los datos estarán bloqueados
+  }
+
   selectedTimeRange.value = value;
   console.log("Selected time range:", value);
+};
+
+// Manejar click en widgets bloqueados con mensajes contextuales
+const handleLockedClick = (widgetType) => {
+  const periodLabels = {
+    today: "hoy",
+    last15d: "últimos 15 días",
+    last30d: "últimos 30 días",
+  };
+
+  const messages = {
+    totalSales: `Análisis de ventas totales de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Wala Premium.`,
+    tickets: `Análisis de tickets de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+    avgTicket: `Análisis de ticket promedio de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+    accounts: `Desglose de métodos de pago de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+    sparkline: `Gráfico de tendencias de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+    topUnits: `Top productos por unidades de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+    topRevenue: `Top productos por ingreso de ${
+      periodLabels[selectedTimeRange.value]
+    } disponible con Premium.`,
+  };
+
+  premium(
+    messages[widgetType] ||
+      `Análisis de ${
+        periodLabels[selectedTimeRange.value]
+      } disponible con Premium.`
+  );
 };
 
 const filteredTransactionsIncomeNotAdjusted = computed(() => {
@@ -261,5 +340,11 @@ const fetchTransactions = async () => {
 
   console.log("Fetched transactions:", transactions.value);
   console.log("Previous transactions:", previousTransactions.value);
+};
+
+const goToProduct = (productId) => {
+  console.log("Navigate to product:", productId);
+  // TODO: Implementar navegación al detalle del producto
+  // router.push({ name: 'ProductDetail', params: { productId } });
 };
 </script>

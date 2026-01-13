@@ -119,40 +119,6 @@
       @close="showCreateModal = false"
       @created="handleActivityCreated"
     />
-
-    <!-- Toast de Info -->
-    <transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 translate-y-4 scale-95"
-      enter-to-class="opacity-100 translate-y-0 scale-100"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100 translate-y-0 scale-100"
-      leave-to-class="opacity-0 translate-y-4 scale-95"
-    >
-      <div
-        v-if="showToast"
-        class="fixed bottom-24 right-4 z-50 bg-blue-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 backdrop-blur-sm border border-blue-500"
-      >
-        <div
-          class="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center"
-        >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </div>
-        <span class="font-semibold text-sm">{{ toastMessage }}</span>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -168,9 +134,11 @@ import ListActivities from "@/components/activities/ListActivities.vue";
 import ActionBtnProgram from "@/components/programs/ActionBtnProgram.vue";
 import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
 import ItemsProgram from "@/components/programs/ItemsProgram.vue";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
+const { info } = useToast();
 const {
   activities,
   loading: loadingActivities,
@@ -181,8 +149,6 @@ const program = ref(null);
 const loading = ref(false);
 const activeTab = ref("all");
 const showCreateModal = ref(false);
-const showToast = ref(false);
-const toastMessage = ref("");
 
 const programId = computed(() => route.params.programId);
 
@@ -247,16 +213,14 @@ async function handleActivityCreated(activity) {
 
 function handleFilterChanged(filter) {
   if (filter.type === "all") {
-    toastMessage.value = "Estas son TODAS las actividades del programa";
+    info("Estas son TODAS las actividades del programa");
   } else {
     const count = filteredActivities.value.length;
     const plural = count !== 1 ? "s" : "";
-    toastMessage.value = `Mostrando ${count} ${filter.name.toLowerCase()}${plural} del programa`;
+    info(
+      `Mostrando ${count} ${filter.name.toLowerCase()}${plural} del programa`
+    );
   }
-  showToast.value = true;
-  setTimeout(() => {
-    showToast.value = false;
-  }, 3000);
 }
 
 function goToInfo() {

@@ -1,8 +1,9 @@
 <template>
-  <div class="relative group w-full">
+  <div class="w-full">
     <component
-      :is="!hasBothTransactions ? 'router-link' : 'div'"
+      :is="!hasBothTransactions ? 'router-link' : 'button'"
       :to="!hasBothTransactions ? { name: 'AccountBalanceApp' } : undefined"
+      @click="handleClick"
       :class="[
         'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
         !hasBothTransactions
@@ -21,29 +22,6 @@
         currentText
       }}</span>
     </component>
-
-    <!-- Tooltip mejorado -->
-    <div
-      v-if="hasBothTransactions"
-      class="absolute z-20 w-64 sm:w-72 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-white bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-xl shadow-gray-900/25 opacity-0 group-hover:opacity-100 transition-all duration-300 -top-20 sm:-top-24 left-1/2 transform -translate-x-1/2 border border-gray-700/50 backdrop-blur-sm"
-    >
-      <!-- Flecha del tooltip -->
-      <div
-        class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"
-      ></div>
-
-      <div class="text-center">
-        <div class="flex items-center justify-center gap-2 mb-2">
-          <div class="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
-          <span class="font-medium text-yellow-200">{{
-            messageTooltip.title
-          }}</span>
-        </div>
-        <p class="text-gray-300 text-xs mb-3">
-          {{ messageTooltip.detail }}
-        </p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -51,8 +29,10 @@
 import { computed, onMounted, ref, onBeforeUnmount } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { Safe, SafeOpen } from "@iconoir/vue";
+import { useToast } from "@/composables/useToast";
 
 const transactionStore = useTransactionStore();
+const { warning } = useToast();
 
 // Computed para verificar si existe una transacción de tipo "opening"
 const hasOpeningToday = computed(() => {
@@ -87,15 +67,18 @@ const currentText = computed(() => {
   }
 });
 
-const messageTooltip = computed(() => {
-  const remainingTime = countdown.value;
-  const title = "Apertura requerida";
-  const detail = `${remainingTime} para aperturar de nuevo.`;
-  return {
-    title,
-    detail,
-  };
-});
+// Manejar clic en el botón
+const handleClick = () => {
+  if (hasBothTransactions.value) {
+    const remainingTime = countdown.value;
+    warning(
+      `Ya cerraste hoy. Espera ${remainingTime} para aperturar de nuevo.`,
+      {
+        duration: 4000,
+      }
+    );
+  }
+};
 
 // Estado del contador
 const countdown = ref("00:00:00");

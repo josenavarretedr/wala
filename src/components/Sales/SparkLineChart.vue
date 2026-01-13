@@ -1,53 +1,62 @@
 <template>
-  <div
-    class="w-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
+  <PremiumLockWrapper
+    :is-premium="isPremium"
+    :is-locked="isLocked"
+    @locked-click="$emit('locked-click')"
   >
-    <!-- Header compacto -->
-    <div class="flex items-center justify-between mb-3">
-      <div class="flex items-center gap-2">
-        <div
-          class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center"
-        >
-          <GraphUp class="w-4 h-4 text-gray-600" />
+    <template #content="{ contentClasses }">
+      <div
+        class="w-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm"
+      >
+        <!-- Header compacto (sin blur) -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center"
+            >
+              <GraphUp class="w-4 h-4 text-gray-600" />
+            </div>
+            <span
+              class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+            >
+              Tendencia
+            </span>
+          </div>
+
+          <span v-if="maxSale > 0" class="text-xs text-gray-500 tabular-nums">
+            Máx: {{ formatCurrency(maxSale) }}
+          </span>
         </div>
-        <span
-          class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
-        >
-          Tendencia
-        </span>
+
+        <!-- Gráfico compacto (con blur cuando locked) -->
+        <div class="relative h-32" :class="contentClasses">
+          <canvas ref="chartCanvas"></canvas>
+
+          <!-- Loading State -->
+          <div
+            v-if="isLoading"
+            class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+          >
+            <SpinnerIcon size="md" class="text-blue-500" />
+          </div>
+
+          <!-- Estado vacío -->
+          <div
+            v-else-if="!hasData"
+            class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
+          >
+            Sin datos en el periodo
+          </div>
+        </div>
       </div>
-
-      <span v-if="maxSale > 0" class="text-xs text-gray-500 tabular-nums">
-        Máx: {{ formatCurrency(maxSale) }}
-      </span>
-    </div>
-
-    <!-- Gráfico compacto -->
-    <div class="relative h-32">
-      <canvas ref="chartCanvas"></canvas>
-
-      <!-- Loading State -->
-      <div
-        v-if="isLoading"
-        class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
-      >
-        <SpinnerIcon size="md" class="text-blue-500" />
-      </div>
-
-      <!-- Estado vacío -->
-      <div
-        v-else-if="!hasData"
-        class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
-      >
-        Sin datos en el periodo
-      </div>
-    </div>
-  </div>
+    </template>
+  </PremiumLockWrapper>
 </template>
 
 <script setup>
 import {
   defineProps,
+  defineEmits,
   ref,
   onMounted,
   onBeforeUnmount,
@@ -58,6 +67,7 @@ import {
 import Chart from "chart.js/auto";
 import { GraphUp } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
+import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
 
 const props = defineProps({
   transactions: {
@@ -72,7 +82,17 @@ const props = defineProps({
     type: String,
     default: "income", // "income" o "expense"
   },
+  isPremium: {
+    type: Boolean,
+    default: true,
+  },
+  isLocked: {
+    type: Boolean,
+    default: false,
+  },
 });
+
+defineEmits(["locked-click"]);
 
 const chartCanvas = ref(null);
 let chartInstance = null;

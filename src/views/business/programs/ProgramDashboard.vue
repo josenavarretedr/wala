@@ -105,12 +105,6 @@
     </div>
 
     <!-- Toast Notification -->
-    <ToastNotification
-      v-model:show="showToast"
-      :message="toastMessage"
-      :type="toastType"
-      :duration="3000"
-    />
   </div>
 </template>
 
@@ -125,20 +119,18 @@ import { InfoCircle, Community } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
 import ItemsProgram from "@/components/programs/ItemsProgram.vue";
-import ToastNotification from "@/components/ui/ToastNotification.vue";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
 const activitiesStore = useActivitiesStore();
 const authStore = useAuthStore();
+const { info } = useToast();
 
 const program = ref(null);
 const loading = ref(false);
 const activeTab = ref("all");
 const activeStatusFilter = ref("all");
-const showToast = ref(false);
-const toastMessage = ref("");
-const toastType = ref("info");
 
 const programId = computed(() => route.params.programId);
 const businessId = computed(() => route.params.businessId);
@@ -250,16 +242,12 @@ function handleFilterChanged(filter) {
   activeStatusFilter.value = "all";
 
   if (filter.type === "all") {
-    toastMessage.value = "Mostrando todas tus actividades";
-    toastType.value = "info";
+    info("Mostrando todas tus actividades");
   } else {
     const count = filteredActivities.value.length;
     const plural = count !== 1 ? "s" : "";
-    toastMessage.value = `${count} ${filter.name.toLowerCase()}${plural}`;
-    toastType.value = "info";
+    info(`${count} ${filter.name.toLowerCase()}${plural}`);
   }
-
-  showToast.value = true;
 }
 
 function handleStatusFilterChanged(statusId) {
@@ -271,9 +259,10 @@ function handleStatusFilterChanged(statusId) {
     pending: "Mostrando actividades pendientes",
   };
 
-  toastMessage.value = statusMessages[statusId] || "";
-  toastType.value = "info";
-  showToast.value = true;
+  const message = statusMessages[statusId] || "";
+  if (message) {
+    info(message);
+  }
 }
 
 function getEmptyMessage() {
