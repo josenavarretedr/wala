@@ -1,6 +1,7 @@
 <template>
   <!-- Widget minimalista con click para abrir modal -->
   <div
+    data-tour="main-buttons"
     :class="[
       'w-full h-full transition-shadow duration-200 cursor-pointer flex flex-col justify-center',
       compact

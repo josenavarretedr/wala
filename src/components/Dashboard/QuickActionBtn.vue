@@ -3,11 +3,21 @@
     v-if="hasTourForCurrentRoute"
     @click="handleClick"
     data-tour="quick-action"
-    class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300 active:scale-95 group"
+    class="relative w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-blue-300 active:scale-95 group"
     :class="{ 'animate-pulse-custom': !isActive }"
     :aria-label="isActive ? 'Tour en progreso' : 'Iniciar tour de ayuda'"
     :title="isActive ? 'Tour en progreso...' : 'Ver tour de esta página'"
   >
+    <!-- Badge "NUEVO" para tours no completados -->
+    <span v-if="showNewBadge" class="absolute -top-1 -right-1 flex h-3 w-3">
+      <span
+        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"
+      ></span>
+      <span
+        class="relative inline-flex rounded-full h-3 w-3 bg-purple-500"
+      ></span>
+    </span>
+
     <!-- Ícono de Flash/ayuda -->
     <Flash
       v-if="!isActive"
@@ -34,11 +44,32 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from "vue";
 import { Flash } from "@iconoir/vue";
 import { useOnboarding } from "@/composables/useOnboarding";
 
 // Usar el composable de onboarding
-const { startTour, isActive, hasTourForCurrentRoute } = useOnboarding();
+const {
+  startTour,
+  isActive,
+  hasTourForCurrentRoute,
+  hasCompletedTour,
+  getCurrentConfig,
+} = useOnboarding();
+
+// Estado para mostrar badge "NUEVO"
+const showNewBadge = ref(false);
+
+/**
+ * Verifica si el tour actual no ha sido completado
+ */
+const checkTourCompletion = async () => {
+  const config = getCurrentConfig();
+  if (config) {
+    const completed = await hasCompletedTour(config.id);
+    showNewBadge.value = !completed; // Mostrar badge si NO está completado
+  }
+};
 
 /**
  * Maneja el clic en el botón
@@ -47,8 +78,14 @@ const { startTour, isActive, hasTourForCurrentRoute } = useOnboarding();
 const handleClick = () => {
   if (!isActive.value) {
     startTour(true); // Forzar reinicio del tour
+    showNewBadge.value = false; // Ocultar badge al iniciar
   }
 };
+
+// Verificar estado al montar
+onMounted(() => {
+  checkTourCompletion();
+});
 </script>
 
 <style scoped>

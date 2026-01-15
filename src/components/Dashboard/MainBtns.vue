@@ -1,7 +1,6 @@
 <template>
   <!-- Navegación -->
   <div
-    data-tour="main-buttons"
     class="flex flex-row justify-center items-stretch gap-3 sm:gap-4 lg:gap-6 max-w-4xl mx-auto bg-white p-2"
   >
     <Suspense>

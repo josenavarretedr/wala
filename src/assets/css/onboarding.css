@@ -1,167 +1,52 @@
 /**
- * Estilos personalizados para Driver.js
- * Personalización del tema de onboarding para que coincida con el diseño de la aplicación
+ * 🎨 Estilos WALA para Driver.js Onboarding
+ * Coherencia visual con ResumenDay, cards y componentes principales
  */
 
-/* Variables CSS para el tema */
+/* ========================================
+   VARIABLES CSS - Paleta WALA
+   ======================================== */
 :root {
-  --driver-primary-color: #2563eb; /* blue-600 - coincide con Tailwind */
-  --driver-text-color: #1f2937; /* gray-800 */
-  --driver-secondary-text: #6b7280; /* gray-500 */
-  --driver-bg-color: #ffffff;
-  --driver-border-radius: 12px;
-  --driver-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  --driver-primary: #f97316; /* orange-600 */
+  --driver-primary-light: #fff7ed; /* orange-50 */
+  --driver-text-primary: #1f2937; /* gray-800 */
+  --driver-text-secondary: #6b7280; /* gray-500 */
+  --driver-text-muted: #9ca3af; /* gray-400 */
+  --driver-bg-white: #ffffff;
+  --driver-bg-gray: #f9fafb; /* gray-50 */
+  --driver-border: #e5e7eb; /* gray-200 */
+  --driver-success: #10b981; /* emerald-500 */
+  --driver-warning: #f59e0b; /* amber-500 */
+  --driver-purple: #8b5cf6; /* purple-500 */
 }
 
-/* Overlay personalizado - más claro para mejor visibilidad */
+/* ========================================
+   OVERLAY - Más visible pero suave
+   ======================================== */
 .driver-overlay {
-  background-color: rgba(0, 0, 0, 0.5) !important; /* ✅ Reducido de 0.75 a 0.5 */
+  background-color: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(.5px);
+  -webkit-backdrop-filter: blur(.5px);
 }
 
-/* Contenedor del popover */
+/* ========================================
+   POPOVER BASE - Estilo Card WALA
+   ======================================== */
 .driver-popover {
-  border-radius: var(--driver-border-radius);
-  box-shadow: var(--driver-shadow);
-  background-color: var(--driver-bg-color);
-  max-width: 400px;
-  padding: 0;
+  background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid var(--driver-border);
+  border-radius: 1rem; /* rounded-xl como ResumenDay */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-sm + border */
+  max-width: 26rem; /* 416px */
+  padding: 1.5rem;
+  animation: popover-fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Título del popover */
-.driver-popover-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--driver-text-color);
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-}
-
-/* Descripción del popover */
-.driver-popover-description {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: var(--driver-secondary-text);
-  margin-bottom: 1rem;
-}
-
-/* Progreso del tour */
-.driver-popover-progress-text {
-  font-size: 0.75rem;
-  color: var(--driver-primary-color);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 0.75rem;
-  display: inline-block;
-}
-
-/* Footer con botones */
-.driver-popover-footer {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* Botones */
-.driver-popover-btn {
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-}
-
-/* Botón siguiente/finalizar */
-.driver-popover-next-btn,
-.driver-popover-done-btn {
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  color: white;
-  flex: 1;
-}
-
-.driver-popover-next-btn:hover,
-.driver-popover-done-btn:hover {
-  background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
-}
-
-/* Botón anterior */
-.driver-popover-prev-btn {
-  background-color: #f3f4f6;
-  color: var(--driver-text-color);
-  flex: 1;
-}
-
-.driver-popover-prev-btn:hover {
-  background-color: #e5e7eb;
-  transform: translateY(-1px);
-}
-
-/* Botón cerrar */
-.driver-popover-close-btn {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f3f4f6;
-  border-radius: 50%;
-  transition: all 0.2s;
-  border: none;
-  cursor: pointer;
-  color: var(--driver-secondary-text);
-}
-
-.driver-popover-close-btn:hover {
-  background-color: #fee2e2;
-  color: #dc2626;
-  transform: scale(1.1);
-}
-
-/* Flecha del popover */
-.driver-popover-arrow {
-  border: 5px solid transparent;
-}
-
-.driver-popover-arrow-side-top {
-  border-top-color: var(--driver-bg-color);
-}
-
-.driver-popover-arrow-side-bottom {
-  border-bottom-color: var(--driver-bg-color);
-}
-
-.driver-popover-arrow-side-left {
-  border-left-color: var(--driver-bg-color);
-}
-
-.driver-popover-arrow-side-right {
-  border-right-color: var(--driver-bg-color);
-}
-
-/* Elemento destacado */
-.driver-active-element {
-  position: relative;
-  z-index: 9999;
-}
-
-/* Animaciones */
-.driver-popover {
-  animation: driver-popover-fade-in 0.3s ease-out;
-}
-
-@keyframes driver-popover-fade-in {
+@keyframes popover-fade-in {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(-10px);
+    transform: scale(0.95) translateY(10px);
   }
   to {
     opacity: 1;
@@ -169,35 +54,475 @@
   }
 }
 
-/* Responsive */
+/* ========================================
+   TEMA WALA - Aplicado con .wala-theme
+   ======================================== */
+.driver-popover.wala-theme {
+  background: linear-gradient(to bottom, #ffffff 0%, #f9fafb 100%) !important;
+  border: 1px solid var(--driver-border) !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+              0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  max-width: 22rem !important; /* Reducir de 26rem a 22rem para pantallas anchas */
+}
+
+/* ========================================
+   HEADER - Título con ícono circular
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-title {
+  font-size: 1.25rem !important; /* text-xl en móvil para mejor jerarquía */
+  font-weight: 700 !important;
+  color: var(--driver-text-primary) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  margin-bottom: 0.75rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Tamaño reducido en desktop para coherencia */
+@media (min-width: 641px) {
+  .driver-popover.wala-theme .driver-popover-title {
+    font-size: 1.125rem !important; /* text-lg en desktop */
+  }
+}
+
+/* Contenedor de ícono antes del título */
+.driver-popover.wala-theme .driver-popover-title .icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem; /* w-10 */
+  height: 2.5rem; /* h-10 */
+  background-color: var(--driver-primary-light);
+  border-radius: 0.5rem; /* rounded-lg */
+  flex-shrink: 0;
+}
+
+.driver-popover.wala-theme .driver-popover-title .icon-wrapper svg {
+  width: 1.25rem; /* w-5 */
+  height: 1.25rem; /* h-5 */
+  color: var(--driver-primary);
+}
+
+/* Logo más grande para paso de bienvenida */
+.driver-popover.wala-theme .driver-popover-title .icon-wrapper img {
+  width: 2.5rem; /* 40px - proporcionado en móviles pequeños */
+  height: 2.5rem;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Wrapper del logo sin fondo */
+.driver-popover.wala-theme .driver-popover-title .icon-wrapper:has(img) {
+  background-color: transparent;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+}
+
+/* Tablets y pantallas medianas: tamaño óptimo */
+@media (min-width: 640px) {
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper img {
+    width: 3rem; /* 48px - bien proporcionado */
+    height: 3rem;
+  }
+  
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper:has(img) {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+/* Desktop: mantener tamaño moderado, no muy grande */
+@media (min-width: 768px) {
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper img {
+    width: 3.5rem; /* 56px - más proporcionado que 4rem */
+    height: 3.5rem;
+  }
+  
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper:has(img) {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}
+
+/* ========================================
+   DESCRIPCIÓN - Texto secundario
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-description {
+  color: var(--driver-text-secondary) !important;
+  line-height: 1.625 !important;
+  font-size: 0.875rem !important; /* text-sm */
+  margin-bottom: 1rem !important;
+}
+
+.driver-popover.wala-theme .driver-popover-description p {
+  margin-bottom: 0.5rem;
+}
+
+.driver-popover.wala-theme .driver-popover-description p:last-child {
+  margin-bottom: 0;
+}
+
+.driver-popover.wala-theme .driver-popover-description strong {
+  font-weight: 600;
+  color: var(--driver-text-primary);
+}
+
+.driver-popover.wala-theme .driver-popover-description code {
+  padding: 0.125rem 0.375rem;
+  background-color: #f1f5f9; /* slate-100 */
+  border: 1px solid #e2e8f0; /* slate-200 */
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8125rem;
+}
+
+.driver-popover.wala-theme .driver-popover-description hr {
+  margin: 0.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--driver-border);
+}
+
+/* ========================================
+   PROGRESO - Badge circular
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-progress-text {
+  background-color: var(--driver-primary-light) !important;
+  color: var(--driver-primary) !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 9999px !important; /* rounded-full */
+  font-size: 0.75rem !important; /* text-xs */
+  font-weight: 600 !important;
+  display: inline-block !important;
+  margin-bottom: 0 !important; /* Quitar margin porque estará en el footer */
+}
+
+/* ========================================
+   FOOTER - Botones de navegación
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-footer {
+  display: flex !important;
+  flex-direction: column !important; /* Columna: badge arriba, botones abajo */
+  gap: 0.75rem !important;
+  align-items: flex-end !important; /* Alinear a la izquierda */
+  padding-top: 1rem !important;
+  margin-top: 0.5rem !important;
+  border-top: 1px solid var(--driver-border) !important;
+}
+
+.driver-popover.wala-theme .driver-popover-navigation-btns {
+  display: flex !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+}
+
+/* ========================================
+   BOTONES - Estilo WALA con hover sutil
+   ======================================== */
+.driver-popover.wala-theme button {
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 0.75rem !important; /* rounded-xl */
+  font-weight: 600 !important;
+  font-size: 0.875rem !important; /* text-sm */
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: none !important;
+  cursor: pointer !important;
+  flex: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+}
+
+/* Mostrar texto en desktop, ocultar iconos */
+.driver-popover.wala-theme button .btn-text {
+  display: inline !important;
+}
+
+.driver-popover.wala-theme button .btn-icon {
+  display: none !important;
+}
+
+/* Botón Siguiente / Finalizar - Color naranja */
+.driver-popover.wala-theme .driver-popover-next-btn,
+.driver-popover.wala-theme .driver-popover-done-btn {
+  background-color: #ea580c !important; /* orange-600 */
+  background-image: none !important; /* Quitar cualquier gradiente */
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.2) !important;
+  text-shadow: none !important; /* Quitar cualquier sombra de texto */
+  -webkit-font-smoothing: antialiased !important; /* Mejorar renderizado */
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+.driver-popover.wala-theme .driver-popover-next-btn:hover,
+.driver-popover.wala-theme .driver-popover-done-btn:hover {
+  background-color: #c2410c !important; /* orange-700 */
+  background-image: none !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 12px rgba(234, 88, 12, 0.3) !important;
+}
+
+.driver-popover.wala-theme .driver-popover-next-btn:active,
+.driver-popover.wala-theme .driver-popover-done-btn:active {
+  transform: translateY(0) !important;
+}
+
+/* Botón Anterior - Gris claro */
+.driver-popover.wala-theme .driver-popover-prev-btn {
+  background-color: #f3f4f6 !important; /* gray-100 */
+  color: var(--driver-text-primary) !important;
+  border: 1px solid var(--driver-border) !important;
+}
+
+.driver-popover.wala-theme .driver-popover-prev-btn:hover {
+  background-color: #e5e7eb; /* gray-200 */
+  transform: translateY(-2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.driver-popover.wala-theme .driver-popover-prev-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   BOTÓN CERRAR (X) - Esquina superior
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-close-btn {
+  position: absolute !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  width: 2rem !important; /* w-8 */
+  height: 2rem !important; /* h-8 */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: #f3f4f6 !important; /* gray-100 */
+  border-radius: 0.5rem !important; /* rounded-lg */
+  transition: all 0.2s !important;
+  border: none !important;
+  cursor: pointer !important;
+  color: var(--driver-text-muted) !important;
+  padding: 0 !important;
+  flex: none !important;
+}
+
+.driver-popover.wala-theme .driver-popover-close-btn:hover {
+  background-color: #fee2e2; /* red-100 */
+  color: #dc2626; /* red-600 */
+  transform: scale(1.1);
+}
+
+/* ========================================
+   FLECHAS - Conectan popover con elemento
+   ======================================== */
+.driver-popover.wala-theme .driver-popover-arrow {
+  border: 8px solid transparent !important;
+}
+
+.driver-popover.wala-theme .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: #ffffff !important;
+}
+
+.driver-popover.wala-theme .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: #ffffff !important;
+}
+
+.driver-popover.wala-theme .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: #ffffff !important;
+}
+
+.driver-popover.wala-theme .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: #ffffff !important;
+}
+
+/* ========================================
+   ELEMENTO DESTACADO - Anillo de color
+   ======================================== */
+.driver-active-element {
+  position: relative;
+  z-index: 9999;
+  outline: 2px solid var(--driver-primary) !important;
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+  transition: outline 0.2s ease;
+}
+
+/* ========================================
+   VARIANTES DE COLOR - Para diferentes pasos
+   ======================================== */
+/* Verde - Para pasos exitosos/positivos */
+.driver-popover.wala-success .icon-wrapper {
+  background-color: #d1fae5 !important; /* emerald-100 */
+}
+
+.driver-popover.wala-success .icon-wrapper svg {
+  color: var(--driver-success) !important;
+}
+
+/* Morado - Para features premium */
+.driver-popover.wala-purple .icon-wrapper {
+  background-color: #ede9fe !important; /* purple-100 */
+}
+
+.driver-popover.wala-purple .icon-wrapper svg {
+  color: var(--driver-purple) !important;
+}
+
+/* Amarillo - Para advertencias */
+.driver-popover.wala-warning .icon-wrapper {
+  background-color: #fef3c7 !important; /* amber-100 */
+}
+
+.driver-popover.wala-warning .icon-wrapper svg {
+  color: var(--driver-warning) !important;
+}
+
+/* ========================================
+   ANIMACIONES SUTILES
+   ======================================== */
+@keyframes wala-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.driver-popover.wala-theme {
+  animation: wala-fade-in 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   RESPONSIVE - Móviles
+   ======================================== */
 @media (max-width: 640px) {
-  .driver-popover {
-    max-width: 90vw;
+  .driver-popover.wala-theme {
+    max-width: calc(100vw - 1.5rem) !important; /* Más ancho */
+    padding: 0.875rem !important; /* Aún más compacto */
+    margin: 0.75rem !important;
   }
-  
-  .driver-popover-title {
-    font-size: 1rem;
+
+  /* Título mantiene jerarquía visual con tamaño más grande definido arriba */
+  .driver-popover.wala-theme .driver-popover-title {
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
   }
-  
-  .driver-popover-description {
-    font-size: 0.875rem;
+
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper {
+    width: 1.75rem !important; /* Más pequeño */
+    height: 1.75rem !important;
+    border-radius: 0.375rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-title .icon-wrapper svg {
+    width: 0.875rem !important; /* Ícono más pequeño */
+    height: 0.875rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-description {
+    font-size: 0.75rem !important; /* 12px */
+    line-height: 1.4 !important;
+    margin-bottom: 0.625rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-description p {
+    margin-bottom: 0.375rem !important;
+  }
+
+  /* Badge de progreso más pequeño y compacto */
+  .driver-popover.wala-theme .driver-popover-progress-text {
+    font-size: 0.625rem !important; /* 10px */
+    padding: 0.125rem 0.375rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-footer {
+    padding-top: 0.625rem !important;
+    margin-top: 0.375rem !important;
+    gap: 0.375rem !important; /* Menos gap entre botones */
+  }
+
+  /* Botones más pequeños y compactos - solo iconos */
+  .driver-popover.wala-theme button {
+    padding: 0.375rem !important; /* Padding más pequeño */
+    font-size: 0.875rem !important; /* Iconos más pequeños */
+    border-radius: 0.375rem !important; /* rounded-md */
+    font-weight: 500 !important;
+    min-width: 2rem !important; /* Ancho mínimo reducido */
+    height: 2rem !important; /* Altura fija más pequeña */
+  }
+
+  /* Ocultar texto en móviles, mostrar solo iconos */
+  .driver-popover.wala-theme button .btn-text {
+    display: none !important;
+  }
+
+  .driver-popover.wala-theme button .btn-icon {
+    display: inline !important;
+  }
+
+  /* Botón cerrar más pequeño */
+  .driver-popover.wala-theme .driver-popover-close-btn {
+    top: 0.5rem !important;
+    right: 0.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    border-radius: 0.25rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-close-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
+
+  /* Reducir el tamaño de la flecha */
+  .driver-popover.wala-theme .driver-popover-arrow {
+    border-width: 5px !important;
   }
 }
 
-/* Estado de carga */
-.driver-popover.loading {
-  opacity: 0.7;
-  pointer-events: none;
+/* Tablets pequeños */
+@media (min-width: 641px) and (max-width: 768px) {
+  .driver-popover.wala-theme {
+    max-width: 22rem !important;
+    padding: 1.125rem !important;
+  }
+
+  .driver-popover.wala-theme .driver-popover-title {
+    font-size: 1rem !important;
+  }
+
+  .driver-popover.wala-theme button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.8125rem !important;
+  }
 }
 
-/* Accesibilidad */
-.driver-popover:focus {
-  outline: 2px solid var(--driver-primary-color);
+/* ========================================
+   ACCESIBILIDAD
+   ======================================== */
+.driver-popover.wala-theme button:focus-visible {
+  outline: 2px solid var(--driver-primary);
   outline-offset: 2px;
 }
 
-/* Mejoras visuales para los badges de progreso */
-/* .driver-popover-progress-text::before {
-  content: '📍 ';
-  margin-right: 0.25rem;
-} */
+.driver-popover.wala-theme .driver-popover-close-btn:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* Reduce motion para usuarios con preferencias */
+@media (prefers-reduced-motion: reduce) {
+  .driver-popover.wala-theme,
+  .driver-popover.wala-theme button {
+    animation: none !important;
+    transition: none !important;
+  }
+}

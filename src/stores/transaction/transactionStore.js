@@ -1425,7 +1425,9 @@ export function useTransactionStore() {
    */
   const deletePaymentFromIncomeTransaction = async (paymentUuid, incomeTransactionId) => {
     const { useClientStore } = await import('@/stores/clientStore');
+    const { useBusinessStore } = await import('@/stores/businessStore');
     const clientStore = useClientStore();
+    const businessStore = useBusinessStore();
 
     console.log('🗑️ [DELETE PAYMENT FROM ARRAY] Iniciando eliminación de payment:', {
       paymentUuid,
@@ -1433,12 +1435,48 @@ export function useTransactionStore() {
     });
 
     // 1. OBTENER TRANSACCIÓN INCOME ORIGINAL
-    const incomeTransaction = transactionsInStore.value.find(
+    let incomeTransaction = transactionsInStore.value.find(
       t => t.uuid === incomeTransactionId
     );
 
+    // Si no se encuentra por uuid, intentar buscar por id
     if (!incomeTransaction) {
-      throw new Error('⚠️ Transacción income no encontrada');
+      incomeTransaction = transactionsInStore.value.find(
+        t => t.id === incomeTransactionId
+      );
+    }
+
+    // Si aún no se encuentra, buscar en Firestore
+    if (!incomeTransaction) {
+      console.log('⚠️ Transacción income no encontrada en store, buscando en Firestore...');
+
+      const businessId = businessStore.business?.id;
+      if (!businessId) {
+        throw new Error('❌ No se pudo obtener el businessId');
+      }
+
+      try {
+        const db = getFirestore();
+        const transactionRef = doc(db, 'businesses', businessId, 'transactions', incomeTransactionId);
+        const transactionSnap = await import('firebase/firestore').then(({ getDoc }) => getDoc(transactionRef));
+
+        if (transactionSnap.exists()) {
+          const data = transactionSnap.data();
+          incomeTransaction = {
+            id: transactionSnap.id,
+            ...data,
+            // Convertir Timestamps si es necesario
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+            updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
+          };
+          console.log('✅ Transacción income cargada desde Firestore:', incomeTransaction.uuid || incomeTransaction.id);
+        } else {
+          throw new Error('⚠️ Transacción income no encontrada en Firestore');
+        }
+      } catch (error) {
+        console.error('❌ Error al cargar transacción desde Firestore:', error);
+        throw new Error('⚠️ No se pudo cargar la transacción income. Verifica que la venta original exista.');
+      }
     }
 
     console.log(`  📝 Transacción income encontrada: ${incomeTransaction.uuid}`);

@@ -110,11 +110,12 @@ module.exports = functions.firestore
 
     // ✅ IGNORAR: Actualizaciones que solo agregan pagos al array payments[]
     const isUpdate = before !== null;
+    const beforePaymentsCount = before?.payments?.length || 0;
+    const afterPaymentsCount = after?.payments?.length || 0;
+
     const isPaymentArrayUpdate = isUpdate &&
-      after.payments &&
-      before.payments &&
-      after.payments.length > before.payments.length &&
-      after.type === 'income'; // Solo para ventas
+      after.type === 'income' && // Solo para ventas
+      afterPaymentsCount !== beforePaymentsCount; // Array de pagos creció
 
     if (isPaymentArrayUpdate) {
       console.log('⏭️ Payment added to existing transaction, skipping (payment transaction will be processed separately)');
@@ -122,7 +123,7 @@ module.exports = functions.firestore
         uuid: after.uuid,
         type: after.type,
         createdAt: after.createdAt,
-        paymentsCount: after.payments.length,
+        paymentsCount: afterPaymentsCount,
         totalPaid: after.totalPaid,
         balance: after.balance
       });

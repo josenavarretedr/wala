@@ -37,7 +37,7 @@
                 Total por cobrar
               </p>
               <p
-                class="text-3xl sm:text-4xl font-extrabold text-orange-600 mb-2 tabular-nums"
+                class="text-3xl font-extrabold text-orange-600 mb-2 tabular-nums"
               >
                 S/ {{ totalReceivable.toFixed(2) }}
               </p>
@@ -321,7 +321,7 @@ const route = useRoute();
 const { isPremium } = useSubscription();
 
 // Toast
-const { warning, premium } = useToast();
+const { warning, premium, success } = useToast();
 
 const { pendingTransactions, totalReceivable, receivablesByClient } =
   useAccountsReceivable();
@@ -399,6 +399,7 @@ function openPaymentModal(transaction) {
 function handlePaymentSuccess() {
   showPaymentModal.value = false;
   selectedTransaction.value = null;
+  success("Pago registrado exitosamente en la cuenta del cliente");
   // La lista se actualiza automáticamente por reactividad
 }
 

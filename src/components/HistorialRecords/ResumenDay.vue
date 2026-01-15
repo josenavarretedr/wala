@@ -9,7 +9,7 @@
       <!-- Toggle section -->
       <div
         class="flex items-center justify-center gap-3 pt-2border-gray-100"
-        @click="showResume = !showResume"
+        @click="handleToggleResume"
         v-if="!showResume"
       >
         <div
@@ -33,7 +33,7 @@
       <!-- Estado expandido - información sensible visible -->
       <div
         class="text-center mb-4"
-        @click="showResume = !showResume"
+        @click="handleToggleResume"
         v-if="showResume"
       >
         <p class="text-sm text-gray-500 mb-1">Saldo actual</p>
@@ -60,7 +60,7 @@
 
         <div></div>
       </div>
-      <div class="text-center mb-4">
+      <!-- <div class="text-center mb-4">
         <div
           class="bg-orange-50 inline-block px-3 py-1 rounded-full mt-3"
           v-if="!opening"
@@ -69,7 +69,7 @@
             Necesitas aperturar el día
           </span>
         </div>
-      </div>
+      </div> -->
     </div>
 
     <!-- Contenido expandible -->
@@ -212,6 +212,13 @@
 import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useToast } from "@/composables/useToast";
+import { useSubscription } from "@/composables/useSubscription";
+import { useRoute } from "vue-router";
+import { BrightCrown } from "@iconoir/vue";
+const route = useRoute();
+const { isPremium } = useSubscription();
+const { warning, success, premium } = useToast();
 
 const showResume = ref(false);
 
@@ -312,6 +319,15 @@ onBeforeUnmount(() => {
   );
   accountsBalanceStore.stopDailySummaryListener();
 });
+
+// Función para manejar el toggle del resumen
+const handleToggleResume = () => {
+  if (!opening.value) {
+    warning("Debes aperturar el día para ver el resumen.");
+    return;
+  }
+  showResume.value = !showResume.value;
+};
 </script>
 
 <style scoped>

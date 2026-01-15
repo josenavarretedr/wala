@@ -10,13 +10,130 @@
         <StreakWidget :compact="true" />
       </div>
       <!-- Grid de apps móvil -->
-      <div class="grid grid-cols-4 gap-2 max-w-md mx-auto">
+      <div data-tour="micro-apps" class="max-w-md mx-auto">
+        <div class="grid grid-cols-4 gap-2">
+          <div
+            v-for="(item, index) in visibleApps"
+            :key="item.id"
+            :class="[
+              'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+              'col-span-1 p-2 sm:p-3',
+              item.color === 'blue' &&
+                'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
+              item.color === 'red' &&
+                'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
+              item.color === 'green' &&
+                'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+              item.color === 'purple' &&
+                'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+              item.color === 'indigo' &&
+                'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
+              item.color === 'orange' &&
+                'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+              item.color === 'teal' &&
+                'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
+              !getValue(item.available) && 'opacity-60 hover:shadow-sm',
+            ]"
+            @click="handleAppClick(item)"
+          >
+            <!-- Icono como componente -->
+            <component
+              v-if="item.isComponent && typeof item.icon !== 'string'"
+              :is="item.icon"
+              :class="[
+                'mb-1 transition-all duration-200',
+                'w-6 h-6 sm:w-8 sm:h-8',
+                getValue(item.available)
+                  ? getIconColor(item.color)
+                  : 'text-gray-400',
+                getValue(item.available) && getIconHoverColor(item.color),
+              ]"
+            />
+            <!-- Icono SVG para 'receipt' -->
+            <svg
+              v-else-if="item.icon === 'receipt'"
+              :class="[
+                'mb-1 transition-all duration-200',
+                'w-6 h-6 sm:w-8 sm:h-8',
+                getValue(item.available)
+                  ? getIconColor(item.color)
+                  : 'text-gray-400',
+                getValue(item.available) && getIconHoverColor(item.color),
+              ]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            <!-- Emoji/texto fallback -->
+            <div
+              v-else
+              :class="[
+                'mb-1 transition-all duration-200',
+                'text-xl sm:text-2xl',
+              ]"
+            >
+              {{ item.icon }}
+            </div>
+            <div
+              :class="[
+                'text-center px-1',
+                getValue(item.available)
+                  ? 'text-gray-600 font-medium'
+                  : 'text-gray-400',
+                'text-xs',
+              ]"
+            >
+              {{ getValue(item.name) }}
+              <!-- <span
+              v-if="
+                item.badge && typeof item.badge === 'function'
+                  ? item.badge()
+                  : item.badge
+              "
+              class="ml-1 text-green-500 text-xs font-bold"
+            >
+              ●
+            </span> -->
+            </div>
+            <div
+              v-if="!getValue(item.available)"
+              class="text-xs text-gray-400 mt-1"
+            >
+              Próximamente
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid desktop: 8 columnas, todos en una fila -->
+    <div
+      data-tour="micro-apps"
+      class="hidden lg:block lg:max-w-7xl xl:max-w-[1600px] lg:mx-auto"
+    >
+      <div class="grid grid-cols-8 gap-4 xl:gap-5 items-stretch">
+        <!-- Widget de racha (2 columnas) -->
+        <div
+          class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
+        >
+          <StreakWidget :compact="true" />
+        </div>
+
+        <!-- Apps (1 columna cada una, 6 en total) -->
         <div
           v-for="(item, index) in visibleApps"
-          :key="item.id"
+          :key="'desktop-' + item.id"
           :class="[
             'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
-            'col-span-1 p-2 sm:p-3',
+            'col-span-1',
+            'p-4 min-h-[140px]',
             item.color === 'blue' &&
               'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
             item.color === 'red' &&
@@ -40,8 +157,7 @@
             v-if="item.isComponent && typeof item.icon !== 'string'"
             :is="item.icon"
             :class="[
-              'mb-1 transition-all duration-200',
-              'w-6 h-6 sm:w-8 sm:h-8',
+              'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
               getValue(item.available)
                 ? getIconColor(item.color)
                 : 'text-gray-400',
@@ -52,8 +168,7 @@
           <svg
             v-else-if="item.icon === 'receipt'"
             :class="[
-              'mb-1 transition-all duration-200',
-              'w-6 h-6 sm:w-8 sm:h-8',
+              'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
               getValue(item.available)
                 ? getIconColor(item.color)
                 : 'text-gray-400',
@@ -73,7 +188,7 @@
           <!-- Emoji/texto fallback -->
           <div
             v-else
-            :class="['mb-1 transition-all duration-200', 'text-xl sm:text-2xl']"
+            class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
           >
             {{ item.icon }}
           </div>
@@ -83,119 +198,11 @@
               getValue(item.available)
                 ? 'text-gray-600 font-medium'
                 : 'text-gray-400',
-              'text-xs',
+              'text-sm xl:text-base',
             ]"
           >
             {{ getValue(item.name) }}
             <!-- <span
-              v-if="
-                item.badge && typeof item.badge === 'function'
-                  ? item.badge()
-                  : item.badge
-              "
-              class="ml-1 text-green-500 text-xs font-bold"
-            >
-              ●
-            </span> -->
-          </div>
-          <div
-            v-if="!getValue(item.available)"
-            class="text-xs text-gray-400 mt-1"
-          >
-            Próximamente
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Grid desktop: 8 columnas, todos en una fila -->
-    <div
-      class="hidden lg:grid lg:grid-cols-8 lg:gap-4 xl:gap-5 lg:max-w-7xl xl:max-w-[1600px] lg:mx-auto lg:items-stretch"
-    >
-      <!-- Widget de racha (2 columnas) -->
-      <div
-        class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
-      >
-        <StreakWidget :compact="true" />
-      </div>
-
-      <!-- Apps (1 columna cada una, 6 en total) -->
-      <div
-        v-for="(item, index) in visibleApps"
-        :key="'desktop-' + item.id"
-        :class="[
-          'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
-          'col-span-1',
-          'p-4 min-h-[140px]',
-          item.color === 'blue' &&
-            'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
-          item.color === 'red' &&
-            'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
-          item.color === 'green' &&
-            'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
-          item.color === 'purple' &&
-            'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
-          item.color === 'indigo' &&
-            'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
-          item.color === 'orange' &&
-            'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
-          item.color === 'teal' &&
-            'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
-          !getValue(item.available) && 'opacity-60 hover:shadow-sm',
-        ]"
-        @click="handleAppClick(item)"
-      >
-        <!-- Icono como componente -->
-        <component
-          v-if="item.isComponent && typeof item.icon !== 'string'"
-          :is="item.icon"
-          :class="[
-            'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-            getValue(item.available)
-              ? getIconColor(item.color)
-              : 'text-gray-400',
-            getValue(item.available) && getIconHoverColor(item.color),
-          ]"
-        />
-        <!-- Icono SVG para 'receipt' -->
-        <svg
-          v-else-if="item.icon === 'receipt'"
-          :class="[
-            'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-            getValue(item.available)
-              ? getIconColor(item.color)
-              : 'text-gray-400',
-            getValue(item.available) && getIconHoverColor(item.color),
-          ]"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        <!-- Emoji/texto fallback -->
-        <div
-          v-else
-          class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
-        >
-          {{ item.icon }}
-        </div>
-        <div
-          :class="[
-            'text-center px-1',
-            getValue(item.available)
-              ? 'text-gray-600 font-medium'
-              : 'text-gray-400',
-            'text-sm xl:text-base',
-          ]"
-        >
-          {{ getValue(item.name) }}
-          <!-- <span
             v-if="
               item.badge && typeof item.badge === 'function'
                 ? item.badge()
@@ -205,12 +212,13 @@
           >
             ●
           </span> -->
-        </div>
-        <div
-          v-if="!getValue(item.available)"
-          class="text-xs text-gray-400 mt-1"
-        >
-          Próximamente
+          </div>
+          <div
+            v-if="!getValue(item.available)"
+            class="text-xs text-gray-400 mt-1"
+          >
+            Próximamente
+          </div>
         </div>
       </div>
     </div>

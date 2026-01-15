@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6 mb-20">
     <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
-    <div data-tour="micro-apps" class="max-w-2xl lg:max-w-none mx-auto">
+    <div class="max-w-2xl lg:max-w-none mx-auto">
       <MicroApps
         :business-id="businessId"
         @navigate-to-app="handleNavigateToApp"

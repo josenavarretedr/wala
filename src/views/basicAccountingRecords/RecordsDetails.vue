@@ -102,9 +102,11 @@ import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import DeleteTransactionModal from "@/components/Transactions/DeleteTransactionModal.vue";
 
 import { useCashEventStore } from "@/stores/cashEventStore";
+import { useToast } from "@/composables/useToast";
 
 const cashEventStore = useCashEventStore();
 const businessStore = useBusinessStore();
+const { success } = useToast();
 
 const isLoading = ref(true);
 const showDeleteModal = ref(false);
@@ -297,19 +299,6 @@ async function handleDeleteConfirm() {
   try {
     // Si es un payment (transacción tipo 'payment'), eliminarlo del array de la venta original
     if (transactionData.value?.type === "payment") {
-      const confirmDelete = window.confirm(
-        "¿Estás seguro de eliminar este pago?\n\n" +
-          `Monto: S/ ${transactionData.value.amount?.toFixed(2) || "0.00"}\n` +
-          `Venta relacionada: S/ ${
-            transactionData.value.relatedTransactionTotal?.toFixed(2) || "0.00"
-          }\n\n` +
-          "Esta acción aumentará el saldo pendiente de la venta original."
-      );
-
-      if (!confirmDelete) {
-        return;
-      }
-
       console.log("🗑️ Eliminando payment:", {
         paymentUuid: transactionData.value.uuid,
         relatedTransactionId: transactionData.value.relatedTransactionId,
@@ -324,6 +313,10 @@ async function handleDeleteConfirm() {
       if (result.success) {
         console.log("✅ Payment eliminado del array exitosamente");
         showDeleteModal.value = false;
+        success(
+          `Pago de S/ ${transactionData.value.amount?.toFixed(2)} eliminado`
+        );
+        success(`Se actualizó la cuenta del cliente.`);
         navigateToDashboard();
       }
     } else {
@@ -336,6 +329,14 @@ async function handleDeleteConfirm() {
 
       if (result.success) {
         showDeleteModal.value = false;
+        const typeLabels = {
+          income: "Venta",
+          expense: "Gasto",
+          transfer: "Transferencia",
+          closure: "Cierre",
+        };
+        const label = typeLabels[transactionData.value?.type] || "Transacción";
+        success(`${label} eliminada correctamente`);
         navigateToDashboard();
       }
     }

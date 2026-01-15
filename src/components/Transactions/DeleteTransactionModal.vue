@@ -267,12 +267,24 @@ const impactMessages = computed(() => {
     case "payment":
       messages.push({
         type: "warning",
-        text: "Se modificará el balance de la venta original",
+        text: `El monto de S/ ${t.amount?.toFixed(
+          2
+        )} se devolverá al saldo pendiente`,
       });
       messages.push({
         type: "info",
-        text: "Se recalcularán los pagos y el saldo pendiente",
+        text: "Se actualizará el estado de pago de la venta original",
       });
+      if (t.relatedTransactionTotal) {
+        const newBalance =
+          t.relatedTransactionTotal -
+          (t.relatedTransactionTotalPaid || 0) +
+          t.amount;
+        messages.push({
+          type: "info",
+          text: `Nuevo saldo pendiente: S/ ${newBalance.toFixed(2)}`,
+        });
+      }
       break;
 
     case "transfer":

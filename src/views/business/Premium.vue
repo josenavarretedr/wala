@@ -7,22 +7,10 @@
       <div class="text-center mb-12">
         <div class="flex justify-center mb-6">
           <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-50 border border-orange-200 text-orange-700"
+            class="inline-flex items-center gap-2 px-4 py-2 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
-              />
-            </svg>
-            <span class="text-sm font-medium">Premium</span>
+            <BrightCrown class="w-4 h-4" />
+            Premium
           </div>
         </div>
 
@@ -207,6 +195,7 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
+import { BrightCrown } from "@iconoir/vue";
 
 const router = useRouter();
 const businessStore = useBusinessStore();
