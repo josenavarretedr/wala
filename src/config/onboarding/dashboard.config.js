@@ -28,10 +28,10 @@ export const dashboardConfig = {
       popover: {
         title: 'Bienvenido a WALA',
         description: `
-          <div style="font-size: 0.875rem; line-height: 1.625; text-align: center;">
+          <div style="font-size: 0.875rem; line-height: 1.625; text-align: left;">
             <img src="/logoWala2.png" alt="Logo WALA" style="width: 120px; height: 120px; margin: 0 auto 1rem auto; display: block; object-fit: contain;" />
-            <p style="margin-bottom: 0.5rem;">Tu <strong>copiloto empresarial para entender tu negocio</strong> y tomar mejores decisiones, día a día.</p>
-            <p style="color: #6b7280;">Te presentamos lo esencial paso a paso.</p>
+            <p style="margin-bottom: 0.5rem; font-size: 0.875rem; color: #1f2937;">Tu <strong>copiloto empresarial</strong> que te dice si <strong>tu negocio ganó o perdió</strong>, día a día.</p>
+            <p style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 400;">Te presentamos lo esencial paso a paso.</p>
           </div>
         `,
         side: 'center',
@@ -40,71 +40,20 @@ export const dashboardConfig = {
       iconName: 'Rocket',
     },
 
-    // 1) Micro Apps
-    {
-      element: '[data-tour="micro-apps"]',
-      popover: {
-        title: 'Todo en un solo lugar',
-        description: `
-          <div style="font-size: 0.875rem; line-height: 1.625;">
-            <p style="margin-bottom: 0.5rem;">Accesos rápidos: <strong>Ventas</strong>, <strong>gastos</strong>, <strong>inventario</strong> y <strong>más</strong>.</p>
-            <p style="color: #6b7280;">Enfócate en lo importante.</p>
-          </div>
-        `,
-        side: 'bottom',
-        align: 'start',
-      },
-      iconName: 'AppWindow',
-      iconColor: 'purple',
-    },
 
-    // 2) Resumen del día
-    {
-      element: '[data-tour="resumen-day"]',
-      popover: {
-        title: 'Tu día en números',
-        description: `
-          <div class="text-sm leading-relaxed">
-            <p>Mira <strong>ingresos</strong>, <strong>egresos</strong> y <strong>balance</strong> en <span style="color: #10b981; font-weight: 600;">tiempo real</span>.</p>
-            <p style="color: #6b7280;">Tu negocio, claro y simple.</p>
-          </div>
-        `,
-        side: 'top',
-        align: 'start',
-      },
-      iconName: 'BarChart',
-      iconColor: 'success',
-    },
 
-    // 3) Lista de transacciones
-    {
-      element: '[data-tour="transactions-list"]',
-      popover: {
-        title: 'Movimientos del día',
-        description: `
-          <div style="font-size: 0.875rem; line-height: 1.625;">
-            <p style="margin-bottom: 0.5rem;">Aquí queda todo registrado con hora, monto y tipo.</p>
-            <p>Tu negocio <strong>bajo control</strong>.</p>
-          </div>
-        `,
-        side: 'top',
-        align: 'start',
-      },
-      iconName: 'List',
-      iconColor: 'blue',
-    },
-
-    // 4) Acciones principales (racha)
+    // 1) Acciones principales (racha)
     {
       element: '[data-tour="main-buttons"]',
       popover: {
         title: 'Rutina diaria',
         description: `
           <div style="font-size: 0.875rem; line-height: 1.625;">
-            <p style="margin-bottom: 0.5rem;">WALA funciona en un ciclo simple:</p>
-            <p style="margin-bottom: 0.375rem;"><strong>1)</strong> <strong>Aperturar caja</strong></p>
-            <p style="margin-bottom: 0.375rem;"><strong>2)</strong> <strong>Registrar movimientos</strong> <span style="color: #6b7280;">(ingresos, egresos, transferencias)</span></p>
-            <p style="margin-bottom: 0.5rem;"><strong>3)</strong> <strong>Cerrar caja</strong></p>
+            <p style="margin-bottom: 0.5rem;">WALA trabaja simple, por días:</p>
+            <p style="margin-bottom: 0.375rem;">1. <strong>Aquí ves si el día está abierto,</strong></p>
+            <p style="margin-bottom: 0.375rem;">2. <strong>Si ya registraste movimientos</strong></p>
+            <p style="margin-bottom: 0.5rem;">3. <strong>Si ya cerraste el día</strong></p>
+            <p style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 400;">Para saber luego cómo te fue hoy</p>
           </div>
         `,
         side: 'top',
@@ -114,32 +63,36 @@ export const dashboardConfig = {
       iconColor: 'orange',
     },
 
-    // 5) Apertura / Cierre
+    // 2) Resumen del día
     {
-      element: '[data-tour="account-balance-btn"]',
+      element: '[data-tour="resumen-day"]',
       popover: {
-        title: 'Aperturar / Cerrar',
+        title: 'Resultado del día',
         description: `
-          <div style="font-size: 0.875rem; line-height: 1.625;">
-            <p style="margin-bottom: 0.5rem;"><strong>Apertura:</strong> registra con cuánto inicias (efectivo y banco).</p>
-            <p><strong>Cierre:</strong> con cuánto terminas. WALA calcula diferencias y guarda tu historial.</p>
+          <div class="text-sm leading-relaxed">
+          <p>Wala te muestra <strong>cómo te fue hoy.</strong></p>
+            <p style="color: #6b7280;">Tu negocio, claro y simple.</p>
+            <p style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 400;">No necesitas calcular nada, solo registrar</p>
           </div>
         `,
         side: 'top',
         align: 'start',
       },
-      iconName: 'SafeOpen',
-      iconColor: 'warning',
+      iconName: 'StatsDownSquare',
+      iconColor: 'success',
     },
 
-    // 6) Nuevo movimiento
+
+
+    // 3) Nuevo movimiento
     {
       element: '[data-tour="new-record-btn"]',
       popover: {
-        title: 'Registrar es lo más importante',
+        title: 'Registra, y Wala, el resto',
         description: `
           <div style="font-size: 0.875rem; line-height: 1.625;">
-            <p style="margin-bottom: 0.5rem;">Registra <strong>ingresos</strong>, <strong>gastos</strong> o <strong>transferencias</strong> en segundos.</p>
+            <p style="margin-bottom: 0.5rem;">Registra cada <strong>venta</strong>, <strong>gastos</strong> o <strong>transferencias</strong> en segundos.</p>
+            <p style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem; font-weight: 400;">Si olvidas cerrar Wala lo hace por ti.</p>
           </div>
         `,
         side: 'top',
