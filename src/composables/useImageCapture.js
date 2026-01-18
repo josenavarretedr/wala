@@ -41,6 +41,7 @@ export function useImageCapture() {
     let revertChanges = null;
     let watermarkElement = null;
     let watermarkApp = null;
+    let originalDisplayValues = []; // Para restaurar elementos ocultos
 
     try {
       // Validar elemento
@@ -50,6 +51,14 @@ export function useImageCapture() {
 
       // Notificar progreso: Preparando
       if (onProgress) onProgress('preparing');
+
+      // Ocultar elementos con clase .no-share-item
+      const elementsToHide = element.querySelectorAll('.no-share-item');
+
+      elementsToHide.forEach((el, index) => {
+        originalDisplayValues[index] = el.style.display;
+        el.style.display = 'none';
+      });
 
       // Agregar watermark al DOM si está habilitado
       if (addWatermarkFlag) {
@@ -123,6 +132,16 @@ export function useImageCapture() {
       return null;
 
     } finally {
+      // Restaurar elementos ocultos con .no-share-item
+      const elementsToHide = element.querySelectorAll('.no-share-item');
+      elementsToHide.forEach((el, index) => {
+        if (originalDisplayValues && originalDisplayValues[index] !== undefined) {
+          el.style.display = originalDisplayValues[index];
+        } else {
+          el.style.display = ''; // Restaurar al valor por defecto
+        }
+      });
+
       // Remover watermark del DOM y desmontar la app de Vue
       if (watermarkElement && element.contains(watermarkElement)) {
         element.removeChild(watermarkElement);

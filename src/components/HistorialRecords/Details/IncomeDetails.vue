@@ -1,13 +1,30 @@
 <template>
   <div class="space-y-6">
-    <!-- Título mejorado -->
+    <!-- Título mejorado con botón de compartir -->
     <div class="text-center space-y-2">
-      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
-        Resumen de Venta
-      </h1>
+      <div class="flex items-center justify-center gap-3">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
+          Resumen de Venta
+        </h1>
+      </div>
       <p class="text-sm text-gray-500">
         {{ formatDate(transactionData.createdAt) }}
       </p>
+      <!-- Botón de Compartir -->
+      <div
+        class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end no-share-item"
+      >
+        <ShareButton
+          v-if="targetRef"
+          :targetRef="targetRef"
+          :fileName="getShareFileName()"
+          shareTitle="Comprobante de Venta"
+          shareText="Powered by wala.lat"
+          componentType="income-details"
+          variant="card"
+          size="sm"
+        />
+      </div>
     </div>
 
     <!-- Preview de la transacción -->
@@ -165,42 +182,20 @@
             'grid gap-3',
             transactionData.clientId &&
             transactionData.clientId !== 'anonymous-client'
-              ? 'grid-cols-3'
-              : 'grid-cols-2',
+              ? 'grid-cols-2'
+              : 'grid-cols-1',
           ]"
         >
-          <div class="bg-blue-50 rounded-xl p-4 text-center">
-            <div
-              class="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-2 flex items-center justify-center"
-            >
-              <GraphUp class="w-4 h-4 text-white" />
-            </div>
-            <div class="text-sm font-medium text-blue-700">
-              {{ getTypeLabel }}
-            </div>
-          </div>
-
-          <div class="bg-green-50 rounded-xl p-4 text-center">
-            <div
-              class="w-8 h-8 bg-green-500 rounded-full mx-auto mb-2 flex items-center justify-center"
-            >
-              <component :is="getAccountIcon" class="w-4 h-4 text-white" />
-            </div>
-            <div class="text-sm font-medium text-green-700">
-              {{ getAccountLabel }}
-            </div>
-          </div>
-
           <!-- Cliente (solo si no es anónimo) -->
           <div
             v-if="
               transactionData.clientId &&
               transactionData.clientId !== 'anonymous-client'
             "
-            class="bg-purple-50 rounded-xl p-4 text-center"
+            class="bg-purple-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
           >
             <div
-              class="w-8 h-8 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center"
+              class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3"
             >
               <svg
                 class="w-4 h-4 text-white"
@@ -218,6 +213,20 @@
             </div>
             <div class="text-sm font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
+            </div>
+          </div>
+
+          <!-- Tipo de método de pago -->
+          <div
+            class="bg-green-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
+          >
+            <div
+              class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3"
+            >
+              <component :is="getAccountIcon" class="w-4 h-4 text-white" />
+            </div>
+            <div class="text-sm font-medium text-green-700">
+              {{ getAccountLabel }}
             </div>
           </div>
         </div>
@@ -289,7 +298,7 @@
     </div>
 
     <!-- Nota informativa -->
-    <div
+    <!-- <div
       v-if="transactionData.items && transactionData.items.length > 0"
       class="bg-blue-50 rounded-xl p-4 border border-blue-200"
     >
@@ -300,18 +309,19 @@
           <ShieldQuestion class="w-3 h-3 text-white" />
         </div>
         <div>
-          <div class="font-medium text-blue-800 mb-1">Registro de ventas</div>
+          <div class="font-medium text-blue-800 mb-1">Este registro no represe</div>
           <div class="text-sm text-blue-700">
             Este registro está guardado en tu historial de transacciones
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
+import ShareButton from "@/components/ShareButton.vue";
 import {
   GraphUp,
   Package,
@@ -324,6 +334,10 @@ const props = defineProps({
   transactionData: {
     type: Object,
     required: true,
+  },
+  targetRef: {
+    type: Object,
+    default: null,
   },
 });
 
@@ -373,6 +387,11 @@ const getTotalPaid = () => {
 
 const getBalance = () => {
   return props.transactionData.balance || 0;
+};
+
+const getShareFileName = () => {
+  const date = formatDate(props.transactionData.createdAt);
+  return `venta-${date.replace(/\s/g, "-").toLowerCase()}.png`;
 };
 
 const getPaymentDate = (payment, index) => {

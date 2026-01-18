@@ -1,13 +1,14 @@
 <template>
   <div
     class="space-y-4 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
+    ref="captureTarget"
   >
     <!-- HEADER -->
-    <div class="flex justify-end items-center gap-3 mb-3">
+    <div class="flex justify-end items-center gap-3 mb-3 no-share-item">
       <CloseBtn v-bind="closeBtnConfig" />
     </div>
 
-    <!-- Content Card -->
+    <!-- Content Card - Contenedor con ref para captura -->
     <div>
       <!-- Estado de carga -->
       <div
@@ -53,11 +54,15 @@
         v-else
         :is="dynamicComponent"
         :transactionData="transactionData"
+        :targetRef="captureTarget"
       />
     </div>
 
     <!-- Actions -->
-    <div v-if="transactionData && !isLoading" class="flex gap-4 mt-6">
+    <div
+      v-if="transactionData && !isLoading"
+      class="flex gap-4 mt-6 no-share-item"
+    >
       <button
         @click="openDeleteModal()"
         :disabled="isDisabled"
@@ -75,6 +80,7 @@
       :related-payments="relatedPayments"
       @close="showDeleteModal = false"
       @confirm="handleDeleteConfirm"
+      class="no-share-item"
     />
   </div>
 </template>
@@ -161,6 +167,9 @@ const { navigateToDashboard } = useFlowClose();
 const transactionStore = useTransactionStore();
 const transactionData = ref(null);
 const dynamicComponent = ref(null);
+
+// Ref para captura de imagen
+const captureTarget = ref(null);
 
 // Mapeo de tipos de transacción a componentes
 const componentMap = {

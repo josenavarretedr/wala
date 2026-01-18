@@ -1,13 +1,30 @@
 <template>
   <div class="space-y-6">
-    <!-- Título mejorado -->
+    <!-- Título mejorado con botón de compartir -->
     <div class="text-center space-y-2">
-      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
-        Detalle del Pago
-      </h1>
+      <div class="flex items-center justify-center gap-3">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
+          Detalle del Pago
+        </h1>
+      </div>
       <p class="text-sm text-gray-500">
         {{ formatDate(transactionData.createdAt) }}
       </p>
+      <!-- Botón de Compartir -->
+      <div
+        class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end no-share-item"
+      >
+        <ShareButton
+          v-if="targetRef"
+          :targetRef="targetRef"
+          :fileName="getShareFileName()"
+          shareTitle="Comprobante de Venta"
+          shareText="Powered by wala.lat"
+          componentType="income-details"
+          variant="card"
+          size="sm"
+        />
+      </div>
     </div>
 
     <!-- Preview de la transacción de pago -->
@@ -62,7 +79,7 @@
                 name: 'DetailsRecords',
                 params: { registerId: transactionData.relatedTransactionId },
               }"
-              class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors no-share-item"
             >
               <svg
                 class="w-4 h-4"
@@ -276,7 +293,9 @@
     </div>
 
     <!-- Nota informativa -->
-    <div class="bg-amber-50 rounded-xl p-4 border border-amber-200">
+    <div
+      class="bg-amber-50 rounded-xl p-4 border border-amber-200 no-share-item"
+    >
       <div class="flex items-start gap-3">
         <div
           class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center shrink-0 mt-0.5"
@@ -303,12 +322,17 @@
 
 <script setup>
 import { computed } from "vue";
+import ShareButton from "@/components/ShareButton.vue";
 import { ShieldQuestion, Coins, SmartphoneDevice } from "@iconoir/vue";
 
 const props = defineProps({
   transactionData: {
     type: Object,
     required: true,
+  },
+  targetRef: {
+    type: Object,
+    default: null,
   },
 });
 
@@ -366,5 +390,10 @@ const formatDate = (date) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(dateObj);
+};
+
+const getShareFileName = () => {
+  const date = formatDate(props.transactionData.createdAt);
+  return `pago-${date.replace(/\s/g, "-").toLowerCase()}.png`;
 };
 </script>
