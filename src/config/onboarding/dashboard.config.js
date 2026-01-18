@@ -46,7 +46,7 @@ export const dashboardConfig = {
     {
       element: '[data-tour="main-buttons"]',
       popover: {
-        title: 'Rutina diaria',
+        title: 'Construye el hábito',
         description: `
           <div style="font-size: 0.875rem; line-height: 1.625;">
             <p style="margin-bottom: 0.5rem;">WALA trabaja simple, por días:</p>
@@ -88,7 +88,7 @@ export const dashboardConfig = {
     {
       element: '[data-tour="new-record-btn"]',
       popover: {
-        title: 'Registra, y Wala, el resto',
+        title: 'Registra, y Wala, hace el resto',
         description: `
           <div style="font-size: 0.875rem; line-height: 1.625;">
             <p style="margin-bottom: 0.5rem;">Registra cada <strong>venta</strong>, <strong>gastos</strong> o <strong>transferencias</strong> en segundos.</p>

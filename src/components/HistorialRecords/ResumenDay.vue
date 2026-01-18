@@ -36,6 +36,41 @@
         @click="handleToggleResume"
         v-if="showResume"
       >
+        <!-- Resultado del día -->
+        <div
+          :class="[
+            'rounded-lg p-3 mb-4',
+            resultadoOperacional > 0
+              ? 'bg-green-50'
+              : resultadoOperacional < 0
+              ? 'bg-red-50'
+              : 'bg-gray-50',
+          ]"
+        >
+          <p class="text-xs text-gray-500 mb-1">Resultado del día</p>
+          <p
+            :class="[
+              'text-lg sm:text-xl font-semibold mb-1',
+              resultadoOperacional > 0
+                ? 'text-green-600'
+                : resultadoOperacional < 0
+                ? 'text-red-600'
+                : 'text-gray-700',
+            ]"
+          >
+            {{
+              resultadoOperacional === 0
+                ? "Sin ganancias ni pérdidas"
+                : resultadoOperacional > 0
+                ? `Ganaste S/ ${resultadoOperacional.toFixed(2)} hoy`
+                : `Perdiste S/ ${Math.abs(resultadoOperacional).toFixed(2)} hoy`
+            }}
+          </p>
+          <p class="text-xs text-gray-400">
+            Basado en los movimientos registrados hoy.
+          </p>
+        </div>
+
         <p class="text-sm text-gray-500 mb-1">Saldo actual</p>
         <p class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">
           S/ {{ saldoActual.toFixed(2) }}
@@ -95,7 +130,7 @@
             <div class="flex items-center gap-2 mb-2">
               <GraphUp class="w-4 h-4 text-green-600" />
               <span class="text-xs sm:text-sm font-medium text-green-700"
-                >Ingresos recibidos</span
+                >Ingresos hoy</span
               >
             </div>
             <p class="text-base sm:text-lg font-semibold text-green-800">
