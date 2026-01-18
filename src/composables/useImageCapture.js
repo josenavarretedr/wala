@@ -11,6 +11,7 @@ import {
   prepareElementForCapture
 } from '@/utils/imageProcessor';
 import WatermarkFooter from '@/components/WatermarkFooter.vue';
+import WatermarkHeader from '@/components/WatermarkHeader.vue';
 
 export function useImageCapture() {
   const isCapturing = ref(false);
@@ -53,10 +54,10 @@ export function useImageCapture() {
       // Agregar watermark al DOM si está habilitado
       if (addWatermarkFlag) {
         const watermarkContainer = document.createElement('div');
-        watermarkApp = createApp(WatermarkFooter);
+        watermarkApp = createApp(WatermarkHeader);
         watermarkApp.mount(watermarkContainer);
         watermarkElement = watermarkContainer.firstChild;
-        element.appendChild(watermarkElement);
+        element.prepend(watermarkElement); // Agregar al inicio del elemento
       }
 
       // Preparar elemento para captura (modificaciones pre-captura)
