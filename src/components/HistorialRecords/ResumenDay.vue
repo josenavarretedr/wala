@@ -1,41 +1,37 @@
 <template>
   <div
     class="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6"
+    ref="resumenDayRef"
   >
-    <!-- Header con información inicial y toggle -->
+    <!-- Toggle section -->
     <div
-      class="cursor-pointer transition-all duration-200 hover:bg-gray-50 -m-2 p-4 rounded-lg"
+      class="flex items-center justify-center gap-3 pt-2 border-gray-100 cursor-pointer toggle-container"
+      @click="handleToggleResume"
+      v-if="!showResume"
     >
-      <!-- Toggle section -->
       <div
-        class="flex items-center justify-center gap-3 pt-2border-gray-100"
-        @click="handleToggleResume"
-        v-if="!showResume"
+        class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"
       >
-        <div
-          class="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center"
-        >
-          <component
-            :is="showResume ? EyeClosed : Eye"
-            class="w-3 h-3 text-blue-600"
-          />
-        </div>
-
-        <div>
-          <h3 class="text-base sm:text-lg font-semibold text-gray-900">
-            Resumen día
-          </h3>
-          <p class="text-xs sm:text-sm text-gray-500">
-            {{ showResume ? "Ocultar información" : "Mira cómo te fue hoy" }}
-          </p>
-        </div>
+        <component
+          :is="showResume ? EyeClosed : Eye"
+          class="w-3 h-3 text-blue-600"
+        />
       </div>
+
+      <div>
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+          Resumen día
+        </h3>
+        <p class="text-xs sm:text-sm text-gray-500">
+          {{ showResume ? "Ocultar información" : "Mira cómo te fue hoy" }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Contenedor completo para captura -->
+    <div v-if="showResume">
       <!-- Estado expandido - información sensible visible -->
-      <div
-        class="text-center mb-4"
-        @click="handleToggleResume"
-        v-if="showResume"
-      >
+      <div class="text-center mb-4" @click="handleToggleResume">
         <!-- Resultado del día -->
         <div
           :class="[
@@ -95,21 +91,9 @@
 
         <div></div>
       </div>
-      <!-- <div class="text-center mb-4">
-        <div
-          class="bg-orange-50 inline-block px-3 py-1 rounded-full mt-3"
-          v-if="!opening"
-        >
-          <span class="text-sm text-orange-600 font-medium">
-            Necesitas aperturar el día
-          </span>
-        </div>
-      </div> -->
-    </div>
 
-    <!-- Contenido expandible -->
-    <Transition name="expand">
-      <div v-if="showResume && opening" class="mt-6 space-y-4">
+      <!-- Contenido expandible -->
+      <div v-if="opening" class="mt-6 space-y-4">
         <!-- Grid de métricas -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <!-- Saldo inicial -->
@@ -238,8 +222,31 @@
             </div>
           </div>
         </div>
+
+        <!-- Botón de Compartir -->
+        <div
+          class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end"
+        >
+          <ShareButton
+            :target-ref="resumenDayRef"
+            file-name="resumen-dia-wala.png"
+            share-title="Resumen del Día"
+            component-type="resumen-dia"
+            variant="card"
+            button-description="Descarga o comparte tu resumen del día"
+            :modifications="{
+              hideElements: ['.share-button-container', '.toggle-container'],
+              styleChanges: {
+                '[ref=resumenDayRef]': {
+                  padding: '24px',
+                  backgroundColor: '#ffffff',
+                },
+              },
+            }"
+          />
+        </div>
       </div>
-    </Transition>
+    </div>
   </div>
 </template>
 
@@ -251,11 +258,13 @@ import { useToast } from "@/composables/useToast";
 import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
 import { BrightCrown } from "@iconoir/vue";
+import ShareButton from "@/components/ShareButton.vue";
 const route = useRoute();
 const { isPremium } = useSubscription();
 const { warning, success, premium } = useToast();
 
 const showResume = ref(false);
+const resumenDayRef = ref(null);
 
 const accountsBalanceStore = useAccountsBalanceStore();
 
