@@ -28,10 +28,12 @@ export function useImageCapture() {
     const {
       addWatermarkFlag = true,
       quality = 0.95,
-      scale = 2, // 2x para mejor calidad en móviles
+      scale = window.devicePixelRatio || 2, // 2x para mejor calidad en móviles
       backgroundColor = '#ffffff',
       modifications = {},
-      onProgress = null
+      onProgress = null,
+      foreignObjectRendering = true,         // Mejora renderizado
+      letterRendering = true                  // Mejora texto
     } = options;
 
     isCapturing.value = true;
@@ -86,17 +88,67 @@ export function useImageCapture() {
         useCORS: true,
         allowTaint: false,
         backgroundColor: backgroundColor,
-        logging: false,
+        logging: true, // Activar logs para debug
         imageTimeout: 15000,
         removeContainer: true,
+        // NO usar dimensiones explícitas, dejar que html2canvas las calcule
         // Optimizaciones para mejor calidad
         letterRendering: true,
-        foreignObjectRendering: false,
+        foreignObjectRendering: false, // Usar false para mayor compatibilidad
         onclone: (clonedDoc) => {
           // Asegurar que las fuentes se carguen correctamente
           const clonedElement = clonedDoc.querySelector('[data-html2canvas-clone]');
           if (clonedElement) {
             clonedElement.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+
+            // Forzar estilos de flexbox para badges y elementos con justify-center
+            const flexElements = clonedElement.querySelectorAll('.flex, [class*="justify-"]');
+            flexElements.forEach(el => {
+              // Asegurar que flex se aplique correctamente
+              if (el.classList.contains('flex')) {
+                el.style.display = 'flex';
+              }
+              // Forzar justify-center
+              if (el.classList.contains('justify-center')) {
+                el.style.justifyContent = 'center';
+              }
+              // Forzar justify-left o justify-start
+              if (el.classList.contains('justify-left') || el.classList.contains('justify-start')) {
+                el.style.justifyContent = 'flex-start';
+              }
+              // Forzar items-center
+              if (el.classList.contains('items-center')) {
+                el.style.alignItems = 'center';
+              }
+              // Forzar gap
+              if (el.classList.contains('gap-1')) el.style.gap = '0.25rem';
+              if (el.classList.contains('gap-1.5')) el.style.gap = '0.375rem';
+              if (el.classList.contains('gap-2')) el.style.gap = '0.5rem';
+              if (el.classList.contains('gap-3')) el.style.gap = '0.75rem';
+              if (el.classList.contains('gap-4')) el.style.gap = '1rem';
+            });
+
+            // Forzar estilos de badges y elementos redondeados
+            const roundedElements = clonedElement.querySelectorAll('[class*="rounded"]');
+            roundedElements.forEach(el => {
+              if (el.classList.contains('rounded-full')) {
+                el.style.borderRadius = '9999px';
+              }
+              if (el.classList.contains('rounded-xl')) {
+                el.style.borderRadius = '0.75rem';
+              }
+              if (el.classList.contains('rounded-lg')) {
+                el.style.borderRadius = '0.5rem';
+              }
+            });
+
+            // Forzar truncate para textos
+            const truncateElements = clonedElement.querySelectorAll('.truncate');
+            truncateElements.forEach(el => {
+              el.style.overflow = 'hidden';
+              el.style.textOverflow = 'ellipsis';
+              el.style.whiteSpace = 'nowrap';
+            });
           }
         }
       });

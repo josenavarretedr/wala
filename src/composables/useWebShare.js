@@ -76,17 +76,26 @@ export function useWebShare() {
         if (canShareFile) {
           console.log('📤 Compartiendo vía Web Share API...');
 
-          await navigator.share({
+          // Agregar timeout para evitar bloqueos
+          const sharePromise = navigator.share({
             files: [file],
             title: title,
             text: text
           });
+
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout en Web Share API')), 30000); // 30 segundos
+          });
+
+          await Promise.race([sharePromise, timeoutPromise]);
 
           lastShareMethod.value = 'webshare';
           console.log('✅ Compartido exitosamente vía Web Share API');
 
           if (onSuccess) onSuccess('webshare');
           return true;
+        } else {
+          console.log('⚠️ No se puede compartir este archivo, usando descarga directa');
         }
       }
 
