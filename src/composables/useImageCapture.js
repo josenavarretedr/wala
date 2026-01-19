@@ -99,7 +99,6 @@ export function useImageCapture() {
           // Asegurar que las fuentes se carguen correctamente
           const clonedElement = clonedDoc.querySelector('[data-html2canvas-clone]');
           if (clonedElement) {
-            clonedElement.style.fontFamily = 'system-ui, -apple-system, sans-serif';
 
             // Forzar estilos de flexbox para badges y elementos con justify-center
             const flexElements = clonedElement.querySelectorAll('.flex, [class*="justify-"]');
