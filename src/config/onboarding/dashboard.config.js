@@ -11,8 +11,10 @@ export const dashboardConfig = {
 
   routeMatcher: (routePath) =>
     routePath.includes('/dashboard') ||
-    (routePath.includes('/business/') &&
+    (routePath.includes('/sales/') &&
       !routePath.includes('/transactions') &&
+      !routePath.includes('/accounts') &&
+      !routePath.includes('/clients') &&
       !routePath.includes('/inventory')),
 
   driverConfig: {

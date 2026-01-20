@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
+import { withSentryCapture, setSentryUser, addBreadcrumb } from '@/utils/sentryHelpers';
 
 export const useAuthStore = defineStore('auth', () => {
   // 🗄️ Estado reactivo
@@ -107,16 +108,26 @@ export const useAuthStore = defineStore('auth', () => {
       clearError();
 
       console.log('🔄 Iniciando login desde store...');
+      addBreadcrumb('Usuario intenta iniciar sesión', 'auth', { email });
 
-      const userData = await authComposable.loginWithEmail(email, password);
+      const userData = await withSentryCapture(
+        () => authComposable.loginWithEmail(email, password),
+        'auth.login'
+      );
+
       setUser(userData);
       saveToStorage(userData);
+
+      // 🛡️ Establecer usuario en Sentry
+      setSentryUser(userData);
+      addBreadcrumb('Login exitoso', 'auth', { userId: userData.uid });
 
       console.log('✅ Login completado en store');
       return userData;
 
     } catch (error) {
       console.error('❌ Error en login (store):', error);
+      addBreadcrumb('Error en login', 'auth', { error: error.message });
       setError(error.message);
       throw error;
     } finally {
@@ -131,16 +142,26 @@ export const useAuthStore = defineStore('auth', () => {
       clearError();
 
       console.log('🔄 Iniciando registro desde store...');
+      addBreadcrumb('Usuario intenta registrarse', 'auth', { email });
 
-      const userData = await authComposable.registerWithEmail(email, password, displayName);
+      const userData = await withSentryCapture(
+        () => authComposable.registerWithEmail(email, password, displayName),
+        'auth.register'
+      );
+
       setUser(userData);
       saveToStorage(userData);
+
+      // 🛡️ Establecer usuario en Sentry
+      setSentryUser(userData);
+      addBreadcrumb('Registro exitoso', 'auth', { userId: userData.uid });
 
       console.log('✅ Registro completado en store');
       return userData;
 
     } catch (error) {
       console.error('❌ Error en registro (store):', error);
+      addBreadcrumb('Error en registro', 'auth', { error: error.message });
       setError(error.message);
       throw error;
     } finally {
@@ -155,16 +176,26 @@ export const useAuthStore = defineStore('auth', () => {
       clearError();
 
       console.log('🔄 Iniciando login con Google desde store...');
+      addBreadcrumb('Usuario intenta login con Google', 'auth');
 
-      const userData = await authComposable.loginWithGoogle();
+      const userData = await withSentryCapture(
+        () => authComposable.loginWithGoogle(),
+        'auth.loginWithGoogle'
+      );
+
       setUser(userData);
       saveToStorage(userData);
+
+      // 🛡️ Establecer usuario en Sentry
+      setSentryUser(userData);
+      addBreadcrumb('Login con Google exitoso', 'auth', { userId: userData.uid });
 
       console.log('✅ Login con Google completado en store');
       return userData;
 
     } catch (error) {
       console.error('❌ Error en login con Google (store):', error);
+      addBreadcrumb('Error en login con Google', 'auth', { error: error.message });
       setError(error.message);
       throw error;
     } finally {
@@ -178,10 +209,19 @@ export const useAuthStore = defineStore('auth', () => {
       setLoading(true);
 
       console.log('🔄 Cerrando sesión desde store...');
+      addBreadcrumb('Usuario cierra sesión', 'auth');
 
-      await authComposable.logoutUser();
+      await withSentryCapture(
+        () => authComposable.logoutUser(),
+        'auth.logout'
+      );
+
       clearUser();
       clearStorage();
+
+      // 🛡️ Limpiar usuario de Sentry
+      setSentryUser(null);
+      addBreadcrumb('Logout exitoso', 'auth');
 
       // Redirigir al login
       await router.push('/auth/login');
@@ -190,6 +230,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     } catch (error) {
       console.error('❌ Error en logout (store):', error);
+      addBreadcrumb('Error en logout', 'auth', { error: error.message });
       setError(error.message);
       throw error;
     } finally {
@@ -203,25 +244,34 @@ export const useAuthStore = defineStore('auth', () => {
   async function checkUser() {
     try {
       console.log('🔍 Verificando usuario actual...');
+      addBreadcrumb('Verificando estado de autenticación', 'auth');
 
-      const userData = await authComposable.checkAuthState();
+      const userData = await withSentryCapture(
+        () => authComposable.checkAuthState(),
+        'auth.checkUser'
+      );
 
       if (userData) {
         setUser(userData);
         saveToStorage(userData);
+        setSentryUser(userData);
+        addBreadcrumb('Usuario verificado', 'auth', { userId: userData.uid });
         console.log('✅ Usuario verificado y sincronizado');
         return userData;
       } else {
         clearUser();
         clearStorage();
+        setSentryUser(null);
         console.log('ℹ️ No hay usuario autenticado');
         return null;
       }
 
     } catch (error) {
       console.error('❌ Error verificando usuario:', error);
+      addBreadcrumb('Error verificando usuario', 'auth', { error: error.message });
       clearUser();
       clearStorage();
+      setSentryUser(null);
       throw error;
     }
   }
@@ -231,6 +281,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       setLoading(true);
       console.log('🔄 Restaurando sesión...');
+      addBreadcrumb('Intentando restaurar sesión', 'auth');
 
       // 1. Verificar localStorage
       const storageData = loadFromStorage();
@@ -239,41 +290,56 @@ export const useAuthStore = defineStore('auth', () => {
         console.log('💾 Datos encontrados en localStorage');
 
         // 2. Verificar con Firebase
-        const firebaseUser = await authComposable.checkAuthState();
+        const firebaseUser = await withSentryCapture(
+          () => authComposable.checkAuthState(),
+          'auth.restoreSession.checkFirebase'
+        );
 
         if (firebaseUser && firebaseUser.uid === storageData.user.uid) {
           // Sincronizar datos (Firebase es la fuente de verdad)
           setUser(firebaseUser);
           setSession(storageData.session);
           saveToStorage(firebaseUser);
+          setSentryUser(firebaseUser);
+          addBreadcrumb('Sesión restaurada exitosamente', 'auth', { userId: firebaseUser.uid });
 
           console.log('✅ Sesión restaurada y sincronizada');
           return firebaseUser;
         } else {
           console.log('⚠️ Inconsistencia entre localStorage y Firebase');
+          addBreadcrumb('Inconsistencia de sesión detectada', 'auth');
           clearUser();
           clearStorage();
+          setSentryUser(null);
           return null;
         }
       } else {
         // 3. Si no hay localStorage, verificar solo Firebase
-        const firebaseUser = await authComposable.checkAuthState();
+        const firebaseUser = await withSentryCapture(
+          () => authComposable.checkAuthState(),
+          'auth.restoreSession.checkFirebaseOnly'
+        );
 
         if (firebaseUser) {
           setUser(firebaseUser);
           saveToStorage(firebaseUser);
+          setSentryUser(firebaseUser);
+          addBreadcrumb('Sesión restaurada desde Firebase', 'auth', { userId: firebaseUser.uid });
           console.log('✅ Sesión restaurada desde Firebase');
           return firebaseUser;
         } else {
           console.log('ℹ️ No hay sesión para restaurar');
+          addBreadcrumb('No hay sesión para restaurar', 'auth');
           return null;
         }
       }
 
     } catch (error) {
       console.error('❌ Error restaurando sesión:', error);
+      addBreadcrumb('Error al restaurar sesión', 'auth', { error: error.message });
       clearUser();
       clearStorage();
+      setSentryUser(null);
       return null;
     } finally {
       setLoading(false);

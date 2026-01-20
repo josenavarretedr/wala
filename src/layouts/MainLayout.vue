@@ -46,6 +46,9 @@
       v-if="showBusinessSelector"
       @close="showBusinessSelector = false"
     />
+
+    <!-- Botón flotante global para tours y feedback -->
+    <FloatingActionButtons :show-report="true" :show-quick-action="true" />
   </div>
 </template>
 
@@ -64,6 +67,7 @@ import { useProgramStore } from "@/stores/programStore";
 import SidebarSection from "@/components/layout/SidebarSection.vue";
 import ProfileDropdown from "@/components/layout/ProfileDropdown.vue";
 import BusinessSelectorModal from "@/components/business/BusinessSelectorModal.vue";
+import FloatingActionButtons from "@/components/Dashboard/FloatingActionButtons.vue";
 
 const router = useRouter();
 const route = useRoute();

@@ -37,9 +37,6 @@
         </Suspense>
       </div>
 
-      <!-- ✅ Botones flotantes unificados -->
-      <FloatingActionButtons :show-report="false" :show-quick-action="true" />
-
       <!-- Botones principales fijos -->
       <div
         class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
@@ -65,7 +62,6 @@ import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 import Loader from "@/components/ui/Loader.vue";
 import MainBtns from "../../components/Dashboard/MainBtns.vue";
 import ListRecordByDay from "@/components/HistorialRecords/ListRecordByDay.vue";
-import FloatingActionButtons from "@/components/Dashboard/FloatingActionButtons.vue";
 
 const route = useRoute();
 const router = useRouter();
