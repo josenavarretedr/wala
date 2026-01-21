@@ -4,6 +4,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '@/composables/useAuth';
 import { withSentryCapture, setSentryUser, addBreadcrumb } from '@/utils/sentryHelpers';
+import { setAnalyticsUserId } from '@/analytics';
 
 export const useAuthStore = defineStore('auth', () => {
   // 🗄️ Estado reactivo
@@ -121,6 +122,9 @@ export const useAuthStore = defineStore('auth', () => {
       // 🛡️ Establecer usuario en Sentry
       setSentryUser(userData);
       addBreadcrumb('Login exitoso', 'auth', { userId: userData.uid });
+
+      // 📊 Establecer userId en Analytics
+      setAnalyticsUserId();
 
       console.log('✅ Login completado en store');
       return userData;

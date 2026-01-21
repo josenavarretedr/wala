@@ -2,6 +2,7 @@
 const { DateTime } = require('luxon');
 const admin = require('firebase-admin');
 const { FieldValue } = require('firebase-admin/firestore');
+const { trackStreakExtended, trackStreakBroken } = require('../Helpers/analyticsHelper');
 
 // ====== CONFIG ======
 const DEFAULT_TZ = 'America/Lima';
@@ -336,11 +337,27 @@ async function updateStreakContextualizada({
   let newCurrent = 1;
   if (lastActiveDay) {
     const gap = daysBetweenYmd(lastActiveDay, day, tz);
-    newCurrent = (gap <= allowedGap) ? (Number(streak.current || 0) + 1) : 1;
+    const streakWasBroken = gap > allowedGap;
+    newCurrent = streakWasBroken ? 1 : (Number(streak.current || 0) + 1);
 
     log('🟢 [STREAK] Gap:', gap, 'días (permitido:', allowedGap + ')');
     log('🟢 [STREAK] Incrementando racha de', streak.current, 'a', newCurrent);
     logAlways(`🔥 [STREAK] INCREMENT - Business: ${businessId}, Day: ${day}, Gap: ${gap}, Prev: ${streak.current} → New: ${newCurrent}`);
+
+    // === ANALYTICS: Trackear ruptura de racha si el gap excedió el permitido ===
+    if (streakWasBroken && Number(streak.current || 0) > 0) {
+      try {
+        await trackStreakBroken({
+          businessId,
+          previousStreakLength: Number(streak.current || 0),
+          daysWithoutTransaction: gap
+        });
+        logAlways(`❌ [ANALYTICS] Streak broken tracked - Previous: ${streak.current}, Gap: ${gap} días`);
+      } catch (analyticsError) {
+        console.warn(`⚠️ [ANALYTICS] Error al trackear streak_broken:`, analyticsError.message);
+        // No lanzar error, la racha se actualizó correctamente
+      }
+    }
   } else {
     log('🆕 [STREAK] Primera actividad registrada');
   }
@@ -370,6 +387,24 @@ async function updateStreakContextualizada({
   });
 
   await streakRef.set(dataToSet, { merge: true });
+
+  // === ANALYTICS: Trackear extensión de racha si aumentó ===
+  if (newCurrent > Number(streak.current || 0)) {
+    try {
+      const daysSinceLastValidTransaction = lastActiveDay ? daysBetweenYmd(lastActiveDay, day, tz) : 1;
+
+      await trackStreakExtended({
+        businessId,
+        streakLength: newCurrent,
+        daysSinceLastValidTransaction
+      });
+
+      logAlways(`✅ [ANALYTICS] Streak extended tracked - Length: ${newCurrent}`);
+    } catch (analyticsError) {
+      console.warn(`⚠️ [ANALYTICS] Error al trackear streak_extended:`, analyticsError.message);
+      // No lanzar error, la racha se incrementó correctamente
+    }
+  }
 
   return {
     updated: true,

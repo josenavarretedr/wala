@@ -15,6 +15,7 @@ const db = admin.firestore();
 const { yesterdayStr, todayStr, dayFromDate } = require('../Helpers/time');
 const { upsertDailySummary } = require('./sharedComputed');
 const { executeAutoOpening } = require('./autoOpening');
+const { trackAutoDayClosed, getNetResult } = require('../Helpers/analyticsHelper');
 const { DateTime } = require('luxon');
 
 const DEFAULT_TZ = 'America/Lima';
@@ -285,6 +286,25 @@ module.exports = functions
               autoCloseReason: 'scheduled',
               completedAt: FieldValue.serverTimestamp()
             });
+
+            // === ANALYTICS: Trackear cierre automático ===
+            try {
+              // Contar transacciones válidas (income/expense)
+              const transactionsCount = (summary.totals?.incomeCount || 0) + (summary.totals?.expenseCount || 0);
+              const netTotal = operational?.result || 0;
+              const netResult = getNetResult(netTotal);
+
+              await trackAutoDayClosed({
+                businessId,
+                dayId: day,
+                transactionsCount,
+                netResult
+              });
+              console.log(`✅ [ANALYTICS] Auto closure tracked`);
+            } catch (analyticsError) {
+              console.warn(`⚠️ [ANALYTICS] Error al trackear auto-closure:`, analyticsError.message);
+              // No lanzar error, el cierre se creó correctamente
+            }
 
             // Traceability log
             await db.collection(`businesses/${businessId}/traceability_logs`).add({

@@ -10,6 +10,9 @@ import { round2, multiplyMoney, addMoney, parseMoneyFloat } from '@/utils/mathUt
 import { serverTimestamp, Timestamp, getFirestore, doc, writeBatch } from 'firebase/firestore';
 import { calculatePaymentStatus, validateNewPayment } from '@/utils/paymentCalculator';
 import { ANONYMOUS_CLIENT_ID } from '@/types/client';
+import { trackTransactionCreated, isValidTransactionForStreak } from '@/analytics';
+import { ensureBusinessId } from '@/composables/useBusinessUtils';
+import { useDailySummary } from '@/composables/useDailySummary';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -419,6 +422,42 @@ export function useTransactionStore() {
         clientName: cleanTransaction.clientName,
         paymentStatus: cleanTransaction.paymentStatus
       });
+
+      // === ANALYTICS: Trackear transacción creada (SOLO income/expense) ===
+      if (isValidTransactionForStreak(cleanTransaction.type)) {
+        try {
+          const businessId = ensureBusinessId();
+          const today = new Date();
+          const year = today.getFullYear();
+          const month = String(today.getMonth() + 1).padStart(2, '0');
+          const day = String(today.getDate()).padStart(2, '0');
+          const dayId = `${year}-${month}-${day}`;
+
+          // Verificar si es la primera transacción del día
+          let isFirstTransactionOfDay = false;
+          try {
+            const { getTodayDailySummary } = useDailySummary();
+            const todaySummary = await getTodayDailySummary();
+
+            // Si hasTxn es false, esta es la primera transacción
+            isFirstTransactionOfDay = !todaySummary || !todaySummary.hasTxn;
+          } catch (summaryError) {
+            console.warn('⚠️ No se pudo verificar si es primera transacción:', summaryError);
+          }
+
+          trackTransactionCreated({
+            businessId,
+            dayId,
+            transactionType: cleanTransaction.type,
+            amount: cleanTransaction.amount || cleanTransaction.total || 0,
+            account: cleanTransaction.account,
+            isFirstTransactionOfDay
+          });
+        } catch (analyticsError) {
+          console.warn('⚠️ Error al trackear transacción en analytics:', analyticsError);
+          // No lanzar error, la transacción se guardó correctamente
+        }
+      }
 
       // Actualizar metadata del cliente si la transacción tiene clientId
       if (transactionToAdd.value.clientId && transactionToAdd.value.clientId !== ANONYMOUS_CLIENT_ID) {

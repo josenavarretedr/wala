@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from "uuid";
 import { useTransaccion } from '@/composables/useTransaction';
 import { useCashEvent } from '@/composables/useCashEvent';
 import { round2, addMoney, subtractMoney, parseMoneyFloat } from '@/utils/mathUtils';
+import { trackDayOpened, trackDayClosed, getNetResult } from '@/analytics';
+import { ensureBusinessId } from '@/composables/useBusinessUtils';
+import { useDailySummary } from '@/composables/useDailySummary';
 
 const cashEventsForToday = ref([]);
 const allCashEvents = ref([]);
@@ -166,6 +169,62 @@ export function useCashEventStore() {
       console.log('QUe fue antes?')
       await createCashEvent(cashEventToAdd.value);
       await registerCashEventTransaction(cashEventToAdd.value);
+
+      // === ANALYTICS: Trackear evento de apertura o cierre ===
+      try {
+        const businessId = ensureBusinessId();
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const dayId = `${year}-${month}-${day}`;
+
+        if (type === 'opening') {
+          // Calcular días desde última transacción válida
+          let daysSinceLastValidTransaction = null;
+          try {
+            const { getDailySummary } = useDailySummary();
+            // Buscar el día anterior
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+            const yesterdaySummary = await getDailySummary(yesterdayStr);
+
+            if (yesterdaySummary && yesterdaySummary.day) {
+              daysSinceLastValidTransaction = 1;
+            }
+          } catch (summaryError) {
+            console.warn('⚠️ No se pudo calcular días desde última transacción:', summaryError);
+          }
+
+          trackDayOpened({
+            businessId,
+            dayId,
+            daysSinceLastValidTransaction
+          });
+        } else if (type === 'closure') {
+          // Contar transacciones y calcular net result
+          const transactionsToday = await getTransactionsTodayCmps();
+          const validTransactions = transactionsToday.filter(tx =>
+            tx.type === 'income' || tx.type === 'expense'
+          );
+          const transactionsCount = validTransactions.length;
+
+          // Calcular net result desde los saldos esperados
+          const netTotal = expectedBalances.value.cash + expectedBalances.value.bank;
+          const netResult = getNetResult(netTotal);
+
+          trackDayClosed({
+            businessId,
+            dayId,
+            transactionsCount,
+            netResult
+          });
+        }
+      } catch (analyticsError) {
+        console.warn('⚠️ Error al trackear evento de analytics:', analyticsError);
+        // No lanzar error, el evento se guardó correctamente
+      }
     } catch (error) {
       console.error('Error al guardar el evento de caja en Firestore:', error);
       throw error;

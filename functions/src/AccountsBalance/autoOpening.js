@@ -41,6 +41,7 @@ const db = admin.firestore();
 
 const { dateRangeForDay } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
+const { trackAutoDayOpened } = require('../Helpers/analyticsHelper');
 
 const DEFAULT_TZ = 'America/Lima';
 
@@ -385,6 +386,18 @@ async function executeAutoOpening(params) {
     });
 
     console.log(`✅ Daily summary updated`);
+
+    // === ANALYTICS: Trackear apertura automática ===
+    try {
+      await trackAutoDayOpened({
+        businessId,
+        dayId: day
+      });
+      console.log(`✅ [ANALYTICS] Auto opening tracked`);
+    } catch (analyticsError) {
+      console.warn(`⚠️ [ANALYTICS] Error al trackear auto-opening:`, analyticsError.message);
+      // No lanzar error, la apertura se creó correctamente
+    }
 
     // === RESULTADO FINAL ===
     const result = {
