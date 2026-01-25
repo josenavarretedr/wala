@@ -219,8 +219,47 @@
               </div>
             </div>
 
-            <!-- Contenedor del Payment Brick -->
-            <div id="paymentBrick_container"></div>
+            <!-- Tabs de métodos de pago -->
+            <div class="flex gap-2 mb-6 border-b border-gray-200">
+              <button
+                @click="selectedPaymentMethod = 'card'"
+                :class="[
+                  'flex-1 py-3 px-4 font-semibold transition-all rounded-t-lg',
+                  selectedPaymentMethod === 'card'
+                    ? 'bg-orange-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                ]"
+              >
+                💳 Tarjeta
+              </button>
+              <button
+                @click="selectedPaymentMethod = 'yape'"
+                :class="[
+                  'flex-1 py-3 px-4 font-semibold transition-all rounded-t-lg',
+                  selectedPaymentMethod === 'yape'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                ]"
+              >
+                📱 Yape
+              </button>
+            </div>
+
+            <!-- Contenedor del Payment Brick (Tarjetas) -->
+            <div
+              v-show="selectedPaymentMethod === 'card'"
+              id="paymentBrick_container"
+            ></div>
+
+            <!-- Componente Yape -->
+            <YapePayment
+              v-if="selectedPaymentMethod === 'yape'"
+              :amount="PLAN_CONFIGS[selectedPlan].amount"
+              :business-id="businessId"
+              :plan-type="selectedPlan"
+              @success="handlePaymentSuccess"
+              @error="handlePaymentError"
+            />
           </div>
         </div>
       </Transition>
@@ -276,6 +315,7 @@ import { useToast } from "@/composables/useToast";
 import { BrightCrown } from "@iconoir/vue";
 import PlanSelector from "@/components/payments/PlanSelector.vue";
 import PaymentSuccessModal from "@/components/payments/PaymentSuccessModal.vue";
+import YapePayment from "@/components/payments/YapePayment.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -286,7 +326,8 @@ const { showToast } = useToast();
 const businessId = computed(
   () => businessStore.currentBusinessId || route.params.businessId
 );
-const selectedPlan = ref("monthly");
+const selectedPlan = ref("test"); // Plan de prueba por defecto
+const selectedPaymentMethod = ref("card"); // 'card' o 'yape'
 const showPaymentModal = ref(false);
 const showSuccessModal = ref(false);
 const isProcessing = ref(false);
@@ -294,6 +335,7 @@ const paymentResult = ref({});
 const mpScriptLoaded = ref(false);
 
 const PLAN_CONFIGS = {
+  test: { name: "Premium Prueba", amount: 5.0 },
   monthly: { name: "Premium Mensual", amount: 27.0 },
   yearly: { name: "Premium Anual", amount: 200.0 },
   lifetime: { name: "Premium de por Vida", amount: 400.0 },
@@ -344,14 +386,18 @@ const openPaymentModal = async () => {
       amount: planConfig.amount,
     });
 
-    await renderPaymentBrick(
-      "paymentBrick_container",
-      planConfig.amount,
-      businessId.value,
-      selectedPlan.value,
-      handlePaymentSuccess,
-      handlePaymentError
-    );
+    // Solo renderizar Payment Brick si el método es tarjeta
+    if (selectedPaymentMethod.value === "card") {
+      await renderPaymentBrick(
+        "paymentBrick_container",
+        planConfig.amount,
+        businessId.value,
+        selectedPlan.value,
+        handlePaymentSuccess,
+        handlePaymentError
+      );
+    }
+    // Si es Yape, el componente YapePayment se renderiza automáticamente
   } catch (error) {
     console.error("Error abriendo modal de pago:", error);
     showToast({

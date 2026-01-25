@@ -250,6 +250,55 @@ function validateSignature(req) {
 
 ---
 
+## 🔔 CONFIGURAR WEBHOOKS EN PRODUCCIÓN
+
+### 1. Obtener URL del Webhook
+
+Tu URL de webhook en producción es:
+
+```
+https://southamerica-east1-wala-lat.cloudfunctions.net/payments/webhook
+```
+
+### 2. Configurar en Mercado Pago Dashboard
+
+1. Ve a https://www.mercadopago.com.pe/developers/panel/webhooks
+2. Asegúrate de estar en modo **PRODUCCIÓN** (toggle arriba a la derecha)
+3. Clic en "Crear webhook"
+4. Configura:
+   - **URL**: `https://southamerica-east1-wala-lat.cloudfunctions.net/payments/webhook`
+   - **Eventos**:
+     - ✅ `payment.created`
+     - ✅ `payment.updated`
+5. Guarda
+6. **IMPORTANTE**: Copia el **Secret** que aparece
+
+### 3. Agregar Secret a Firebase
+
+```bash
+# Configurar el secret como variable de entorno
+firebase functions:config:set mercadopago.webhook_secret="TU_SECRET_AQUI"
+
+# Desplegar functions para aplicar cambios
+firebase deploy --only functions:payments
+```
+
+O agrega a `functions/.env`:
+
+```bash
+MP_WEBHOOK_SECRET=tu_webhook_secret_aqui
+```
+
+### 4. Verificar Funcionamiento
+
+Después de hacer un pago de prueba, verifica:
+
+1. **Logs en Firebase**: Busca mensajes con "📬 Webhook recibido"
+2. **Colección `webhookEvents`**: Debe tener el evento guardado
+3. **Documento `business`**: Debe actualizarse con `premium: true`
+
+---
+
 ## ✅ CHECKLIST FINAL
 
 Antes de lanzar:
@@ -259,7 +308,9 @@ Antes de lanzar:
 - [ ] ✅ Functions desplegadas (`firebase deploy --only functions:payments`)
 - [ ] ✅ Frontend desplegado (`firebase deploy --only hosting`)
 - [ ] ✅ Webhook configurado en Mercado Pago (modo Producción)
-- [ ] ✅ Pago de prueba REAL completado exitosamente (S/ 27)
+- [ ] ✅ MP_WEBHOOK_SECRET configurado en Firebase
+- [ ] ✅ Pago de prueba con plan TEST (S/ 5) completado exitosamente
+- [ ] ✅ Webhook recibido y procesado correctamente
 - [ ] ✅ Suscripción verificada en Firestore
 - [ ] ✅ Logs verificados sin errores
 - [ ] ✅ Modal de éxito funcionando

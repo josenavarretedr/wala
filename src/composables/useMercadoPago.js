@@ -97,6 +97,7 @@ export function useMercadoPago() {
           paymentMethods: {
             creditCard: "all",
             debitCard: "all",
+            yape: 'all',
             maxInstallments: 1
           },
         },

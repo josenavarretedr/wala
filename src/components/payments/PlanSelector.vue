@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div
       v-for="plan in plans"
       :key="plan.type"
@@ -83,6 +83,15 @@ const emit = defineEmits(["update:modelValue"]);
 const selectedPlan = ref(props.modelValue);
 
 const plans = [
+  {
+    type: "test",
+    name: "Prueba",
+    price: 5,
+    period: "7 días",
+    description: "Plan de prueba para testing en producción",
+    badge: "🧪 TEST",
+    savings: null,
+  },
   {
     type: "monthly",
     name: "Mensual",

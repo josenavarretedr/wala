@@ -22,6 +22,12 @@ const preferenceClient = new Preference(client);
  * Configuración de planes Premium
  */
 const PLANS = {
+  test: {
+    name: 'Premium Prueba',
+    amount: 5.00,
+    duration: 7, // días (1 semana)
+    currency: 'PEN',
+  },
   monthly: {
     name: 'Premium Mensual',
     amount: 27.00,
