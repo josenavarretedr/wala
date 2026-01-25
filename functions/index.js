@@ -24,6 +24,18 @@ exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 // ✨ PROGRAMAS (MÓDULO JUNTOS)
 exports.joinProgramByCode = require('./src/Programs/joinProgramByCode').joinProgramByCode;
 
+// 💳 PAYMENTS - Mercado Pago Integration
+const paymentApp = require("./src/Payments/paymentEndpoints");
+exports.payments = onRequest(
+  {
+    cors: true,
+    region: "southamerica-east1",
+    timeoutSeconds: 60,
+    memory: "256MiB",
+  },
+  paymentApp
+);
+
 // FUNCIÓN DE PRUEBA (remover en producción)
 // exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');
 

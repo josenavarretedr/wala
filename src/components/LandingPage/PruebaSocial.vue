@@ -46,15 +46,13 @@
       </div>
 
       <!-- BLOQUE RESPALDO INSTITUCIONAL -->
-      <div class="mb-12 md:mb-20">
-        <!-- Título -->
+      <!-- <div class="mb-12 md:mb-20">
         <h2
           class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 text-center leading-tight"
         >
           Respaldado por quienes fortalecen el emprendimiento
         </h2>
 
-        <!-- Subtexto ajustado -->
         <p
           class="text-xl sm:text-2xl text-gray-600 mb-12 text-center max-w-4xl mx-auto leading-relaxed"
           style="line-height: 1.6"
@@ -64,11 +62,9 @@
           y la inclusión digital.
         </p>
 
-        <!-- Grid de aliados (limpio, sin ruido) -->
         <div
           class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 max-w-5xl mx-auto"
         >
-          <!-- Aliado 1: Municipalidad JLO -->
           <div
             class="bg-white rounded-2xl shadow-lg border border-blue-100 p-6 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
           >
@@ -81,8 +77,6 @@
               Municipalidad de<br />José Leonardo Ortiz
             </p>
           </div>
-
-          <!-- Aliado 2: COPEME -->
           <div
             class="bg-white rounded-2xl shadow-lg border border-emerald-100 p-6 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
           >
@@ -94,7 +88,6 @@
             <p class="text-sm font-semibold text-gray-900">COPEME</p>
           </div>
 
-          <!-- Aliado 3: RESCAM -->
           <div
             class="bg-white rounded-2xl shadow-lg border border-purple-100 p-6 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
           >
@@ -110,8 +103,7 @@
               >
             </p>
           </div>
-
-          <!-- Aliado 4: Cooperación Internacional -->
+          
           <div
             class="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 flex flex-col items-center justify-center text-center transition-all duration-200 hover:shadow-xl hover:-translate-y-1"
           >
@@ -126,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Frase de honestidad (CLAVE) -->
         <div
           class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl border border-blue-100 p-6 sm:p-8 max-w-3xl mx-auto"
         >
@@ -136,7 +127,7 @@
             Es una herramienta que se construye y valida en el territorio.
           </p>
         </div>
-      </div>
+      </div> -->
 
       <!-- TESTIMONIOS -->
       <div class="mb-12 md:mb-20">
