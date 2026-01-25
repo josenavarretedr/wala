@@ -117,43 +117,65 @@ async function activateYapeSubscription(businessId, planType, payment, externalR
   try {
     const plan = PLANS[planType];
     const db = admin.firestore();
-    const businessRef = db.collection('businesses').doc(businessId);
-
     const now = Timestamp.now();
-    let expiresAt = null;
 
+    // Calcular fecha de expiración
+    let endDate = null;
     if (plan.durationDays) {
-      const expirationDate = new Date();
-      expirationDate.setDate(expirationDate.getDate() + plan.durationDays);
-      expiresAt = Timestamp.fromDate(expirationDate);
+      const endDateTime = new Date();
+      endDateTime.setDate(endDateTime.getDate() + plan.durationDays);
+      endDate = Timestamp.fromDate(endDateTime);
     }
 
+    // Crear datos de suscripción con la misma estructura que paymentService.js
     const subscriptionData = {
+      plan: 'premium',
+      planType: planType,
       status: 'active',
-      plan: planType,
-      planName: plan.name,
       amount: plan.amount,
+      currency: 'PEN',
       paymentMethod: 'yape',
-      paymentId: payment.id.toString(),
+      transactionId: payment.id.toString(),
+      startDate: now,
+      endDate: endDate,
+      autoRenew: false,
       externalReference: externalReference,
-      activatedAt: now,
-      expiresAt: expiresAt,
-      autoRenew: false, // Yape no soporta renovación automática
-      lastPaymentDate: now,
-      lastPaymentStatus: payment.status,
-      updatedAt: now
+      updatedAt: now,
     };
 
-    await businessRef.update({
-      subscription: subscriptionData,
-      isPremium: true,
-      updatedAt: now
-    });
+    // Actualizar documento del negocio
+    await db.collection('businesses')
+      .doc(businessId)
+      .update({
+        subscription: subscriptionData,
+        updatedAt: now,
+      });
+
+    // Crear registro en subcolección de historial
+    await db.collection('businesses')
+      .doc(businessId)
+      .collection('subscriptions')
+      .add({
+        planType: planType,
+        amount: plan.amount,
+        currency: 'PEN',
+        status: 'approved',
+        mpPaymentId: payment.id.toString(),
+        mpStatus: payment.status,
+        mpStatusDetail: payment.status_detail,
+        externalReference: externalReference,
+        paymentMethodId: 'yape',
+        createdAt: now,
+        metadata: {
+          phoneNumber: payment.metadata?.phone_number || null,
+          payerEmail: payment.payer?.email || null,
+        },
+      });
 
     console.log('✅ Suscripción activada:', {
       businessId,
-      plan: planType,
-      expiresAt: expiresAt ? expiresAt.toDate() : 'lifetime'
+      planType,
+      endDate: endDate ? endDate.toDate() : 'LIFETIME',
     });
 
     return subscriptionData;

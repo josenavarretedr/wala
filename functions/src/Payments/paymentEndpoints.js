@@ -28,9 +28,9 @@ app.post('/create_preference', validateAuth, async (req, res) => {
       });
     }
 
-    if (!['test', 'monthly', 'yearly', 'lifetime'].includes(planType)) {
+    if (!['test', 'monthly', 'annual', 'lifetime'].includes(planType)) {
       return res.status(400).json({
-        error: 'planType debe ser: test, monthly, yearly o lifetime',
+        error: 'planType debe ser: test, monthly, annual o lifetime',
       });
     }
 

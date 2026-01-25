@@ -1,23 +1,16 @@
 <template>
   <div class="yape-payment-container">
-    <!-- Header con logo Yape -->
-    <div class="yape-header">
-      <div class="yape-logo">
-        <span class="yape-icon">📱</span>
-        <h3>Pagar con Yape</h3>
-      </div>
-      <p class="yape-description">
-        Ingresa el código de 6 dígitos que aparece en tu app Yape
-      </p>
-    </div>
-
-    <!-- Formulario -->
+    <!-- Formulario compacto -->
     <form @submit.prevent="handleSubmit" class="yape-form">
       <!-- Campo: Número de celular -->
       <div class="form-group">
-        <label for="yape-phone">
-          <span class="label-icon">📞</span>
-          Número de celular
+        <label for="yape-phone" class="form-label">
+          <div
+            class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center"
+          >
+            <Phone class="w-4 h-4 text-purple-600" />
+          </div>
+          <span>Número de celular</span>
         </label>
         <input
           id="yape-phone"
@@ -36,9 +29,13 @@
 
       <!-- Campo: Código OTP -->
       <div class="form-group">
-        <label for="yape-otp">
-          <span class="label-icon">🔐</span>
-          Código Yape (OTP)
+        <label for="yape-otp" class="form-label">
+          <div
+            class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center"
+          >
+            <Lock class="w-4 h-4 text-purple-600" />
+          </div>
+          <span>Código Yape (6 dígitos)</span>
         </label>
         <input
           id="yape-otp"
@@ -53,24 +50,44 @@
           @input="validateOTP"
         />
         <span v-if="otpError" class="error-message">{{ otpError }}</span>
-        <p class="help-text">Abre tu app Yape y genera un código de pago</p>
       </div>
 
-      <!-- Resumen del pago -->
-      <div class="payment-summary">
-        <div class="summary-row">
-          <span class="summary-label">Plan seleccionado:</span>
-          <span class="summary-value">{{ planName }}</span>
-        </div>
-        <div class="summary-row total">
-          <span class="summary-label">Total a pagar:</span>
-          <span class="summary-value">S/ {{ amount.toFixed(2) }}</span>
-        </div>
+      <!-- Instrucciones colapsables -->
+      <div class="instructions-accordion">
+        <button
+          type="button"
+          @click="showInstructions = !showInstructions"
+          class="accordion-trigger"
+        >
+          <div class="flex items-center gap-2">
+            <HelpCircle class="w-4 h-4 text-purple-600" />
+            <span class="text-sm font-medium text-gray-700">
+              ¿Cómo obtener el código?
+            </span>
+          </div>
+          <NavArrowDown
+            :class="[
+              'w-4 h-4 text-gray-400 transition-transform',
+              showInstructions ? 'rotate-180' : '',
+            ]"
+          />
+        </button>
+
+        <Transition name="accordion">
+          <div v-if="showInstructions" class="accordion-content">
+            <ol class="instructions-list">
+              <li>Abre la app Yape en tu celular.</li>
+              <li>Toca "Aprobar compras".</li>
+              <li>Copiar código de aprobación.</li>
+              <li>Ingresa el código de 6 dígitos aquí.</li>
+            </ol>
+          </div>
+        </Transition>
       </div>
 
       <!-- Error general -->
       <div v-if="error" class="error-banner">
-        <span class="error-icon">⚠️</span>
+        <WarningCircle class="w-5 h-5 text-red-600" />
         <p>{{ error }}</p>
       </div>
 
@@ -80,20 +97,21 @@
         class="yape-btn"
         :disabled="isProcessing || !isFormValid"
       >
-        <span v-if="isProcessing" class="spinner"></span>
-        <span v-else class="btn-icon">✓</span>
+        <div v-if="isProcessing" class="spinner"></div>
+        <Lock v-else class="w-5 h-5" />
         {{ isProcessing ? "Procesando..." : `Pagar S/ ${amount.toFixed(2)}` }}
       </button>
 
-      <!-- Instrucciones -->
-      <div class="yape-instructions">
-        <h4>¿Cómo obtener el código Yape?</h4>
-        <ol>
-          <li>Abre la app Yape en tu celular</li>
-          <li>Toca "Pagar con código QR"</li>
-          <li>Selecciona "Generar código de pago"</li>
-          <li>Ingresa el código de 6 dígitos aquí</li>
-        </ol>
+      <!-- Resumen del pago (abajo) -->
+      <div class="payment-summary">
+        <div class="summary-row">
+          <span class="summary-label">Plan seleccionado</span>
+          <span class="summary-value">{{ planName }}</span>
+        </div>
+        <div class="summary-row total">
+          <span class="summary-label">Total</span>
+          <span class="summary-value">S/ {{ amount.toFixed(2) }}</span>
+        </div>
       </div>
     </form>
   </div>
@@ -102,6 +120,13 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useYape } from "@/composables/useYape";
+import {
+  Phone,
+  HelpCircle,
+  NavArrowDown,
+  WarningCircle,
+  Lock,
+} from "@iconoir/vue";
 
 // Props
 const props = defineProps({
@@ -138,6 +163,7 @@ const otp = ref("");
 const phoneError = ref("");
 const otpError = ref("");
 const error = ref("");
+const showInstructions = ref(false);
 
 // Computed
 const planName = computed(() => {
@@ -228,46 +254,13 @@ const handleSubmit = async () => {
 
 <style scoped>
 .yape-payment-container {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.yape-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.yape-logo {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
-}
-
-.yape-icon {
-  font-size: 2rem;
-}
-
-.yape-header h3 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #6e1c74;
-}
-
-.yape-description {
-  color: #666;
-  font-size: 0.9rem;
+  width: 100%;
 }
 
 .yape-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .form-group {
@@ -276,136 +269,162 @@ const handleSubmit = async () => {
   gap: 0.5rem;
 }
 
-.form-group label {
+.form-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 500;
-  color: #333;
-}
-
-.label-icon {
-  font-size: 1.2rem;
+  color: #374151;
+  font-size: 0.875rem;
 }
 
 .form-input {
   padding: 0.75rem 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #6e1c74;
+  border-color: #9333ea;
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.1);
 }
 
 .form-input:disabled {
-  background-color: #f5f5f5;
+  background-color: #f9fafb;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .otp-input {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   letter-spacing: 0.5rem;
   text-align: center;
   font-weight: 600;
 }
 
 .error-message {
-  color: #e53935;
-  font-size: 0.85rem;
+  color: #dc2626;
+  font-size: 0.8rem;
   margin-top: -0.25rem;
-}
-
-.help-text {
-  color: #666;
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.payment-summary {
-  background: #f9f9f9;
-  padding: 1rem;
-  border-radius: 8px;
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.25rem;
 }
 
-.summary-row.total {
-  padding-top: 0.5rem;
-  border-top: 2px solid #e0e0e0;
-  font-weight: 600;
-  font-size: 1.1rem;
+/* Accordion de instrucciones */
+.instructions-accordion {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: #f9fafb;
 }
 
-.summary-value {
-  color: #6e1c74;
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
+.accordion-trigger:hover {
+  background: #f3f4f6;
+}
+
+.accordion-content {
+  padding: 0 1rem 0.75rem 1rem;
+}
+
+.instructions-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.instructions-list li {
+  margin-bottom: 0.25rem;
+}
+
+.accordion-enter-active,
+.accordion-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.accordion-enter-from,
+.accordion-leave-to {
+  opacity: 0;
+  max-height: 0;
+}
+
+.accordion-enter-to,
+.accordion-leave-from {
+  opacity: 1;
+  max-height: 200px;
+}
+
+/* Error banner */
 .error-banner {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1rem;
-  background: #ffebee;
-  border-left: 4px solid #e53935;
-  border-radius: 4px;
-}
-
-.error-icon {
-  font-size: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
 }
 
 .error-banner p {
   margin: 0;
-  color: #c62828;
-  font-size: 0.9rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+  flex: 1;
 }
 
+/* Botón Yape */
 .yape-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #6e1c74 0%, #8e24aa 100%);
+  padding: 1rem 1.5rem;
+  background: linear-gradient(135deg, #9333ea 0%, #a855f7 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1.1rem;
+  border-radius: 0.75rem;
+  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(147, 51, 234, 0.2);
 }
 
 .yape-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(110, 28, 116, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+  background: linear-gradient(135deg, #7e22ce 0%, #9333ea 100%);
 }
 
 .yape-btn:disabled {
-  background: #ccc;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
 
-.btn-icon {
-  font-size: 1.3rem;
-}
-
 .spinner {
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -417,27 +436,55 @@ const handleSubmit = async () => {
   }
 }
 
-.yape-instructions {
-  background: #f0f0f0;
+/* Resumen del pago */
+.payment-summary {
+  background: linear-gradient(to bottom right, #f3f4f6, #e5e7eb);
   padding: 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e7eb;
 }
 
-.yape-instructions h4 {
-  margin: 0 0 0.75rem 0;
-  font-size: 0.95rem;
-  color: #333;
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
-.yape-instructions ol {
-  margin: 0;
-  padding-left: 1.5rem;
+.summary-row:last-child {
+  margin-bottom: 0;
 }
 
-.yape-instructions li {
-  font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 0.25rem;
+.summary-row.total {
+  padding-top: 0.75rem;
+  border-top: 1px solid #d1d5db;
+  margin-top: 0.25rem;
+}
+
+.summary-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.summary-row.total .summary-value {
+  font-size: 1.25rem;
+  color: #9333ea;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .form-input {
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+
+  .otp-input {
+    font-size: 1.125rem;
+    letter-spacing: 0.375rem;
+  }
 }
 </style>

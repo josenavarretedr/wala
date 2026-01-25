@@ -30,7 +30,7 @@ const PLANS = {
     durationDays: 30,
     name: 'Premium Mensual'
   },
-  yearly: {
+  annual: {
     durationDays: 365,
     name: 'Premium Anual'
   },
@@ -170,7 +170,7 @@ async function handleApprovedPayment(businessId, planType, payment) {
     }
 
     const db = admin.firestore();
-    const businessRef = db.collection('business').doc(businessId);
+    const businessRef = db.collection('businesses').doc(businessId);
 
     // Calcular fechas
     const startDate = admin.firestore.Timestamp.now();

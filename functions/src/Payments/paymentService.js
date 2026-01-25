@@ -34,7 +34,7 @@ const PLANS = {
     duration: 30, // días
     currency: 'PEN',
   },
-  yearly: {
+  annual: {
     name: 'Premium Anual',
     amount: 200.00,
     duration: 365,

@@ -156,7 +156,7 @@
         <button
           @click="openPaymentModal"
           :disabled="isProcessing"
-          class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-orange-600 hover:to-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isProcessing ? "Procesando..." : "Continuar al Pago" }}
         </button>
@@ -173,93 +173,110 @@
       <Transition name="modal">
         <div
           v-if="showPaymentModal"
-          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto"
+          class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto"
           @click.self="closePaymentModal"
         >
           <div
-            class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-8 my-8 transform transition-all"
+            class="min-h-screen md:min-h-0 md:flex md:items-center md:justify-center md:p-4"
           >
-            <div class="flex justify-between items-center mb-6">
-              <h3 class="text-2xl font-bold text-gray-900">Completa tu pago</h3>
-              <button
-                @click="closePaymentModal"
-                class="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg
-                  class="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <!-- Resumen del plan -->
-            <div class="bg-orange-50 rounded-lg p-4 mb-6">
-              <div class="flex justify-between items-center">
-                <span class="font-semibold text-gray-700"
-                  >Plan seleccionado:</span
-                >
-                <span class="font-bold text-gray-900">{{
-                  currentPlanName
-                }}</span>
-              </div>
-              <div class="flex justify-between items-center mt-2">
-                <span class="font-semibold text-gray-700">Total a pagar:</span>
-                <span class="text-2xl font-bold text-orange-600">{{
-                  formattedAmount
-                }}</span>
-              </div>
-            </div>
-
-            <!-- Tabs de métodos de pago -->
-            <div class="flex gap-2 mb-6 border-b border-gray-200">
-              <button
-                @click="selectedPaymentMethod = 'card'"
-                :class="[
-                  'flex-1 py-3 px-4 font-semibold transition-all rounded-t-lg',
-                  selectedPaymentMethod === 'card'
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                ]"
-              >
-                💳 Tarjeta
-              </button>
-              <button
-                @click="selectedPaymentMethod = 'yape'"
-                :class="[
-                  'flex-1 py-3 px-4 font-semibold transition-all rounded-t-lg',
-                  selectedPaymentMethod === 'yape'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                ]"
-              >
-                📱 Yape
-              </button>
-            </div>
-
-            <!-- Contenedor del Payment Brick (Tarjetas) -->
             <div
-              v-show="selectedPaymentMethod === 'card'"
-              id="paymentBrick_container"
-            ></div>
+              class="bg-white md:rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 min-h-screen md:min-h-0 md:my-8 transform transition-all"
+            >
+              <!-- Header -->
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl sm:text-2xl font-bold text-gray-900">
+                  Completa tu pago
+                </h3>
+                <button
+                  @click="closePaymentModal"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
 
-            <!-- Componente Yape -->
-            <YapePayment
-              v-if="selectedPaymentMethod === 'yape'"
-              :amount="PLAN_CONFIGS[selectedPlan].amount"
-              :business-id="businessId"
-              :plan-type="selectedPlan"
-              @success="handlePaymentSuccess"
-              @error="handlePaymentError"
-            />
+              <!-- Resumen del plan -->
+              <div
+                class="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl p-4 mb-6 border border-blue-100"
+              >
+                <div class="flex justify-between items-center">
+                  <span class="text-sm font-medium text-gray-600"
+                    >Plan seleccionado</span
+                  >
+                  <span class="font-bold text-gray-900">{{
+                    currentPlanName
+                  }}</span>
+                </div>
+                <div class="flex justify-between items-center mt-2">
+                  <span class="text-sm font-medium text-gray-600"
+                    >Total a pagar</span
+                  >
+                  <span class="text-2xl font-bold text-blue-600">{{
+                    formattedAmount
+                  }}</span>
+                </div>
+              </div>
+
+              <!-- Tabs de métodos de pago -->
+              <div class="grid grid-cols-2 gap-3 mb-6">
+                <button
+                  @click="selectedPaymentMethod = 'card'"
+                  :class="[
+                    'flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-all',
+                    selectedPaymentMethod === 'card'
+                      ? 'bg-blue-500 text-white shadow-md ring-2 ring-blue-200'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200',
+                  ]"
+                >
+                  <CreditCard class="w-5 h-5" />
+                  <span>Tarjeta</span>
+                </button>
+                <button
+                  @click="selectedPaymentMethod = 'yape'"
+                  :class="[
+                    'flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-all',
+                    selectedPaymentMethod === 'yape'
+                      ? 'bg-purple-600 text-white shadow-md ring-2 ring-purple-200'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200',
+                  ]"
+                >
+                  <img
+                    src="/yape-app-seeklogo.png"
+                    alt="Yape"
+                    class="w-5 h-5 object-contain"
+                  />
+                  <span>Yape</span>
+                </button>
+              </div>
+
+              <!-- Contenedor del Payment Brick (Tarjetas) -->
+              <div
+                v-show="selectedPaymentMethod === 'card'"
+                id="paymentBrick_container"
+              ></div>
+
+              <!-- Componente Yape -->
+              <YapePayment
+                v-if="selectedPaymentMethod === 'yape'"
+                :amount="PLAN_CONFIGS[selectedPlan].amount"
+                :business-id="businessId"
+                :plan-type="selectedPlan"
+                @success="handlePaymentSuccess"
+                @error="handlePaymentError"
+              />
+            </div>
           </div>
         </div>
       </Transition>
@@ -299,7 +316,7 @@
   >
     <div class="text-center">
       <div
-        class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"
       ></div>
       <p class="text-gray-600">Cargando...</p>
     </div>
@@ -312,7 +329,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useMercadoPago } from "@/composables/useMercadoPago";
 import { useToast } from "@/composables/useToast";
-import { BrightCrown } from "@iconoir/vue";
+import { BrightCrown, CreditCard } from "@iconoir/vue";
 import PlanSelector from "@/components/payments/PlanSelector.vue";
 import PaymentSuccessModal from "@/components/payments/PaymentSuccessModal.vue";
 import YapePayment from "@/components/payments/YapePayment.vue";
@@ -326,7 +343,7 @@ const { showToast } = useToast();
 const businessId = computed(
   () => businessStore.currentBusinessId || route.params.businessId
 );
-const selectedPlan = ref("test"); // Plan de prueba por defecto
+const selectedPlan = ref("monthly"); // Plan de prueba por defecto
 const selectedPaymentMethod = ref("card"); // 'card' o 'yape'
 const showPaymentModal = ref(false);
 const showSuccessModal = ref(false);
@@ -335,9 +352,9 @@ const paymentResult = ref({});
 const mpScriptLoaded = ref(false);
 
 const PLAN_CONFIGS = {
-  test: { name: "Premium Prueba", amount: 5.0 },
+  // test: { name: "Premium Prueba", amount: 5.0 },
   monthly: { name: "Premium Mensual", amount: 27.0 },
-  yearly: { name: "Premium Anual", amount: 200.0 },
+  annual: { name: "Premium Anual", amount: 200.0 },
   lifetime: { name: "Premium de por Vida", amount: 400.0 },
 };
 

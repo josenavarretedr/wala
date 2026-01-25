@@ -121,7 +121,7 @@ const router = useRouter();
 const planName = computed(() => {
   const planTypes = {
     monthly: "Premium Mensual",
-    yearly: "Premium Anual",
+    annual: "Premium Anual",
     lifetime: "Premium de por Vida",
   };
   return planTypes[props.paymentData.planType] || "Premium";
