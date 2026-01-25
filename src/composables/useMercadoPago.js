@@ -1,8 +1,16 @@
 import { ref } from 'vue';
 import { getAuth } from 'firebase/auth';
 
-const MP_PUBLIC_KEY = 'TEST-d9db5058-7d42-47a5-a224-9a283c925466';
+// Usar credenciales de producción o TEST según el entorno
+const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY || 'TEST-d9db5058-7d42-47a5-a224-9a283c925466';
 const FUNCTIONS_URL = import.meta.env.VITE_FUNCTIONS_URL || 'http://127.0.0.1:5001/wala-lat/southamerica-east1';
+
+// Log para verificar entorno (solo en desarrollo)
+if (import.meta.env.DEV) {
+  console.log('🔑 Modo:', import.meta.env.MODE);
+  console.log('🔑 MP Public Key:', MP_PUBLIC_KEY.substring(0, 25) + '...');
+  console.log('🌐 Functions URL:', FUNCTIONS_URL);
+}
 
 export function useMercadoPago() {
   const isLoading = ref(false);
@@ -88,10 +96,8 @@ export function useMercadoPago() {
           },
           paymentMethods: {
             creditCard: "all",
-            bankTransfer: "all",
-            onboarding_credits: "all",
             debitCard: "all",
-            maxInstallments: 2
+            maxInstallments: 1
           },
         },
         callbacks: {

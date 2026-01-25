@@ -23,5 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
-# Variables de Desarrolo
+# Variables de Desarrollo y Credenciales
 .env
+.env.local
+.env.*.local
+functions/.env
+functions/.env.local
+functions/.env.*.local
+
+# Archivos sensibles
+**/wala-lat-firebase-adminsdk.json

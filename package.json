@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "emulators:start": "firebase emulators:start",
     "initServer": "vite firebase emulators:start",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:functions": "cd functions && firebase deploy --only functions:payments",
+    "deploy:full": "npm run build && firebase deploy"
   },
   "dependencies": {
     "@algolia/autocomplete-js": "^1.17.8",
