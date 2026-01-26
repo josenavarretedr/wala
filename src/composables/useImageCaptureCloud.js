@@ -106,21 +106,24 @@ export function useImageCaptureCloud() {
       // Pequeño delay para que el DOM se actualice
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // 7. Calcular dimensiones
-      const rect = clone.getBoundingClientRect();
-
-      // Fijar ancho a 400px para consistencia en todas las capturas
+      // 7. Calcular dimensiones con ancho fijo
+      // Fijar ancho a 400px para consistencia
       const targetWidth = 400;
-      const originalWidth = Math.ceil(rect.width);
-      const originalHeight = Math.ceil(rect.height);
-      const scale = targetWidth / originalWidth;
+      clone.style.width = `${targetWidth}px`;
+      clone.style.maxWidth = `${targetWidth}px`;
+
+      // Esperar un frame para que el layout se recalcule
+      await new Promise(resolve => requestAnimationFrame(resolve));
+
+      // Ahora medir la altura real del contenido después de aplicar el ancho
+      const rect = clone.getBoundingClientRect();
       const width = targetWidth;
-      const height = Math.ceil(originalHeight * scale);
+      const height = Math.ceil(rect.height);
 
       console.log('📐 Dimensiones calculadas:', {
-        original: { width: originalWidth, height: originalHeight },
-        scaled: { width, height },
-        scale
+        width,
+        height,
+        contentHeight: rect.height
       });
 
       // 8. Resetear estilos de posicionamiento temporal
