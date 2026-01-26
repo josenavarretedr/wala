@@ -90,122 +90,26 @@
         </div>
       </div>
 
-      <!-- Información de pago parcial o historial -->
-      <div
-        v-if="
-          transactionData.items &&
-          transactionData.items.length > 0 &&
-          transactionData.payments &&
-          transactionData.payments.length > 0
-        "
-        :class="[
-          'border-b p-4',
-          getPaymentStatus() !== 'completed'
-            ? 'bg-orange-50 border-orange-100'
-            : 'bg-gray-50 border-gray-100',
-        ]"
-      >
-        <!-- Resumen de pagos (solo si no está completado) -->
-        <div
-          v-if="getPaymentStatus() !== 'completed'"
-          class="space-y-2 text-sm mb-4 pb-4 border-b border-orange-200"
-        >
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Pagado:</span>
-            <span class="font-semibold text-green-600">
-              S/ {{ getTotalPaid().toFixed(2) }}
-            </span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-gray-600">Saldo pendiente:</span>
-            <span class="font-semibold text-red-600">
-              S/ {{ getBalance().toFixed(2) }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Historial de pagos (siempre que exista) -->
-        <div>
-          <h4 class="text-xs font-semibold text-gray-700 mb-2">
-            Historial de pagos
-          </h4>
-          <div class="space-y-2">
-            <div
-              v-for="(payment, index) in transactionData.payments"
-              :key="index"
-              class="bg-white rounded-lg p-2"
-            >
-              <div class="flex justify-between items-center text-xs mb-1.5">
-                <div class="flex items-center gap-2">
-                  <span class="text-gray-500"
-                    >Pago {{ index + 1 }}
-                    {{ index === 0 ? "(Inicial)" : "" }}</span
-                  >
-                  <span
-                    :class="[
-                      'px-2 py-0.5 rounded text-xs',
-                      payment.method === 'cash'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-purple-100 text-purple-700',
-                    ]"
-                  >
-                    {{ payment.method === "cash" ? "Efectivo" : "Digital" }}
-                  </span>
-                </div>
-                <span class="font-semibold text-gray-800">
-                  S/ {{ payment.amount.toFixed(2) }}
-                </span>
-              </div>
-              <!-- Fecha del pago -->
-              <div
-                v-if="getPaymentDate(payment, index)"
-                class="flex items-center gap-1.5 text-xs text-gray-500"
-              >
-                <svg
-                  class="w-3 h-3 shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span class="truncate">{{
-                  getPaymentDate(payment, index)
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Información de tipo, cuenta y cliente -->
       <div
-        v-if="transactionData.items && transactionData.items.length > 0"
+        v-if="
+          transactionData.clientId &&
+          transactionData.clientId !== 'anonymous-client'
+        "
         class="p-4 border-b border-gray-100"
       >
-        <div
-          :class="[
-            'grid gap-3',
-            transactionData.clientId &&
-            transactionData.clientId !== 'anonymous-client'
-              ? 'grid-cols-2'
-              : 'grid-cols-1',
-          ]"
+        <h3
+          class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"
         >
+          <User class="w-5 h-5 text-gray-600" />
+          Cliente:
+        </h3>
+        <div class="grid gap-3 grid-cols-1">
           <!-- Cliente (solo si no es anónimo) -->
           <div
-            v-if="
-              transactionData.clientId &&
-              transactionData.clientId !== 'anonymous-client'
-            "
             class="bg-purple-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
           >
-            <div
+            <!-- <div
               class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3"
             >
               <svg
@@ -221,14 +125,14 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-            </div>
+            </div> -->
             <div class="text-sm font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
             </div>
           </div>
 
           <!-- Tipo de método de pago -->
-          <div
+          <!-- <div
             class="bg-green-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
           >
             <div
@@ -239,7 +143,7 @@
             <div class="text-sm font-medium text-green-700">
               {{ getAccountLabel }}
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -306,6 +210,103 @@
           Agrega productos para ver el resumen
         </p>
       </div>
+
+      <!-- Información de pago parcial o historial -->
+      <div
+        v-if="
+          transactionData.items &&
+          transactionData.items.length > 0 &&
+          transactionData.payments &&
+          transactionData.payments.length > 0
+        "
+        :class="[
+          'border-b p-4',
+          getPaymentStatus() !== 'completed'
+            ? 'bg-orange-50 border-orange-100'
+            : 'bg-gray-50 border-gray-100',
+        ]"
+      >
+        <h3
+          class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"
+        >
+          <TaskList class="w-5 h-5 text-gray-600" />
+          Historial de Pagos:
+        </h3>
+        <!-- Resumen de pagos (solo si no está completado) -->
+        <div
+          v-if="getPaymentStatus() !== 'completed'"
+          class="space-y-2 text-sm mb-4 pb-4 border-b border-orange-200"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Pagado:</span>
+            <span class="font-semibold text-green-600">
+              S/ {{ getTotalPaid().toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Saldo pendiente:</span>
+            <span class="font-semibold text-red-600">
+              S/ {{ getBalance().toFixed(2) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Historial de pagos (siempre que exista) -->
+        <div>
+          <h4 class="text-xs font-semibold text-gray-700 mb-2">Registros</h4>
+          <div class="space-y-2">
+            <div
+              v-for="(payment, index) in transactionData.payments"
+              :key="index"
+              class="bg-white rounded-lg p-2"
+            >
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-gray-500"
+                    >Pago {{ index + 1 }}
+                    {{ index === 0 ? "(Inicial)" : "" }}</span
+                  >
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded text-xs',
+                      payment.method === 'cash'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-purple-100 text-purple-700',
+                    ]"
+                  >
+                    {{ payment.method === "cash" ? "Efectivo" : "Digital" }}
+                  </span>
+                </div>
+                <span class="font-semibold text-gray-800">
+                  S/ {{ payment.amount.toFixed(2) }}
+                </span>
+              </div>
+              <!-- Fecha del pago -->
+              <div
+                v-if="getPaymentDate(payment, index)"
+                class="flex items-center gap-1.5 text-xs text-gray-500"
+              >
+                <svg
+                  class="w-3 h-3 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span class="truncate">{{
+                  getPaymentDate(payment, index)
+                }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Nota informativa -->
@@ -334,13 +335,7 @@
 import { computed } from "vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
-import {
-  GraphUp,
-  Package,
-  ShieldQuestion,
-  Coins,
-  SmartphoneDevice,
-} from "@iconoir/vue";
+import { TaskList, Package, User, Coins, SmartphoneDevice } from "@iconoir/vue";
 
 const props = defineProps({
   transactionData: {

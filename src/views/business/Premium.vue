@@ -158,13 +158,20 @@
           :disabled="isProcessing"
           class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ isProcessing ? "Procesando..." : "Continuar al Pago" }}
+          {{ isProcessing ? "Procesando..." : "Continuar con el pago" }}
         </button>
 
-        <!-- Mensaje de seguridad -->
-        <p class="text-center text-sm text-gray-500 mt-4">
-          🔒 Pago seguro procesado por Mercado Pago
-        </p>
+        <!-- Mensaje de seguridad Mercado Pago -->
+        <div
+          class="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200"
+        >
+          <span class="text-xs text-gray-600">Pago seguro procesado con</span
+          ><img
+            src="@/assets/mercadopago-seeklogo.png"
+            alt="Mercado Pago"
+            class="h-6 object-contain"
+          />
+        </div>
       </div>
     </div>
 
@@ -232,18 +239,6 @@
               <!-- Tabs de métodos de pago -->
               <div class="grid grid-cols-2 gap-3 mb-6">
                 <button
-                  @click="selectedPaymentMethod = 'card'"
-                  :class="[
-                    'flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-all',
-                    selectedPaymentMethod === 'card'
-                      ? 'bg-blue-500 text-white shadow-md ring-2 ring-blue-200'
-                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200',
-                  ]"
-                >
-                  <CreditCard class="w-5 h-5" />
-                  <span>Tarjeta</span>
-                </button>
-                <button
                   @click="selectedPaymentMethod = 'yape'"
                   :class="[
                     'flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-all',
@@ -258,6 +253,18 @@
                     class="w-5 h-5 object-contain"
                   />
                   <span>Yape</span>
+                </button>
+                <button
+                  @click="selectedPaymentMethod = 'card'"
+                  :class="[
+                    'flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold transition-all',
+                    selectedPaymentMethod === 'card'
+                      ? 'bg-blue-500 text-white shadow-md ring-2 ring-blue-200'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200',
+                  ]"
+                >
+                  <CreditCard class="w-5 h-5" />
+                  <span>Tarjeta</span>
                 </button>
               </div>
 
@@ -276,6 +283,19 @@
                 @success="handlePaymentSuccess"
                 @error="handlePaymentError"
               />
+
+              <!-- Mensaje de seguridad Mercado Pago -->
+              <div
+                class="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200"
+              >
+                <span class="text-xs text-gray-600"
+                  >Pago seguro procesado con</span
+                ><img
+                  src="@/assets/mercadopago-seeklogo.png"
+                  alt="Mercado Pago"
+                  class="h-6 object-contain"
+                />
+              </div>
             </div>
           </div>
         </div>

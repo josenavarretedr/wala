@@ -21,7 +21,7 @@
           pattern="[0-9]{9}"
           required
           :disabled="isProcessing"
-          class="form-input"
+          class="form-input phone-input"
           @input="validatePhone"
         />
         <span v-if="phoneError" class="error-message">{{ phoneError }}</span>
@@ -306,6 +306,13 @@ const handleSubmit = async () => {
   font-weight: 600;
 }
 
+.phone-input {
+  font-size: 1.25rem;
+  letter-spacing: 0.25rem;
+  text-align: center;
+  font-weight: 600;
+}
+
 .error-message {
   color: #dc2626;
   font-size: 0.8rem;
@@ -485,6 +492,10 @@ const handleSubmit = async () => {
   .otp-input {
     font-size: 1.125rem;
     letter-spacing: 0.375rem;
+  }
+  .phone-input {
+    font-size: 1.125rem;
+    letter-spacing: 0.2rem;
   }
 }
 </style>

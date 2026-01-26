@@ -14,12 +14,12 @@
       <div
         class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end no-share-item"
       >
-        <ShareButton
+        <ShareButtonCloud
           v-if="targetRef"
           :targetRef="targetRef"
           :fileName="getShareFileName()"
           shareTitle="Comprobante de Venta"
-          shareText="Powered by wala.lat"
+          shareText="Negocio impulsado con wala.lat"
           componentType="income-details"
           variant="card"
           size="sm"
@@ -183,38 +183,27 @@
         </div>
       </div>
 
-      <!-- Información de método de pago y cliente -->
-      <div class="p-4 border-b border-gray-100">
-        <div
-          :class="[
-            'grid gap-3',
-            transactionData.clientId &&
-            transactionData.clientId !== 'anonymous-client'
-              ? 'grid-cols-2'
-              : 'grid-cols-1',
-          ]"
+      <!-- Información de tipo, cuenta y cliente -->
+      <div
+        v-if="
+          transactionData.clientId &&
+          transactionData.clientId !== 'anonymous-client'
+        "
+        class="p-4 border-b border-gray-100"
+      >
+        <h3
+          class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"
         >
-          <div class="bg-green-50 rounded-xl p-4 text-center">
-            <div
-              class="w-8 h-8 bg-green-500 rounded-full mx-auto mb-2 flex items-center justify-center"
-            >
-              <component :is="getAccountIcon" class="w-4 h-4 text-white" />
-            </div>
-            <div class="text-sm font-medium text-green-700">
-              {{ getAccountLabel }}
-            </div>
-          </div>
-
+          <User class="w-5 h-5 text-gray-600" />
+          Cliente:
+        </h3>
+        <div class="grid gap-3 grid-cols-1">
           <!-- Cliente (solo si no es anónimo) -->
           <div
-            v-if="
-              transactionData.clientId &&
-              transactionData.clientId !== 'anonymous-client'
-            "
-            class="bg-purple-50 rounded-xl p-4 text-center"
+            class="bg-purple-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
           >
-            <div
-              class="w-8 h-8 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center"
+            <!-- <div
+              class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3"
             >
               <svg
                 class="w-4 h-4 text-white"
@@ -229,11 +218,25 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-            </div>
+            </div> -->
             <div class="text-sm font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
             </div>
           </div>
+
+          <!-- Tipo de método de pago -->
+          <!-- <div
+            class="bg-green-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
+          >
+            <div
+              class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3"
+            >
+              <component :is="getAccountIcon" class="w-4 h-4 text-white" />
+            </div>
+            <div class="text-sm font-medium text-green-700">
+              {{ getAccountLabel }}
+            </div>
+          </div> -->
         </div>
       </div>
 
@@ -322,8 +325,8 @@
 
 <script setup>
 import { computed } from "vue";
-import ShareButton from "@/components/ShareButton.vue";
-import { ShieldQuestion, Coins, SmartphoneDevice } from "@iconoir/vue";
+import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
+import { ShieldQuestion, Coins, SmartphoneDevice, User } from "@iconoir/vue";
 
 const props = defineProps({
   transactionData: {
