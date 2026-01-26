@@ -225,15 +225,33 @@
 
         <!-- Botón de Compartir -->
         <div
-          class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end"
+          class="no-share-item mt-6 pt-4 border-t border-gray-200 flex justify-end"
         >
-          <ShareButton
+          <!-- <ShareButton
             :target-ref="resumenDayRef"
             file-name="resumen-dia-wala.png"
             share-title="Resumen del Día"
             component-type="resumen-dia"
             variant="card"
             button-description="Descarga o comparte tu resumen del día"
+            :modifications="{
+              hideElements: ['.share-button-container', '.toggle-container'],
+              styleChanges: {
+                '[ref=resumenDayRef]': {
+                  padding: '24px',
+                  backgroundColor: '#ffffff',
+                },
+              },
+            }"
+          /> -->
+
+          <ShareButtonCloud
+            :target-ref="resumenDayRef"
+            file-name="resumen-dia-wala.png"
+            share-title="Resumen del Día"
+            component-type="resumen-dia"
+            variant="card"
+            button-description="Descarga o comparte tu resumen del día (Cloud)"
             :modifications="{
               hideElements: ['.share-button-container', '.toggle-container'],
               styleChanges: {
@@ -259,6 +277,7 @@ import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
 import { BrightCrown } from "@iconoir/vue";
 import ShareButton from "@/components/ShareButton.vue";
+import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
 const route = useRoute();
 const { isPremium } = useSubscription();
 const { warning, success, premium } = useToast();

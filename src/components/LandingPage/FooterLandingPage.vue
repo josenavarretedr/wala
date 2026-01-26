@@ -18,7 +18,7 @@
             <span class="text-xl font-semibold text-gray-900">WALA</span>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed mb-3">
-            Tu copiloto empresarial para emprendedores latinoamericanos.
+            Mi copiloto empresarial para emprendedores latinoamericanos.
           </p>
           <p class="text-sm text-gray-700 font-medium">
             Construimos inclusión financiera desde abajo.

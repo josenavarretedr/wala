@@ -1,6 +1,16 @@
 /**
  * useImageCapture.js - Composable para captura de componentes como imagen
  * Utiliza html2canvas para generar imágenes de alta calidad
+ * 
+ * ⚠️ DEPRECADO: Este composable usa html2canvas (renderizado cliente)
+ * ✅ USAR NUEVO: useImageCaptureCloud.js (renderizado server-side con Puppeteer)
+ * 
+ * Problemas conocidos con html2canvas:
+ * - Elementos flexbox mal alineados (justify-center)
+ * - Badges cortados o descentrados
+ * - Elementos rounded-full con baja calidad
+ * 
+ * El nuevo sistema Cloud Functions resuelve estos problemas con 100% de fidelidad.
  */
 
 import { ref, createApp } from 'vue';

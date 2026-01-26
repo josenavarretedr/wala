@@ -206,6 +206,14 @@ service cloud.firestore {
     }
 
     // ═════════════════════════════════════════════════════════════
+    // 📸 SHARE LIMITS (Control de cuota de shares)
+    // ═════════════════════════════════════════════════════════════
+    match /shareLimits/{userId} {
+      // Solo el usuario puede leer/escribir su propio límite
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ═════════════════════════════════════════════════════════════
     // ⚠️ REGLA TEMPORAL DE DESARROLLO - COMENTADA PARA PRODUCCIÓN
     // ═════════════════════════════════════════════════════════════
     // ⚠️ IMPORTANTE: Esta regla permite acceso total a Firestore

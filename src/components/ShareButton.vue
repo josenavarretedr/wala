@@ -1,4 +1,11 @@
 <template>
+  <!-- 
+    ⚠️ COMPONENTE DEPRECADO
+    ✅ Usar: ShareButtonCloud.vue (renderizado server-side)
+    
+    Este componente usa html2canvas (cliente) y tiene problemas de
+    alineación en badges, flexbox y elementos redondeados.
+  -->
   <button
     @click="handleShare"
     :disabled="isProcessing || !targetRef"

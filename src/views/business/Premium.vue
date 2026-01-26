@@ -22,7 +22,7 @@
 
         <p class="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto">
           Organiza tu negocio, entiende tus números y toma mejores decisiones
-          con tu copiloto empresarial.
+          con mi copiloto empresarial.
         </p>
       </div>
 

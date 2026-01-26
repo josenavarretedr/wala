@@ -3,7 +3,7 @@
     <div class="flex items-center justify-start gap-4">
       <img src="/WalaLogoOF.png" alt="Wala" class="w-9 h-9" />
       <span class="text-sm font-semibold text-gray-600">
-        <span class="text-orange-600">wala.lat</span>, tu copiloto empresarial
+        <span class="text-orange-600">wala.lat</span>, mi copiloto empresarial
       </span>
     </div>
   </div>

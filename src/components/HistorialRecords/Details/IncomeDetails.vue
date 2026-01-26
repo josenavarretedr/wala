@@ -14,12 +14,23 @@
       <div
         class="share-button-container mt-6 pt-4 border-t border-gray-200 flex justify-end no-share-item"
       >
-        <ShareButton
+        <!-- <ShareButton
           v-if="targetRef"
           :targetRef="targetRef"
           :fileName="getShareFileName()"
           shareTitle="Comprobante de Venta"
-          shareText="Powered by wala.lat"
+          shareText="Negocio impulsado con wala.lat"
+          componentType="income-details"
+          variant="card"
+          size="sm"
+        /> -->
+
+        <ShareButtonCloud
+          v-if="targetRef"
+          :targetRef="targetRef"
+          :fileName="getShareFileName()"
+          shareTitle="Comprobante de Venta"
+          shareText="Negocio impulsado con wala.lat"
           componentType="income-details"
           variant="card"
           size="sm"
@@ -322,6 +333,7 @@
 <script setup>
 import { computed } from "vue";
 import ShareButton from "@/components/ShareButton.vue";
+import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
 import {
   GraphUp,
   Package,
