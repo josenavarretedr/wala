@@ -18,7 +18,7 @@
     <PruebaSocial></PruebaSocial>
 
     <!-- Sección 5: Planes -->
-    <Planes></Planes>
+    <!-- <Planes></Planes> -->
 
     <!-- <FaQ></FaQ> -->
 

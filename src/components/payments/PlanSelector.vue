@@ -1,69 +1,86 @@
 <template>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <!-- <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"> -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-8">
     <div
       v-for="plan in plans"
       :key="plan.type"
       :class="[
-        'relative bg-white rounded-2xl border-2 p-6 cursor-pointer transition-all duration-200',
+        'bg-white rounded-xl border shadow-sm p-4 cursor-pointer transition-all duration-200',
         selectedPlan === plan.type
-          ? 'border-orange-500 shadow-lg scale-105'
-          : 'border-gray-200 hover:border-orange-300 hover:shadow-md',
+          ? 'border-orange-600 shadow-md border-2'
+          : 'border-gray-100 hover:border-orange-300 hover:shadow-md',
       ]"
       @click="selectPlan(plan.type)"
     >
-      <!-- Badge de popular/ahorro -->
-      <div
-        v-if="plan.badge"
-        class="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold rounded-full"
-      >
-        {{ plan.badge }}
-      </div>
-
-      <!-- Nombre del plan -->
-      <h3 class="text-xl font-bold text-gray-900 mb-2 text-center">
-        {{ plan.name }}
-      </h3>
-
-      <!-- Precio -->
-      <div class="text-center mb-4">
-        <div class="text-4xl font-extrabold text-gray-900">
-          S/ {{ plan.price }}
+      <!-- Layout horizontal -->
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Radio/Checkmark -->
+        <div class="flex-shrink-0">
+          <div
+            :class="[
+              'w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-200',
+              selectedPlan === plan.type
+                ? 'border-orange-600 bg-orange-600'
+                : 'border-gray-300 bg-white',
+            ]"
+          >
+            <svg
+              v-if="selectedPlan === plan.type"
+              class="w-3 h-3 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="3"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
         </div>
-        <div class="text-sm text-gray-600">
-          {{ plan.period }}
-        </div>
-        <div
-          v-if="plan.savings"
-          class="text-xs text-emerald-600 font-semibold mt-1"
-        >
-          Ahorras S/ {{ plan.savings }}
-        </div>
-      </div>
 
-      <!-- Descripción -->
-      <p class="text-sm text-gray-600 text-center mb-4">
-        {{ plan.description }}
-      </p>
+        <!-- Icono + Nombre del plan -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1">
+            <component
+              :is="plan.icon"
+              :class="[
+                'w-5 h-5 flex-shrink-0 transition-colors duration-200',
+                selectedPlan === plan.type
+                  ? 'text-orange-600 '
+                  : 'text-gray-400',
+              ]"
+            />
+            <h3
+              :class="[
+                'text-base sm:text-lg font-bold transition-colors duration-200',
+                selectedPlan === plan.type ? 'text-gray-900' : 'text-gray-700',
+              ]"
+            >
+              {{ plan.name }}
+            </h3>
+          </div>
+          <p class="text-xs sm:text-sm text-gray-500 line-clamp-1">
+            {{ plan.description }}
+          </p>
+          <p
+            v-if="plan.savings"
+            class="text-xs text-emerald-600 font-semibold mt-1"
+          >
+            Ahorras S/ {{ plan.savings }}
+          </p>
+        </div>
 
-      <!-- Checkmark de selección -->
-      <div
-        v-if="selectedPlan === plan.type"
-        class="absolute top-4 right-4 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center"
-      >
-        <svg
-          class="w-4 h-4 text-white"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="3"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
+        <!-- Precio -->
+        <div class="text-right flex-shrink-0">
+          <div class="text-xl sm:text-2xl font-extrabold text-gray-900">
+            S/ {{ plan.price }}
+          </div>
+          <div class="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
+            {{ plan.period }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -71,6 +88,7 @@
 
 <script setup>
 import { ref } from "vue";
+import { Sparks, FireFlame, Infinite } from "@iconoir/vue";
 
 const props = defineProps({
   modelValue: {
@@ -92,6 +110,7 @@ const plans = [
   //   description: "Plan de prueba para testing en producción",
   //   badge: "🧪 TEST",
   //   savings: null,
+  //   icon: Sparks,
   // },
   {
     type: "monthly",
@@ -101,6 +120,7 @@ const plans = [
     description: "Ideal para empezar y probar todas las funcionalidades",
     badge: null,
     savings: null,
+    icon: Sparks,
   },
   {
     type: "annual",
@@ -110,6 +130,7 @@ const plans = [
     description: "¡Ahorra S/ 124 al año! Mejor relación precio-valor",
     badge: "🔥 MÁS POPULAR",
     savings: 124,
+    icon: FireFlame,
   },
   {
     type: "lifetime",
@@ -119,6 +140,7 @@ const plans = [
     description: "Acceso ilimitado para siempre. Inversión única",
     badge: "⭐ MEJOR OFERTA",
     savings: null,
+    icon: Infinite,
   },
 ];
 

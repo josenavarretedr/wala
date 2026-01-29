@@ -26,6 +26,36 @@
         </p>
       </div>
 
+      <div class="mb-8" id="payment-container">
+        <!-- Selector de planes -->
+        <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">
+          Elige tu plan
+        </h2>
+
+        <PlanSelector v-model="selectedPlan" />
+
+        <!-- Botón para abrir Payment Brick -->
+        <button
+          @click="openPaymentModal"
+          :disabled="isProcessing"
+          class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ isProcessing ? "Procesando..." : "Continuar con el pago" }}
+        </button>
+
+        <!-- Mensaje de seguridad Mercado Pago -->
+        <div
+          class="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200"
+        >
+          <span class="text-xs text-gray-600">Pago seguro procesado con</span
+          ><img
+            src="@/assets/mercadopago-seeklogo.png"
+            alt="Mercado Pago"
+            class="h-6 object-contain"
+          />
+        </div>
+      </div>
+
       <!-- Card principal -->
       <div
         class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-12 mb-8"
@@ -143,34 +173,6 @@
               </p>
             </div>
           </div>
-        </div>
-
-        <!-- Selector de planes -->
-        <h2 class="text-2xl font-bold text-gray-900 text-center mb-6">
-          Elige tu plan
-        </h2>
-
-        <PlanSelector v-model="selectedPlan" />
-
-        <!-- Botón para abrir Payment Brick -->
-        <button
-          @click="openPaymentModal"
-          :disabled="isProcessing"
-          class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ isProcessing ? "Procesando..." : "Continuar con el pago" }}
-        </button>
-
-        <!-- Mensaje de seguridad Mercado Pago -->
-        <div
-          class="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-gray-200"
-        >
-          <span class="text-xs text-gray-600">Pago seguro procesado con</span
-          ><img
-            src="@/assets/mercadopago-seeklogo.png"
-            alt="Mercado Pago"
-            class="h-6 object-contain"
-          />
         </div>
       </div>
     </div>
