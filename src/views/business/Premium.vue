@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50/30 to-orange-50/30 py-12 px-4"
-  >
+  <div class="min-h-screen py-12 px-4">
     <div class="max-w-5xl mx-auto">
       <!-- Header -->
       <div class="text-center mb-12">
@@ -363,7 +361,7 @@ const { renderPaymentBrick, unmountBrick } = useMercadoPago();
 const { showToast } = useToast();
 
 const businessId = computed(
-  () => businessStore.currentBusinessId || route.params.businessId
+  () => businessStore.currentBusinessId || route.params.businessId,
 );
 const selectedPlan = ref("monthly"); // Plan de prueba por defecto
 const selectedPaymentMethod = ref("card"); // 'card' o 'yape'
@@ -382,7 +380,7 @@ const PLAN_CONFIGS = {
 
 const currentPlanName = computed(() => PLAN_CONFIGS[selectedPlan.value].name);
 const formattedAmount = computed(
-  () => `S/ ${PLAN_CONFIGS[selectedPlan.value].amount.toFixed(2)}`
+  () => `S/ ${PLAN_CONFIGS[selectedPlan.value].amount.toFixed(2)}`,
 );
 
 const loadMercadoPagoScript = () => {
@@ -433,7 +431,7 @@ const openPaymentModal = async () => {
         businessId.value,
         selectedPlan.value,
         handlePaymentSuccess,
-        handlePaymentError
+        handlePaymentError,
       );
     }
     // Si es Yape, el componente YapePayment se renderiza automáticamente

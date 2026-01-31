@@ -24,37 +24,42 @@
 
     <!-- Logo / Nombre del negocio - Centro -->
     <div class="absolute left-1/2 transform -translate-x-1/2">
-      <component
-        :is="logoLinkComponent"
-        :to="logoLinkRoute"
-        class="flex items-center gap-3 group cursor-pointer"
-        @click="handleLogoClick"
-      >
-        <Folder
-          class="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition"
-        />
-        <h1
-          class="text-xl md:text-2xl lg:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
+      <div class="flex items-center gap-3">
+        <!-- Logo y nombre con navegación al dashboard -->
+        <component
+          :is="logoLinkComponent"
+          :to="logoLinkRoute"
+          class="flex items-center gap-3 group cursor-pointer"
+          @click="handleLogoClick"
         >
-          {{ displayName }}
-        </h1>
+          <Folder
+            class="w-6 h-6 text-blue-600 group-hover:text-blue-800 transition"
+          />
+          <h1
+            class="text-xl md:text-2xl lg:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
+          >
+            {{ displayName }}
+          </h1>
+        </component>
 
-        <!-- Badge Premium/Emprendedor -->
+        <!-- Badge Premium/Gratis con lógica de click separada -->
         <span
           v-if="isPremium"
-          class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
+          @click="handleBadgeClick"
+          class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg cursor-pointer hover:bg-orange-50 transition-colors"
         >
           <BrightCrown class="w-4 h-4" />
           Premium
         </span>
         <span
           v-else
-          class="flex items-center gap-1.5 px-3 py-1 bg-gray-400 text-white text-xs font-semibold rounded-full"
+          @click="handleBadgeClick"
+          class="flex items-center gap-1.5 px-3 py-1 bg-gray-400 text-white text-xs font-semibold rounded-full cursor-pointer hover:bg-gray-500 transition-colors"
         >
           <Crown class="w-4 h-4" />
           Gratis
         </span>
-      </component>
+      </div>
     </div>
 
     <!-- Espacio para elementos del lado derecho (reservado para futuro uso) -->
@@ -70,7 +75,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import BtnLogout from "@/components/Auth/BtnLogout.vue";
 import { Folder, BrightCrown, Crown } from "@iconoir/vue";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
@@ -99,6 +104,7 @@ const props = defineProps({
 const emit = defineEmits(["toggle-sidebar"]);
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const businessStore = useBusinessStore();
 const userStore = useUserStore();
@@ -154,6 +160,29 @@ const handleLogoClick = (event) => {
   transactionStore.resetTransactionToAdd();
 };
 
+// Función para manejar el click en el badge Premium/Gratis
+const handleBadgeClick = (event) => {
+  event.stopPropagation();
+
+  if (isPremium.value) {
+    // Si ya es premium, ir al dashboard
+    if (currentBusinessId.value) {
+      flow.resetFlow();
+      transactionStore.resetTransactionToAdd();
+      // Navegar al dashboard si no estamos ya allí
+      if (route.name !== "BusinessDashboard") {
+        router.push({
+          name: "BusinessDashboard",
+          params: { businessId: currentBusinessId.value },
+        });
+      }
+    }
+  } else {
+    // Si es gratis/free, redirigir a premium
+    router.push(`/business/${route.params.businessId}/premium`);
+  }
+};
+
 const businessName = computed(() => {
   const currentBusiness = businessStore.business;
   return currentBusiness?.nombre || null;
@@ -170,7 +199,7 @@ watch(
       displayName.value = props.contextName || businessName.value || "WALA";
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // También observar si cambia el negocio seleccionado
@@ -180,7 +209,7 @@ watch(
     if (authStore.user) {
       displayName.value = props.contextName || businessName.value || "WALA";
     }
-  }
+  },
 );
 
 // Observar cambios en contextName (para FacilitatorLayout)
@@ -191,6 +220,6 @@ watch(
       displayName.value = newName;
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>

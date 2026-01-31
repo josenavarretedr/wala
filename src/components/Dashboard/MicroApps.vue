@@ -388,6 +388,7 @@ import {
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { useSubscription } from "@/composables/useSubscription";
 
 // Props
 const props = defineProps({
@@ -403,6 +404,9 @@ const emit = defineEmits(["navigateToApp"]);
 // Stores
 const programStore = useProgramStore();
 const userStore = useUserStore();
+
+// Subscription
+const { isPremium } = useSubscription();
 
 // Estado del modal
 const showModal = ref(false);
@@ -541,8 +545,13 @@ const getValue = (value) => {
 
 // Computed properties
 const visibleApps = computed(() => {
-  // Mostrar 8 apps principales + Premium (total 9)
-  return allMicroApps.value.slice(0, 9);
+  // Obtener las apps principales
+  const apps = allMicroApps.value.slice(0, 9);
+  // Si el usuario ya es premium, filtrar el menú de Premium (id: 9)
+  if (isPremium.value) {
+    return apps.filter((app) => app.id !== 9);
+  }
+  return apps;
 });
 
 const availableApps = computed(() => {
