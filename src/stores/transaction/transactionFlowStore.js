@@ -10,6 +10,7 @@ import StepAddIncomeDetails from '@/components/transactionFlow/StepAddIncomeDeta
 import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDetails.vue';
 import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePreview.vue';
 import StepAddExpensePreview from '@/components/transactionFlow/StepAddExpensePreview.vue';
+import StepAddQuotePreview from '@/components/transactionFlow/StepAddQuotePreview.vue';
 // import StepSummary from '@/components/transactionFlow/StepSummary.vue';
 
 import StepTransferDetails from '@/components/transactionFlow/StepTransferDetails.vue';
@@ -100,6 +101,13 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push(
           { label: 'Detalles transferencia', component: StepTransferDetails },
           { label: 'Preview transferencia', component: StepTransferPreview }
+        );
+      } else if (transactionType === 'quote') {
+        // NUEVO FLUJO PARA COTIZACION
+        this.steps.push(
+          { label: 'Detalles cotización', component: StepAddIncomeDetails },
+          { label: 'Adjuntar cliente', component: StepAttachClient },
+          { label: 'Preview cotización', component: StepAddQuotePreview }
         );
       }
 

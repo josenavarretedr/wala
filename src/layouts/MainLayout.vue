@@ -103,7 +103,7 @@ router.afterEach(() => {
 const currentBusiness = computed(() => userStore.currentBusiness); // UserStore: relación usuario-negocio
 const businessData = computed(() => businessStore.business); // BusinessStore: datos completos del negocio
 const currentBusinessId = computed(
-  () => route.params.businessId || userStore.currentBusiness?.businessId
+  () => route.params.businessId || userStore.currentBusiness?.businessId,
 );
 
 // ✅ Usar UserStore para roles y permisos (fuente única de verdad para el contexto usuario-negocio)
@@ -167,6 +167,13 @@ const mainItems = computed(() => {
       to: `/business/${businessId}/programs`,
       badge: programStore.hasActiveProgram ? "●" : null,
       badgeColor: "text-green-500",
+      permission: null,
+    },
+    {
+      icon: "BrightCrown",
+      label: "Premium",
+      to: `/business/${businessId}/premium`,
+      badgeColor: "text-orange-500",
       permission: null,
     },
   ];

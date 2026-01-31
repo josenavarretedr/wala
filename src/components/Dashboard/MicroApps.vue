@@ -384,6 +384,7 @@ import {
   Group,
   Community,
   BrightCrown,
+  Bookmark,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -464,6 +465,15 @@ const allMicroApps = ref([
   },
   {
     id: 7,
+    name: "Cotizaciones",
+    route: "/quotes",
+    available: true,
+    icon: Bookmark,
+    isComponent: true,
+    color: "purple",
+  },
+  {
+    id: 8,
     name: computed(() => userStore.currentBusinessProgramName),
     route: computed(() => {
       // Obtener el programa más reciente
@@ -484,7 +494,7 @@ const allMicroApps = ref([
     color: "teal",
   },
   {
-    id: 8,
+    id: 9,
     name: "Premium",
     route: "/premium",
     available: true,
@@ -531,8 +541,8 @@ const getValue = (value) => {
 
 // Computed properties
 const visibleApps = computed(() => {
-  // Mostrar 7 apps principales + Premium (total 8)
-  return allMicroApps.value.slice(0, 8);
+  // Mostrar 8 apps principales + Premium (total 9)
+  return allMicroApps.value.slice(0, 9);
 });
 
 const availableApps = computed(() => {
@@ -596,7 +606,10 @@ watch(showModal, (newValue) => {
 <style scoped>
 /* Transiciones suaves y minimalistas */
 .group {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease,
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
     background-color 0.2s ease;
 }
 

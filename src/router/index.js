@@ -176,6 +176,20 @@ const routes = [
         meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
       },
 
+      // ✅ NUEVO: Cotizaciones
+      {
+        path: 'quotes',
+        name: 'Quotes',
+        component: () => import('@/views/Quotes.vue'),
+        meta: { requiresAuth: true, title: 'Cotizaciones' }
+      },
+      {
+        path: 'quotes/:quoteId',
+        name: 'QuoteDetails',
+        component: () => import('@/components/HistorialRecords/Details/QuoteDetails.vue'),
+        meta: { requiresAuth: true, title: 'Detalle de Cotización' }
+      },
+
       // ✨ NUEVO: Premium
       {
         path: 'premium',

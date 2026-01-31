@@ -473,6 +473,20 @@ export function useTransactionStore() {
         }
       }
 
+      // ✅ SI LA TRANSACCIÓN VIENE DE UNA COTIZACIÓN, MARCARLA COMO CONVERTIDA
+      if (transactionToAdd.value.quoteId) {
+        try {
+          console.log(`🔄 Marcando cotización ${transactionToAdd.value.quoteNumber} como convertida`);
+          const { useQuotes } = await import('@/composables/useQuotes');
+          const { markQuoteAsConverted } = useQuotes();
+          await markQuoteAsConverted(transactionToAdd.value.quoteId, transactionToAdd.value.uuid);
+          console.log('✅ Cotización marcada como convertida exitosamente');
+        } catch (quoteError) {
+          console.warn('⚠️ No se pudo marcar cotización como convertida:', quoteError);
+          // No lanzar error, la transacción ya se guardó correctamente
+        }
+      }
+
       // === TRAZABILIDAD: Finalizar operación compleja ===
       await operationChain.finish({
         reason: 'transaction_creation_completed',
@@ -2211,6 +2225,157 @@ export function useTransactionStore() {
     }
   };
 
+  /**
+   * Genera el próximo número de cotización automáticamente
+   * Formato: COT-YYYY-####
+   */
+  const getNextQuoteNumber = async () => {
+    try {
+      const businessId = ensureBusinessId();
+      const db = getFirestore();
+      const currentYear = new Date().getFullYear();
+
+      // Buscar todas las cotizaciones del año actual
+      const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+      const quotesRef = collection(db, 'businesses', businessId, 'quotes');
+      const q = query(
+        quotesRef,
+        where('year', '==', currentYear),
+        orderBy('quoteNumber', 'desc'),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        // Primera cotización del año
+        return `COT-${currentYear}-0001`;
+      }
+
+      // Obtener el último número y sumar 1
+      const lastQuote = snapshot.docs[0].data();
+      const lastNumber = parseInt(lastQuote.quoteNumber.split('-')[2]) || 0;
+      const nextNumber = lastNumber + 1;
+
+      return `COT-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
+
+    } catch (error) {
+      console.error('❌ Error generando número de cotización:', error);
+      // Fallback
+      const currentYear = new Date().getFullYear();
+      return `COT-${currentYear}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
+    }
+  };
+
+  /**
+   * Guarda una cotización en Firestore
+   * Las cotizaciones NO afectan inventario ni cuentas, solo se guardan para referencia
+   * @param {number} expirationDays - Días de validez de la cotización
+   */
+  const addQuote = async (expirationDays = 15) => {
+    try {
+      console.log('📋 Iniciando guardado de cotización...');
+
+      // Validaciones básicas
+      if (!transactionToAdd.value.items || transactionToAdd.value.items.length === 0) {
+        throw new Error('La cotización debe tener al menos un producto');
+      }
+
+      // Generar UUID y número de cotización
+      const quoteUuid = uuidv4();
+      const quoteNumber = await getNextQuoteNumber();
+      const businessId = ensureBusinessId();
+      const currentUser = await import('@/composables/useAuth').then(m => m.useAuth().getCurrentUser());
+
+      // Calcular total
+      const total = getTransactionToAddTotal();
+
+      // Calcular fecha de expiración
+      const expirationDate = new Date();
+      expirationDate.setDate(expirationDate.getDate() + expirationDays);
+
+      // Crear objeto de cotización
+      const quote = {
+        uuid: quoteUuid,
+        quoteNumber: quoteNumber,
+        type: 'quote',
+        status: 'pending', // pending | converted | cancelled | expired
+
+        // Fechas
+        createdAt: serverTimestamp(),
+        expiresAt: Timestamp.fromDate(expirationDate),
+        year: new Date().getFullYear(),
+        expirationDays: expirationDays,
+
+        // Cliente
+        clientId: transactionToAdd.value.clientId || ANONYMOUS_CLIENT_ID,
+        clientName: transactionToAdd.value.clientName || 'Cliente Anónimo',
+
+        // Productos
+        items: transactionToAdd.value.items.map(item => ({
+          uuid: item.uuid || item.selectedProductUuid,
+          name: item.name || item.description,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'unidad',
+          price: item.price,
+          totalItemPrice: item.price * item.quantity
+        })),
+
+        // Totales
+        total: total,
+        amount: total,
+        itemsCount: transactionToAdd.value.items.length,
+
+        // Metadata
+        businessId: businessId,
+        userId: currentUser?.uid || 'unknown',
+        convertedToTransactionId: null, // Se llenará cuando se convierta a venta
+        convertedAt: null,
+
+        // Notas
+        notes: transactionToAdd.value.notes || ''
+      };
+
+      console.log('📋 Guardando cotización:', {
+        quoteNumber: quote.quoteNumber,
+        total: quote.total,
+        itemsCount: quote.itemsCount,
+        clientName: quote.clientName,
+        expiresAt: expirationDate
+      });
+
+      // Guardar en Firestore en colección separada 'quotes'
+      const db = getFirestore();
+      const { doc, setDoc } = await import('firebase/firestore');
+      const quoteRef = doc(db, 'businesses', businessId, 'quotes', quoteUuid);
+
+      await setDoc(quoteRef, quote);
+
+      console.log('✅ Cotización guardada exitosamente:', quoteNumber);
+
+      // Actualizar metadata del cliente si existe
+      if (quote.clientId && quote.clientId !== ANONYMOUS_CLIENT_ID) {
+        try {
+          const { useClientStore } = await import('@/stores/clientStore');
+          const clientStore = useClientStore();
+          await clientStore.updateClientMetadata(quote.clientId);
+          console.log('✅ Metadata del cliente actualizada');
+        } catch (clientError) {
+          console.warn('⚠️ No se pudo actualizar metadata del cliente:', clientError);
+        }
+      }
+
+      status.value = 'success';
+      return { success: true, quoteNumber: quote.quoteNumber, quoteUuid: quote.uuid };
+
+    } catch (error) {
+      console.error('❌ Error guardando cotización:', error);
+      status.value = 'error';
+      throw error;
+    }
+  };
+
   return {
     transactionsInStore,
     transactionToAdd,
@@ -2219,6 +2384,8 @@ export function useTransactionStore() {
     itemToAddInExpenseMaterial,
     status,
     addTransaction,
+    addQuote,
+    getNextQuoteNumber,
     getTransactions,
     getTransactionsToday,
     getTransactionsByDayStore,

@@ -139,10 +139,14 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Detalles ingreso":
+    case "Detalles cotización":
     case "Detalles egreso":
     case "Detalles transferencia":
-      // Para ingresos, verificar que haya items
-      if (currentStepLabel === "Detalles ingreso") {
+      // Para ingresos y cotizaciones, verificar que haya items
+      if (
+        currentStepLabel === "Detalles ingreso" ||
+        currentStepLabel === "Detalles cotización"
+      ) {
         result = transactionData.items && transactionData.items.length > 0;
       }
       // Para egresos, verificar según la categoría
@@ -181,7 +185,8 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Preview ingreso":
-      // Para preview de ingresos, siempre permitir finalizar
+    case "Preview cotización":
+      // Para preview de ingresos y cotizaciones, siempre permitir finalizar
       result = true;
       break;
 
@@ -309,35 +314,74 @@ const finalizarRegistro = async () => {
       paymentStatus: transactionStore.transactionToAdd.value.paymentStatus,
     });
 
-    await transactionStore.addTransaction();
+    // Detectar si es una cotización
+    const isQuote = transactionStore.transactionToAdd.value.type === "quote";
 
-    console.log("✅ Transacción guardada exitosamente");
+    if (isQuote) {
+      // Guardar como cotización (sin afectar inventario ni cuentas)
+      console.log("📋 Guardando como cotización...");
 
-    const businessId = businessStore.getBusinessId;
+      // Obtener los días de expiración del transactionStore
+      const expirationDays =
+        transactionStore.transactionToAdd.value.expirationDays || 15;
 
-    // NO resetear loading aquí, mantener el botón deshabilitado hasta navegar
-    flow.transactionLoading = false;
-    // isFinalizando.value sigue en true para mantener botón deshabilitado
+      const result = await transactionStore.addQuote(expirationDays);
 
-    // Primer toast: Éxito
-    success("Transacción registrada");
+      console.log("✅ Cotización guardada:", result.quoteNumber);
 
-    // Esperar 2.5 segundos para que se vea el primer toast
-    setTimeout(() => {
-      success("Regresando al dashboard...");
+      const businessId = businessStore.getBusinessId;
+      flow.transactionLoading = false;
+
+      // Toast de éxito para cotización
+      success(`Cotización ${result.quoteNumber} creada exitosamente`);
 
       setTimeout(() => {
-        router.replace({
-          name: "BusinessDashboard",
-          params: { businessId },
-        });
+        success("Regresando al dashboard...");
 
-        // Resetear y navegar
-        transactionStore.resetTransactionToAdd();
-        flow.resetFlow();
-        isFinalizando.value = false;
-      }, 500); // Pequeña espera antes de navegar
-    }, 2000);
+        setTimeout(() => {
+          router.replace({
+            name: "BusinessDashboard",
+            params: { businessId },
+          });
+
+          // Resetear y navegar
+          transactionStore.resetTransactionToAdd();
+          flow.resetFlow();
+          isFinalizando.value = false;
+        }, 500);
+      }, 2000);
+    } else {
+      // Flujo normal de transacción
+      await transactionStore.addTransaction();
+
+      console.log("✅ Transacción guardada exitosamente");
+
+      const businessId = businessStore.getBusinessId;
+
+      // NO resetear loading aquí, mantener el botón deshabilitado hasta navegar
+      flow.transactionLoading = false;
+      // isFinalizando.value sigue en true para mantener botón deshabilitado
+
+      // Primer toast: Éxito
+      success("Transacción registrada");
+
+      // Esperar 2.5 segundos para que se vea el primer toast
+      setTimeout(() => {
+        success("Regresando al dashboard...");
+
+        setTimeout(() => {
+          router.replace({
+            name: "BusinessDashboard",
+            params: { businessId },
+          });
+
+          // Resetear y navegar
+          transactionStore.resetTransactionToAdd();
+          flow.resetFlow();
+          isFinalizando.value = false;
+        }, 500); // Pequeña espera antes de navegar
+      }, 2000);
+    }
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);
     flow.transactionLoading = false;
