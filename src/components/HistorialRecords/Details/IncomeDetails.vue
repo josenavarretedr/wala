@@ -210,14 +210,12 @@
           Agrega productos para ver el resumen
         </p>
       </div>
-
       <!-- Información de pago parcial o historial -->
       <div
         v-if="
           transactionData.items &&
           transactionData.items.length > 0 &&
-          transactionData.payments &&
-          transactionData.payments.length > 0
+          isOnePayment === false
         "
         :class="[
           'border-b p-4',
@@ -391,6 +389,14 @@ const getPaymentStatus = () => {
 const getTotalPaid = () => {
   return props.transactionData.totalPaid || 0;
 };
+
+const isOnePayment = computed(() => {
+  return (
+    props.transactionData.payments &&
+    props.transactionData.payments.length === 1 &&
+    props.transactionData.payments[0].amount === getTotal()
+  );
+});
 
 const getBalance = () => {
   return props.transactionData.balance || 0;

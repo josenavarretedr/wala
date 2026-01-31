@@ -503,7 +503,7 @@ async function registerPayment() {
   try {
     await addPaymentToTransaction(
       selectedTransaction.value.uuid,
-      paymentForm.value
+      paymentForm.value,
     );
 
     // Cerrar modal y mostrar éxito

@@ -1,0 +1,98 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════
+// 🔐 FIREBASE STORAGE SECURITY RULES
+// ═══════════════════════════════════════════════════════════
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ═══════════════════════════════════════════════════════════
+    // 📎 FILE ATTACHMENTS (Temporal Upload)
+    // ═══════════════════════════════════════════════════════════
+    
+    // Path: uploads/tmp/{tenantId}/{uid}/{timestamp-fileId}/original
+    // Path: uploads/tmp/{tenantId}/{uid}/{timestamp-fileId}/preview
+    match /uploads/tmp/{tenantId}/{uid}/{fileFolder}/{fileName} {
+      
+      // LECTURA: Solo el dueño puede leer sus archivos temporales
+      allow read: if request.auth != null 
+                  && request.auth.uid == uid;
+      
+      // ESCRITURA: Solo el dueño puede subir archivos a su carpeta
+      allow write: if request.auth != null 
+                   && request.auth.uid == uid
+                   && validateFileUpload();
+      
+      // DELETE: Solo el dueño puede eliminar
+      allow delete: if request.auth != null 
+                    && request.auth.uid == uid;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 📁 FILE ATTACHMENTS (Final Location - Futuro)
+    // ═══════════════════════════════════════════════════════════
+    
+    // Path: uploads/{tenantId}/{entityType}/{entityId}/{fileId}/original
+    // Path: uploads/{tenantId}/{entityType}/{entityId}/{fileId}/preview
+    match /uploads/{tenantId}/{entityType}/{entityId}/{fileId}/{fileName} {
+      
+      // LECTURA: Usuarios autenticados del mismo tenant
+      allow read: if request.auth != null;
+                  // TODO: Agregar validación de tenantId cuando se implemente
+      
+      // ESCRITURA: Solo usuarios autenticados del tenant
+      allow write: if request.auth != null
+                   && validateFileUpload();
+      
+      // DELETE: Solo el owner o admin
+      allow delete: if request.auth != null;
+                    // TODO: Agregar validación de permisos
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🚫 DENEGAR TODO LO DEMÁS
+    // ═══════════════════════════════════════════════════════════
+    
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 🔧 FUNCIONES DE VALIDACIÓN
+    // ═══════════════════════════════════════════════════════════
+    
+    /**
+     * Valida que el archivo cumpla con los requisitos
+     */
+    function validateFileUpload() {
+      return validateFileSize() 
+             && validateFileType();
+    }
+
+    /**
+     * Valida el tamaño del archivo (máx 5MB)
+     */
+    function validateFileSize() {
+      let maxSize = 5 * 1024 * 1024; // 5MB en bytes
+      return request.resource.size <= maxSize;
+    }
+
+    /**
+     * Valida el tipo de archivo (solo imágenes y PDF)
+     */
+    function validateFileType() {
+      let allowedTypes = [
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/heic',
+        'image/heif',
+        'image/webp',
+        'application/pdf'
+      ];
+      
+      return request.resource.contentType in allowedTypes;
+    }
+  }
+}

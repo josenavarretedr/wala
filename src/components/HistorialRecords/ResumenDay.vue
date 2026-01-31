@@ -39,8 +39,8 @@
             resultadoOperacional > 0
               ? 'bg-green-50'
               : resultadoOperacional < 0
-              ? 'bg-red-50'
-              : 'bg-gray-50',
+                ? 'bg-red-50'
+                : 'bg-gray-50',
           ]"
         >
           <p class="text-xs text-gray-500 mb-1">Resultado del día</p>
@@ -50,20 +50,20 @@
               resultadoOperacional > 0
                 ? 'text-green-600'
                 : resultadoOperacional < 0
-                ? 'text-red-600'
-                : 'text-gray-700',
+                  ? 'text-red-600'
+                  : 'text-gray-700',
             ]"
           >
             {{
               resultadoOperacional === 0
                 ? "Sin ganancias ni pérdidas"
                 : resultadoOperacional > 0
-                ? `Ganaste S/ ${resultadoOperacional.toFixed(2)} hoy`
-                : `Perdiste S/ ${Math.abs(resultadoOperacional).toFixed(2)} hoy`
+                  ? `Ganaste S/ ${resultadoOperacional.toFixed(2)}`
+                  : `Perdiste S/ ${Math.abs(resultadoOperacional).toFixed(2)}`
             }}
           </p>
           <p class="text-xs text-gray-400">
-            Basado en los movimientos registrados hoy.
+            Basado tus movimientos registrados.
           </p>
         </div>
 
@@ -301,7 +301,7 @@ const totalAjustesCierre = computed(() => {
   return accountsBalanceStore.totalAjustesCierre;
 });
 const resultadoOperacional = computed(
-  () => accountsBalanceStore.resultadoOperacional
+  () => accountsBalanceStore.resultadoOperacional,
 );
 const saldoActual = computed(() => accountsBalanceStore.saldoActual);
 
@@ -314,12 +314,12 @@ watch(
   async (newTransactions) => {
     if (newTransactions && newTransactions.length > 0) {
       console.log(
-        "🔄 ResumenDay - Detectados cambios en transacciones, recargando..."
+        "🔄 ResumenDay - Detectados cambios en transacciones, recargando...",
       );
       await accountsBalanceStore.forceReloadSummary();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // 🔄 Watch para detectar cambios en dailySummary directamente
@@ -340,7 +340,7 @@ watch(
       }
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Inicialización
@@ -360,7 +360,7 @@ onMounted(async () => {
     console.log("   🔥 Listener activo - se actualizará automáticamente");
   } else {
     console.log(
-      "ℹ️ ResumenDay - DailySummary no disponible, usando cálculo manual"
+      "ℹ️ ResumenDay - DailySummary no disponible, usando cálculo manual",
     );
     console.log("   Fuente de datos: Transacciones locales (fallback)");
     console.log("   🔥 Listener activo - esperando primera transacción");
@@ -378,7 +378,7 @@ onMounted(async () => {
 // 🛑 Detener listener cuando el componente se desmonta
 onBeforeUnmount(() => {
   console.log(
-    "🛑 ResumenDay - Desmontando componente y deteniendo listener..."
+    "🛑 ResumenDay - Desmontando componente y deteniendo listener...",
   );
   accountsBalanceStore.stopDailySummaryListener();
 });

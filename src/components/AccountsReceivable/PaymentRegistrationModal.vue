@@ -68,7 +68,7 @@
 
       <!-- Contenido del formulario -->
       <div class="px-6 py-6 space-y-6">
-        <!-- Opciones de método de pago (copiado de StepPaymentMethod) -->
+        <!-- Opciones de método de pago -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-3">
             Método de pago
@@ -138,73 +138,162 @@
           </div>
         </div>
 
-        <!-- Monto a pagar -->
-        <div v-if="selectedMethod" class="bg-gray-50 p-4 rounded-lg space-y-3">
-          <label class="block text-sm font-medium text-gray-700">
-            Monto a pagar
-          </label>
-          <div class="relative">
-            <span
-              class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold"
-              >S/</span
-            >
-            <input
-              v-model.number="paymentAmount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              :max="transaction?.balance || 0"
-              class="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-300 focus:border-blue-500 focus:outline-none text-lg font-semibold"
-              placeholder="0.00"
-              autofocus
-            />
+        <!-- Tipo de pago: Completo o Parcial -->
+        <div v-if="selectedMethod" class="max-w-lg mx-auto space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <label class="block text-sm font-medium text-gray-700 mb-3">
+              ¿Cuánto pagará el cliente?
+            </label>
+
+            <div class="space-y-3">
+              <!-- Pago Completo -->
+              <button
+                @click="setPaymentType('complete')"
+                :class="[
+                  'w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between',
+                  paymentType === 'complete'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300',
+                ]"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                      paymentType === 'complete'
+                        ? 'border-green-500'
+                        : 'border-gray-300',
+                    ]"
+                  >
+                    <div
+                      v-if="paymentType === 'complete'"
+                      class="w-3 h-3 rounded-full bg-green-500"
+                    ></div>
+                  </div>
+                  <div class="text-left">
+                    <div class="font-medium text-gray-800">Pago Completo</div>
+                    <div class="text-xs text-gray-500">
+                      Liquidar el saldo total
+                    </div>
+                  </div>
+                </div>
+                <span class="text-lg font-semibold text-green-600"
+                  >S/ {{ (transaction?.balance || 0).toFixed(2) }}</span
+                >
+              </button>
+
+              <!-- Abono / Pago Parcial -->
+              <button
+                @click="handlePartialAmountInputFocus()"
+                :class="[
+                  'w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between',
+                  paymentType === 'partial'
+                    ? 'border-orange-500 bg-orange-50'
+                    : 'border-gray-200 bg-white hover:border-gray-300',
+                ]"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                      paymentType === 'partial'
+                        ? 'border-orange-500'
+                        : 'border-gray-300',
+                    ]"
+                  >
+                    <div
+                      v-if="paymentType === 'partial'"
+                      class="w-3 h-3 rounded-full bg-orange-500"
+                    ></div>
+                  </div>
+                  <div class="text-left">
+                    <div class="font-medium text-gray-800">
+                      Abono / Pago Parcial
+                    </div>
+                    <div class="text-xs text-gray-500">
+                      El cliente abonará una parte
+                    </div>
+                  </div>
+                </div>
+                <span class="text-lg font-semibold text-orange-600"
+                  >Parcial</span
+                >
+              </button>
+            </div>
           </div>
 
-          <!-- Cálculo de nuevo saldo -->
-          <div v-if="paymentAmount > 0" class="space-y-2 text-sm">
-            <div class="flex justify-between text-gray-600">
-              <span>Saldo actual:</span>
-              <span class="font-medium"
-                >S/ {{ transaction?.balance?.toFixed(2) }}</span
-              >
-            </div>
-            <div class="flex justify-between text-gray-600">
-              <span>Pago a registrar:</span>
-              <span class="font-medium text-blue-600"
-                >S/ {{ paymentAmount.toFixed(2) }}</span
-              >
-            </div>
-            <div
-              class="flex justify-between text-gray-800 font-semibold border-t border-gray-300 pt-2"
-            >
-              <span>Nuevo saldo:</span>
-              <span
-                :class="[newBalance > 0 ? 'text-orange-600' : 'text-green-600']"
-              >
-                S/ {{ newBalance.toFixed(2) }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Error de validación -->
+          <!-- Input de monto parcial -->
           <div
-            v-if="validationError"
-            class="text-sm text-red-600 flex items-center gap-2 bg-red-50 p-3 rounded-lg"
+            v-if="paymentType === 'partial'"
+            class="bg-orange-50 p-4 rounded-lg space-y-3"
           >
-            <svg
-              class="w-5 h-5 flex-shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            <label class="block text-sm font-medium text-gray-700">
+              Monto del abono
+            </label>
+            <div class="relative">
+              <span
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                >S/</span
+              >
+              <input
+                ref="partialAmountInput"
+                v-model.number="paymentAmount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                :max="transaction?.balance || 0"
+                class="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-orange-200 focus:border-orange-500 focus:outline-none text-lg font-semibold"
+                placeholder="0.00"
+                @input="handlePartialAmountInput"
               />
-            </svg>
-            <span>{{ validationError }}</span>
+            </div>
+
+            <!-- Validación y cálculo de saldo -->
+            <div v-if="paymentAmount > 0" class="space-y-2 text-sm">
+              <div class="flex justify-between text-gray-600">
+                <span>Saldo actual:</span>
+                <span class="font-medium"
+                  >S/ {{ (transaction?.balance || 0).toFixed(2) }}</span
+                >
+              </div>
+              <div class="flex justify-between text-gray-600">
+                <span>Abono a registrar:</span>
+                <span class="font-medium text-orange-600"
+                  >S/ {{ paymentAmount.toFixed(2) }}</span
+                >
+              </div>
+              <div
+                class="flex justify-between text-gray-800 font-semibold border-t border-gray-300 pt-2"
+              >
+                <span>Nuevo saldo:</span>
+                <span
+                  :class="[newBalance > 0 ? 'text-red-600' : 'text-green-600']"
+                >
+                  S/ {{ newBalance.toFixed(2) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Error de validación -->
+            <div
+              v-if="validationError"
+              class="text-sm text-red-600 flex items-center gap-2"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{{ validationError }}</span>
+            </div>
           </div>
         </div>
 
@@ -257,7 +346,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useAccountsReceivable } from "@/composables/useAccountsReceivable";
 
 const props = defineProps({
@@ -277,10 +366,12 @@ const { addPaymentToTransaction } = useAccountsReceivable();
 
 // Estado local
 const selectedMethod = ref(null);
+const paymentType = ref("complete"); // 'complete' | 'partial'
 const paymentAmount = ref(0);
 const notes = ref("");
 const isLoading = ref(false);
 const validationError = ref("");
+const partialAmountInput = ref(null);
 
 // Computed
 const newBalance = computed(() => {
@@ -308,13 +399,86 @@ watch(paymentAmount, (newAmount) => {
 
   if (newAmount > (props.transaction?.balance || 0)) {
     validationError.value = `El monto no puede exceder el saldo pendiente de S/ ${props.transaction?.balance?.toFixed(
-      2
+      2,
     )}`;
     return;
   }
 });
 
+// Cuando se selecciona un método de pago y está en modo "complete", establecer el monto automáticamente
+watch(selectedMethod, (newMethod) => {
+  if (newMethod && paymentType.value === "complete") {
+    paymentAmount.value = props.transaction?.balance || 0;
+  }
+});
+
 // Methods
+function setPaymentType(type) {
+  paymentType.value = type;
+  validationError.value = "";
+
+  if (type === "complete") {
+    paymentAmount.value = props.transaction?.balance || 0;
+  } else {
+    // Si viene de complete y el monto es igual al balance, dejarlo en balance - 1
+    if (paymentAmount.value === (props.transaction?.balance || 0)) {
+      paymentAmount.value = Math.max((props.transaction?.balance || 0) - 1, 0);
+    } else if (paymentAmount.value === 0) {
+      // Si es 0, también dejarlo en un valor válido
+      paymentAmount.value = Math.max((props.transaction?.balance || 0) - 1, 0);
+    }
+
+    // Enfocar el input en el siguiente tick
+    nextTick(() => {
+      if (partialAmountInput.value) {
+        partialAmountInput.value.focus();
+      }
+    });
+  }
+}
+
+function handlePartialAmountInputFocus() {
+  setPaymentType("partial");
+
+  nextTick(() => {
+    if (partialAmountInput.value) {
+      partialAmountInput.value.focus();
+    }
+  });
+}
+
+function handlePartialAmountInput() {
+  validationError.value = "";
+
+  // Si el monto es mayor al balance, auto-cambiar a pago completo
+  if (paymentAmount.value > (props.transaction?.balance || 0)) {
+    // Guardar el valor actual menos 1 para que si regresa a partial tenga un valor válido
+    const savedPartialAmount = Math.max(
+      (props.transaction?.balance || 0) - 1,
+      0,
+    );
+
+    // Cambiar a pago completo
+    paymentType.value = "complete";
+
+    // Primero guardar el monto parcial válido (temporalmente)
+    paymentAmount.value = savedPartialAmount;
+
+    // Luego en el siguiente tick, setear el monto completo
+    nextTick(() => {
+      paymentAmount.value = props.transaction?.balance || 0;
+    });
+
+    validationError.value = "";
+    return;
+  }
+
+  if (paymentAmount.value <= 0) {
+    validationError.value = "El monto debe ser mayor a 0";
+    return;
+  }
+}
+
 function getTotal() {
   return props.transaction?.total || props.transaction?.amount || 0;
 }
@@ -352,6 +516,7 @@ function closeModal() {
 
 function resetForm() {
   selectedMethod.value = null;
+  paymentType.value = "complete";
   paymentAmount.value = 0;
   notes.value = "";
   validationError.value = "";
@@ -364,7 +529,7 @@ watch(
     if (!isOpen) {
       resetForm();
     }
-  }
+  },
 );
 </script>
 

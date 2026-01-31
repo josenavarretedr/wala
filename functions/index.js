@@ -24,7 +24,10 @@ exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 // ✨ PROGRAMAS (MÓDULO JUNTOS)
 exports.joinProgramByCode = require('./src/Programs/joinProgramByCode').joinProgramByCode;
 
-// 🖼️ SHARE - Renderizado de imágenes server-side (Gen2)
+// � STORAGE - Procesamiento de archivos subidos
+exports.processFileUpload = require('./src/Storage/processFileUpload').processFileUpload;
+
+// �🖼️ SHARE - Renderizado de imágenes server-side (Gen2)
 exports.renderToImageV2 = require('./src/Share/renderToImage').renderToImage;
 
 // 💳 PAYMENTS - Mercado Pago Integration

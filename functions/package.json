@@ -24,6 +24,7 @@
     "mercadopago": "^2.12.0",
     "openai": "^6.3.0",
     "puppeteer-core": "^24.36.0",
+    "sharp": "^0.33.2",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

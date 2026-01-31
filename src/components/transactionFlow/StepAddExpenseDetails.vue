@@ -311,7 +311,7 @@
                   {{
                     Math.max(
                       0,
-                      maxAmount - getMaterialsTotal() - getCurrentItemTotal()
+                      maxAmount - getMaterialsTotal() - getCurrentItemTotal(),
                     ).toFixed(2)
                   }}
                 </span>
@@ -411,7 +411,7 @@
                 <button
                   @click="
                     transactionStore.removeMaterialItemFromExpense(
-                      material.uuid
+                      material.uuid,
                     )
                   "
                   class="flex-shrink-0 p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
@@ -637,13 +637,13 @@ watch(
   async (newTransactions) => {
     if (newTransactions && newTransactions.length > 0) {
       console.log(
-        "🔄 StepAddExpenseDetails - Detectados cambios en transacciones, recargando saldos..."
+        "🔄 StepAddExpenseDetails - Detectados cambios en transacciones, recargando saldos...",
       );
       // Recargar dailySummary para obtener saldos actualizados
       await accountsBalanceStore.loadFromDailySummary();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // ========================================
@@ -766,7 +766,7 @@ const getMaterialsTotal = () => {
     (sum, material) => {
       return sum + (material.cost || 0) * (material.quantity || 0);
     },
-    0
+    0,
   );
 };
 
@@ -880,7 +880,7 @@ watch(
     if (transactionStore.transactionToAdd.value.category === "materials") {
       transactionStore.setExpenseAmount(newTotal);
     }
-  }
+  },
 );
 
 // Validar que el monto no exceda el máximo disponible (labor/overhead)
@@ -901,7 +901,7 @@ const addExpenseHandler = async () => {
 
   // Configurar la cuenta en el expensesStore
   expensesStore.modifyExpenseToAddAccount(
-    transactionStore.transactionToAdd.value.account
+    transactionStore.transactionToAdd.value.account,
   );
 
   flow.nextStep();
