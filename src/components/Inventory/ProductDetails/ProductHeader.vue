@@ -167,6 +167,36 @@
           </svg>
           <span>{{ trackStockLabelShort }}</span>
         </div>
+
+        <!-- 🤖 Badge: Clasificación IA -->
+        <div
+          v-if="classification && classification.category"
+          :key="`classification-${classification.category}`"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+          :class="classificationBadgeClass"
+        >
+          <svg
+            class="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            ></path>
+          </svg>
+          <span>{{ classificationLabel }}</span>
+          <!-- <span
+            v-if="classification.confidence"
+            class="ml-0.5 opacity-75"
+            :title="`Confianza: ${(classification.confidence * 100).toFixed(0)}%`"
+          >
+            {{ confidenceEmoji }}
+          </span> -->
+        </div>
       </div>
 
       <!-- Última actualización -->
@@ -234,6 +264,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  classification: {
+    type: Object,
+    default: null,
+  },
 });
 
 // Debug: Observar cambios en props
@@ -252,7 +286,7 @@ watch(
       productType: newType,
     });
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Debug específico para productType
@@ -264,7 +298,7 @@ watch(
       nuevo: newType,
       badgeClass: productTypeBadgeClass.value,
     });
-  }
+  },
 );
 
 const route = useRoute();
@@ -377,6 +411,63 @@ const unitLabelShort = computed(() => {
     paquete: "Paquete",
   };
   return units[props.unit] || props.unit;
+});
+
+// ==========================================
+// COMPUTED: Classification badge (🤖 IA)
+// ==========================================
+const classificationLabel = computed(() => {
+  if (!props.classification) return "";
+
+  const parts = [];
+  if (props.classification.category) parts.push(props.classification.category);
+  if (props.classification.subcategory)
+    parts.push(props.classification.subcategory);
+
+  return parts.join(" › ");
+});
+
+const classificationBadgeClass = computed(() => {
+  if (!props.classification) return "";
+
+  const source = props.classification.source;
+  const confidence = props.classification.confidence || 0;
+
+  // Color según fuente
+  if (source === "rules" || source === "local_match") {
+    // Match local - verde
+    return "bg-green-50 text-green-700 border border-green-200";
+  } else if (source === "llm") {
+    // IA - color según confianza
+    if (confidence >= 0.9) {
+      return "bg-blue-50 text-blue-700 border border-blue-200";
+    } else if (confidence >= 0.7) {
+      return "bg-yellow-50 text-yellow-700 border border-yellow-200";
+    } else {
+      return "bg-orange-50 text-orange-700 border border-orange-200";
+    }
+  } else if (source === "manual") {
+    return "bg-purple-50 text-purple-700 border border-purple-200";
+  }
+
+  return "bg-gray-50 text-gray-600 border border-gray-200";
+});
+
+const confidenceEmoji = computed(() => {
+  if (!props.classification || !props.classification.confidence) return "";
+
+  const confidence = props.classification.confidence;
+  const source = props.classification.source;
+
+  if (source === "rules" || source === "local_match") {
+    return "🎯"; // Match exacto
+  } else if (confidence >= 0.9) {
+    return "✨"; // Alta confianza
+  } else if (confidence >= 0.7) {
+    return "💡"; // Media confianza
+  } else {
+    return "⚠️"; // Baja confianza
+  }
 });
 </script>
 

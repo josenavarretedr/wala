@@ -53,7 +53,7 @@ const storage = getStorage(appFirebase);
  * @type {import("firebase/functions").Functions}
  * @see {@link https://firebase.google.com/docs/functions}
  */
-const functions = getFunctions(appFirebase, 'us-central1');
+const functions = getFunctions(appFirebase, 'southamerica-east1');
 
 // Verificar si estamos en un entorno local para conectar a los emuladores
 if (window.location.hostname === 'localhost') {

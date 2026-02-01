@@ -32,6 +32,25 @@ export const createBusiness = async (uid, businessData) => {
     createdAt: new Date(),
     updatedAt: new Date(),
 
+    // ===== CLASIFICACIÓN IA =====
+    industry: businessData.industry || 'otro',
+    industryDetectedBy: businessData.industry && businessData.industry !== 'otro' ? 'manual' : 'pending',
+    industryConfidence: businessData.industry && businessData.industry !== 'otro' ? 1.0 : 0.0,
+    description: businessData.descripcion || businessData.description || '',
+
+    // ===== CONTROL DE USO DE IA =====
+    aiUsage: {
+      classificationsThisMonth: 0,
+      llmCallsThisMonth: 0,
+      lastResetAt: new Date(),
+      plan: 'free',
+      limits: {
+        maxClassificationsPerDay: 50,
+        maxLLMCallsPerDay: 10
+      }
+    },
+    hasCustomTaxonomy: false,
+
     // ===== INFORMACIÓN DE CONTACTO =====
     contactInfo: {
       email: businessData.contactInfo?.email || businessData.email || '',

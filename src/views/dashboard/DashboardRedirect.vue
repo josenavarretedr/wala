@@ -1,5 +1,31 @@
 <template>
   <div class="space-y-6 mb-20">
+    <!-- 🔧 DEV: Botón temporal para inicializar taxonomías -->
+    <!-- <div class="max-w-2xl mx-auto px-4">
+      <button
+        v-if="!taxonomiesInitialized"
+        @click="initTaxonomies"
+        :disabled="initializingTaxonomies"
+        class="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+      >
+        <span v-if="initializingTaxonomies"
+          >⏳ Inicializando taxonomías...</span
+        >
+        <span v-else>🤖 Inicializar Taxonomías IA (Solo una vez)</span>
+      </button>
+      <div
+        v-if="taxonomyMessage"
+        :class="[
+          'mt-2 p-3 rounded-lg text-sm',
+          taxonomyError
+            ? 'bg-red-50 text-red-800 border border-red-200'
+            : 'bg-green-50 text-green-800 border border-green-200',
+        ]"
+      >
+        {{ taxonomyMessage }}
+      </div>
+    </div> -->
+
     <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
     <div class="max-w-2xl lg:max-w-none mx-auto">
       <MicroApps
@@ -55,6 +81,10 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useOnboarding } from "@/composables/useOnboarding";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import appFirebase from "@/firebaseInit";
+
+const functions = getFunctions(appFirebase, "southamerica-east1");
 
 // Imports de componentes
 import MicroApps from "@/components/Dashboard/MicroApps.vue";
@@ -75,6 +105,12 @@ const { autoStartIfFirstVisit } = useOnboarding(); // ✅ Sistema de onboarding
 
 const metrics = ref(null);
 const metricsLoading = ref(false);
+
+// Estados para inicialización de taxonomías
+const initializingTaxonomies = ref(false);
+const taxonomiesInitialized = ref(false);
+const taxonomyMessage = ref("");
+const taxonomyError = ref(false);
 
 // BusinessStore: datos completos del negocio
 const businessId = computed(
@@ -136,6 +172,58 @@ const loadDashboardData = async () => {
   } catch (error) {
     console.error("Error al cargar dashboard:", error);
     metricsLoading.value = false;
+  }
+};
+
+// Función para inicializar taxonomías (solo se ejecuta una vez)
+const initTaxonomies = async () => {
+  try {
+    initializingTaxonomies.value = true;
+    taxonomyMessage.value = "";
+    taxonomyError.value = false;
+
+    // Detectar si estamos en desarrollo (emuladores) o producción
+    const isDev =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+    const functionUrl = isDev
+      ? "http://127.0.0.1:5001/wala-lat/southamerica-east1/initializeTaxonomies"
+      : "https://southamerica-east1-wala-lat.cloudfunctions.net/initializeTaxonomies";
+
+    console.log("🔧 Llamando a función:", functionUrl);
+
+    // Llamar como HTTP request en lugar de callable
+    const response = await fetch(functionUrl, {
+      method: "GET",
+    });
+
+    console.log("📡 Response status:", response.status);
+
+    const result = await response.json();
+
+    console.log("📦 Response data:", result);
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error || JSON.stringify(result) || "Error desconocido",
+      );
+    }
+
+    taxonomiesInitialized.value = true;
+    taxonomyError.value = false;
+
+    const created = result.results.filter((r) => r.status === "created").length;
+    const skipped = result.results.filter((r) => r.status === "skipped").length;
+
+    taxonomyMessage.value = `✅ ${created} taxonomías creadas, ${skipped} ya existían. Total de categorías: ${result.results.reduce((acc, r) => acc + r.categoriesCount, 0)}`;
+
+    console.log("✅ Taxonomías inicializadas:", result);
+  } catch (error) {
+    taxonomyError.value = true;
+    taxonomyMessage.value = `❌ Error: ${error.message}`;
+    console.error("❌ Error al inicializar taxonomías:", error);
+  } finally {
+    initializingTaxonomies.value = false;
   }
 };
 

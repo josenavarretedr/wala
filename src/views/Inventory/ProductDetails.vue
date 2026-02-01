@@ -61,6 +61,7 @@
         :track-stock="product.trackStock"
         :unit="product.unit"
         :stock-log="product.stockLog"
+        :classification="product.classification"
         class="mb-6"
       />
 
@@ -150,13 +151,13 @@ const loadProduct = async () => {
     console.log("🔍 [ProductDetails] ProductData recibido:", productData);
     console.log(
       "🔍 [ProductDetails] StockLog count:",
-      productData?.stockLog?.length || 0
+      productData?.stockLog?.length || 0,
     );
 
     if (productData?.stockLog?.length > 0) {
       console.log(
         "🔍 [ProductDetails] Último stockLog:",
-        productData.stockLog[productData.stockLog.length - 1]
+        productData.stockLog[productData.stockLog.length - 1],
       );
     }
 
@@ -201,7 +202,7 @@ watch(
     if (newProductId && newProductId !== oldProductId) {
       loadProduct();
     }
-  }
+  },
 );
 
 // Watcher para detectar el query param 'refresh' que indica una actualización forzada
@@ -216,7 +217,7 @@ watch(
       console.log("🔄 Refrescando producto por actualización de datos...");
       loadProduct();
     }
-  }
+  },
 );
 
 // También recargar cuando se activa el componente (navegación hacia atrás)

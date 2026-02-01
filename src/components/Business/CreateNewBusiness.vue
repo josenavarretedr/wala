@@ -53,6 +53,62 @@
         </p>
       </div>
 
+      <!-- 🆕 INDUSTRIA/RUBRO (para clasificación IA) -->
+      <div class="space-y-2">
+        <div class="flex items-center space-x-4">
+          <svg
+            class="w-8 h-8 text-purple-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            ></path>
+          </svg>
+          <select
+            v-model="industry"
+            class="w-full text-lg text-gray-700 px-4 py-3 rounded-lg shadow-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option disabled value="">¿Qué productos/servicios ofreces?</option>
+            <option value="ferreteria">
+              🔨 Ferretería / Materiales de Construcción
+            </option>
+            <option value="reposteria">
+              🍰 Repostería / Panadería / Pastelería
+            </option>
+            <option value="libreria">📚 Librería / Papelería</option>
+            <option value="restaurante">
+              🍽️ Restaurante / Cafetería / Comida
+            </option>
+            <option value="farmacia">💊 Farmacia / Botica</option>
+            <option value="otro">
+              ❓ Otro (la IA lo detectará automáticamente)
+            </option>
+          </select>
+        </div>
+
+        <p
+          v-if="industry === 'otro'"
+          class="text-xs text-purple-600 bg-purple-50 rounded-lg p-3 leading-relaxed"
+        >
+          <strong>💡 Detección automática:</strong> La IA analizará los
+          productos que agregues para identificar tu rubro y mejorar las
+          sugerencias de clasificación.
+        </p>
+
+        <p
+          v-else-if="industry"
+          class="text-xs text-green-600 bg-green-50 rounded-lg p-3 leading-relaxed"
+        >
+          <strong>✓ Perfecto:</strong> El sistema usará categorías
+          especializadas para {{ getIndustryLabel(industry) }}.
+        </p>
+      </div>
+
       <!-- Región -->
       <div class="flex items-center space-x-4 border-b pb-2">
         <MapPin class="w-8 h-8 text-blue-500" />
@@ -155,10 +211,24 @@ const router = useRouter();
 const name = ref("");
 const description = ref("");
 const type = ref("");
+const industry = ref("");
 const region = ref("");
 const socialHandle = ref("");
 const contactNumber = ref("");
 const isLoading = ref(false);
+
+// Helper: Obtener etiqueta de industria
+const getIndustryLabel = (industryValue) => {
+  const labels = {
+    ferreteria: "Ferretería / Materiales de Construcción",
+    reposteria: "Repostería / Panadería",
+    libreria: "Librería / Papelería",
+    restaurante: "Restaurante / Cafetería",
+    farmacia: "Farmacia / Botica",
+    otro: "Otro",
+  };
+  return labels[industryValue] || industryValue;
+};
 
 async function handleSubmit() {
   if (isLoading.value) return;
@@ -171,6 +241,11 @@ async function handleSubmit() {
 
   if (!type.value) {
     alert("Selecciona un tipo de negocio");
+    return;
+  }
+
+  if (!industry.value) {
+    alert("Selecciona el rubro de tu negocio");
     return;
   }
 
@@ -193,6 +268,7 @@ async function handleSubmit() {
       id: businessId,
       nombre: name.value.trim(),
       tipo: type.value,
+      industry: industry.value, // 🆕 Campo para clasificación IA
       direccion: region.value.trim(), // Mapear region a direccion
       telefono: contactNumber.value.trim(),
       email: "", // Campo requerido por el store

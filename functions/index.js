@@ -17,7 +17,21 @@ exports.scheduledAutoClose = require('./src/AccountsBalance/scheduledAutoClose')
 exports.onTransactionWrite = require('./src/AccountsBalance/onTransactionWrite');
 exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 
-// INVENTORY AI CLASSIFICATION
+// 🤖 CLASIFICACIÓN IA - Sistema de 3 Capas
+exports.classifyProductRequest = require('./src/Inventory/classifyProductRequest').classifyProductRequest;
+exports.onProductCorrected = require('./src/Inventory/onProductCorrected').onProductCorrected;
+exports.classifyExpenseOnCreate = require('./src/Expense/classifyExpenseOnCreate').classifyExpenseOnCreate;
+
+// 🏢 BUSINESS - Detección automática de industria
+exports.onBusinessCreated = require('./src/Business/onBusinessCreated').onBusinessCreated;
+
+// 📚 TAXONOMY - Generación de taxonomías base
+exports.generateInitialTaxonomies = require('./src/Taxonomy/generateInitialTaxonomies').generateInitialTaxonomies;
+
+// ⚙️ SETUP - Inicialización de taxonomías (ejecutar una sola vez)
+exports.initializeTaxonomies = require('./src/Setup/initializeTaxonomies').initializeTaxonomies;
+
+// INVENTORY AI CLASSIFICATION (Legacy - comentado)
 // exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');
 // exports.classifyProduct = require('./src/Inventory/classifyProductCallable');
 

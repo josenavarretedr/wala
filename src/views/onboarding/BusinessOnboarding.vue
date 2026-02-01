@@ -82,32 +82,50 @@
             />
           </div>
 
-          <!-- Tipo de negocio -->
+          <!-- 🤖 Rubro/Industria para IA -->
           <div>
             <label class="block text-sm font-medium text-gray-900 mb-2">
-              Tipo de negocio
+              ¿Qué productos/servicios ofreces?
               <span class="text-red-500">*</span>
             </label>
             <select
-              v-model="businessForm.tipo"
+              v-model="businessForm.industry"
               required
               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
             >
-              <option value="">Selecciona un tipo</option>
-              <option value="restaurante">Restaurante</option>
-              <option value="tienda">Tienda</option>
-              <option value="bodega">Bodega</option>
-              <option value="farmacia">Farmacia</option>
-              <option value="panaderia">Panadería</option>
-              <option value="ferreteria">Ferretería</option>
-              <option value="salon">Salón de Belleza</option>
-              <option value="consultorio">Consultorio</option>
-              <option value="cafeteria">Cafetería</option>
-              <option value="servicios">Servicios</option>
-              <option value="consultoria">Consultoría</option>
-              <option value="freelance">Freelance</option>
-              <option value="otro">Otro</option>
+              <option value="">Selecciona tu rubro</option>
+              <option value="ferreteria">
+                🔨 Ferretería / Materiales de Construcción
+              </option>
+              <option value="reposteria">
+                🍰 Repostería / Panadería / Pastelería
+              </option>
+              <option value="libreria">📚 Librería / Papelería</option>
+              <option value="restaurante">
+                🍽️ Restaurante / Cafetería / Comida
+              </option>
+              <option value="farmacia">💊 Farmacia / Botica</option>
+              <option value="otro">
+                ❓ Otro (la IA lo detectará automáticamente)
+              </option>
             </select>
+
+            <p
+              v-if="businessForm.industry === 'otro'"
+              class="mt-2 text-xs text-purple-600 bg-purple-50 rounded-lg p-3"
+            >
+              <strong>💡 Detección automática:</strong> La IA analizará los
+              productos que agregues para identificar tu rubro y mejorar las
+              sugerencias de clasificación.
+            </p>
+
+            <p
+              v-else-if="businessForm.industry"
+              class="mt-2 text-xs text-green-600 bg-green-50 rounded-lg p-3"
+            >
+              <strong>✓ Perfecto:</strong> El sistema usará categorías
+              especializadas para {{ getIndustryLabel(businessForm.industry) }}.
+            </p>
           </div>
 
           <!-- Descripción del negocio -->
@@ -251,10 +269,24 @@ const BUSINESS_PERMISSIONS = {
 const businessForm = ref({
   nombre: "",
   tipo: "",
+  industry: "", // 🆕 Campo para clasificación IA
   descripcion: "",
   userRole: "gerente",
   departamento: "",
 });
+
+// Helper: Obtener etiqueta de industria
+const getIndustryLabel = (industryValue) => {
+  const labels = {
+    ferreteria: "Ferretería / Materiales de Construcción",
+    reposteria: "Repostería / Panadería",
+    libreria: "Librería / Papelería",
+    restaurante: "Restaurante / Cafetería",
+    farmacia: "Farmacia / Botica",
+    otro: "Otro",
+  };
+  return labels[industryValue] || industryValue;
+};
 
 onMounted(() => {
   // Verificar autenticación
@@ -280,29 +312,21 @@ const handleCreateBusiness = async () => {
       throw new Error("El nombre del negocio es obligatorio");
     }
 
-    if (!businessForm.value.tipo) {
-      throw new Error("Debe seleccionar un tipo de negocio");
+    if (!businessForm.value.industry) {
+      throw new Error("Debe seleccionar el rubro de tu negocio");
     }
 
     if (!businessForm.value.userRole) {
       throw new Error("Debe seleccionar su rol en el negocio");
     }
 
-    // Generar ID para el negocio
-    const uuid = uuidv4().slice(0, 8);
-    const businessId = `${businessForm.value.tipo.toUpperCase()}-${uuid}`;
-
     console.log(`🏗️ Creando negocio: ${businessForm.value.nombre}`);
 
     // Crear el negocio en Firestore
     const businessData = {
-      id: businessId,
-      nombre: businessForm.value.nombre.trim(),
-      tipo: businessForm.value.tipo,
+      businessName: businessForm.value.nombre.trim(),
+      industry: businessForm.value.industry, // 🆕 Campo para clasificación IA
       descripcion: businessForm.value.descripcion.trim() || "",
-      direccion: "",
-      telefono: "",
-      email: "",
       gerenteId: authStore.user.uid,
       fechaCreacion: new Date(),
       activo: true,
@@ -315,7 +339,8 @@ const handleCreateBusiness = async () => {
       },
     };
 
-    await businessStore.createBusiness(businessData);
+    const business = await businessStore.createBusiness(businessData);
+    const businessId = business.uuid || business.id;
     console.log(`✅ Negocio creado con ID: ${businessId}`);
 
     // Agregar relación usuario-negocio
@@ -330,14 +355,14 @@ const handleCreateBusiness = async () => {
     });
 
     console.log(
-      `✅ Usuario asignado al negocio como ${businessForm.value.userRole}`
+      `✅ Usuario asignado al negocio como ${businessForm.value.userRole}`,
     );
 
     // Establecer como negocio actual
     const switched = userStore.switchBusiness(businessId);
     if (!switched) {
       console.warn(
-        `⚠️  No se pudo establecer negocio actual, pero continuando...`
+        `⚠️  No se pudo establecer negocio actual, pero continuando...`,
       );
     }
 
@@ -346,7 +371,7 @@ const handleCreateBusiness = async () => {
         isCreateMode.value
           ? "al selector de negocios"
           : "al dashboard del negocio"
-      }: ${businessId}`
+      }: ${businessId}`,
     );
 
     // Redirigir con un pequeño delay para asegurar sincronización

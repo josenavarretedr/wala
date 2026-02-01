@@ -396,6 +396,259 @@
       </div>
     </div>
 
+    <!-- PASO 1.5: Clasificación con IA 🤖 -->
+    <div v-if="currentStep === 1.5" class="space-y-6">
+      <div class="text-center mb-6">
+        <h2
+          class="text-2xl font-bold text-gray-800 flex items-center justify-center gap-2"
+        >
+          <span>🤖</span>
+          Clasificación Inteligente
+        </h2>
+        <p class="text-sm text-gray-500 mt-2">
+          Clasifica tu producto automáticamente usando IA (opcional)
+        </p>
+      </div>
+
+      <!-- Botón Clasificar con IA -->
+      <div v-if="!aiSuggestion && !showManualClassification" class="space-y-4">
+        <button
+          type="button"
+          @click="classifyWithAI"
+          :disabled="isClassifying || !localFormData.description"
+          class="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <svg
+            v-if="isClassifying"
+            class="animate-spin h-5 w-5"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+              fill="none"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <span v-if="isClassifying">Clasificando...</span>
+          <span v-else>🤖 Clasificar con IA</span>
+        </button>
+
+        <div class="text-center space-y-2">
+          <button
+            type="button"
+            @click="showManualClassification = true"
+            class="text-sm text-blue-600 hover:text-blue-700 font-medium"
+          >
+            Clasificar manualmente
+          </button>
+          <div class="text-xs text-gray-500">o</div>
+          <button
+            type="button"
+            @click="skipClassification"
+            class="text-sm text-gray-500 hover:text-gray-600"
+          >
+            Omitir clasificación
+          </button>
+        </div>
+
+        <div
+          v-if="classificationError"
+          class="p-3 bg-red-50 border border-red-200 rounded-lg"
+        >
+          <p class="text-sm text-red-800">{{ classificationError }}</p>
+        </div>
+      </div>
+
+      <!-- Sugerencia de IA -->
+      <div v-if="aiSuggestion && !aiSuggestionRejected" class="space-y-4">
+        <div
+          class="bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-6"
+        >
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <div
+                class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center"
+              >
+                <span class="text-xl">🤖</span>
+              </div>
+              <div>
+                <h3 class="font-semibold text-gray-900">Sugerencia de IA</h3>
+                <div class="flex items-center gap-2 mt-1">
+                  <span
+                    class="text-xs px-2 py-0.5 rounded-full"
+                    :class="[
+                      aiSuggestion.confidence >= 0.9
+                        ? 'bg-green-100 text-green-800'
+                        : aiSuggestion.confidence >= 0.7
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-orange-100 text-orange-800',
+                    ]"
+                  >
+                    {{ (aiSuggestion.confidence * 100).toFixed(0) }}% confianza
+                  </span>
+                  <span class="text-xs text-gray-500">{{
+                    aiSuggestion.source
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Categoría:</span>
+              <span class="font-semibold text-gray-900">{{
+                aiSuggestion.category
+              }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="text-sm text-gray-600">Subcategoría:</span>
+              <span class="font-semibold text-gray-900">{{
+                aiSuggestion.subcategory
+              }}</span>
+            </div>
+            <div
+              v-if="aiSuggestion.subsubcategory"
+              class="flex items-center gap-2"
+            >
+              <span class="text-sm text-gray-600">Detalle:</span>
+              <span class="font-semibold text-gray-900">{{
+                aiSuggestion.subsubcategory
+              }}</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-6">
+            <button
+              type="button"
+              @click="acceptAISuggestion"
+              class="py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+            >
+              ✓ Aceptar
+            </button>
+            <button
+              type="button"
+              @click="rejectAISuggestion"
+              class="py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium rounded-lg transition-colors"
+            >
+              ✗ Clasificar manualmente
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Clasificación Manual -->
+      <div
+        v-if="showManualClassification || aiSuggestionRejected"
+        class="space-y-4"
+      >
+        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <h3 class="font-semibold text-gray-900 mb-4">Clasificación Manual</h3>
+
+          <div class="space-y-4">
+            <!-- Categoría -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Categoría *
+              </label>
+              <select
+                v-model="localFormData.classification.category"
+                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                @change="
+                  localFormData.classification.subcategory = null;
+                  localFormData.classification.subsubcategory = null;
+                "
+              >
+                <option value="">Selecciona una categoría</option>
+                <option
+                  v-for="cat in availableCategories"
+                  :key="cat"
+                  :value="cat"
+                >
+                  {{ cat }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Subcategoría -->
+            <div v-if="localFormData.classification?.category">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Subcategoría *
+              </label>
+              <select
+                v-model="localFormData.classification.subcategory"
+                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                @change="localFormData.classification.subsubcategory = null"
+              >
+                <option value="">Selecciona una subcategoría</option>
+                <option
+                  v-for="subcat in availableSubcategories"
+                  :key="subcat"
+                  :value="subcat"
+                >
+                  {{ subcat }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Subsubcategoría (opcional) -->
+            <div
+              v-if="
+                localFormData.classification?.subcategory &&
+                availableSubsubcategories.length > 0
+              "
+            >
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Detalle (opcional)
+              </label>
+              <select
+                v-model="localFormData.classification.subsubcategory"
+                class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Sin especificar</option>
+                <option
+                  v-for="subsubcat in availableSubsubcategories"
+                  :key="subsubcat"
+                  :value="subsubcat"
+                >
+                  {{ subsubcat }}
+                </option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              @click="currentStep = 2"
+              :disabled="
+                !localFormData.classification?.category ||
+                !localFormData.classification?.subcategory
+              "
+              class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors disabled:cursor-not-allowed"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="skipClassification"
+          class="w-full text-sm text-gray-500 hover:text-gray-600"
+        >
+          Omitir clasificación
+        </button>
+      </div>
+    </div>
+
     <!-- PASO 2: Precios y Costos -->
     <div v-if="currentStep === 2" class="space-y-6">
       <div class="text-center mb-6">
@@ -715,15 +968,33 @@
       <!-- Indicador de pasos -->
       <div class="flex items-center gap-2">
         <div
-          v-for="step in 3"
-          :key="step"
           :class="[
             'w-2 h-2 rounded-full transition-all',
-            step === currentStep
+            currentStep === 1 || currentStep === 1.5
               ? 'bg-blue-600 w-8'
-              : step < currentStep
-              ? 'bg-blue-400'
-              : 'bg-gray-300',
+              : currentStep > 1
+                ? 'bg-blue-400'
+                : 'bg-gray-300',
+          ]"
+        ></div>
+        <div
+          :class="[
+            'w-2 h-2 rounded-full transition-all',
+            currentStep === 2
+              ? 'bg-blue-600 w-8'
+              : currentStep > 2
+                ? 'bg-blue-400'
+                : 'bg-gray-300',
+          ]"
+        ></div>
+        <div
+          :class="[
+            'w-2 h-2 rounded-full transition-all',
+            currentStep === 3
+              ? 'bg-blue-600 w-8'
+              : currentStep > 3
+                ? 'bg-blue-400'
+                : 'bg-gray-300',
           ]"
         ></div>
       </div>
@@ -768,8 +1039,8 @@
           saving
             ? "Guardando..."
             : mode === "create"
-            ? "Crear Producto"
-            : "Guardar Cambios"
+              ? "Crear Producto"
+              : "Guardar Cambios"
         }}</span>
       </button>
     </div>
@@ -777,7 +1048,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
+import { useInventory } from "@/composables/useInventory";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+
+const inventory = useInventory();
+const businessStore = useBusinessStore();
 
 // Props
 const props = defineProps({
@@ -810,13 +1087,21 @@ const emit = defineEmits(["submit", "cancel"]);
 const currentStep = ref(1);
 const localFormData = ref({ ...props.initialData });
 
+// 🤖 IA Classification - Step 1.5
+const isClassifying = ref(false);
+const aiSuggestion = ref(null);
+const aiSuggestionRejected = ref(false);
+const showManualClassification = ref(false);
+const taxonomyData = ref(null);
+const classificationError = ref("");
+
 // Watch para sincronizar con props.initialData
 watch(
   () => props.initialData,
   (newData) => {
     localFormData.value = { ...newData };
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Computed: Opciones de unidad disponibles según el tipo de producto
@@ -862,6 +1147,11 @@ const canProceedToNextStep = computed(() => {
       localFormData.value.type &&
       localFormData.value.unit
     );
+  }
+
+  if (currentStep.value === 1.5) {
+    // Paso 1.5: Clasificación (opcional pero recomendado)
+    return true; // Siempre puede avanzar
   }
 
   if (currentStep.value === 2) {
@@ -910,21 +1200,173 @@ watch(
       }
       // No cambia trackStock para PRODUCT (el usuario decide)
     }
-  }
+  },
 );
 
 // Métodos de navegación
 const nextStep = () => {
-  if (canProceedToNextStep.value && currentStep.value < 3) {
-    currentStep.value++;
+  if (canProceedToNextStep.value) {
+    // Si estamos en paso 1 y no tenemos clasificación, ir a 1.5
+    if (
+      currentStep.value === 1 &&
+      !localFormData.value.classification?.category
+    ) {
+      currentStep.value = 1.5;
+    } else if (currentStep.value < 3) {
+      currentStep.value++;
+    }
   }
 };
 
 const previousStep = () => {
   if (currentStep.value > 1) {
-    currentStep.value--;
+    if (currentStep.value === 1.5) {
+      currentStep.value = 1;
+    } else if (currentStep.value === 2 && aiSuggestion.value) {
+      currentStep.value = 1.5;
+    } else {
+      currentStep.value--;
+    }
   }
 };
+
+// 🤖 IA Classification Methods
+const loadTaxonomy = async () => {
+  try {
+    const industry = businessStore.currentBusiness?.industry;
+    if (!industry) {
+      console.warn("No industry found for business");
+      return;
+    }
+
+    const db = getFirestore();
+    const taxonomyRef = doc(db, "wala_global", "taxonomies", industry, "main");
+    const taxonomySnap = await getDoc(taxonomyRef);
+
+    if (taxonomySnap.exists()) {
+      taxonomyData.value = taxonomySnap.data();
+    } else {
+      console.warn(`No taxonomy found for industry: ${industry}`);
+    }
+  } catch (error) {
+    console.error("Error loading taxonomy:", error);
+  }
+};
+
+const classifyWithAI = async () => {
+  if (!localFormData.value.description) {
+    classificationError.value = "Ingresa un nombre de producto primero";
+    return;
+  }
+
+  try {
+    isClassifying.value = true;
+    classificationError.value = "";
+
+    const result = await inventory.classifyProduct(
+      localFormData.value.description,
+    );
+
+    aiSuggestion.value = result;
+    aiSuggestionRejected.value = false;
+
+    // Si la confianza es alta (>=90%), auto-aplicar
+    if (result.confidence >= 0.9) {
+      acceptAISuggestion();
+    }
+  } catch (error) {
+    console.error("Error classifying product:", error);
+    classificationError.value =
+      error.message || "Error al clasificar el producto";
+  } finally {
+    isClassifying.value = false;
+  }
+};
+
+const acceptAISuggestion = () => {
+  if (aiSuggestion.value) {
+    localFormData.value.classification = {
+      category: aiSuggestion.value.category,
+      subcategory: aiSuggestion.value.subcategory,
+      subsubcategory: aiSuggestion.value.subsubcategory || null,
+      confidence: aiSuggestion.value.confidence,
+      source: aiSuggestion.value.source,
+      classifiedAt: new Date(),
+    };
+
+    // Avanzar al siguiente paso
+    currentStep.value = 2;
+  }
+};
+
+const rejectAISuggestion = () => {
+  aiSuggestionRejected.value = true;
+  showManualClassification.value = true;
+  aiSuggestion.value = null;
+
+  // Inicializar objeto de clasificación para clasificación manual
+  if (!localFormData.value.classification) {
+    localFormData.value.classification = {
+      category: "",
+      subcategory: "",
+      subsubcategory: null,
+    };
+  }
+};
+
+const skipClassification = () => {
+  localFormData.value.classification = null;
+  currentStep.value = 2;
+};
+
+// Inicializar clasificación manual cuando se activa
+watch(showManualClassification, (show) => {
+  if (show && !localFormData.value.classification) {
+    localFormData.value.classification = {
+      category: "",
+      subcategory: "",
+      subsubcategory: null,
+    };
+  }
+});
+
+// Computeds para opciones de categorización manual
+const availableCategories = computed(() => {
+  if (!taxonomyData.value?.categories) return [];
+  return Object.keys(taxonomyData.value.categories);
+});
+
+const availableSubcategories = computed(() => {
+  if (
+    !taxonomyData.value?.categories ||
+    !localFormData.value.classification?.category
+  )
+    return [];
+  const category =
+    taxonomyData.value.categories[localFormData.value.classification.category];
+  return category ? Object.keys(category) : [];
+});
+
+const availableSubsubcategories = computed(() => {
+  if (
+    !taxonomyData.value?.categories ||
+    !localFormData.value.classification?.category ||
+    !localFormData.value.classification?.subcategory
+  )
+    return [];
+
+  const category =
+    taxonomyData.value.categories[localFormData.value.classification.category];
+  if (!category) return [];
+
+  const subcategory = category[localFormData.value.classification.subcategory];
+  return subcategory && Array.isArray(subcategory) ? subcategory : [];
+});
+
+// Cargar taxonomía al montar
+onMounted(() => {
+  loadTaxonomy();
+});
 
 // Método para enviar el formulario
 const handleSubmit = () => {

@@ -10,8 +10,13 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  query,
+  where,
+  orderBy,
+  limit,
 } from "firebase/firestore";
-import appFirebase from "@/firebaseInit";
+import appFirebase, { functions } from "@/firebaseInit";
+import { httpsCallable } from "firebase/functions";
 
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from 'uuid';
@@ -116,6 +121,17 @@ export function useInventory() {
         createdAt: serverTimestamp(),
       };
 
+      // 🆕 Si viene clasificación del form, incluirla
+      if (productData.classification && productData.classification.category) {
+        productPayload.classification = {
+          ...productData.classification,
+          classifiedAt: serverTimestamp(),
+          classifiedBy: 'user',
+          humanReviewed: true
+        };
+        productPayload.needsReview = false;
+      }
+
       // Crear producto en Firestore
       await setDoc(productRef, productPayload);
 
@@ -125,7 +141,8 @@ export function useInventory() {
         type: productPayload.type,
         trackStock: productPayload.trackStock,
         price: productPayload.price,
-        cost: productPayload.cost
+        cost: productPayload.cost,
+        hasClassification: !!productPayload.classification
       });
 
       return productId;
@@ -515,6 +532,83 @@ export function useInventory() {
     }
   };
 
+  /**
+   * 🤖 Clasificar producto usando IA (llamada a Cloud Function)
+   * @param {string|Object} descriptionOrData - Descripción del producto o { description, type, businessId }
+   * @returns {Promise<Object>} Clasificación sugerida
+   */
+  const classifyProduct = async (descriptionOrData) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      // Si se pasa solo string, construir objeto
+      const data = typeof descriptionOrData === 'string'
+        ? { description: descriptionOrData, businessId }
+        : { ...descriptionOrData, businessId };
+
+      const classifyFn = httpsCallable(functions, 'classifyProductRequest');
+      const result = await classifyFn(data);
+      return result.data;
+    } catch (error) {
+      console.error('Error clasificando producto:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 📝 Corregir una clasificación existente
+   * @param {string} productId 
+   * @param {Object} newClassification 
+   */
+  const correctClassification = async (productId, newClassification) => {
+    try {
+      const businessId = ensureBusinessId();
+      const productRef = doc(db, `businesses/${businessId}/products`, productId);
+
+      const updateData = {
+        'classification': {
+          ...newClassification,
+          humanReviewed: true,
+          humanCorrectedAt: serverTimestamp(),
+          source: 'manual'
+        },
+        'needsReview': false,
+        'updatedAt': serverTimestamp()
+      };
+
+      await updateDoc(productRef, updateData);
+
+      console.log('✅ Clasificación corregida:', productId);
+    } catch (error) {
+      console.error('Error corrigiendo clasificación:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 📋 Obtener productos sin clasificar o pendientes de revisión
+   * @returns {Promise<Array>} Lista de productos
+   */
+  const getUnclassifiedProducts = async () => {
+    try {
+      const businessId = ensureBusinessId();
+      const productsRef = collection(db, `businesses/${businessId}/products`);
+
+      const q = query(
+        productsRef,
+        where('needsReview', '==', true),
+        orderBy('createdAt', 'desc'),
+        limit(50)
+      );
+
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      console.error('Error obteniendo productos sin clasificar:', error);
+      return [];
+    }
+  };
+
   return {
     createItem,
     createProduct,
@@ -524,5 +618,9 @@ export function useInventory() {
     getAllItemsInInventory,
     getProductById,
     updateProduct,
+    // 🆕 Métodos de clasificación IA
+    classifyProduct,
+    correctClassification,
+    getUnclassifiedProducts,
   };
 }

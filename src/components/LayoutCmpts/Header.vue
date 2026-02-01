@@ -185,7 +185,7 @@ const handleBadgeClick = (event) => {
 
 const businessName = computed(() => {
   const currentBusiness = businessStore.business;
-  return currentBusiness?.nombre || null;
+  return currentBusiness?.businessName || null;
 });
 
 // Watch para actualizar el título dinámicamente

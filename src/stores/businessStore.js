@@ -3,6 +3,7 @@ import { collection, doc, getDoc, setDoc, query, where, getDocs, updateDoc, addD
 import { db } from '@/firebaseInit'
 import { v4 as uuidv4 } from 'uuid'
 import { useTraceability } from '@/composables/useTraceability'
+import { createBusiness as createBusinessComposable } from '@/composables/useBusiness'
 
 export const useBusinessStore = defineStore('business', {
   state: () => ({
@@ -276,154 +277,36 @@ export const useBusinessStore = defineStore('business', {
             tags: ['business_creation', 'new_business'],
             component: 'BusinessStore.createBusiness',
             metadata: {
-              businessName: businessData.nombre,
-              businessType: businessData.tipo,
+              businessName: businessData.businessName,
+              businessType: businessData.industry,
               ownerId: businessData.gerenteId
             }
           }
         )
 
-        const business = {
-          id: businessData.id,
-          nombre: businessData.nombre,
-          tipo: businessData.tipo,
-          direccion: businessData.direccion || '',
-          telefono: businessData.telefono || '',
-          email: businessData.email || '',
-          gerenteId: businessData.gerenteId,
-          fechaCreacion: new Date(),
-          activo: true,
+        // Usar el composable actualizado para crear el negocio
+        const businessUuid = await createBusinessComposable(businessData.gerenteId, businessData)
 
-          // ===== INFORMACIÓN DE CONTACTO =====
-          contactInfo: {
-            email: businessData.email || businessData.contactInfo?.email || '',
-            phone: businessData.telefono || businessData.contactInfo?.phone || '',
-            address: {
-              street: businessData.direccion || businessData.contactInfo?.address?.street || '',
-              city: businessData.contactInfo?.address?.city || '',
-              state: businessData.contactInfo?.address?.state || '',
-              country: businessData.contactInfo?.address?.country || 'PE',
-              zipCode: businessData.contactInfo?.address?.zipCode || ''
-            },
-            website: businessData.contactInfo?.website || '',
-            socialMedia: {
-              facebook: businessData.contactInfo?.socialMedia?.facebook || '',
-              instagram: businessData.contactInfo?.socialMedia?.instagram || '',
-              twitter: businessData.contactInfo?.socialMedia?.twitter || '',
-              linkedin: businessData.contactInfo?.socialMedia?.linkedin || ''
-            }
-          },
-
-          configuracion: {
-            moneda: businessData.moneda || 'PEN',
-            timezone: businessData.timezone || 'America/Lima',
-            permisos: {
-              empleados: {
-                verIngresos: true,
-                verEgresos: true,
-                crearMovimientos: true,
-                editarMovimientos: false,
-                verReportes: false
-              }
-            }
-          },
-          // ✨ NUEVO: Inicializar con plan Free por defecto
-          subscription: this.getDefaultSubscription(businessData.gerenteId),
-          features: this.getFeaturesForPlan('free'),
-          usage: this.getDefaultUsageStats(),
-
-          // ===== METADATOS =====
-          isActive: true,
-          deleted: false,
-          updatedAt: new Date(),
-          version: 1
-        }
-
-        // Crear documento principal en Firestore
-        const businessDocRef = doc(db, 'businesses', businessData.id)
-        await setDoc(businessDocRef, business)
-
-        // ===== CREAR SUBCOLECCIÓN SETTINGS =====
-        console.log('📁 Creando configuraciones en settings/...')
-
-        // 1. settings/onboarding
-        const onboardingRef = doc(db, 'businesses', businessData.id, 'settings', 'onboarding')
-        await setDoc(onboardingRef, {
-          completedTours: {},
-          tourStarts: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        })
-
-        // 2. settings/config
-        const configRef = doc(db, 'businesses', businessData.id, 'settings', 'config')
-        await setDoc(configRef, {
-          workingHours: {
-            monday: { open: '08:00', close: '18:00', isOpen: true },
-            tuesday: { open: '08:00', close: '18:00', isOpen: true },
-            wednesday: { open: '08:00', close: '18:00', isOpen: true },
-            thursday: { open: '08:00', close: '18:00', isOpen: true },
-            friday: { open: '08:00', close: '18:00', isOpen: true },
-            saturday: { open: '09:00', close: '14:00', isOpen: true },
-            sunday: { open: '00:00', close: '00:00', isOpen: false }
-          },
-          notifications: {
-            email: true,
-            push: true,
-            lowStock: true,
-            dailyReport: false
-          },
-          display: {
-            theme: 'auto',
-            language: 'es',
-            dateFormat: 'DD/MM/YYYY',
-            currencyFormat: '$1,000.00'
-          },
-          updatedAt: new Date()
-        })
-
-        // 3. settings/integrations
-        const integrationsRef = doc(db, 'businesses', businessData.id, 'settings', 'integrations')
-        await setDoc(integrationsRef, {
-          payment: {},
-          accounting: {},
-          shipping: {},
-          updatedAt: new Date()
-        })
-
-        // 4. settings/customization
-        const customizationRef = doc(db, 'businesses', businessData.id, 'settings', 'customization')
-        await setDoc(customizationRef, {
-          branding: {
-            logo: '',
-            favicon: '',
-            primaryColor: '#3B82F6',
-            secondaryColor: '#10B981',
-            accentColor: '#F59E0B'
-          },
-          invoice: {
-            template: 'modern',
-            footer: '',
-            notes: ''
-          },
-          receipt: {
-            header: business.nombre,
-            footer: 'Gracias por su compra',
-            showLogo: false
-          },
-          updatedAt: new Date()
-        })
-
-        console.log('✅ Configuraciones de settings/ creadas exitosamente')
-
-        // Actualizar estado local
-        this.business = business
-        this.businessList = [business]
-
-        console.log('✅ Negocio creado exitosamente:', business.nombre)
-        console.log('🔗 ID del negocio:', businessData.id)
+        console.log('✅ Negocio creado exitosamente con UUID:', businessUuid)
         console.log('👤 Gerente asignado:', businessData.gerenteId)
-        return business
+
+        // Cargar el negocio recién creado para actualizar el estado local
+        const businessDocRef = doc(db, 'businesses', businessUuid)
+        const businessSnapshot = await getDoc(businessDocRef)
+
+        if (businessSnapshot.exists()) {
+          const business = {
+            id: businessSnapshot.id,
+            ...businessSnapshot.data()
+          }
+
+          this.business = business
+          this.businessList = [business]
+
+          return business
+        } else {
+          throw new Error('No se pudo cargar el negocio recién creado')
+        }
 
       } catch (error) {
         console.error('❌ Error al crear negocio:', error)
