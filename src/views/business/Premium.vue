@@ -374,7 +374,7 @@ const mpScriptLoaded = ref(false);
 const PLAN_CONFIGS = {
   // test: { name: "Premium Prueba", amount: 5.0 },
   monthly: { name: "Premium Mensual", amount: 27.0 },
-  annual: { name: "Premium Anual", amount: 200.0 },
+  annual: { name: "Premium Anual", amount: 225.0 },
   lifetime: { name: "Premium de por Vida", amount: 400.0 },
 };
 

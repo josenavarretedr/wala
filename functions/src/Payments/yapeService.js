@@ -26,7 +26,7 @@ const PLANS = {
   },
   annual: {
     name: 'Premium Anual',
-    amount: 200,
+    amount: 225,
     durationDays: 365
   },
   lifetime: {

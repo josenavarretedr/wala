@@ -125,7 +125,7 @@ const plans = [
   {
     type: "annual",
     name: "Anual",
-    price: 200,
+    price: 225,
     period: "por año",
     description: "¡Ahorra S/ 124 al año! Mejor relación precio-valor",
     badge: "🔥 MÁS POPULAR",

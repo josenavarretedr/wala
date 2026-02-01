@@ -39,7 +39,7 @@
 
       <!-- Botones principales fijos -->
       <div
-        class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white rounded-2xl shadow-xl"
+        class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-2xl shadow-xl"
       >
         <MainBtns />
       </div>
@@ -78,7 +78,7 @@ const metricsLoading = ref(false);
 
 // BusinessStore: datos completos del negocio
 const businessId = computed(
-  () => route.params.businessId || userStore.currentBusiness?.businessId
+  () => route.params.businessId || userStore.currentBusiness?.businessId,
 );
 
 // ✅ Usar BusinessStore para roles y permisos
@@ -111,7 +111,7 @@ const loadDashboardData = async () => {
         router.push("/onboarding");
       } else if (userStore.userBusinesses.length === 1) {
         router.push(
-          `/business/${userStore.userBusinesses[0].businessId}/dashboard`
+          `/business/${userStore.userBusinesses[0].businessId}/dashboard`,
         );
       } else {
         router.push("/select-business");
@@ -162,7 +162,8 @@ onMounted(async () => {
 
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
@@ -173,11 +174,14 @@ onMounted(async () => {
 
 /* Sombras cuidadas para microaplicaciones */
 .aspect-square {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
 }
 
 .aspect-square:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 

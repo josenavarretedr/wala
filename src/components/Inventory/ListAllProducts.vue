@@ -174,7 +174,7 @@ function buildIndex(items) {
         type: p.type ? p.type : "MERCH",
         trackStock: p.trackStock ? p.trackStock : false,
       }
-    )
+    ),
   );
 }
 
@@ -197,7 +197,7 @@ watch(
   (val) => {
     buildIndex(val);
   },
-  { deep: true }
+  { deep: true },
 );
 
 // ===== FILTRADO CON DEBOUNCE =====
@@ -221,7 +221,7 @@ const filteredProducts = computed(() => {
 
   // Ordenar alfabéticamente por descripción
   return filtered.sort((a, b) =>
-    a.description.localeCompare(b.description, "es", { sensitivity: "base" })
+    a.description.localeCompare(b.description, "es", { sensitivity: "base" }),
   );
 });
 
@@ -298,7 +298,9 @@ function formatPrice(price) {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
   color: #111827;
   font-size: 16px;
   font-weight: 500;
@@ -327,7 +329,8 @@ function formatPrice(price) {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   max-height: 300px;
   overflow-y: auto;
@@ -377,7 +380,9 @@ function formatPrice(price) {
 /* Dropdown transition */
 .dropdown-enter-active,
 .dropdown-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .dropdown-enter-from,

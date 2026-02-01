@@ -36,7 +36,7 @@ const PLANS = {
   },
   annual: {
     name: 'Premium Anual',
-    amount: 200.00,
+    amount: 225.00,
     duration: 365,
     currency: 'PEN',
   },

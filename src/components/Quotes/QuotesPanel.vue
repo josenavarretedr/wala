@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 space-y-6">
+  <div class="space-y-6 mb-20 p-2">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
@@ -154,32 +154,32 @@
         <!-- Header de la cotización -->
         <div class="bg-gray-50 p-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <div
+            <!-- <div
               class="w-10 h-10 rounded-full bg-purple-500 flex items-center justify-center text-white font-semibold"
             >
               {{ getClientInitials(quote.clientName) }}
-            </div>
+            </div> -->
             <div>
               <div class="flex items-center gap-2">
                 <p class="font-semibold text-gray-800">
                   {{ quote.quoteNumber }}
                 </p>
-                <span
-                  :class="[
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium border',
-                    quote.status === 'pending'
-                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                      : quote.status === 'converted'
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : quote.status === 'cancelled'
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : 'bg-gray-50 text-gray-700 border-gray-200',
-                  ]"
-                >
-                  {{ getStatusLabel(quote.status) }}
-                </span>
               </div>
-              <p class="text-sm text-gray-600">{{ quote.clientName }}</p>
+
+              <span
+                :class="[
+                  'inline-flex items-center gap-1 px-2 py-0.5  mt-3 rounded-md text-xs font-medium border',
+                  quote.status === 'pending'
+                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                    : quote.status === 'converted'
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : quote.status === 'cancelled'
+                        ? 'bg-red-50 text-red-700 border-red-200'
+                        : 'bg-gray-50 text-gray-700 border-gray-200',
+                ]"
+              >
+                {{ getStatusLabel(quote.status) }}
+              </span>
             </div>
           </div>
           <div class="text-right">
@@ -241,6 +241,14 @@
                 {{ quote.status === "expired" ? "Expiró" : "Expira" }}
                 {{ formatDate(quote.expiresAt) }}
               </span>
+            </div>
+            <div
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 rounded-md border border-purple-200"
+            >
+              <User class="w-3.5 h-3.5 text-purple-700 font-medium" />
+              <span class="text-xs text-purple-700 font-medium">{{
+                quote.clientName
+              }}</span>
             </div>
           </div>
 
@@ -347,7 +355,7 @@
             </button>
 
             <!-- Cancelar -->
-            <button
+            <!-- <button
               v-if="quote.status === 'pending'"
               @click="confirmCancelQuote(quote)"
               class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-all duration-200"
@@ -366,7 +374,7 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -377,7 +385,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useQuotes } from "@/composables/useQuotes";
-import { Bookmark } from "@iconoir/vue";
+import { Bookmark, User } from "@iconoir/vue";
 import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import { useBusinessStore } from "@/stores/businessStore";

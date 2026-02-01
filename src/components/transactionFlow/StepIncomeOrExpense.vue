@@ -131,7 +131,7 @@
         </div>
       </div>
 
-      <!-- Opción Cambio -->
+      <!-- Opción Cotización -->
       <div class="relative group">
         <button
           @click="handleSelectedType('quote')"
@@ -142,6 +142,15 @@
               : 'bg-white text-gray-600 hover:bg-purple-50 hover:text-purple-600 border border-gray-200 hover:border-purple-200',
           ]"
         >
+          <!-- Badge Premium (centrado verticalmente en mobile, esquina superior derecha en sm+) -->
+          <span
+            v-if="!isPremium"
+            class="absolute top-1/2 -translate-y-1/2 right-2 sm:top-3 sm:right-3 sm:translate-y-0 flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border border-orange-600 shadow-lg z-10"
+          >
+            <BrightCrown class="w-3 h-3 sm:w-4 sm:h-4" />
+            Premium
+          </span>
+
           <div
             class="p-2 sm:p-3 rounded-full bg-white/20 backdrop-blur-sm shrink-0"
           >
@@ -192,14 +201,35 @@
 </template>
 
 <script setup>
+import { ref, computed, watch, nextTick } from "vue";
 import { GraphUp, DatabaseExport, CoinsSwap, Bookmark } from "@iconoir/vue";
+import { BrightCrown } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+import { useToast } from "@/composables/useToast";
+import { useSubscription } from "@/composables/useSubscription";
+import { useRoute } from "vue-router";
 
+const route = useRoute();
 const flow = useTransactionFlowStore();
 const transactionStore = useTransactionStore();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 const handleSelectedType = (type) => {
+  // Validar si intenta seleccionar 'quote' sin ser premium
+  if (type === "quote" && !isPremium.value) {
+    nextTick(() => {
+      premium("Crea cotizaciones y conviértelas en ventas", {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      });
+    });
+    return;
+  }
+
   transactionStore.modifyTransactionToAddType(type);
   flow.defineDynamicSteps(type);
   flow.nextStep();
