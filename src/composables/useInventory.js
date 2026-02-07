@@ -609,6 +609,621 @@ export function useInventory() {
     }
   };
 
+  /**
+   * Normaliza una descripción para matching consistente
+   * @param {string} description - Descripción a normalizar
+   * @returns {string} Descripción normalizada
+   */
+  const normalizeDescription = (description) => {
+    if (!description) return '';
+
+    return description
+      .toString()
+      .toUpperCase()
+      .trim()
+      // Remover tildes
+      .replace(/[ÁÀÄÂ]/g, 'A')
+      .replace(/[ÉÈËÊ]/g, 'E')
+      .replace(/[ÍÌÏÎ]/g, 'I')
+      .replace(/[ÓÒÖÔ]/g, 'O')
+      .replace(/[ÚÙÜÛ]/g, 'U')
+      .replace(/Ñ/g, 'N')
+      // Remover caracteres especiales excepto espacios y números
+      .replace(/[^A-Z0-9\s]/g, ' ')
+      // Normalizar espacios múltiples
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
+  /**
+   * 📚 Carga taxonomía local del negocio
+   * @param {string} businessId - ID del negocio
+   * @returns {Promise<Object>} Taxonomía local o estructura vacía
+   */
+  const loadLocalTaxonomy = async (businessId) => {
+    try {
+      if (!businessId) {
+        businessId = ensureBusinessId();
+      }
+
+      const taxonomyRef = doc(db, 'businesses', businessId, 'settings', 'taxonomies');
+      const taxonomySnap = await getDoc(taxonomyRef);
+
+      if (taxonomySnap.exists()) {
+        console.log('✅ Taxonomía local cargada para:', businessId);
+        return taxonomySnap.data();
+      } else {
+        console.log('ℹ️ No existe taxonomía local, creando estructura vacía');
+        // Crear estructura vacía inicial
+        const emptyTaxonomy = {
+          customCategories: [],
+          customBrands: [],
+          customPresentations: [],
+          rules: [], // 🆕 Rules locales del negocio
+          stats: {
+            totalCustomItems: 0,
+            customCategories: 0,
+            customBrands: 0,
+            avgConfidence: 0,
+            lastUpdate: serverTimestamp()
+          }
+        };
+        await setDoc(taxonomyRef, emptyTaxonomy);
+        return emptyTaxonomy;
+      }
+    } catch (error) {
+      console.error('❌ Error cargando taxonomía local:', error);
+      return {
+        customCategories: [],
+        customBrands: [],
+        customPresentations: [],
+        rules: [],
+        stats: {}
+      };
+    }
+  };
+
+  /**
+   * 🌍 Actualiza taxonomía global (confidence >= 0.8)
+   * - Agrega término a categories si no existe
+   * - Crea regla automática si confidence >= 0.85
+   * - Agrega marca a brands[] si es nueva
+   * - Actualiza stats
+   * @param {Object} classification - Clasificación de IA
+   * @param {string} userInput - Descripción original del usuario
+   * @param {number} confidence - Nivel de confianza
+   * @param {string} industry - Industria del negocio
+   */
+  const updateGlobalTaxonomy = async (classification, userInput, confidence, industry) => {
+    try {
+      if (!industry) {
+        console.warn('⚠️ No industry provided for global taxonomy update');
+        return;
+      }
+
+      const taxonomyRef = doc(db, 'wala_global', 'taxonomies', industry, 'main');
+      const taxonomySnap = await getDoc(taxonomyRef);
+
+      let taxonomyData = taxonomySnap.exists() ? taxonomySnap.data() : {
+        categories: {},
+        brands: [],
+        presentations: [],
+        rules: [],
+        stats: {
+          totalProducts: 0,
+          llmUsed: 0,
+          localMatches: 0,
+          rulesMatches: 0,
+          totalLearnings: 0,
+          manualCorrections: 0,
+          avgConfidence: 0,
+          lastLearningAt: null
+        }
+      };
+
+      let hasChanges = false;
+
+      // 1. Actualizar categorías
+      if (classification.category) {
+        if (!taxonomyData.categories[classification.category]) {
+          taxonomyData.categories[classification.category] = {};
+          hasChanges = true;
+        }
+
+        if (classification.subcategory) {
+          if (!taxonomyData.categories[classification.category][classification.subcategory]) {
+            taxonomyData.categories[classification.category][classification.subcategory] = [];
+            hasChanges = true;
+          }
+
+          if (classification.subsubcategory) {
+            const items = taxonomyData.categories[classification.category][classification.subcategory];
+            if (!items.includes(classification.subsubcategory)) {
+              items.push(classification.subsubcategory);
+              hasChanges = true;
+            }
+          }
+        }
+      }
+
+      // 2. Agregar marca si es nueva
+      if (classification.brand) {
+        if (!taxonomyData.brands) taxonomyData.brands = [];
+        if (!taxonomyData.brands.includes(classification.brand)) {
+          taxonomyData.brands.push(classification.brand);
+          hasChanges = true;
+        }
+      }
+
+      // 3. Agregar presentación si es nueva
+      if (classification.presentation) {
+        if (!taxonomyData.presentations) taxonomyData.presentations = [];
+        if (!taxonomyData.presentations.includes(classification.presentation)) {
+          taxonomyData.presentations.push(classification.presentation);
+          hasChanges = true;
+        }
+      }
+
+      // 4. Crear regla automática si confidence >= 0.8 (antes era 0.85)
+      if (confidence >= 0.8) {
+        await createAutoRule(industry, userInput, classification, confidence, taxonomyData);
+        hasChanges = true;
+      }
+
+      // 5. Actualizar estadísticas
+      if (!taxonomyData.stats) {
+        taxonomyData.stats = {
+          totalProducts: 0,
+          llmUsed: 0,
+          localMatches: 0,
+          rulesMatches: 0,
+          totalLearnings: 0,
+          manualCorrections: 0,
+          avgConfidence: 0,
+          lastLearningAt: null
+        };
+      }
+
+      taxonomyData.stats.totalLearnings = (taxonomyData.stats.totalLearnings || 0) + 1;
+      taxonomyData.stats.lastLearningAt = serverTimestamp();
+
+      // Actualizar promedio de confianza
+      const currentAvg = taxonomyData.stats.avgConfidence || 0;
+      const currentCount = taxonomyData.stats.totalLearnings || 1;
+      taxonomyData.stats.avgConfidence = ((currentAvg * (currentCount - 1)) + confidence) / currentCount;
+
+      if (hasChanges) {
+        await setDoc(taxonomyRef, taxonomyData, { merge: true });
+        console.log('🌍 ✅ TAXONOMÍA GLOBAL ACTUALIZADA:', {
+          industry,
+          category: classification.category,
+          subcategory: classification.subcategory,
+          confidence,
+          totalLearnings: taxonomyData.stats.totalLearnings,
+          totalRules: taxonomyData.rules?.length || 0,
+          ruleCreated: confidence >= 0.85
+        });
+      } else {
+        console.log('ℹ️ Taxonomía global sin cambios');
+      }
+
+      return taxonomyData;
+    } catch (error) {
+      console.error('❌ Error actualizando taxonomía global:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 🏪 Actualiza taxonomía local del negocio (confidence < 0.8)
+   * - Estructura: { customCategories: [], customBrands: [], customPresentations: [], stats: {} }
+   * @param {string} businessId - ID del negocio
+   * @param {Object} classification - Clasificación de IA o manual
+   * @param {string} userInput - Descripción original del usuario
+   * @param {number} confidence - Nivel de confianza
+   */
+  const updateLocalTaxonomy = async (businessId, classification, userInput, confidence) => {
+    try {
+      if (!businessId) {
+        businessId = ensureBusinessId();
+      }
+
+      const taxonomyRef = doc(db, 'businesses', businessId, 'settings', 'taxonomies');
+      const taxonomySnap = await getDoc(taxonomyRef);
+
+      console.log(`📊 Actualizando taxonomía local - Confidence: ${confidence}, Source: ${classification.source}`);
+
+      let taxonomyData = taxonomySnap.exists() ? taxonomySnap.data() : {
+        customCategories: [],
+        customBrands: [],
+        customPresentations: [],
+        rules: [], // 🆕 Rules locales
+        stats: {
+          totalCustomItems: 0,
+          customCategories: 0,
+          customBrands: 0,
+          avgConfidence: 0,
+          lastUpdate: null
+        }
+      };
+
+      let hasChanges = false;
+
+      // 1. Agregar categoría personalizada si no existe
+      if (classification.category) {
+        const categoryExists = taxonomyData.customCategories.some(cat =>
+          cat.category === classification.category &&
+          cat.subcategory === classification.subcategory
+        );
+
+        if (!categoryExists) {
+          const categoryEntry = {
+            category: classification.category,
+            subcategory: classification.subcategory || null,
+            items: classification.subsubcategory ? [classification.subsubcategory] : [],
+            createdBy: 'user',
+            createdAt: new Date(),
+            source: classification.source || 'manual',
+            confidence: confidence,
+            originalInput: userInput
+          };
+
+          taxonomyData.customCategories.push(categoryEntry);
+          hasChanges = true;
+        } else if (classification.subsubcategory) {
+          // Agregar item a categoría existente
+          const category = taxonomyData.customCategories.find(cat =>
+            cat.category === classification.category &&
+            cat.subcategory === classification.subcategory
+          );
+
+          if (category && !category.items.includes(classification.subsubcategory)) {
+            category.items.push(classification.subsubcategory);
+            hasChanges = true;
+          }
+        }
+      }
+
+      // 2. Agregar marca personalizada
+      if (classification.brand) {
+        if (!taxonomyData.customBrands.includes(classification.brand)) {
+          taxonomyData.customBrands.push(classification.brand);
+          hasChanges = true;
+        }
+      }
+
+      // 3. Agregar presentación personalizada
+      if (classification.presentation) {
+        if (!taxonomyData.customPresentations.includes(classification.presentation)) {
+          taxonomyData.customPresentations.push(classification.presentation);
+          hasChanges = true;
+        }
+      }
+
+      // 4. Crear rule local si confidence >= 0.5 (más permisivo que global que usa 0.85)
+      if (confidence >= 0.5) {
+        const ruleAdded = await createLocalRule(businessId, userInput, classification, confidence, taxonomyData);
+        if (ruleAdded) {
+          hasChanges = true;
+          console.log('✅ Rule local creada, marcando cambios para guardar');
+        }
+      }
+
+      // 5. Actualizar estadísticas
+      if (hasChanges) {
+        taxonomyData.stats.totalCustomItems = (taxonomyData.stats.totalCustomItems || 0) + 1;
+        taxonomyData.stats.customCategories = taxonomyData.customCategories.length;
+        taxonomyData.stats.customBrands = taxonomyData.customBrands.length;
+        taxonomyData.stats.lastUpdate = serverTimestamp();
+
+        // Actualizar promedio de confianza
+        const currentAvg = taxonomyData.stats.avgConfidence || 0;
+        const currentCount = taxonomyData.stats.totalCustomItems || 1;
+        taxonomyData.stats.avgConfidence = ((currentAvg * (currentCount - 1)) + confidence) / currentCount;
+
+        await setDoc(taxonomyRef, taxonomyData, { merge: true });
+
+        console.log('🏪 ✅ TAXONOMÍA LOCAL ACTUALIZADA:', {
+          businessId,
+          category: classification.category,
+          subcategory: classification.subcategory,
+          confidence,
+          totalCustomItems: taxonomyData.stats.totalCustomItems,
+          totalCategories: taxonomyData.customCategories.length,
+          totalRules: taxonomyData.rules?.length || 0
+        });
+      } else {
+        console.log('ℹ️ Taxonomía local sin cambios');
+      }
+
+      return taxonomyData;
+    } catch (error) {
+      console.error('❌ Error actualizando taxonomía local:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 🔧 Crea regla automática en taxonomía global
+   * - Normaliza el input del usuario
+   * - Genera patrón regex flexible
+   * - Agrega a array rules[]
+   * @param {string} industry - Industria
+   * @param {string} userInput - Descripción original
+   * @param {Object} classification - Clasificación resultante
+   * @param {number} confidence - Nivel de confianza
+   * @param {Object} taxonomyData - Datos actuales de taxonomía (opcional, para evitar re-fetch)
+   */
+  const createAutoRule = async (industry, userInput, classification, confidence, taxonomyData = null) => {
+    try {
+      const normalized = normalizeDescription(userInput);
+
+      // Lista de palabras a ignorar (marcas comunes, medidas, tipos)
+      const stopwords = ['SOL', 'SIKA', 'CEMEX', 'TIPO', 'PORTLAND', 'KG', 'MT', 'CM', 'MM', 'LT', 'GL', 'UN', 'UNI', 'UNIDAD', 'PACK', 'CAJA'];
+      const numbersRegex = /^\d+\.?\d*$/;
+
+      // Extraer solo palabras clave (ignorar stopwords, números y palabras muy cortas)
+      const keywords = normalized
+        .split(' ')
+        .filter(word => {
+          return word.length > 2 &&
+            !stopwords.includes(word) &&
+            !numbersRegex.test(word);
+        })
+        .slice(0, 2); // Tomar máximo 2 palabras clave
+
+      // Si no hay keywords válidas, usar la primera palabra significativa
+      if (keywords.length === 0) {
+        keywords.push(normalized.split(' ').find(w => w.length > 2) || normalized);
+      }
+
+      // Generar patrón con alternancia (|) para mayor flexibilidad
+      const pattern = keywords
+        .map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|');
+
+      console.log('🌍 Pattern global generado:', {
+        original: userInput,
+        normalized,
+        keywords,
+        pattern: `(${pattern})`
+      });
+
+      const rule = {
+        match: `(${pattern})`,
+        category: classification.category,
+        subcategory: classification.subcategory || null,
+        subsubcategory: classification.subsubcategory || null,
+        brand: classification.brand || null,
+        presentation: classification.presentation || null,
+        auto: true,
+        confidence: confidence,
+        createdAt: new Date(),
+        timesUsed: 0,
+        originalInput: userInput
+      };
+
+      const taxonomyRef = doc(db, 'wala_global', 'taxonomies', industry, 'main');
+
+      // Si ya tenemos taxonomyData, usarla; si no, hacer fetch
+      if (!taxonomyData) {
+        const taxonomySnap = await getDoc(taxonomyRef);
+        taxonomyData = taxonomySnap.exists() ? taxonomySnap.data() : { rules: [] };
+      }
+
+      if (!taxonomyData.rules) {
+        taxonomyData.rules = [];
+      }
+
+      // Verificar que no exista una regla similar
+      const ruleExists = taxonomyData.rules.some(r => r.match === rule.match);
+
+      if (!ruleExists) {
+        taxonomyData.rules.push(rule);
+
+        console.log('🎯 Regla automática agregada al array:', {
+          pattern: rule.match,
+          category: classification.category,
+          confidence,
+          totalRules: taxonomyData.rules.length
+        });
+      } else {
+        console.log('ℹ️ Regla ya existe:', rule.match);
+      }
+
+    } catch (error) {
+      console.error('❌ Error creando regla automática:', error);
+    }
+  };
+
+  /**
+   * 🏪 Crea regla LOCAL en taxonomía del negocio
+   * - Similar a createAutoRule pero guarda en taxonomía local
+   * - Se usa cuando confidence < 0.8
+   * @param {string} businessId - ID del negocio
+   * @param {string} userInput - Descripción original
+   * @param {Object} classification - Clasificación resultante
+   * @param {number} confidence - Nivel de confianza
+   * @param {Object} taxonomyData - Datos actuales de taxonomía local (opcional)
+   */
+  const createLocalRule = async (businessId, userInput, classification, confidence, taxonomyData = null) => {
+    try {
+      if (!businessId) businessId = ensureBusinessId();
+
+      const normalized = normalizeDescription(userInput);
+
+      // Lista de palabras a ignorar (marcas comunes, medidas, tipos)
+      const stopwords = ['SOL', 'SIKA', 'CEMEX', 'TIPO', 'PORTLAND', 'KG', 'MT', 'CM', 'MM', 'LT', 'GL', 'UN', 'UNI', 'UNIDAD', 'PACK', 'CAJA'];
+      const numbersRegex = /^\d+\.?\d*$/;
+
+      // Extraer solo palabras clave (ignorar stopwords, números y palabras muy cortas)
+      const keywords = normalized
+        .split(' ')
+        .filter(word => {
+          return word.length > 2 &&
+            !stopwords.includes(word) &&
+            !numbersRegex.test(word);
+        })
+        .slice(0, 2); // Tomar máximo 2 palabras clave
+
+      // Si no hay keywords válidas, usar la primera palabra significativa
+      if (keywords.length === 0) {
+        keywords.push(normalized.split(' ').find(w => w.length > 2) || normalized);
+      }
+
+      // Generar patrón con alternancia (|) para mayor flexibilidad
+      const pattern = keywords
+        .map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('|');
+
+      console.log('🎯 Pattern generado:', {
+        original: userInput,
+        normalized,
+        keywords,
+        pattern: `(${pattern})`
+      });
+
+      const rule = {
+        match: `(${pattern})`,
+        category: classification.category,
+        subcategory: classification.subcategory || null,
+        subsubcategory: classification.subsubcategory || null,
+        brand: classification.brand || null,
+        presentation: classification.presentation || null,
+        auto: true,
+        confidence: confidence,
+        createdAt: new Date(),
+        timesUsed: 0,
+        originalInput: userInput,
+        source: 'local'
+      };
+
+      const taxonomyRef = doc(db, 'businesses', businessId, 'settings', 'taxonomies');
+
+      // Si ya tenemos taxonomyData, usarla; si no, hacer fetch
+      if (!taxonomyData) {
+        const taxonomySnap = await getDoc(taxonomyRef);
+        taxonomyData = taxonomySnap.exists() ? taxonomySnap.data() : { rules: [] };
+      }
+
+      if (!taxonomyData.rules) {
+        taxonomyData.rules = [];
+      }
+
+      // Verificar que no exista una regla similar
+      const ruleExists = taxonomyData.rules.some(r => r.match === rule.match);
+
+      if (!ruleExists) {
+        taxonomyData.rules.push(rule);
+
+        console.log('🏪 Rule local agregada al array:', {
+          pattern: rule.match,
+          category: classification.category,
+          confidence,
+          totalLocalRules: taxonomyData.rules.length
+        });
+        return true; // Rule agregada
+      } else {
+        console.log('ℹ️ Rule local ya existe:', rule.match);
+        return false; // Rule ya existía
+      }
+
+    } catch (error) {
+      console.error('❌ Error creando rule local:', error);
+      return false;
+    }
+  };
+
+  /**
+   * 🎯 Actualiza taxonomía global o local según confianza
+   * @param {Object} classification - Clasificación de IA o manual
+   * @param {string} userInput - Descripción original del usuario
+   * @param {boolean} isAccepted - Si el usuario aceptó o editó
+   * @param {string} businessId - ID del negocio
+   * @param {string} industry - Industria del negocio
+   * @returns {Promise<Object>} Resultado de la actualización
+   */
+  const updateTaxonomyFromClassification = async (classification, userInput, isAccepted = true, businessId = null, industry = null) => {
+    try {
+      if (!businessId) businessId = ensureBusinessId();
+
+      const confidence = classification.confidence || 0;
+      const source = classification.source || 'unknown';
+
+      console.log('🔍 updateTaxonomyFromClassification DEBUG:', {
+        confidence,
+        source,
+        isAccepted,
+        hasIndustry: !!industry,
+        conditionCheck: {
+          'llm + high': source === 'llm' && confidence >= 0.8 && isAccepted,
+          'llm + low': source === 'llm' && confidence < 0.8 && isAccepted,
+          'manual': source === 'manual' || !isAccepted,
+          'local_match': source === 'local_match' || source === 'rules'
+        }
+      });
+
+      let result = {
+        updated: false,
+        type: null,
+        message: ''
+      };
+
+      // LÓGICA DE ACTUALIZACIÓN
+      if (source === 'llm' && confidence >= 0.8 && isAccepted) {
+        // ✅ Alta confianza + aceptada → Taxonomía global
+        await updateGlobalTaxonomy(classification, userInput, confidence, industry);
+        result = {
+          updated: true,
+          type: 'global',
+          message: '✅ Taxonomía global actualizada - Ayudará a otros usuarios'
+        };
+
+        // Si confidence >= 0.85, también se creó una regla automática
+        if (confidence >= 0.85) {
+          result.message += ' (Regla automática creada)';
+        }
+
+      } else if (source === 'llm' && confidence < 0.8 && isAccepted) {
+        // ⚠️ Baja confianza pero aceptada → Taxonomía local
+        await updateLocalTaxonomy(businessId, classification, userInput, confidence);
+        result = {
+          updated: true,
+          type: 'local',
+          message: '✅ Guardado en taxonomía local de tu negocio'
+        };
+
+      } else if (source === 'manual' || !isAccepted) {
+        // ✋ Clasificación manual o editada → Taxonomía local con confidence 1.0
+        await updateLocalTaxonomy(businessId, classification, userInput, 1.0);
+        result = {
+          updated: true,
+          type: 'local',
+          message: '✅ Categoría personalizada guardada'
+        };
+
+      } else if (source === 'local_match' || source === 'rules') {
+        // 🎯 Coincidencia local o regla → No actualizar taxonomía
+        result = {
+          updated: false,
+          type: 'none',
+          message: '✅ Clasificación aplicada'
+        };
+      }
+
+      console.log('📊 Taxonomía actualizada:', result);
+      return result;
+
+    } catch (error) {
+      console.error('❌ Error actualizando taxonomía:', error);
+      return {
+        updated: false,
+        type: 'error',
+        message: '❌ Error al actualizar taxonomía'
+      };
+    }
+  };
+
   return {
     createItem,
     createProduct,
@@ -622,5 +1237,13 @@ export function useInventory() {
     classifyProduct,
     correctClassification,
     getUnclassifiedProducts,
+    // 🆕 Métodos de taxonomía
+    loadLocalTaxonomy,
+    updateGlobalTaxonomy,
+    updateLocalTaxonomy,
+    createAutoRule,
+    createLocalRule,
+    updateTaxonomyFromClassification,
+    normalizeDescription,
   };
 }

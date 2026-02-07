@@ -66,7 +66,7 @@ exports.classifyProductRequest = functions
       const llmCallsThisMonth = aiUsage.llmCallsThisMonth || 0;
 
       const limits = {
-        free: { maxLLMCallsPerDay: 10 },
+        free: { maxLLMCallsPerDay: 50 },
         premium: { maxLLMCallsPerDay: 200 }
       };
 
@@ -94,12 +94,147 @@ exports.classifyProductRequest = functions
 
       const taxonomy = taxonomyDoc.data();
 
-      // 🎯 PASO 1: Intentar clasificación local (búsqueda en taxonomía)
-      console.log('🔍 Buscando coincidencias en taxonomía local...');
-      const localMatch = searchInTaxonomy(description, taxonomy, 0.75); // 75% similitud mínima (detecta singulares/plurales)
+      // 🎯 PASO 1: Buscar en RULES LOCALES del negocio (más específicas)
+      console.log('🏪 Cargando taxonomía LOCAL del negocio...');
+      const localTaxonomyDoc = await admin.firestore()
+        .collection('businesses')
+        .doc(businessId)
+        .collection('settings')
+        .doc('taxonomies')
+        .get();
 
-      if (localMatch) {
-        console.log(`✅ Coincidencia local encontrada (${(localMatch.confidence * 100).toFixed(0)}%): ${localMatch.matchedTerm}`);
+      if (localTaxonomyDoc.exists) {
+        const localTaxonomy = localTaxonomyDoc.data();
+
+        console.log(`🔍 Buscando en RULES LOCALES (${localTaxonomy.rules ? localTaxonomy.rules.length : 0} disponibles)...`);
+
+        if (localTaxonomy.rules && localTaxonomy.rules.length > 0) {
+          for (let i = 0; i < localTaxonomy.rules.length; i++) {
+            const rule = localTaxonomy.rules[i];
+            try {
+              const regex = new RegExp(rule.match, 'i');
+
+              if (regex.test(description)) {
+                console.log(`✅ RULE LOCAL MATCH: "${rule.match}" → ${rule.category} > ${rule.subcategory}`);
+
+                // Incrementar contador de uso
+                rule.timesUsed = (rule.timesUsed || 0) + 1;
+                await localTaxonomyDoc.ref.update({ rules: localTaxonomy.rules });
+
+                // Retornar clasificación desde la regla local
+                const classification = {
+                  category: rule.category,
+                  subcategory: rule.subcategory,
+                  subsubcategory: rule.subsubcategory || null,
+                  brand: rule.brand || null,
+                  presentation: rule.presentation || null,
+                  tags: [
+                    rule.category?.toLowerCase(),
+                    rule.subcategory?.toLowerCase()
+                  ].filter(Boolean),
+                  confidence: rule.confidence || 0.9,
+                  source: 'local_rules',
+                  matchedRule: rule.match
+                };
+
+                console.log(`✅ Clasificación por RULE LOCAL (${(classification.confidence * 100).toFixed(0)}%)`);
+                return classification;
+              }
+            } catch (error) {
+              console.error(`⚠️ Error evaluando rule local: ${rule.match}`, error);
+            }
+          }
+          console.log('❌ Sin coincidencias en rules locales');
+        }
+
+        // 🎯 PASO 2: Buscar en CATEGORÍAS LOCALES
+        console.log('🔍 Buscando en CATEGORÍAS LOCALES...');
+
+        if (localTaxonomy.customCategories && localTaxonomy.customCategories.length > 0) {
+          console.log(`📊 Taxonomía local encontrada con ${localTaxonomy.customCategories.length} categorías personalizadas`);
+
+          // Convertir customCategories a formato compatible con searchInTaxonomy
+          const localTaxonomyFormatted = {};
+          localTaxonomy.customCategories.forEach(cat => {
+            if (!localTaxonomyFormatted[cat.category]) {
+              localTaxonomyFormatted[cat.category] = {};
+            }
+            if (cat.subcategory) {
+              localTaxonomyFormatted[cat.category][cat.subcategory] = cat.items || [];
+            }
+          });
+
+          const localMatch = searchInTaxonomy(description, { categories: localTaxonomyFormatted }, 0.75);
+
+          if (localMatch) {
+            console.log(`✅ Coincidencia LOCAL encontrada (${(localMatch.confidence * 100).toFixed(0)}%): ${localMatch.matchedTerm}`);
+
+            const classification = {
+              ...localMatch,
+              brand: null,
+              presentation: null,
+              tags: [
+                localMatch.category.toLowerCase(),
+                localMatch.subcategory.toLowerCase()
+              ].filter(Boolean)
+            };
+
+            console.log(`✅ Clasificación local: ${classification.category} > ${classification.subcategory}`);
+            return classification;
+          }
+
+          console.log('❌ Sin coincidencias >= 75% en categorías locales');
+        }
+      }
+
+      // 🎯 PASO 3: Buscar en RULES GLOBALES
+      console.log(`🔍 Buscando en RULES GLOBALES (${taxonomy.rules ? taxonomy.rules.length : 0} disponibles)...`);
+
+      if (taxonomy.rules && taxonomy.rules.length > 0) {
+        for (let i = 0; i < taxonomy.rules.length; i++) {
+          const rule = taxonomy.rules[i];
+          try {
+            const regex = new RegExp(rule.match, 'i');
+
+            if (regex.test(description)) {
+              console.log(`✅ RULE GLOBAL MATCH: "${rule.match}" → ${rule.category} > ${rule.subcategory}`);
+
+              // Incrementar contador de uso
+              rule.timesUsed = (rule.timesUsed || 0) + 1;
+              await taxonomyDoc.ref.update({ rules: taxonomy.rules });
+
+              // Retornar clasificación desde la regla
+              const classification = {
+                category: rule.category,
+                subcategory: rule.subcategory,
+                subsubcategory: rule.subsubcategory || null,
+                brand: rule.brand || null,
+                presentation: rule.presentation || null,
+                tags: [
+                  rule.category?.toLowerCase(),
+                  rule.subcategory?.toLowerCase()
+                ].filter(Boolean),
+                confidence: rule.confidence || 0.95,
+                source: 'global_rules',
+                matchedRule: rule.match
+              };
+
+              console.log(`✅ Clasificación por RULE GLOBAL (${(classification.confidence * 100).toFixed(0)}%)`);
+              return classification;
+            }
+          } catch (error) {
+            console.error(`⚠️ Error evaluando regla global: ${rule.match}`, error);
+          }
+        }
+        console.log('❌ Sin coincidencias en rules globales');
+      }
+
+      // 🎯 PASO 4: Buscar en CATEGORÍAS GLOBALES
+      console.log('🔍 Buscando en CATEGORÍAS GLOBALES...');
+      const globalMatch = searchInTaxonomy(description, taxonomy, 0.75);
+
+      if (globalMatch) {
+        console.log(`✅ Coincidencia GLOBAL encontrada (${(globalMatch.confidence * 100).toFixed(0)}%): ${globalMatch.matchedTerm}`);
 
         // Detectar marca y presentación
         const brands = (taxonomy.brands || []).map(b => b.name || b);
@@ -107,25 +242,26 @@ exports.classifyProductRequest = functions
         const presentationDetection = detectPresentation(description);
 
         const classification = {
-          ...localMatch,
+          ...globalMatch,
           brand: brandDetection.brand,
           presentation: presentationDetection.presentation,
           tags: [
-            localMatch.category.toLowerCase(),
-            localMatch.subcategory.toLowerCase()
+            globalMatch.category.toLowerCase(),
+            globalMatch.subcategory.toLowerCase()
           ].filter(Boolean)
         };
 
-        // Actualizar estadísticas de taxonomía (match local)
+        // Actualizar estadísticas de taxonomía (match global)
         await updateTaxonomyStats(taxonomyDoc.ref, classification, 'local_match');
 
-        console.log(`✅ Clasificación local: ${classification.category} > ${classification.subcategory} (${(classification.confidence * 100).toFixed(0)}%)`);
+        console.log(`✅ Clasificación global: ${classification.category} > ${classification.subcategory} (${(classification.confidence * 100).toFixed(0)}%)`);
         return classification;
       }
 
-      console.log('⚠️ Sin coincidencia local - usando IA...');
+      console.log('❌ Sin coincidencias >= 75% en categorías globales');
+      console.log('⚠️ Sin coincidencia en taxonomías - usando IA...');
 
-      // 🤖 PASO 2: Clasificar con Grok (solo si no hay match local)
+      // 🤖 PASO 5: Clasificar con Grok (solo si no hay match)
       const classification = await classifyWithGrok(
         description,
         industry,

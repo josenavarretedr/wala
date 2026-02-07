@@ -1233,7 +1233,7 @@ const previousStep = () => {
 // 🤖 IA Classification Methods
 const loadTaxonomy = async () => {
   try {
-    const industry = businessStore.currentBusiness?.industry;
+    const industry = businessStore.business?.industry;
     if (!industry) {
       console.warn("No industry found for business");
       return;

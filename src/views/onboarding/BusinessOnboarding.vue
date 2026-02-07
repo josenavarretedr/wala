@@ -123,8 +123,8 @@
               v-else-if="businessForm.industry"
               class="mt-2 text-xs text-green-600 bg-green-50 rounded-lg p-3"
             >
-              <strong>✓ Perfecto:</strong> El sistema usará categorías
-              especializadas para {{ getIndustryLabel(businessForm.industry) }}.
+              <strong>¡Excelente!</strong> Wala usará y análisis para
+              {{ getIndustryLabel(businessForm.industry) }}.
             </p>
           </div>
 

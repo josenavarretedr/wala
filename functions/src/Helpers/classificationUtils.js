@@ -173,20 +173,32 @@ function calculateSimilarity(str1, str2) {
   if (s1 === s2) return 1.0;
   if (s1.length === 0 || s2.length === 0) return 0;
 
-  // Coincidencia exacta de substring
-  if (s1.includes(s2) || s2.includes(s1)) {
-    const longer = s1.length > s2.length ? s1 : s2;
-    const shorter = s1.length > s2.length ? s2 : s1;
-    return shorter.length / longer.length;
+  // 🎯 PASO 1: Coincidencia exacta de substring (PRIORITARIO)
+  // Si uno contiene al otro completamente, es una coincidencia fuerte
+  if (s1.includes(s2)) {
+    // Cuánto del string total representa el match
+    const coverage = s2.length / s1.length;
+    // Si el término de taxonomía cubre al menos 60% de la descripción, es muy fuerte
+    return Math.max(0.85, coverage);
   }
 
-  // Coincidencia de palabras con soporte para singular/plural
-  const words1 = s1.split(/\s+/).filter(w => w.length > 2); // Filtrar palabras muy cortas
-  const words2 = s2.split(/\s+/).filter(w => w.length > 2);
+  if (s2.includes(s1)) {
+    const coverage = s1.length / s2.length;
+    return Math.max(0.85, coverage);
+  }
 
-  let bestOverallMatch = 0;
+  // 🎯 PASO 2: Coincidencia de todas las palabras importantes
+  // Filtrar palabras comunes y cortas (stopwords)
+  const stopwords = ['DE', 'DEL', 'LA', 'EL', 'LOS', 'LAS', 'Y', 'O', 'UN', 'UNA'];
+  const words1 = s1.split(/\s+/).filter(w => w.length > 2 && !stopwords.includes(w));
+  const words2 = s2.split(/\s+/).filter(w => w.length > 2 && !stopwords.includes(w));
 
-  // Para cada palabra del producto, buscar la mejor coincidencia en taxonomía
+  if (words1.length === 0 || words2.length === 0) return 0;
+
+  // Contar cuántas palabras importantes coinciden
+  let matchedWords = 0;
+  const totalWords = Math.min(words1.length, words2.length);
+
   for (const word1 of words1) {
     for (const word2 of words2) {
       let wordScore = 0;
@@ -195,7 +207,7 @@ function calculateSimilarity(str1, str2) {
       if (word1 === word2) {
         wordScore = 1.0;
       }
-      // Coincidencia de substring (ej: "CLAVO" contiene en "CLAVOS")
+      // Coincidencia de substring (ej: "CLAVO" en "CLAVOS")
       else if (word1.includes(word2) || word2.includes(word1)) {
         const longer = word1.length > word2.length ? word1 : word2;
         const shorter = word1.length > word2.length ? word2 : word1;
@@ -213,17 +225,32 @@ function calculateSimilarity(str1, str2) {
         else if (stem1.length >= 4 && stem2.length >= 4) {
           if (stem1.startsWith(stem2.substring(0, 4)) ||
             stem2.startsWith(stem1.substring(0, 4))) {
-            wordScore = 0.85;
+            wordScore = 0.8;
           }
         }
       }
 
-      // Guardar el mejor match encontrado
-      bestOverallMatch = Math.max(bestOverallMatch, wordScore);
+      if (wordScore >= 0.8) {
+        matchedWords++;
+        break; // Ya encontramos match para esta palabra, pasar a la siguiente
+      }
     }
   }
 
-  return bestOverallMatch;
+  // Porcentaje de palabras que coinciden
+  const matchRatio = matchedWords / totalWords;
+
+  // Si todas las palabras importantes coinciden, es un match muy fuerte
+  if (matchRatio === 1.0) return 0.95;
+
+  // Si al menos 2/3 de las palabras coinciden, es un buen match
+  if (matchRatio >= 0.67) return 0.8;
+
+  // Si al menos la mitad coincide, es aceptable
+  if (matchRatio >= 0.5) return 0.7;
+
+  // Retornar el ratio ajustado
+  return matchRatio * 0.7;
 }
 
 /**
@@ -239,12 +266,12 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
   }
 
   const normalized = normalizeDescription(description);
-  const words = normalized.split(/\s+/).filter(w => w.length > 2); // Palabras de al menos 3 letras
 
   let bestMatch = null;
   let bestScore = 0;
 
   console.log(`🔍 Buscando "${description}" (normalizado: "${normalized}") en taxonomía...`);
+  console.log(`📊 Umbral de similitud: ${(threshold * 100).toFixed(0)}%`);
 
   // Buscar en categorías, subcategorías y subsubcategorías
   for (const [category, subcategories] of Object.entries(taxonomy.categories)) {
@@ -255,8 +282,9 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
       // Coincidencia en subcategoría
       const subcatScore = calculateSimilarity(description, subcategory);
 
-      if (subcatScore >= threshold) {
-        console.log(`   ✓ Coincidencia: "${subcategory}" (${(subcatScore * 100).toFixed(0)}%)`);
+      if (subcatScore >= 0.5) { // Log todas las coincidencias mayores al 50%
+        const normalizedSubcat = normalizeDescription(subcategory);
+        console.log(`   🔎 "${subcategory}" (norm: "${normalizedSubcat}") → ${(subcatScore * 100).toFixed(1)}%`);
       }
 
       if (subcatScore > bestScore && subcatScore >= threshold) {
@@ -266,7 +294,7 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
           subcategory,
           subsubcategory: null,
           confidence: subcatScore,
-          source: 'rules',
+          source: 'local_match',
           matchedTerm: subcategory
         };
       }
@@ -276,8 +304,9 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
         for (const subsubcategory of subsubcategories) {
           const subsubScore = calculateSimilarity(description, subsubcategory);
 
-          if (subsubScore >= threshold) {
-            console.log(`   ✓ Coincidencia: "${subsubcategory}" (${(subsubScore * 100).toFixed(0)}%)`);
+          if (subsubScore >= 0.5) { // Log todas las coincidencias mayores al 50%
+            const normalizedSubsubcat = normalizeDescription(subsubcategory);
+            console.log(`      🔎 "${subsubcategory}" (norm: "${normalizedSubsubcat}") → ${(subsubScore * 100).toFixed(1)}%`);
           }
 
           if (subsubScore > bestScore && subsubScore >= threshold) {
@@ -287,7 +316,7 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
               subcategory,
               subsubcategory,
               confidence: subsubScore,
-              source: 'rules',
+              source: 'local_match',
               matchedTerm: subsubcategory
             };
           }
@@ -297,7 +326,7 @@ function searchInTaxonomy(description, taxonomy, threshold = 0.75) {
   }
 
   if (bestMatch) {
-    console.log(`✅ Mejor match: "${bestMatch.matchedTerm}" en ${bestMatch.category} › ${bestMatch.subcategory} (${(bestScore * 100).toFixed(0)}%)`);
+    console.log(`✅ MATCH ENCONTRADO: "${bestMatch.matchedTerm}" en ${bestMatch.category} › ${bestMatch.subcategory}${bestMatch.subsubcategory ? ' › ' + bestMatch.subsubcategory : ''} (${(bestScore * 100).toFixed(1)}%)`);
   } else {
     console.log(`❌ Sin coincidencias >= ${(threshold * 100).toFixed(0)}%`);
   }

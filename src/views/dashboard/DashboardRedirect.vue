@@ -61,6 +61,8 @@
             <Loader />
           </template>
         </Suspense>
+
+        <ClasificationTest />
       </div>
 
       <!-- Botones principales fijos -->
@@ -83,6 +85,8 @@ import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useOnboarding } from "@/composables/useOnboarding";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import appFirebase from "@/firebaseInit";
+
+import ClasificationTest from "@/components/Test/ClasificationTest.vue";
 
 const functions = getFunctions(appFirebase, "southamerica-east1");
 
