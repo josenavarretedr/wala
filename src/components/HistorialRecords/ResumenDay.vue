@@ -272,6 +272,7 @@
 import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
 import { useToast } from "@/composables/useToast";
 import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
@@ -279,6 +280,7 @@ import { BrightCrown } from "@iconoir/vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
 const route = useRoute();
+const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
 const { isPremium } = useSubscription();
 const { warning, success, premium } = useToast();
 
@@ -358,6 +360,9 @@ onMounted(async () => {
     console.log("✅ ResumenDay - DailySummary cargado exitosamente");
     console.log("   Fuente de datos: Backend pre-calculado (dailySummary)");
     console.log("   🔥 Listener activo - se actualizará automáticamente");
+
+    // ⚡ OPTIMIZACIÓN: Marcar datos como cargados para AccountBalanceApp
+    accountsBalanceFlowStore.markDataAsLoaded();
   } else {
     console.log(
       "ℹ️ ResumenDay - DailySummary no disponible, usando cálculo manual",

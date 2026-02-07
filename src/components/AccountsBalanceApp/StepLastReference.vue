@@ -151,6 +151,14 @@ import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/account
 import { useDailySummary } from "@/composables/useDailySummary";
 import { useTransaccion } from "@/composables/useTransaction";
 
+// ⚡ OPTIMIZACIÓN: Recibir datos precargados como prop
+const props = defineProps({
+  preloadedData: {
+    type: Object,
+    default: null,
+  },
+});
+
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 const { getTodayDailySummary } = useDailySummary();
@@ -203,7 +211,7 @@ const findLastClosure = async () => {
       lastClosureData.value = closureTransactions[0];
       console.log("Último cierre encontrado:", lastClosureData.value);
       console.log(
-        `Total de cierres encontrados: ${closureTransactions.length}`
+        `Total de cierres encontrados: ${closureTransactions.length}`,
       );
     } else {
       console.log("No se encontraron transacciones de cierre.");
@@ -219,7 +227,7 @@ const findLastClosure = async () => {
 const findOpeningToday = async () => {
   if (dailySummary.value?.openingData.id) {
     openingData.value = await getTransactionByID(
-      dailySummary.value.openingData.id
+      dailySummary.value.openingData.id,
     );
     console.log("Apertura del día encontrada:", openingData.value);
   } else {
@@ -229,22 +237,47 @@ const findOpeningToday = async () => {
 };
 
 // Inicialización
+// Inicialización
 onMounted(async () => {
   try {
-    // Iniciar el loading y sincronizar con el store
+    // ⚡ OPTIMIZACIÓN: Si vienen datos precargados, NO hacer loading
+    if (props.preloadedData && props.preloadedData.dailySummary) {
+      console.log(
+        "⚡ StepLastReference - MODO RÁPIDO: Usando datos precargados",
+      );
+
+      dailySummary.value = props.preloadedData.dailySummary;
+
+      // Configuración instantánea sin loading
+      if (dailySummary.value?.openingData?.id) {
+        openingData.value = await getTransactionByID(
+          dailySummary.value.openingData.id,
+        );
+      }
+
+      if (!dailySummary.value?.hasOpening) {
+        await findLastClosure();
+      }
+
+      // ⚡ NO hay loading - datos instantáneos
+      isLoading.value = false;
+      console.log("✅ StepLastReference - Carga instantánea completa");
+      return;
+    }
+
+    // 🔄 MODO NORMAL: Solo si NO hay datos precargados
+    console.log("🔄 StepLastReference - Cargando datos desde cero");
     isLoading.value = true;
     flowStore.setStepLoading(true);
 
-    // Cargar transacciones del día si no están cargadas
     dailySummary.value = await getTodayDailySummary();
-
-    // Buscar apertura del día
     findOpeningToday();
 
-    // Si no hay apertura hoy, buscar el último cierre
     if (!hasOpeningToday.value) {
       await findLastClosure();
     }
+
+    console.log("✅ StepLastReference - Inicialización completa");
   } catch (error) {
     console.error("Error en inicialización de StepLastReference:", error);
   } finally {

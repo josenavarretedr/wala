@@ -1,8 +1,6 @@
 <template>
   <div class="w-full">
-    <component
-      :is="!hasBothTransactions ? 'router-link' : 'button'"
-      :to="!hasBothTransactions ? { name: 'AccountBalanceApp' } : undefined"
+    <button
       @click="handleClick"
       :class="[
         'w-full py-3 px-4 sm:py-4 sm:px-6 text-base sm:text-lg font-semibold rounded-xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3 backdrop-blur-sm',
@@ -21,29 +19,33 @@
       <span class="font-bold tracking-wide text-sm sm:text-base truncate">{{
         currentText
       }}</span>
-    </component>
+    </button>
   </div>
 </template>
 
 <script setup>
 import { computed, onMounted, ref, onBeforeUnmount } from "vue";
+import { useRouter } from "vue-router";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
 import { Safe, SafeOpen } from "@iconoir/vue";
 import { useToast } from "@/composables/useToast";
 
+const router = useRouter();
 const transactionStore = useTransactionStore();
+const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
 const { warning } = useToast();
 
 // Computed para verificar si existe una transacción de tipo "opening"
 const hasOpeningToday = computed(() => {
   return transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "opening"
+    (transaction) => transaction.type === "opening",
   );
 });
 
 const hasClosureToday = computed(() => {
   return transactionStore.transactionsInStore.value.some(
-    (transaction) => transaction.type === "closure"
+    (transaction) => transaction.type === "closure",
   );
 });
 
@@ -75,9 +77,18 @@ const handleClick = () => {
       `Ya cerraste hoy. Espera ${remainingTime} para aperturar de nuevo.`,
       {
         duration: 4000,
-      }
+      },
     );
+    return;
   }
+
+  // ⚡ OPTIMIZACIÓN: Marcar datos como cargados antes de navegar
+  // Esto permite que AccountBalanceAppWrapper use los datos ya disponibles
+  console.log("⚡ Marcando datos como cargados antes de navegar...");
+  accountsBalanceFlowStore.markDataAsLoaded();
+
+  // Navegar a AccountBalanceApp
+  router.push({ name: "AccountBalanceApp" });
 };
 
 // Estado del contador

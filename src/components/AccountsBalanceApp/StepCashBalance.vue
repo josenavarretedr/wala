@@ -206,6 +206,14 @@ import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/account
 import { useTransaccion } from "@/composables/useTransaction";
 import { useDailySummary } from "@/composables/useDailySummary";
 
+// ⚡ OPTIMIZACIÓN: Recibir datos precargados como prop
+const props = defineProps({
+  preloadedData: {
+    type: Object,
+    default: null,
+  },
+});
+
 const { getTransactionByID } = useTransaccion();
 
 const { getTodayDailySummary } = useDailySummary();
@@ -251,7 +259,7 @@ const cashDifference = computed(() => {
   if (!hasUserInput.value) return 0;
   return accountsBalanceStore.calculateDifference(
     realCashBalance.value,
-    expectedCashBalance.value
+    expectedCashBalance.value,
   );
 });
 
@@ -295,7 +303,7 @@ watch(
       openingData: openingData.value,
     });
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Manejadores
@@ -342,7 +350,7 @@ const findLastClosure = async () => {
 // Buscar la apertura del día (solo para modo close)
 const findOpeningToday = () => {
   const opening = transactionStore.transactionsInStore.value.find(
-    (t) => t.type === "opening"
+    (t) => t.type === "opening",
   );
   if (opening) {
     openingData.value = opening;
@@ -358,38 +366,38 @@ const setupBalanceStore = async () => {
 
   if (loaded) {
     console.log(
-      "✅ StepCashBalance - Usando dailySummary (backend pre-calculado)"
+      "✅ StepCashBalance - Usando dailySummary (backend pre-calculado)",
     );
     console.log("📊 dailySummary cargado:", accountsBalanceStore.dailySummary);
     console.log(
       "📊 dailySummary.transfers:",
-      accountsBalanceStore.dailySummary?.transfers
+      accountsBalanceStore.dailySummary?.transfers,
     );
     console.log(
       "📊 dailySummary.transfers.cash:",
-      accountsBalanceStore.dailySummary?.transfers?.cash
+      accountsBalanceStore.dailySummary?.transfers?.cash,
     );
     console.log("📊 hasDailySummary:", accountsBalanceStore.hasDailySummary);
 
     // Forzar acceso directo al composable para debug
     const dailySummaryComp = useDailySummary();
     const valorDirecto = dailySummaryComp.getEfectoTransferenciasEnCash(
-      accountsBalanceStore.dailySummary
+      accountsBalanceStore.dailySummary,
     );
     console.log(
       "📊 efectoTransferenciasEnCash (directo del composable):",
-      valorDirecto
+      valorDirecto,
     );
     console.log(
       "📊 efectoTransferenciasEnCash (desde store):",
-      accountsBalanceStore.efectoTransferenciasEnCash
+      accountsBalanceStore.efectoTransferenciasEnCash,
     );
     return;
   }
 
   // Fallback: Cargar transacciones manualmente (legacy)
   console.log(
-    "ℹ️ StepCashBalance - DailySummary no disponible, usando transacciones"
+    "ℹ️ StepCashBalance - DailySummary no disponible, usando transacciones",
   );
 
   if (isOpeningMode.value) {
@@ -401,7 +409,7 @@ const setupBalanceStore = async () => {
         (tx) => {
           const txTime = tx.createdAt?.seconds || 0;
           return txTime >= openingTime;
-        }
+        },
       );
       accountsBalanceStore.setTransactions(dayTransactions);
       accountsBalanceStore.setOpening(openingData.value);
@@ -412,7 +420,29 @@ const setupBalanceStore = async () => {
 // Inicialización
 onMounted(async () => {
   try {
-    // Iniciar el loading y sincronizar con el store
+    // ⚡ OPTIMIZACIÓN: Si vienen datos precargados, NO hacer loading
+    if (props.preloadedData && props.preloadedData.dailySummary) {
+      console.log("⚡ StepCashBalance - MODO RÁPIDO: Usando datos precargados");
+      dailySummary.value = props.preloadedData.dailySummary;
+
+      // Configuración instantánea sin loading
+      if (isOpeningMode.value) {
+        await findLastClosure();
+      } else {
+        findOpeningToday();
+      }
+
+      await setupBalanceStore();
+      realCashBalance.value = expectedCashBalance.value;
+
+      // ⚡ NO hay loading - datos instantáneos
+      isLoading.value = false;
+      console.log("✅ StepCashBalance - Carga instantánea completa");
+      return;
+    }
+
+    // 🔄 MODO NORMAL: Solo si NO hay datos precargados
+    console.log("🔄 StepCashBalance - Cargando datos desde cero");
     isLoading.value = true;
     flowStore.setStepLoading(true);
 
@@ -425,9 +455,9 @@ onMounted(async () => {
     }
 
     await setupBalanceStore();
-
-    // Establecer el valor esperado como valor inicial
     realCashBalance.value = expectedCashBalance.value;
+
+    console.log("✅ StepCashBalance - Inicialización completa");
   } catch (error) {
     console.error("Error en inicialización de StepCashBalance:", error);
   } finally {
@@ -475,7 +505,9 @@ onMounted(async () => {
 /* Animación fade para indicadores de estado */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .fade-enter-from,

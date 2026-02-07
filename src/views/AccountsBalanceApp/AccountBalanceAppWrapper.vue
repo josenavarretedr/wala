@@ -9,8 +9,22 @@
       <CloseBtn v-bind="closeBtnConfig" />
     </div>
 
+    <!-- Loading state inicial -->
+    <div v-if="isLoading" class="flex justify-center items-center py-12">
+      <div class="text-center space-y-3">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"
+        ></div>
+        <p class="text-sm text-gray-600">Cargando datos...</p>
+      </div>
+    </div>
+
     <!-- Paso actual -->
-    <component :is="CurrentStepComponent" />
+    <component
+      v-else
+      :is="CurrentStepComponent"
+      :preloadedData="preloadedData"
+    />
 
     <div
       class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
@@ -24,6 +38,7 @@
 import { computed, onMounted, ref } from "vue";
 import NavigationBtnsAccountsBalance from "@/components/AccountsBalanceApp/NavigationBtnsAccountsBalance.vue";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore.js";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore.js";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 import CloseBtn from "@/components/ui/CloseBtn.vue";
@@ -42,52 +57,103 @@ const { getCurrentUser } = useAuth();
 
 const transactionStore = useTransactionStore();
 const flow = useAccountsBalanceFlowStore();
+const accountsBalanceStore = useAccountsBalanceStore();
+
 // Props para el ProgressIndicator usando el composable
 const progressProps = computed(() =>
-  getProgressIndicatorProps(flow, FLOW_TYPES.TRANSACTION)
+  getProgressIndicatorProps(flow, FLOW_TYPES.TRANSACTION),
 );
 
 const CurrentStepComponent = computed(() => flow.currentStepConfig.component);
 
-// Estado local para evitar el bucle infinito
-const hasOpeningTransaction = ref(false);
+// Estado local
 const isLoading = ref(true);
+// ⚡ OPTIMIZACIÓN: Datos precargados para pasar a componentes hijos
+const preloadedData = ref(null);
 
-// Al montar el componente, verificar cierre lazy y cargar transacciones
+// Al montar el componente, verificar si los datos ya están cargados
 onMounted(async () => {
   try {
-    console.log("🚀 Iniciando verificación de cierres pendientes...");
+    console.log("🚀 Iniciando AccountBalanceAppWrapper...");
 
-    // 1. Esperar a que el usuario esté autenticado
     const user = await getCurrentUser();
-
     if (!user) {
       console.error("❌ Usuario no autenticado");
       return;
     }
 
-    console.log("✅ Usuario autenticado:", user.email);
-    console.log("   UID:", user.uid);
+    // ⚡ OPTIMIZACIÓN: Si los datos ya están cargados desde ResumenDay (Dashboard),
+    // NO hacer consultas nuevas - usar dailySummary directamente
+    if (flow.dataAlreadyLoaded && accountsBalanceStore.dailySummary) {
+      console.log("⚡ MODO RÁPIDO: Datos ya cargados desde Dashboard");
+      console.log("   Usando dailySummary precalculado del backend");
 
-    // IMPORTANTE: Pequeño delay para asegurar que el token esté disponible
-    // Esto es necesario porque el token ID puede tardar unos milisegundos en generarse
+      // Usar los datos ya existentes del accountsBalanceStore
+      preloadedData.value = {
+        dailySummary: accountsBalanceStore.dailySummary,
+        transactions: accountsBalanceStore.transactions,
+        hasOpening: accountsBalanceStore.dailySummary?.hasOpening || false,
+        saldoInicial: accountsBalanceStore.saldoInicial,
+        totalIngresos: accountsBalanceStore.totalIngresos,
+        totalEgresos: accountsBalanceStore.totalEgresos,
+        saldoActual: accountsBalanceStore.saldoActual,
+        saldoActualCash: accountsBalanceStore.saldoActualCash,
+        saldoActualBank: accountsBalanceStore.saldoActualBank,
+        fromCache: true,
+      };
+
+      console.log("✅ Datos precargados listos:", {
+        hasOpening: preloadedData.value.hasOpening,
+        totalTransactions: preloadedData.value.transactions?.length || 0,
+        saldoInicial: preloadedData.value.saldoInicial,
+        saldoActual: preloadedData.value.saldoActual,
+      });
+
+      isLoading.value = false;
+      return;
+    }
+
+    // Si NO vienen datos cargados, hacer el proceso normal
+    console.log("🔄 MODO NORMAL: Cargando datos desde cero...");
+
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // 2. Llamar a lazyCloseIfNeeded para verificar día anterior
-    // await checkLazyClose();
+    // Cargar dailySummary desde el accountsBalanceStore
+    const loaded = await accountsBalanceStore.loadFromDailySummary();
 
-    // 3. Cargar transacciones del día actual
-    await transactionStore.getTransactionsToday();
+    if (loaded) {
+      console.log("✅ DailySummary cargado exitosamente");
 
-    // 4. Verificar si existe una transacción de tipo "opening"
-    hasOpeningTransaction.value =
-      transactionStore.transactionsInStore.value.some(
-        (transaction) => transaction.type === "opening"
-      );
+      preloadedData.value = {
+        dailySummary: accountsBalanceStore.dailySummary,
+        transactions: accountsBalanceStore.transactions,
+        hasOpening: accountsBalanceStore.dailySummary?.hasOpening || false,
+        saldoInicial: accountsBalanceStore.saldoInicial,
+        totalIngresos: accountsBalanceStore.totalIngresos,
+        totalEgresos: accountsBalanceStore.totalEgresos,
+        saldoActual: accountsBalanceStore.saldoActual,
+        saldoActualCash: accountsBalanceStore.saldoActualCash,
+        saldoActualBank: accountsBalanceStore.saldoActualBank,
+        fromCache: false,
+      };
+    } else {
+      console.log("⚠️ No se pudo cargar dailySummary, usando fallback");
+      // Fallback: cargar transacciones manualmente
+      await transactionStore.getTransactionsToday();
 
-    console.log("✅ Verificación completada", {
-      hasOpening: hasOpeningTransaction.value,
-      totalTransactions: transactionStore.transactionsInStore.value.length,
+      preloadedData.value = {
+        transactions: transactionStore.transactionsInStore.value,
+        hasOpening: transactionStore.transactionsInStore.value.some(
+          (t) => t.type === "opening",
+        ),
+        fromCache: false,
+      };
+    }
+
+    console.log("✅ Datos cargados:", {
+      hasOpening: preloadedData.value.hasOpening,
+      totalTransactions: preloadedData.value.transactions?.length || 0,
+      fromCache: preloadedData.value.fromCache,
     });
   } catch (error) {
     console.error("❌ Error en inicialización:", error);
@@ -179,17 +245,12 @@ const checkLazyClose = async () => {
     // Debug adicional
     console.warn(
       "🔍 auth.currentUser:",
-      auth.currentUser ? auth.currentUser.email : "null"
+      auth.currentUser ? auth.currentUser.email : "null",
     );
 
     // El flujo puede continuar aunque falle el lazy close
     return null;
   }
-};
-
-// Manejar cuando se crea una nueva apertura
-const onOpeningCreated = () => {
-  hasOpeningTransaction.value = true;
 };
 
 // Configuración para el CloseBtn

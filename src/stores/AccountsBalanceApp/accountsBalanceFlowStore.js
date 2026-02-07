@@ -17,6 +17,8 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
     accountBalanceLoading: false,
     stepLoading: false,
     accountBalanceError: null,
+    // ⚡ OPTIMIZACIÓN: Flag para evitar recargas innecesarias
+    dataAlreadyLoaded: false,
     // Estado para almacenar los datos de cada paso
     stepsData: {
       // Datos del paso "Referencia anterior"
@@ -83,6 +85,8 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
       ];
       // Resetear los datos de los pasos
       this.resetStepsData();
+      // ⚡ OPTIMIZACIÓN: Resetear flag de datos cargados al salir del flujo
+      this.resetDataLoadedFlag();
     },
     // Resetear los datos de los pasos
     resetStepsData() {
@@ -106,6 +110,16 @@ export const useAccountsBalanceFlowStore = defineStore('accountBalanceFlow', {
     // Actualizar estado de loading del step actual
     setStepLoading(loading) {
       this.stepLoading = loading;
+    },
+    // ⚡ OPTIMIZACIÓN: Marcar datos como ya cargados (desde ResumenDay)
+    markDataAsLoaded() {
+      this.dataAlreadyLoaded = true;
+      console.log('⚡ Datos marcados como cargados desde Dashboard');
+    },
+    // ⚡ OPTIMIZACIÓN: Resetear flag de datos cargados
+    resetDataLoadedFlag() {
+      this.dataAlreadyLoaded = false;
+      console.log('🔄 Flag de datos cargados reseteado');
     },
     // defineDynamicSteps(accountType) {
     //   // Limpia pasos previos dinámicos
