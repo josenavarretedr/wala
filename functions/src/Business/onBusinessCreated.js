@@ -24,6 +24,7 @@ exports.onBusinessCreated = functions
 
     console.log(`🆕 Nuevo negocio creado: ${business.nombre || businessId}`);
     console.log(`📋 Industria inicial: ${business.industry}`);
+    console.log(`📊 Tipo de negocio: ${business.businessType || 'no especificado'}`);
 
     try {
       // Si industry !== "otro", solo actualizar industryDetectedBy

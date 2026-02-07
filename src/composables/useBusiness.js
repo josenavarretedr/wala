@@ -38,6 +38,9 @@ export const createBusiness = async (uid, businessData) => {
     industryConfidence: businessData.industry && businessData.industry !== 'otro' ? 1.0 : 0.0,
     description: businessData.descripcion || businessData.description || '',
 
+    // ===== TIPO DE ACTIVIDAD ECONÓMICA =====
+    businessType: businessData.businessType || '',
+
     // ===== CONTROL DE USO DE IA =====
     aiUsage: {
       classificationsThisMonth: 0,

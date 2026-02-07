@@ -79,6 +79,7 @@ import { useRoute, useRouter } from "vue-router";
 import BtnLogout from "@/components/Auth/BtnLogout.vue";
 import { Folder, BrightCrown, Crown } from "@iconoir/vue";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
+import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowStore";
 
 import { useSubscription } from "@/composables/useSubscription";
 
@@ -110,6 +111,7 @@ const businessStore = useBusinessStore();
 const userStore = useUserStore();
 const transactionStore = useTransactionStore();
 const flow = useTransactionFlowStore();
+const onboardingFlowStore = useBusinessOnboardingFlowStore();
 
 const displayName = ref("WALA");
 
@@ -221,5 +223,29 @@ watch(
     }
   },
   { immediate: true },
+);
+
+// Watch reactivo para el nombre del onboarding
+watch(
+  () => onboardingFlowStore.businessOnboardingData.nombre,
+  (newName) => {
+    // Solo actualizar si estamos en la ruta de onboarding y hay un nombre
+    if (newName && route.name === "BusinessOnboarding") {
+      displayName.value = newName;
+    }
+  },
+);
+
+// Watch para actualizar cuando cambias de ruta (especialmente después de crear negocio)
+watch(
+  () => route.name,
+  () => {
+    // Si sales del onboarding, actualizar con el nombre del negocio actual
+    if (route.name !== "BusinessOnboarding") {
+      if (authStore.user) {
+        displayName.value = props.contextName || businessName.value || "WALA";
+      }
+    }
+  },
 );
 </script>

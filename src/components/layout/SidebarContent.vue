@@ -140,7 +140,7 @@ const businessInitial = computed(() => {
     business?.nombre ||
     business?.name ||
     userBusiness?.businessName ||
-    "Sin negocio";
+    "WALA";
   return name.charAt(0).toUpperCase() || "W";
 });
 
@@ -153,7 +153,7 @@ const businessDisplayName = computed(() => {
     business?.nombre ||
     business?.name ||
     userBusiness?.businessName ||
-    "Sin negocio"
+    "WALA"
   );
 });
 
