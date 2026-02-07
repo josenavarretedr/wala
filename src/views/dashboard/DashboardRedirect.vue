@@ -62,7 +62,7 @@
           </template>
         </Suspense>
 
-        <ClasificationTest />
+        <!-- <ClasificationTest /> -->
       </div>
 
       <!-- Botones principales fijos -->

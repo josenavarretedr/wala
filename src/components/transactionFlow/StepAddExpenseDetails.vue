@@ -494,7 +494,10 @@
         </label>
 
         <!-- Componente de búsqueda asíncrona -->
-        <SearchExpenseAsync @update:expenseToAdd="handleExpenseSelected" />
+        <SearchExpenseAsync
+          :category="transactionStore.transactionToAdd.value.category"
+          @update:expenseToAdd="handleExpenseSelected"
+        />
 
         <!-- Mostrar gasto seleccionado -->
         <div

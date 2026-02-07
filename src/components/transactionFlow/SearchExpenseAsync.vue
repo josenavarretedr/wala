@@ -11,6 +11,16 @@ import "@algolia/autocomplete-theme-classic";
 
 const emit = defineEmits(["update:expenseToAdd"]);
 
+// Prop para recibir la categoría a filtrar
+const props = defineProps({
+  category: {
+    type: String,
+    default: null,
+    validator: (value) =>
+      !value || ["labor", "overhead", "materials"].includes(value),
+  },
+});
+
 import { ref, onMounted, watch } from "vue";
 import { useExpenses } from "@/composables/useExpenses";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
@@ -29,7 +39,16 @@ function normalize(s = "") {
 }
 
 function buildIndex(expenses) {
-  index.value = expenses.map((e) => ({
+  // Filtrar por categoría si se proporcionó una
+  let filteredExpenses = expenses;
+  if (props.category) {
+    filteredExpenses = expenses.filter((e) => e.category === props.category);
+    console.log(
+      `✅ Filtrando expenses por categoría "${props.category}": ${filteredExpenses.length} de ${expenses.length}`,
+    );
+  }
+
+  index.value = filteredExpenses.map((e) => ({
     expenseId: e.uuid,
     expenseDescription: e.description,
     expenseDescription_lc: normalize(e.description || ""),
@@ -42,16 +61,31 @@ function buildIndex(expenses) {
 }
 
 // Cargar expenses y construir índice inicial
+const allExpenses = ref([]);
+
 const loadExpenses = async () => {
   try {
     const expenses = await getAllExpensesWithMetadata();
+    allExpenses.value = expenses;
     buildIndex(expenses);
     console.log("✅ Expenses cargados para búsqueda:", expenses.length);
   } catch (error) {
     console.error("❌ Error loading expenses:", error);
+    allExpenses.value = [];
     index.value = [];
   }
 };
+
+// Reconstruir índice cuando cambie la categoría
+watch(
+  () => props.category,
+  (newCategory) => {
+    if (allExpenses.value.length > 0) {
+      console.log(`🔄 Categoría cambiada a: ${newCategory || "todas"}`);
+      buildIndex(allExpenses.value);
+    }
+  },
+);
 
 // ===== DEBOUNCE DEL FILTRADO =====
 let _debounceTimer;
@@ -73,7 +107,7 @@ function getExpensesDebounced(query) {
                 expenseDescription: `Registrar nuevo gasto: ${query}`,
                 isNewExpense: true,
               },
-            ]
+            ],
       );
     }, 120);
   });
@@ -82,7 +116,7 @@ function getExpensesDebounced(query) {
 // Función helper para limpiar el input del autocomplete
 function clearAutocompleteInput() {
   const autocompleteInput = document.querySelector(
-    "#autocomplete-expense input"
+    "#autocomplete-expense input",
   );
   if (autocompleteInput) {
     autocompleteInput.value = "";
@@ -219,7 +253,7 @@ onMounted(async () => {
 
   // ===== AJUSTES DEL INPUT MÓVIL =====
   const autocompleteInput = document.querySelector(
-    "#autocomplete-expense input"
+    "#autocomplete-expense input",
   );
   if (autocompleteInput) {
     autocompleteInput.setAttribute("inputmode", "search");
@@ -241,7 +275,9 @@ onMounted(async () => {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
 }
 
@@ -274,7 +310,8 @@ onMounted(async () => {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   margin-top: 4px;
   overflow: hidden;

@@ -22,7 +22,6 @@
         <div class="text-3xl font-bold mb-1">
           S/ {{ getTotalAmount().toFixed(2) }}
         </div>
-        <div class="text-red-100 text-sm">Total del gasto</div>
       </div>
 
       <!-- Información de tipo y cuenta -->
@@ -32,10 +31,14 @@
             <div
               class="w-8 h-8 bg-red-500 rounded-full mx-auto mb-2 flex items-center justify-center"
             >
-              <DatabaseExport class="w-4 h-4 text-white" />
+              <component :is="getExpenseTypeIcon" class="w-4 h-4 text-white" />
             </div>
             <div class="text-sm font-medium text-red-700">
-              {{ getTypeLabel }}
+              {{
+                getCategoryLabel(
+                  transactionStore.transactionToAdd.value.category,
+                )
+              }}
             </div>
           </div>
 
@@ -161,10 +164,73 @@
                   <span class="font-medium text-red-800">
                     {{
                       getCategoryLabel(
-                        transactionStore.transactionToAdd.value.category
+                        transactionStore.transactionToAdd.value.category,
                       )
                     }}
                   </span>
+                </div>
+              </div>
+
+              <!-- Clasificación Automática de Overhead -->
+              <div
+                v-if="isOverheadExpense && overheadClassification"
+                class="border-t border-red-200 pt-3"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-medium text-gray-700">
+                    Clasificación automática
+                  </div>
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                  >
+                    {{ (overheadClassification.confidence * 100).toFixed(0) }}%
+                  </span>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                  <!-- Categoría -->
+                  <div>
+                    <div class="text-xs text-gray-500 mb-0.5">Categoría</div>
+                    <div class="text-sm font-semibold text-gray-900">
+                      {{ overheadClassification.subcategory }}
+                    </div>
+                  </div>
+                  <!-- Subcategoría -->
+                  <div v-if="overheadClassification.subsubcategory">
+                    <div class="text-xs text-gray-500 mb-0.5">Subcategoría</div>
+                    <div class="text-sm font-medium text-gray-900">
+                      {{ overheadClassification.subsubcategory }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Estado: Clasificación Pendiente -->
+              <div
+                v-if="isOverheadExpense && !overheadClassification"
+                class="border-t border-red-200 pt-3"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <div
+                    class="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center"
+                  >
+                    <Brain class="w-4 h-4 text-yellow-600" />
+                  </div>
+                  <div class="text-sm font-medium text-gray-700">
+                    Clasificación pendiente
+                  </div>
+                  <div class="ml-auto">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                    >
+                      IA procesará
+                    </span>
+                  </div>
+                </div>
+                <div class="bg-yellow-50 rounded-lg p-3">
+                  <p class="text-xs text-yellow-800">
+                    Este gasto será clasificado automáticamente por IA después
+                    de guardarlo.
+                  </p>
                 </div>
               </div>
 
@@ -219,6 +285,7 @@
 <script setup>
 import { computed } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { classifyOverhead } from "@/utils/overheadClassifier";
 import {
   DatabaseExport,
   ShieldQuestion,
@@ -227,6 +294,8 @@ import {
   Package,
   User,
   Settings,
+  Brain,
+  CheckCircle,
 } from "@iconoir/vue";
 
 const transactionStore = useTransactionStore();
@@ -240,6 +309,25 @@ const transactionStore = useTransactionStore();
  */
 const isMaterialsExpense = computed(() => {
   return transactionStore.transactionToAdd.value.category === "materials";
+});
+
+/**
+ * Verifica si es un expense de tipo overhead
+ */
+const isOverheadExpense = computed(() => {
+  return transactionStore.transactionToAdd.value.category === "overhead";
+});
+
+/**
+ * Obtiene la clasificación automática de overhead
+ */
+const overheadClassification = computed(() => {
+  if (!isOverheadExpense.value) return null;
+
+  const description = transactionStore.transactionToAdd.value.description;
+  if (!description) return null;
+
+  return classifyOverhead(description);
 });
 
 /**
@@ -337,5 +425,16 @@ const getCategoryIcon = computed(() => {
     overhead: Settings,
   };
   return icons[category] || Package;
+});
+
+// Computed para obtener el ícono del tipo de gasto
+const getExpenseTypeIcon = computed(() => {
+  const category = transactionStore.transactionToAdd.value.category;
+  const icons = {
+    materials: Package,
+    labor: User,
+    overhead: Settings,
+  };
+  return icons[category] || DatabaseExport;
 });
 </script>

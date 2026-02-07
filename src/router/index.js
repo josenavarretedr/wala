@@ -82,18 +82,6 @@ const routes = [
 
       // Rutas para gerentes
       {
-        path: 'employees',
-        name: 'EmployeeManagement',
-        component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
-        meta: { role: 'gerente', title: 'Empleados' }
-      },
-      {
-        path: 'settings',
-        name: 'BusinessSettings',
-        component: () => import('@/components/Business/CreateNewBusiness.vue'), // Temporal
-        meta: { role: 'gerente', title: 'Configuración' }
-      },
-      {
         path: 'business-info',
         name: 'BusinessInfo',
         component: () => import('@/views/business/BusinessInfo.vue'),

@@ -4,6 +4,7 @@ import { getFirestore, collection, setDoc, query, where, doc, getDocs, getDoc, d
 import appFirebase from '@/firebaseInit';
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from "uuid";
+import { classifyOverhead } from '@/utils/overheadClassifier';
 
 
 const db = getFirestore(appFirebase);
@@ -106,6 +107,38 @@ export function useExpenses() {
           averageAmount: logData.amount,
         }
       };
+
+      // ========================================
+      // CLASIFICACIÓN AUTOMÁTICA DE OVERHEAD
+      // ========================================
+      if (expenseData.category === 'overhead') {
+        console.log('🔍 Detectado expense tipo overhead, aplicando clasificación local...');
+
+        const classification = classifyOverhead(expenseData.description);
+
+        if (classification) {
+          // Match exitoso con reglas locales
+          expenseDoc.subcategory = classification.subcategory;
+          expenseDoc.subsubcategory = classification.subsubcategory || null;
+          expenseDoc.classificationSource = 'local_rules';
+          expenseDoc.classificationConfidence = classification.confidence;
+          expenseDoc.classificationMatchedRule = classification.matchedRule;
+
+          console.log('✅ Overhead clasificado localmente:', {
+            subcategory: classification.subcategory,
+            subsubcategory: classification.subsubcategory,
+            confidence: classification.confidence
+          });
+        } else {
+          // Sin match local, marcar para procesamiento por IA
+          expenseDoc.subcategory = null;
+          expenseDoc.subsubcategory = null;
+          expenseDoc.classificationSource = 'pending_ai';
+          expenseDoc.classificationConfidence = null;
+
+          console.log('⏳ Sin match local, expense marcado para clasificación IA');
+        }
+      }
 
       // Si es expense de materials, agregar metadata extendida inicial
       if (expenseData.category === 'materials' && firstLog.materialItems) {

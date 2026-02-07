@@ -36,11 +36,30 @@ exports.classifyExpenseOnCreate = functions
         return null;
       }
 
-      // Verificar si ya tiene clasificación
-      if (expense.classification && expense.classification.category) {
-        console.log(`✓ Gasto ya clasificado`);
+      // ========================================
+      // SKIP SI YA FUE CLASIFICADO LOCALMENTE
+      // ========================================
+      if (expense.classificationSource === 'local_rules') {
+        console.log(`✅ Gasto ya clasificado localmente (source: local_rules)`);
+        console.log(`   Subcategoría: ${expense.subcategory}`);
+        console.log(`   Subsubcategoría: ${expense.subsubcategory || 'N/A'}`);
+        console.log(`   Confianza: ${expense.classificationConfidence}`);
         return null;
       }
+
+      // Solo procesar si está marcado para clasificación IA
+      if (expense.classificationSource !== 'pending_ai' && !expense.subcategory) {
+        console.log(`⏭️ Gasto no marcado para clasificación IA, esperando...`);
+        return null;
+      }
+
+      // Verificar si ya tiene clasificación antigua
+      if (expense.classification && expense.classification.category) {
+        console.log(`✓ Gasto ya clasificado (formato antiguo)`);
+        return null;
+      }
+
+      console.log(`🤖 Procediendo con clasificación IA para overhead...`);
 
       // Obtener información del negocio
       const businessDoc = await admin.firestore()
@@ -85,18 +104,16 @@ exports.classifyExpenseOnCreate = functions
       );
 
       if (classification && classification.confidence >= CONFIDENCE_THRESHOLDS.SUGGEST) {
-        console.log(`✅ Gasto clasificado: ${classification.category} > ${classification.subcategory}`);
+        console.log(`✅ Gasto clasificado con IA: ${classification.category} > ${classification.subcategory}`);
 
+        // Actualizar con estructura nueva (subcategory y subsubcategory directos)
         await snap.ref.update({
-          classification: {
-            category: classification.category,
-            subcategory: classification.subcategory,
-            subsubcategory: classification.subsubcategory,
-            confidence: classification.confidence,
-            source: classification.source,
-            classifiedAt: admin.firestore.FieldValue.serverTimestamp(),
-            needsReview: false
-          },
+          subcategory: classification.category,
+          subsubcategory: classification.subcategory || null,
+          classificationSource: 'ai',
+          classificationConfidence: classification.confidence,
+          classificationModel: 'grok',
+          classifiedAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
