@@ -115,7 +115,7 @@
                 />
               </svg>
             </div> -->
-            <div class="text-sm font-medium text-purple-700 truncate px-1">
+            <div class="font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
             </div>
           </div>

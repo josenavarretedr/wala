@@ -52,16 +52,6 @@
               <span class="text-xs opacity-80">Insumos | Mercadería</span>
             </div>
           </button>
-
-          <!-- Tooltip de ayuda -->
-          <div
-            class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
-          >
-            <div class="text-center">
-              <strong>Ejemplos:</strong> Materias primas, productos terminados,
-              insumos directos
-            </div>
-          </div>
         </div>
 
         <!-- Sueldo de Personal de Producción -->
@@ -99,16 +89,6 @@
               >
             </div>
           </button>
-
-          <!-- Tooltip de ayuda -->
-          <div
-            class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
-          >
-            <div class="text-center">
-              <strong>Ejemplos:</strong> Personal que participa directamente en
-              la producción o prestación del servicio
-            </div>
-          </div>
         </div>
 
         <!-- Gastos Generales (Overhead) -->
@@ -146,16 +126,6 @@
               >
             </div>
           </button>
-
-          <!-- Tooltip de ayuda -->
-          <div
-            class="absolute z-20 w-48 px-3 py-2 text-xs text-white bg-gray-800 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -bottom-16 left-1/2 transform -translate-x-1/2 pointer-events-none"
-          >
-            <div class="text-center">
-              <strong>Ejemplos:</strong> Alquiler, luz, agua, internet, sueldo
-              administrativo, marketing, combustible
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -159,67 +159,82 @@
               </div>
 
               <!-- Clasificación Automática de Overhead -->
-              <div
-                v-if="isOverheadExpense && overheadClassification"
-                class="border-t border-red-200 pt-3"
+              <PremiumLockWrapper
+                v-if="isOverheadExpense"
+                :isPremium="isPremium"
+                :isLocked="!isPremium"
+                @locked-click="handlePremiumClick"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm font-medium text-gray-700">
-                    Clasificación automática
-                  </div>
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
-                  >
-                    {{ (overheadClassification.confidence * 100).toFixed(0) }}%
-                  </span>
-                </div>
-                <div class="bg-gray-50 rounded-lg p-3 space-y-2">
-                  <!-- Categoría -->
-                  <div>
-                    <div class="text-xs text-gray-500 mb-0.5">Categoría</div>
-                    <div class="text-sm font-semibold text-gray-900">
-                      {{ overheadClassification.subcategory }}
-                    </div>
-                  </div>
-                  <!-- Subcategoría -->
-                  <div v-if="overheadClassification.subsubcategory">
-                    <div class="text-xs text-gray-500 mb-0.5">Subcategoría</div>
-                    <div class="text-sm font-medium text-gray-900">
-                      {{ overheadClassification.subsubcategory }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Estado: Clasificación Pendiente -->
-              <div
-                v-if="isOverheadExpense && !overheadClassification"
-                class="border-t border-red-200 pt-3"
-              >
-                <div class="flex items-center gap-2 mb-3">
+                <template #content="{ contentClasses }">
                   <div
-                    class="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center"
+                    v-if="overheadClassification"
+                    :class="['border-t border-red-200 pt-3', contentClasses]"
                   >
-                    <Brain class="w-4 h-4 text-yellow-600" />
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="text-sm font-medium text-gray-700">
+                        Clasificación automática
+                      </div>
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                      >
+                        {{
+                          (overheadClassification.confidence * 100).toFixed(0)
+                        }}%
+                      </span>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-3 space-y-2">
+                      <!-- Categoría -->
+                      <div>
+                        <div class="text-xs text-gray-500 mb-0.5">
+                          Categoría
+                        </div>
+                        <div class="text-sm font-semibold text-gray-900">
+                          {{ overheadClassification.subcategory }}
+                        </div>
+                      </div>
+                      <!-- Subcategoría -->
+                      <div v-if="overheadClassification.subsubcategory">
+                        <div class="text-xs text-gray-500 mb-0.5">
+                          Subcategoría
+                        </div>
+                        <div class="text-sm font-medium text-gray-900">
+                          {{ overheadClassification.subsubcategory }}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-sm font-medium text-gray-700">
-                    Clasificación pendiente
+
+                  <!-- Estado: Clasificación Pendiente -->
+                  <div
+                    v-if="!overheadClassification"
+                    :class="['border-t border-red-200 pt-3', contentClasses]"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <div
+                        class="w-6 h-6 bg-yellow-100 rounded-lg flex items-center justify-center"
+                      >
+                        <Brain class="w-4 h-4 text-yellow-600" />
+                      </div>
+                      <div class="text-sm font-medium text-gray-700">
+                        Clasificación pendiente
+                      </div>
+                      <div class="ml-auto">
+                        <span
+                          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
+                        >
+                          IA procesará
+                        </span>
+                      </div>
+                    </div>
+                    <div class="bg-yellow-50 rounded-lg p-3">
+                      <p class="text-xs text-yellow-800">
+                        Este gasto será clasificado automáticamente por IA
+                        después de guardarlo.
+                      </p>
+                    </div>
                   </div>
-                  <div class="ml-auto">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"
-                    >
-                      IA procesará
-                    </span>
-                  </div>
-                </div>
-                <div class="bg-yellow-50 rounded-lg p-3">
-                  <p class="text-xs text-yellow-800">
-                    Este gasto será clasificado automáticamente por IA después
-                    de guardarlo.
-                  </p>
-                </div>
-              </div>
+                </template>
+              </PremiumLockWrapper>
 
               <!-- Notas -->
               <div v-if="props.transactionData.notes">
@@ -248,34 +263,16 @@
         </p>
       </div>
     </div>
-
-    <!-- Botones de acción o información adicional -->
-    <div
-      v-if="hasValidData"
-      class="bg-blue-50 rounded-xl p-4 border border-blue-200"
-    >
-      <div class="flex items-start gap-3">
-        <div
-          class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"
-        >
-          <ShieldQuestion class="w-4 h-4 text-white" />
-        </div>
-        <div class="flex-1">
-          <div class="font-semibold text-blue-800 mb-1">
-            Registro de gasto{{ isMaterialsExpense ? " de materiales" : "" }}
-          </div>
-          <div class="text-sm text-blue-700">
-            Este registro está guardado en tu historial de transacciones
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from "vue";
 import { classifyOverhead } from "@/utils/overheadClassifier";
+import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
+import { useRoute } from "vue-router";
 import {
   DatabaseExport,
   ShieldQuestion,
@@ -295,6 +292,26 @@ const props = defineProps({
     required: true,
   },
 });
+
+const route = useRoute();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
+
+// ========================================
+// METHODS
+// ========================================
+
+const handlePremiumClick = () => {
+  premium(
+    "La clasificación automática con IA está disponible en Wala Premium.",
+    {
+      actionLink: {
+        text: "Actualiza a Wala Premium",
+        route: `/business/${route.params.businessId}/premium`,
+      },
+    },
+  );
+};
 
 // ========================================
 // COMPUTED PROPERTIES

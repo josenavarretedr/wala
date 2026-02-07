@@ -219,7 +219,7 @@
                 />
               </svg>
             </div> -->
-            <div class="text-sm font-medium text-purple-700 truncate px-1">
+            <div class="font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
             </div>
           </div>
@@ -296,7 +296,7 @@
     </div>
 
     <!-- Nota informativa -->
-    <div
+    <!-- <div
       class="bg-amber-50 rounded-xl p-4 border border-amber-200 no-share-item"
     >
       <div class="flex items-start gap-3">
@@ -319,7 +319,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
 

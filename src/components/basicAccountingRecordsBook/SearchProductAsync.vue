@@ -29,7 +29,10 @@ function normalize(s = "") {
 }
 
 function buildIndex(items) {
-  index.value = items.map((p) => ({
+  // Filtrar productos de tipo RAW_MATERIAL (insumos)
+  const filteredItems = items.filter((p) => p.type !== "RAW_MATERIAL");
+
+  index.value = filteredItems.map((p) => ({
     productId: p.uuid,
     productDescription: p.description,
     productDescription_lc: normalize(p.description || ""),
@@ -46,7 +49,7 @@ buildIndex(inventoryStore.allItemsInInventory.value);
 watch(
   () => inventoryStore.allItemsInInventory.value,
   (val) => buildIndex(val),
-  { deep: true }
+  { deep: true },
 );
 
 // Función legacy mantenida por compatibilidad (ahora solo retorna el índice)
@@ -74,7 +77,7 @@ function getItemsDebounced(query) {
                 productDescription: `Registrar nuevo producto: ${query}`,
                 isNewProduct: true,
               },
-            ]
+            ],
       );
     }, 120);
   });
@@ -124,7 +127,7 @@ onMounted(() => {
 
             // Manejar producto existente
             const selected = inventoryStore.allItemsInInventory.value.find(
-              (p) => p.uuid === item.productId
+              (p) => p.uuid === item.productId,
             );
             if (selected) {
               transactionStore.modifyItemToAddInTransaction({
@@ -140,7 +143,7 @@ onMounted(() => {
             } else {
               console.error(
                 "Producto seleccionado no encontrado:",
-                item.productId
+                item.productId,
               );
             }
           },
@@ -224,7 +227,9 @@ onMounted(() => {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px 0 rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
 }
 
@@ -257,7 +262,8 @@ onMounted(() => {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
   margin-top: 4px;
   overflow: hidden;

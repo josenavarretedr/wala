@@ -1211,7 +1211,7 @@ const nextStep = () => {
       currentStep.value === 1 &&
       !localFormData.value.classification?.category
     ) {
-      currentStep.value = 1.5;
+      currentStep.value = 2;
     } else if (currentStep.value < 3) {
       currentStep.value++;
     }
@@ -1220,10 +1220,10 @@ const nextStep = () => {
 
 const previousStep = () => {
   if (currentStep.value > 1) {
-    if (currentStep.value === 1.5) {
+    if (currentStep.value === 2) {
       currentStep.value = 1;
     } else if (currentStep.value === 2 && aiSuggestion.value) {
-      currentStep.value = 1.5;
+      currentStep.value = 2;
     } else {
       currentStep.value--;
     }
@@ -1233,7 +1233,7 @@ const previousStep = () => {
 // 🤖 IA Classification Methods
 const loadTaxonomy = async () => {
   try {
-    const industry = businessStore.business?.industry;
+    const industry = businessStore.currentBusiness?.industry;
     if (!industry) {
       console.warn("No industry found for business");
       return;
