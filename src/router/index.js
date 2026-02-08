@@ -296,9 +296,39 @@ const routes = [
         component: () => import('@/views/Inventory/ProductDetails.vue')
       },
       {
-        path: 'inventory/product/:productId/edit',
-        name: 'InventoryEditProduct',
-        component: () => import('@/views/Inventory/EditProduct.vue')
+        path: 'inventory/product/:productId/edit-general-info',
+        name: 'InventoryEditProductGeneralInfo',
+        component: () => import('@/views/Inventory/EditProductGeneralInfo.vue')
+      },
+      {
+        path: 'inventory/product/:productId/edit-economic-info',
+        name: 'InventoryEditProductEconomicInfo',
+        component: () => import('@/views/Inventory/EditProductEconomicInfo.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing',
+        name: 'InventoryProductCosting',
+        component: () => import('@/views/ProductCosting/ProductCosting.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing/costs-materials',
+        name: 'CostsMaterials',
+        component: () => import('@/views/ProductCosting/CostsMaterials.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing/costs-mod',
+        name: 'CostsMOD',
+        component: () => import('@/views/ProductCosting/CostsMOD.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing/costs-cif',
+        name: 'CostsCIF',
+        component: () => import('@/views/ProductCosting/CostsCIF.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing/costs-overhead',
+        name: 'CostsOverhead',
+        component: () => import('@/views/ProductCosting/CostsOverhead.vue')
       },
       {
         path: 'inventory/product/:productId/add-stock',

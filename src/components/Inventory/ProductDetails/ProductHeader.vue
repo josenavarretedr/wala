@@ -18,17 +18,31 @@
 
     <!-- Contenido principal -->
     <div class="relative z-10">
-      <!-- Botón de edición flotante (esquina superior derecha) -->
-      <router-link
-        :to="editProductRoute"
-        class="absolute top-0 right-0 p-2 bg-white hover:bg-gray-50 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md hover:scale-105"
-        title="Editar producto"
-      >
-        <EditPencil class="w-4 h-4 text-gray-600" />
-      </router-link>
+      <!-- Botones de edición flotantes (esquina superior derecha) -->
+      <div class="absolute top-0 right-0 flex gap-2">
+        <router-link
+          :to="editGeneralInfoRoute"
+          class="p-2 bg-white hover:bg-blue-50 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md hover:scale-105 group"
+          title="Editar información general"
+        >
+          <svg
+            class="w-4 h-4 text-gray-600 group-hover:text-blue-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+            ></path>
+          </svg>
+        </router-link>
+      </div>
 
       <!-- Nombre del Producto -->
-      <div class="pr-12 mb-3">
+      <div class="pr-24 mb-3">
         <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">
           {{ description || "Sin descripción" }}
         </h1>
@@ -148,6 +162,7 @@
 
         <!-- Badge: Control de Stock -->
         <div
+          v-if="props.trackStock"
           :key="`track-${trackStock}`"
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
           :class="trackStockBadgeClass"
@@ -305,11 +320,21 @@ const route = useRoute();
 const metricsStore = useProductMetricsStore();
 
 // ==========================================
-// COMPUTED: Router link para edición
+// COMPUTED: Router links para edición
 // ==========================================
-const editProductRoute = computed(() => {
+const editGeneralInfoRoute = computed(() => {
   return {
-    name: "InventoryEditProduct",
+    name: "InventoryEditProductGeneralInfo",
+    params: {
+      businessId: route.params.businessId,
+      productId: props.productId,
+    },
+  };
+});
+
+const editEconomicInfoRoute = computed(() => {
+  return {
+    name: "InventoryEditProductEconomicInfo",
     params: {
       businessId: route.params.businessId,
       productId: props.productId,

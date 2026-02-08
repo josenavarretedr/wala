@@ -4,23 +4,46 @@
     class="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3"
   >
     <!-- Header del bloque -->
-    <div class="flex items-center gap-2 mb-1">
-      <svg
-        class="w-5 h-5 text-purple-600"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
+    <div class="flex justify-between gap-2 relative mb-4">
+      <div class="flex items-center gap-2">
+        <svg
+          class="w-5 h-5 text-purple-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+          />
+        </svg>
+        <span class="text-lg font-medium text-gray-600"
+          >Información Económica</span
+        >
+      </div>
+
+      <!-- Botón de edición flotante (esquina superior derecha) -->
+      <router-link
+        :to="editEconomicInfoRoute"
+        class="p-2 bg-white hover:bg-green-50 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md hover:scale-105 group"
+        title="Editar precios y costos"
       >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-        />
-      </svg>
-      <span class="text-xs font-medium text-gray-600"
-        >Información Económica</span
-      >
+        <svg
+          class="w-4 h-4 text-gray-600 group-hover:text-green-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          ></path>
+        </svg>
+      </router-link>
     </div>
 
     <!-- Grid de Información Financiera - Mobile First -->
@@ -164,6 +187,10 @@
 <script setup>
 import { computed } from "vue";
 import { useProductMetricsStore } from "@/stores/Inventory/productMetricsStore";
+import { useRoute } from "vue-router";
+import { EditPencil } from "@iconoir/vue";
+
+const route = useRoute();
 
 // Props
 const props = defineProps({
@@ -196,6 +223,16 @@ const hasCostData = computed(() => {
   return props.cost !== null && props.cost !== undefined && props.cost > 0;
 });
 
+const editEconomicInfoRoute = computed(() => {
+  return {
+    name: "InventoryEditProductEconomicInfo",
+    params: {
+      businessId: route.params.businessId,
+      productId: props.productId,
+    },
+  };
+});
+
 // ==========================================
 // COMPUTED: Cálculos de margen
 // ==========================================
@@ -219,7 +256,7 @@ const profitabilityStatus = computed(() => {
     return metricsStore.getProfitabilityStatus(null);
   }
   return metricsStore.getProfitabilityStatus(
-    parseFloat(marginPercentage.value)
+    parseFloat(marginPercentage.value),
   );
 });
 

@@ -174,11 +174,9 @@
             >
               <option value="uni">Unidad</option>
               <option value="kg">Kilogramo</option>
-              <option value="g">Gramo</option>
               <option value="lt">Litro</option>
-              <option value="ml">Mililitro</option>
               <option value="m">Metro</option>
-              <option value="cm">Porción</option>
+              <option value="porcion">Porción</option>
               <option value="service">Servicio</option>
             </select>
           </div>
@@ -331,7 +329,7 @@
                   transactionStore.transactionToAdd.value.items
                     .reduce(
                       (total, item) => total + item.quantity * item.price,
-                      0
+                      0,
                     )
                     .toFixed(2)
                 }}
