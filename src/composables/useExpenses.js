@@ -45,8 +45,53 @@ export function useExpenses() {
   };
 
   /**
+   * Crea purchaseLogs para cada producto comprado
+   * @param {string} businessId - ID del negocio
+   * @param {Array} materialItems - Array de materials comprados
+   * @param {string} expenseId - UUID del expense
+   * @param {Object} logData - Datos del log (date, account, transactionRef)
+   */
+  const createPurchaseLogs = async (businessId, materialItems, expenseId, logData) => {
+    try {
+      const purchaseLogsPromises = materialItems
+        .filter(item => item.productId) // Solo items con productId
+        .map(async (item) => {
+          const logId = uuidv4();
+          const purchaseLogRef = doc(
+            db,
+            `businesses/${businessId}/products/${item.productId}/purchaseLogs`,
+            logId
+          );
+
+          const purchaseLogData = {
+            uuid: logId,
+            date: logData.date,
+            quantity: item.quantity || 0,
+            cost: item.cost || 0,
+            unit: item.unit || null,
+            total: item.totalCost || 0,
+            expenseRef: `businesses/${businessId}/expenses/${expenseId}`,
+            account: logData.account,
+            transactionRef: logData.transactionRef,
+            businessId: businessId,
+            createdAt: serverTimestamp(),
+          };
+
+          await setDoc(purchaseLogRef, purchaseLogData);
+          console.log(`✅ PurchaseLog creado para producto ${item.productId}`);
+        });
+
+      await Promise.all(purchaseLogsPromises);
+      console.log(`✅ ${purchaseLogsPromises.length} purchaseLogs creados`);
+    } catch (error) {
+      console.error('❌ Error creating purchaseLogs:', error);
+      // No throw - permitir que el expense se cree aunque falle esto
+    }
+  };
+
+  /**
    * Crea un nuevo expense con su primer log
-   * @param {Object} expenseData - Datos del expense (description, category, subcategory)
+   * @param {Object} expenseData - Datos del expense (description, category, subcategory, bucket, paylabor, overheadUsage, splits)
    * @param {Object} logData - Datos del primer log (amount, date, transactionRef, account, notes, materialItems)
    * @returns {Promise<string>} UUID del expense creado
    */
@@ -54,43 +99,87 @@ export function useExpenses() {
     try {
       const businessId = ensureBusinessId();
 
-      // Si se proporciona un UUID específico (como para materials), usarlo
+      // Si se proporciona un UUID específico, usarlo
       const expenseId = expenseData.uuid || uuidv4();
 
       const now = serverTimestamp();
-      const nowDate = new Date(); // Para usar dentro de arrays
+      const nowDate = new Date();
 
+      // ========================================
+      // ESTRUCTURA PARA MATERIALS (NUEVA)
+      // ========================================
+      if (expenseData.category === 'materials') {
+        console.log('📦 Creando expense de MATERIALS (documento separado)');
+
+        // Limpiar materialItems
+        const cleanedMaterialItems = (logData.materialItems || []).map(item => ({
+          uuid: item.uuid || null,
+          productId: item.productId || null,
+          description: item.description || null,
+          quantity: item.quantity || 0,
+          unit: item.unit || null,
+          cost: item.cost || 0,
+          totalCost: item.totalCost || 0,
+          oldOrNewProduct: item.oldOrNewProduct || null,
+          stockLogId: item.stockLogId || null,
+        }));
+
+        // Extraer productIds para indexación
+        const productIds = cleanedMaterialItems
+          .map(item => item.productId)
+          .filter(Boolean); // Remover nulls
+
+        // Calcular metadata
+        const totalItems = cleanedMaterialItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+        const uniqueProducts = new Set(productIds).size;
+
+        const expenseDoc = {
+          uuid: expenseId,
+          description: expenseData.description,
+          category: 'materials',
+          bucket: expenseData.bucket || null,
+          amount: logData.amount, // Total de la compra
+          date: logData.date,
+          account: logData.account,
+          transactionRef: logData.transactionRef,
+          notes: logData.notes || null,
+          materialItems: cleanedMaterialItems,
+          productIds: productIds, // Para búsquedas indexadas
+          metadata: {
+            totalItems,
+            uniqueProducts,
+          },
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+        await setDoc(expenseRef, expenseDoc);
+
+        // Crear purchaseLogs para cada producto
+        await createPurchaseLogs(businessId, cleanedMaterialItems, expenseId, logData);
+
+        console.log('✅ Expense de materials creado:', expenseId, {
+          items: cleanedMaterialItems.length,
+          productIds: productIds.length,
+          amount: logData.amount
+        });
+
+        return expenseId;
+      }
+
+      // ========================================
+      // ESTRUCTURA PARA LABOR/OVERHEAD (CON LOGS)
+      // ========================================
       const firstLog = {
         amount: logData.amount,
-        date: logData.date, // Ya viene como Date del store
+        date: logData.date,
         transactionRef: logData.transactionRef,
         account: logData.account,
         notes: logData.notes || null,
         logId: uuidv4(),
         createdAt: nowDate,
       };
-
-      // Si el log incluye materialItems, agregarlos (limpiando undefined)
-      if (logData.materialItems && logData.materialItems.length > 0) {
-        firstLog.materialItems = logData.materialItems.map(item => {
-          // Limpiar valores undefined y convertirlos a null
-          return {
-            uuid: item.uuid || null,
-            productId: item.productId || null,
-            description: item.description || null,
-            quantity: item.quantity || 0,
-            unit: item.unit || null,
-            cost: item.cost || 0,
-            totalCost: item.totalCost || 0,
-            oldOrNewProduct: item.oldOrNewProduct || null,
-            stockLogId: item.stockLogId || null,
-          };
-        });
-
-        console.log('📦 Creando expense con materialItems:', {
-          itemsCount: firstLog.materialItems.length
-        });
-      }
 
       const expenseDoc = {
         uuid: expenseId,
@@ -143,30 +232,6 @@ export function useExpenses() {
 
           console.log('⏳ Sin match local, expense marcado para clasificación IA');
         }
-      }
-
-      // Si es expense de materials, agregar metadata extendida inicial
-      if (expenseData.category === 'materials' && firstLog.materialItems) {
-        const items = firstLog.materialItems;
-
-        expenseDoc.metadata.totalItems = items.reduce((sum, item) => sum + (item.quantity || 0), 0);
-        expenseDoc.metadata.uniqueProducts = new Set(items.map(item => item.productId).filter(Boolean)).size;
-
-        // Top products inicial (filtrar productos sin ID)
-        expenseDoc.metadata.topProducts = items
-          .filter(item => item.productId) // Solo items con productId
-          .map(item => ({
-            productId: item.productId,
-            description: item.description || 'Sin descripción',
-            totalQuantity: item.quantity || 0,
-            totalSpent: item.totalCost || 0,
-            occurrences: 1
-          }));
-
-        console.log('📊 Metadata inicial para materials:', {
-          totalItems: expenseDoc.metadata.totalItems,
-          uniqueProducts: expenseDoc.metadata.uniqueProducts
-        });
       }
 
       const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);

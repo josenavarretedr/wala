@@ -195,13 +195,14 @@ export function useTransactionStore() {
             transactionToAdd.value.uuid // Pasar el UUID de la transacción
           );
 
-          // Actualizar materialItems con los stockLogIds generados
+          // Actualizar materialItems con los stockLogIds y productIds generados
           if (materialStockLogMap && materialStockLogMap.length > 0) {
             transactionToAdd.value.materialItems = transactionToAdd.value.materialItems.map(material => {
               const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
               if (mapping) {
                 return {
                   ...material,
+                  productId: mapping.productId, // ✅ Agregar productId
                   stockLogId: mapping.stockLogId
                 };
               }
@@ -229,9 +230,13 @@ export function useTransactionStore() {
             amount: materialTotal
           });
 
-          // ✅ USAR EXPENSE ÚNICO CON ID FIJO PARA EL AÑO
-          const currentYear = new Date().getFullYear();
-          const MATERIALS_EXPENSE_ID = `materials-expense-${currentYear}`;
+          // ✅ NUEVA ESTRUCTURA: Crear expense separado por cada compra
+          const expenseData = {
+            uuid: uuidv4(), // UUID único para cada compra
+            description: transactionToAdd.value.description || 'Compra de materiales',
+            category: 'materials',
+            bucket: transactionToAdd.value.bucket || null, // DIRECT_MATERIAL o COGS_RESALE
+          };
 
           // Preparar log data con materialItems incluidos
           const logData = {
@@ -240,7 +245,6 @@ export function useTransactionStore() {
             transactionRef: transactionToAdd.value.uuid,
             account: transactionToAdd.value.account,
             notes: transactionToAdd.value.notes || null,
-
             // Incluir materialItems con totalCost calculado
             materialItems: transactionToAdd.value.materialItems.map(item => ({
               ...item,
@@ -248,36 +252,15 @@ export function useTransactionStore() {
             }))
           };
 
-          // Buscar si ya existe el expense de materials de este año
-          const existingExpense = await getExpenseById(MATERIALS_EXPENSE_ID);
+          console.log('✨ Creando expense individual para compra de materials');
 
-          if (existingExpense) {
-            // Agregar log al expense existente
-            await addLogToExpense(MATERIALS_EXPENSE_ID, logData);
-            await updateExpenseMetadata(MATERIALS_EXPENSE_ID);
+          expenseId = await createExpenseWithLog(expenseData, logData);
 
-            expenseId = MATERIALS_EXPENSE_ID;
-            transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
-            transactionToAdd.value.oldOrNewExpense = 'old';
+          // Actualizar el expenseId en la transacción
+          transactionToAdd.value.expenseId = expenseId;
+          transactionToAdd.value.oldOrNewExpense = 'new';
 
-            console.log(`✅ Log agregado a expense de materials del año ${currentYear}`);
-          } else {
-            // Crear nuevo expense de materials para el año
-            const expenseData = {
-              uuid: MATERIALS_EXPENSE_ID,
-              description: 'COMPRAS DE MATERIALES/INSUMOS',
-              category: 'materials',
-              subcategory: null,
-            };
-
-            await createExpenseWithLog(expenseData, logData);
-
-            expenseId = MATERIALS_EXPENSE_ID;
-            transactionToAdd.value.expenseId = MATERIALS_EXPENSE_ID;
-            transactionToAdd.value.oldOrNewExpense = 'new';
-
-            console.log(`✅ Nuevo expense de materials creado para el año ${currentYear}`);
-          }
+          console.log('✅ Expense de materials creado con ID:', expenseId);
         } else {
           // Para otros tipos de gastos (labor, overhead)
           transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
