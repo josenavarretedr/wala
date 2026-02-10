@@ -75,6 +75,8 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       ];
     },
     defineDynamicSteps(transactionType) {
+      console.log("🔧 defineDynamicSteps - Tipo:", transactionType);
+
       // Limpia pasos previos dinámicos
       this.steps = [
         { label: 'Tipo de transacción', component: StepIncomeOrExpense },
@@ -110,6 +112,9 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           { label: 'Preview cotización', component: StepAddQuotePreview }
         );
       }
+
+      console.log("✅ Pasos definidos:", this.steps.map(s => s.label));
+      console.log("📍 Total de pasos:", this.steps.length);
 
       // this.steps.push({ label: 'Resumen', component: StepSummary });
     }

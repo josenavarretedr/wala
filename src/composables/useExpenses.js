@@ -97,6 +97,11 @@ export function useExpenses() {
         description: expenseData.description,
         category: expenseData.category || null,
         subcategory: expenseData.subcategory || null,
+        // Campos de clasificación contable
+        bucket: expenseData.bucket || null,
+        paylabor: expenseData.paylabor || null,
+        overheadUsage: expenseData.overheadUsage || null,
+        splits: expenseData.splits || null,
         createdAt: now,
         updatedAt: now,
         logs: [firstLog],

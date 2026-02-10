@@ -47,15 +47,17 @@
             </div>
             <div class="text-left flex-1">
               <span class="text-base font-semibold block"
-                >Costos de materiales</span
+                >Insumos para vender o producir</span
               >
-              <span class="text-xs opacity-80">Insumos | Mercadería</span>
+              <span class="text-xs opacity-80"
+                >Ingredientes, mercadería, empaques.</span
+              >
             </div>
           </button>
         </div>
 
         <!-- Sueldo de Personal de Producción -->
-        <div v-if="!isCommerceBusiness" class="relative group">
+        <div class="relative group">
           <button
             @click="selectExpenseCategory('labor')"
             :class="[
@@ -82,10 +84,10 @@
             </div>
             <div class="text-left flex-1">
               <span class="text-base font-semibold block"
-                >Sueldo de Personal de Producción</span
+                >Sueldos del equipo</span
               >
               <span class="text-xs opacity-80"
-                >Chef, cocineros, especialistas</span
+                >Sueldos, jornales, comisiones, honorarios.</span
               >
             </div>
           </button>
@@ -119,10 +121,11 @@
             </div>
             <div class="text-left flex-1">
               <span class="text-base font-semibold block"
-                >Gastos Generales (Overhead)</span
+                >Gastos para que el negocio funcione</span
               >
               <span class="text-xs opacity-80"
-                >Todos los demás gastos operativos</span
+                >Alquiler, servicios, internet, mantenimiento, marketing,
+                etc</span
               >
             </div>
           </button>
@@ -181,7 +184,7 @@ const businessStore = useBusinessStore();
 
 // Computed
 const isCommerceBusiness = computed(() => {
-  return businessStore.business?.businessType === "comercio";
+  return businessStore.business?.businessType === "RETAIL";
 });
 
 // Variables reactivas
@@ -191,7 +194,12 @@ const selectedCategory = ref(
 
 // Observar cambios y actualizar los stores correspondientes
 watch(selectedCategory, (newCategory) => {
+  console.log("🔍 StepExpenseType - Category selected:", newCategory);
   transactionStore.setExpenseCategory(newCategory);
+  console.log(
+    "✅ StepExpenseType - Category saved to store:",
+    transactionStore.transactionToAdd.value.category,
+  );
 });
 
 // Resetear selección si se cambió a comercio y tenía labor seleccionado

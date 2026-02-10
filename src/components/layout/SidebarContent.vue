@@ -137,8 +137,8 @@ const businessInitial = computed(() => {
   // Prioridad: 1. prop current-business, 2. businessStore, 3. userStore
   const name =
     props.currentBusiness?.businessName ||
-    business?.nombre ||
-    business?.name ||
+    business?.businessName ||
+    business?.businessName ||
     userBusiness?.businessName ||
     "WALA";
   return name.charAt(0).toUpperCase() || "W";
@@ -148,13 +148,7 @@ const businessDisplayName = computed(() => {
   const business = businessStore.business;
   const userBusiness = userStore.currentBusiness;
 
-  return (
-    props.currentBusiness?.businessName ||
-    business?.nombre ||
-    business?.name ||
-    userBusiness?.businessName ||
-    "WALA"
-  );
+  return business?.businessName || "WALA";
 });
 
 const businessDepartment = computed(() => {

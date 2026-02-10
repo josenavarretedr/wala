@@ -158,6 +158,84 @@
                 </div>
               </div>
 
+              <!-- Bucket contable -->
+              <div v-if="props.transactionData.bucket">
+                <div class="text-sm font-medium text-red-700 mb-1">
+                  Clasificación contable
+                </div>
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-gray-100 text-gray-800 border border-gray-200"
+                >
+                  {{ getBucketLabel(props.transactionData.bucket) }}
+                </span>
+              </div>
+
+              <!-- PayLabor role -->
+              <div v-if="props.transactionData.paylabor">
+                <div class="text-sm font-medium text-red-700 mb-1">
+                  Rol del trabajador
+                </div>
+                <span class="text-sm font-medium text-red-800">
+                  {{ getPayLaborLabel(props.transactionData.paylabor) }}
+                </span>
+              </div>
+
+              <!-- Overhead Usage -->
+              <div v-if="props.transactionData.overheadUsage">
+                <div class="text-sm font-medium text-red-700 mb-1">
+                  Impacto del gasto
+                </div>
+                <span class="text-sm font-medium text-red-800">
+                  {{
+                    getOverheadUsageLabel(props.transactionData.overheadUsage)
+                  }}
+                </span>
+              </div>
+
+              <!-- Splits (prorrateo) -->
+              <div
+                v-if="
+                  props.transactionData.splits &&
+                  props.transactionData.splits.length > 0
+                "
+              >
+                <div class="text-sm font-medium text-red-700 mb-2">
+                  Prorrateo del gasto
+                </div>
+                <div
+                  class="bg-white rounded-lg p-3 space-y-2 border border-red-100"
+                >
+                  <div
+                    v-for="(split, idx) in props.transactionData.splits"
+                    :key="idx"
+                    class="flex items-center justify-between text-sm"
+                  >
+                    <span class="text-gray-700">{{
+                      getBucketLabel(split.bucket)
+                    }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-gray-900">
+                        S/ {{ (split.amount || 0).toFixed(2) }}
+                      </span>
+                      <span class="text-xs text-gray-500">
+                        ({{ Math.round((split.percentage || 0) * 100) }}%)
+                      </span>
+                    </div>
+                  </div>
+                  <!-- Barra visual -->
+                  <div class="flex h-2 rounded-full overflow-hidden mt-1">
+                    <div
+                      v-for="(split, idx) in props.transactionData.splits"
+                      :key="'bar-' + idx"
+                      :class="idx === 0 ? 'bg-orange-400' : 'bg-blue-400'"
+                      :style="{
+                        width: `${Math.round((split.percentage || 0) * 100)}%`,
+                      }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+
               <!-- Clasificación Automática de Overhead -->
               <PremiumLockWrapper
                 v-if="isOverheadExpense"
@@ -425,6 +503,38 @@ const getCategoryLabel = (category) => {
     overhead: "Gastos indirectos",
   };
   return labels[category] || category;
+};
+
+// Función para obtener la etiqueta del bucket contable
+const getBucketLabel = (bucket) => {
+  const labels = {
+    DIRECT_MATERIAL: "Material directo",
+    COGS_RESALE: "Mercadería para reventa",
+    DIRECT_LABOR: "Mano de obra directa",
+    MANUFACTURING_OH: "Costos indirectos de producción",
+    OVERHEAD: "Gastos generales",
+  };
+  return labels[bucket] || bucket;
+};
+
+// Función para obtener la etiqueta del rol paylabor
+const getPayLaborLabel = (role) => {
+  const labels = {
+    DIRECT_SERVICE: "Atención directa / servicio profesional",
+    PRODUCTION_SUPPORT: "Producción general (cocina, taller, fábrica)",
+    ADMIN_SUPPORT: "Administración / apoyo",
+  };
+  return labels[role] || role;
+};
+
+// Función para obtener la etiqueta del uso overhead
+const getOverheadUsageLabel = (usage) => {
+  const labels = {
+    PRODUCE: "Producción o prestación de servicio",
+    ADMIN: "Atención o gestión",
+    MIXED: "Uso general (ambas áreas)",
+  };
+  return labels[usage] || usage;
 };
 
 // Computed para obtener el ícono de la categoría

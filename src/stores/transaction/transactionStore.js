@@ -51,6 +51,11 @@ const transactionToAdd = ref({
   // Campos para transacciones de egreso tipo 'materials':
   materialItems: [], // Array de materiales/insumos comprados
   materialItemsAndStockLogs: [], // Relación entre items y stockLogs
+  // Campos para clasificación contable:
+  paylabor: null,        // 'DIRECT_SERVICE' | 'PRODUCTION_SUPPORT' | 'ADMIN_SUPPORT'
+  overheadUsage: null,   // 'PRODUCE' | 'ADMIN' | 'MIXED'
+  bucket: null,          // 'DIRECT_MATERIAL' | 'COGS_RESALE' | 'DIRECT_LABOR' | 'MANUFACTURING_OH' | 'OVERHEAD'
+  splits: null,          // Array de { bucket, amount, percentage } para overhead MIXED
   // Campos para transfers:
   fromAccount: null,
   toAccount: null,
@@ -307,6 +312,11 @@ export function useTransactionStore() {
               description: transactionToAdd.value.description,
               category: transactionToAdd.value.category,
               subcategory: transactionToAdd.value.subcategory || null,
+              // Campos de clasificación contable
+              bucket: transactionToAdd.value.bucket || null,
+              paylabor: transactionToAdd.value.paylabor || null,
+              overheadUsage: transactionToAdd.value.overheadUsage || null,
+              splits: transactionToAdd.value.splits || null,
             };
 
             console.log('✨ Creando nuevo expense con primer log:', expenseData);
@@ -780,6 +790,11 @@ export function useTransactionStore() {
       // Campos para transacciones de egreso tipo 'materials':
       materialItems: [], // Array de materiales/insumos comprados
       materialItemsAndStockLogs: [], // Relación entre items y stockLogs
+      // Campos para clasificación contable:
+      paylabor: null,
+      overheadUsage: null,
+      bucket: null,
+      splits: null,
       fromAccount: null,
       toAccount: null,
 
@@ -955,6 +970,12 @@ export function useTransactionStore() {
   const setExpenseAmount = (amount) => { transactionToAdd.value.amount = parseMoneyFloat(amount); };
   const setExpenseCategory = (category) => { transactionToAdd.value.category = category; }; // 'materials'|'labor'|'overhead'
   const setExpenseSubcategory = (subcategory) => { transactionToAdd.value.subcategory = subcategory; }; // 'office'|'travel'|'utilities' etc.
+
+  // Nuevos setters para clasificación contable
+  const setPayLabor = (role) => { transactionToAdd.value.paylabor = role; }; // 'DIRECT_SERVICE'|'PRODUCTION_SUPPORT'|'ADMIN_SUPPORT'
+  const setOverheadUsage = (usage) => { transactionToAdd.value.overheadUsage = usage; }; // 'PRODUCE'|'ADMIN'|'MIXED'
+  const setBucket = (bucket) => { transactionToAdd.value.bucket = bucket; };
+  const setSplits = (splits) => { transactionToAdd.value.splits = splits; };
 
   // Funciones para manejar transferencias
   const setTransferFromAccount = (fromAccount) => { transactionToAdd.value.fromAccount = fromAccount; };
@@ -2419,6 +2440,10 @@ export function useTransactionStore() {
     setExpenseCategory,
     setTransferFromAccount,
     setTransferToAccount,
+    setPayLabor,
+    setOverheadUsage,
+    setBucket,
+    setSplits,
     removeItemToTransaction,
     removeMaterialItemFromExpense,
     getSteps,
