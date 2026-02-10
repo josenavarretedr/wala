@@ -69,7 +69,7 @@
           @click="navigateToCost('costs-materials')"
           :class="[
             'relative p-5 rounded-xl border-2 transition-all text-left group',
-            costingStore.hasMaterialsCost
+            hasMaterialsCostStructure
               ? 'border-emerald-500 bg-emerald-50 shadow-md'
               : 'border-gray-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm',
           ]"
@@ -79,7 +79,7 @@
             <div
               :class="[
                 'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
-                costingStore.hasMaterialsCost
+                hasMaterialsCostStructure
                   ? 'bg-emerald-500'
                   : 'bg-emerald-100 group-hover:bg-emerald-200',
               ]"
@@ -87,9 +87,7 @@
               <svg
                 class="w-6 h-6"
                 :class="
-                  costingStore.hasMaterialsCost
-                    ? 'text-white'
-                    : 'text-emerald-600'
+                  hasMaterialsCostStructure ? 'text-white' : 'text-emerald-600'
                 "
                 fill="none"
                 stroke="currentColor"
@@ -117,7 +115,7 @@
 
           <!-- Check verde cuando hay datos -->
           <div
-            v-if="costingStore.hasMaterialsCost"
+            v-if="hasMaterialsCostStructure"
             class="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center"
           >
             <svg
@@ -137,7 +135,7 @@
 
           <!-- Número del costo -->
           <div
-            v-if="costingStore.hasMaterialsCost"
+            v-if="hasMaterialsCostStructure"
             class="mt-3 pt-3 border-t border-emerald-200"
           >
             <div class="flex items-center justify-between">
@@ -145,7 +143,7 @@
                 >Costo configurado</span
               >
               <span class="text-lg font-bold text-emerald-600">
-                S/ {{ formatNumber(costingStore.costs.materials) }}
+                S/ {{ formatNumber(getMaterialsCost) }}
               </span>
             </div>
           </div>
@@ -423,6 +421,9 @@
         v-if="costingStore.hasAnyCost"
         class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200"
       >
+        <!-- <pre>
+          {{ costingStore }}
+        </pre> -->
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-800">Costo Total</h3>
           <span class="text-3xl font-bold text-gray-900">
@@ -467,7 +468,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
 import { useProductCostingStore } from "@/stores/productCostingStore";
@@ -499,6 +500,19 @@ const showCIF = computed(() => {
   return ["PRODUCT", "SERVICE"].includes(product.value.type);
 });
 
+// Computed para detectar si tiene costStructure configurado
+const hasMaterialsCostStructure = computed(() => {
+  return (
+    product.value?.costStructure?.materials !== null &&
+    product.value?.costStructure?.materials !== undefined &&
+    product.value?.costStructure?.materials > 0
+  );
+});
+
+const getMaterialsCost = computed(() => {
+  return product.value?.costStructure?.materials || 0;
+});
+
 // Methods
 const loadProduct = async () => {
   loading.value = true;
@@ -519,10 +533,16 @@ const loadProduct = async () => {
       return;
     }
 
+    console.log("📦 Producto cargado en ProductCosting:", {
+      productId,
+      costStructure: productData.costStructure,
+      cost: productData.cost,
+    });
+
     product.value = productData;
 
-    // Inicializar el store con el productId actual
-    costingStore.initializeProduct(productId);
+    // Inicializar el store con el productId y el producto actual
+    costingStore.initializeProduct(productId, productData);
   } catch (err) {
     console.error("Error cargando producto:", err);
     error.value = "Error al cargar el producto";
@@ -565,6 +585,16 @@ const goBack = () => {
     },
   });
 };
+
+// Watchers
+watch(
+  () => route.params.productId,
+  () => {
+    if (route.params.productId) {
+      loadProduct();
+    }
+  },
+);
 
 // Lifecycle
 onMounted(() => {

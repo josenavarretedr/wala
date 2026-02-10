@@ -21,6 +21,18 @@ export const useProductCostingStore = defineStore('productCosting', () => {
   });
 
   // ==========================================
+  // Estado de Composición de Materiales
+  // ==========================================
+
+  const materialsComposition = ref({
+    items: [],              // Array de materiales: [{productId, description, quantity, unit, costPerUnit, subtotal}]
+    totalCost: 0,          // Suma calculada de todos los subtotales
+    hasChanges: false,     // Flag para detectar cambios sin guardar
+    loadedFromFirestore: false, // Flag para saber si se cargó data existente
+    originalData: []       // Copia de los datos originales para comparación
+  });
+
+  // ==========================================
   // Computed Properties
   // ==========================================
 
@@ -73,6 +85,36 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     return hasMaterialsCost.value || hasMODCost.value || hasCIFCost.value || hasOverheadCost.value;
   });
 
+  /**
+   * Calcula cuántos materiales tienen costo definido
+   */
+  const materialsWithCost = computed(() => {
+    return materialsComposition.value.items.filter(item => item.costPerUnit !== null && item.costPerUnit > 0).length;
+  });
+
+  /**
+   * Porcentaje de materiales con costo definido
+   */
+  const materialsCostProgress = computed(() => {
+    const total = materialsComposition.value.items.length;
+    if (total === 0) return 0;
+    return Math.round((materialsWithCost.value / total) * 100);
+  });
+
+  /**
+   * Materiales sin costo definido
+   */
+  const materialsWithoutCost = computed(() => {
+    return materialsComposition.value.items.filter(item => !item.costPerUnit || item.costPerUnit <= 0);
+  });
+
+  /**
+   * Verifica si hay cambios sin guardar en la composición
+   */
+  const hasUnsavedChanges = computed(() => {
+    return materialsComposition.value.hasChanges;
+  });
+
   // ==========================================
   // Métodos
   // ==========================================
@@ -81,12 +123,27 @@ export const useProductCostingStore = defineStore('productCosting', () => {
    * Inicializa el store para un producto específico
    * @param {string} productId - ID del producto
    */
-  function initializeProduct(productId) {
+  function initializeProduct(productId, product = null) {
     if (currentProductId.value !== productId) {
       currentProductId.value = productId;
       // En el futuro, aquí se cargarían los datos desde Firestore
       // Por ahora solo reseteamos si es un producto diferente
       resetCosts();
+    }
+
+    // Si se pasó el producto, cargar costos desde costStructure
+    if (product && product.costStructure) {
+      costs.value.materials = product.costStructure.materials ?? null;
+      costs.value.mod = product.costStructure.mod ?? null;
+      costs.value.cif = product.costStructure.cif ?? null;
+      costs.value.overhead = product.costStructure.overhead ?? null;
+
+      console.log('📦 Costos cargados desde producto:', {
+        materials: costs.value.materials,
+        mod: costs.value.mod,
+        cif: costs.value.cif,
+        overhead: costs.value.overhead
+      });
     }
   }
 
@@ -169,6 +226,146 @@ export const useProductCostingStore = defineStore('productCosting', () => {
   }
 
   // ==========================================
+  // Métodos de Composición de Materiales
+  // ==========================================
+
+  /**
+   * Carga la composición de materiales existente
+   * @param {Array} composition - Array de materiales del producto
+   */
+  function loadComposition(composition = []) {
+    materialsComposition.value.items = [...composition];
+    materialsComposition.value.originalData = JSON.parse(JSON.stringify(composition));
+    materialsComposition.value.loadedFromFirestore = true;
+    materialsComposition.value.hasChanges = false;
+    calculateTotalCost();
+    console.log('📦 Composición cargada:', materialsComposition.value.items);
+  }
+
+  /**
+   * Agrega un material a la composición
+   * @param {Object} material - Objeto del material a agregar
+   */
+  function addMaterialToComposition(material) {
+    // Verificar si ya existe
+    const existingIndex = materialsComposition.value.items.findIndex(
+      item => item.productId === material.productId
+    );
+
+    if (existingIndex !== -1) {
+      console.warn('⚠️ Material ya existe en la composición');
+      return { success: false, reason: 'duplicate' };
+    }
+
+    // Agregar el material
+    materialsComposition.value.items.push({
+      productId: material.productId,
+      description: material.description,
+      quantity: material.quantity,
+      unit: material.unit,
+      costPerUnit: material.costPerUnit || null,
+      subtotal: material.costPerUnit ? (material.quantity * material.costPerUnit) : null
+    });
+
+    materialsComposition.value.hasChanges = true;
+    calculateTotalCost();
+
+    console.log('✅ Material agregado:', material.description);
+    return { success: true };
+  }
+
+  /**
+   * Actualiza la cantidad de un material
+   * @param {string} productId - ID del producto
+   * @param {number} quantity - Nueva cantidad
+   */
+  function updateMaterialQuantity(productId, quantity) {
+    const material = materialsComposition.value.items.find(
+      item => item.productId === productId
+    );
+
+    if (!material) {
+      console.warn('⚠️ Material no encontrado:', productId);
+      return;
+    }
+
+    material.quantity = parseFloat(quantity);
+
+    // Recalcular subtotal
+    if (material.costPerUnit && material.costPerUnit > 0) {
+      material.subtotal = material.quantity * material.costPerUnit;
+    }
+
+    materialsComposition.value.hasChanges = true;
+    calculateTotalCost();
+
+    console.log('📝 Cantidad actualizada:', material.description, quantity);
+  }
+
+  /**
+   * Elimina un material de la composición
+   * @param {string} productId - ID del producto a eliminar
+   */
+  function removeMaterial(productId) {
+    const index = materialsComposition.value.items.findIndex(
+      item => item.productId === productId
+    );
+
+    if (index === -1) {
+      console.warn('⚠️ Material no encontrado:', productId);
+      return;
+    }
+
+    const removedMaterial = materialsComposition.value.items.splice(index, 1)[0];
+    materialsComposition.value.hasChanges = true;
+    calculateTotalCost();
+
+    console.log('🗑️ Material eliminado:', removedMaterial.description);
+  }
+
+  /**
+   * Calcula el costo total de la composición
+   */
+  function calculateTotalCost() {
+    const total = materialsComposition.value.items.reduce((sum, item) => {
+      if (item.subtotal && item.subtotal > 0) {
+        return sum + item.subtotal;
+      }
+      return sum;
+    }, 0);
+
+    materialsComposition.value.totalCost = parseFloat(total.toFixed(2));
+
+    // Sincronizar con costs.materials
+    costs.value.materials = materialsComposition.value.totalCost;
+
+    console.log('💰 Costo total calculado:', materialsComposition.value.totalCost);
+    console.log('💰 costs.materials sincronizado:', costs.value.materials);
+  }
+
+  /**
+   * Resetea la composición de materiales
+   */
+  function resetComposition() {
+    materialsComposition.value = {
+      items: [],
+      totalCost: 0,
+      hasChanges: false,
+      loadedFromFirestore: false,
+      originalData: []
+    };
+    console.log('🔄 Composición reseteada');
+  }
+
+  /**
+   * Verifica si hay materiales sin costo
+   * @returns {boolean}
+   */
+  function hasMaterialsWithoutCost() {
+    return materialsWithoutCost.value.length > 0;
+  }
+
+  // ==========================================
   // Return
   // ==========================================
 
@@ -176,6 +373,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     // Estado
     currentProductId,
     costs,
+    materialsComposition,
 
     // Computed
     hasMaterialsCost,
@@ -184,8 +382,12 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     hasOverheadCost,
     totalCost,
     hasAnyCost,
+    materialsWithCost,
+    materialsCostProgress,
+    materialsWithoutCost,
+    hasUnsavedChanges,
 
-    // Métodos
+    // Métodos de costos
     initializeProduct,
     updateMaterialsCost,
     updateMODCost,
@@ -193,6 +395,15 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     updateOverheadCost,
     resetCosts,
     saveCosts,
-    getCostByType
+    getCostByType,
+
+    // Métodos de composición
+    loadComposition,
+    addMaterialToComposition,
+    updateMaterialQuantity,
+    removeMaterial,
+    calculateTotalCost,
+    resetComposition,
+    hasMaterialsWithoutCost
   };
 });

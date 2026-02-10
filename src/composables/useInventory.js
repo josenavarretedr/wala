@@ -7,6 +7,7 @@ import {
   getDoc,
   doc,
   serverTimestamp,
+  Timestamp,
   setDoc,
   updateDoc,
   arrayUnion,
@@ -518,12 +519,36 @@ export function useInventory() {
         updatePayload.trackStock = Boolean(updatedData.trackStock);
       }
 
+      // Actualizar costStructure si existe (completo o campos específicos)
+      if (updatedData.costStructure !== undefined) {
+        // Si se pasa el objeto completo
+        updatePayload.costStructure = updatedData.costStructure;
+      } else {
+        // Si se usan campos específicos con dot notation
+        if (updatedData['costStructure.materials'] !== undefined) {
+          updatePayload['costStructure.materials'] = Number(updatedData['costStructure.materials']);
+        }
+        if (updatedData['costStructure.materialsHistory'] !== undefined) {
+          updatePayload['costStructure.materialsHistory'] = updatedData['costStructure.materialsHistory'];
+        }
+        if (updatedData['costStructure.mod'] !== undefined) {
+          updatePayload['costStructure.mod'] = Number(updatedData['costStructure.mod']);
+        }
+        if (updatedData['costStructure.cif'] !== undefined) {
+          updatePayload['costStructure.cif'] = Number(updatedData['costStructure.cif']);
+        }
+        if (updatedData['costStructure.overhead'] !== undefined) {
+          updatePayload['costStructure.overhead'] = Number(updatedData['costStructure.overhead']);
+        }
+      }
+
       // Agregar timestamp de actualización
       updatePayload.updatedAt = serverTimestamp();
 
       await updateDoc(productRef, updatePayload);
 
-      console.log('✅ Product updated successfully:', productId, updatePayload);
+      console.log('✅ Product updated successfully:', productId);
+      console.log('📦 Update payload:', JSON.stringify(updatePayload, null, 2));
       return { success: true, productId, updatedFields: updatePayload };
 
     } catch (error) {
@@ -1224,6 +1249,181 @@ export function useInventory() {
     }
   };
 
+  /**
+   * Obtiene productos candidatos para composición (con trackStock = true)
+   * @param {string} excludeProductId - ID del producto a excluir (evitar recursión)
+   * @returns {Promise<Array>} - Array de productos
+   */
+  const getMaterialCandidates = async (excludeProductId = null) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) {
+        throw new Error('No se puede obtener materiales sin businessId activo');
+      }
+
+      const productsRef = collection(db, `businesses/${businessId}/products`);
+      const q = query(productsRef, where('trackStock', '==', true));
+
+      const snapshot = await getDocs(q);
+      const products = [];
+
+      snapshot.forEach((doc) => {
+        const productId = doc.id;
+
+        // Excluir el producto actual
+        if (excludeProductId && productId === excludeProductId) {
+          return;
+        }
+
+        products.push({
+          productId,
+          ...doc.data()
+        });
+      });
+
+      console.log(`📦 ${products.length} materiales candidatos obtenidos`);
+      return products;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo materiales candidatos:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Obtiene solo el costo de un producto específico
+   * @param {string} productId - ID del producto
+   * @returns {Promise<number|null>} - Costo del producto o null
+   */
+  const getProductCostById = async (productId) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) {
+        throw new Error('No se puede obtener costo sin businessId activo');
+      }
+
+      const productRef = doc(db, `businesses/${businessId}/products`, productId);
+      const productSnap = await getDoc(productRef);
+
+      if (!productSnap.exists()) {
+        console.warn('⚠️ Producto no encontrado:', productId);
+        return null;
+      }
+
+      const cost = productSnap.data().cost || null;
+      return cost;
+
+    } catch (error) {
+      console.error('❌ Error obteniendo costo del producto:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Guarda la composición de materiales de un producto
+   * @param {string} productId - ID del producto
+   * @param {Array} composition - Array de materiales
+   * @param {number} totalCost - Costo total calculado
+   * @returns {Promise<boolean>} - true si se guardó exitosamente
+   */
+  const saveProductComposition = async (productId, composition, totalCost) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) {
+        throw new Error('No se puede guardar composición sin businessId activo');
+      }
+
+      const productRef = doc(db, `businesses/${businessId}/products`, productId);
+
+      // Verificar que el producto existe
+      const productSnap = await getDoc(productRef);
+      if (!productSnap.exists()) {
+        throw new Error('Producto no encontrado');
+      }
+
+      const currentData = productSnap.data();
+      const currentCostStructure = currentData.costStructure || {};
+
+      // Crear entrada de historial
+      // Nota: serverTimestamp() NO se puede usar dentro de arrays, usar Timestamp.now()
+      const historyEntry = {
+        date: Timestamp.now(),
+        value: totalCost,
+        reason: currentCostStructure.materials ? 'update' : 'initial'
+      };
+
+      // Preparar el historial actualizado
+      const currentHistory = currentCostStructure.materialsHistory || [];
+      const updatedHistory = [...currentHistory, historyEntry];
+
+      // Actualizar el producto
+      await updateDoc(productRef, {
+        composition: composition,
+        'costStructure.materials': totalCost,
+        'costStructure.materialsHistory': updatedHistory
+      });
+
+      console.log('💾 Composición guardada exitosamente:', {
+        productId,
+        totalCost,
+        materialsCount: composition.length
+      });
+
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error guardando composición:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Valida una composición antes de guardar
+   * @param {Array} composition - Array de materiales a validar
+   * @returns {Object} - { valid: boolean, errors: Array }
+   */
+  const validateComposition = (composition) => {
+    const errors = [];
+
+    if (!composition || composition.length === 0) {
+      errors.push('La composición debe tener al menos un material');
+      return { valid: false, errors };
+    }
+
+    composition.forEach((material, index) => {
+      // Validar productId
+      if (!material.productId) {
+        errors.push(`Material ${index + 1}: productId es obligatorio`);
+      }
+
+      // Validar quantity
+      if (!material.quantity || material.quantity <= 0) {
+        errors.push(`Material ${index + 1}: La cantidad debe ser mayor a 0`);
+      }
+
+      // Validar que quantity tenga máximo 2 decimales
+      if (material.quantity) {
+        const decimals = (material.quantity.toString().split('.')[1] || '').length;
+        if (decimals > 2) {
+          errors.push(`Material ${index + 1}: La cantidad debe tener máximo 2 decimales`);
+        }
+      }
+
+      // Validar unit
+      if (!material.unit) {
+        errors.push(`Material ${index + 1}: La unidad es obligatoria`);
+      }
+    });
+
+    const valid = errors.length === 0;
+
+    if (!valid) {
+      console.warn('⚠️ Validación de composición fallida:', errors);
+    }
+
+    return { valid, errors };
+  };
+
   return {
     createItem,
     createProduct,
@@ -1245,5 +1445,10 @@ export function useInventory() {
     createLocalRule,
     updateTaxonomyFromClassification,
     normalizeDescription,
+    // 🆕 Métodos de composición de materiales
+    getMaterialCandidates,
+    getProductCostById,
+    saveProductComposition,
+    validateComposition
   };
 }

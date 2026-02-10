@@ -9,7 +9,21 @@
 import { autocomplete } from "@algolia/autocomplete-js";
 import "@algolia/autocomplete-theme-classic";
 
-const emit = defineEmits(["update:productToAdd"]);
+// Props
+const props = defineProps({
+  mode: {
+    type: String,
+    default: "transaction", // 'transaction' o 'materials'
+    validator: (value) => ["transaction", "materials"].includes(value),
+  },
+  excludeProductId: {
+    type: String,
+    default: null,
+  },
+});
+
+// Emits
+const emit = defineEmits(["update:productToAdd", "material-selected"]);
 
 import { ref, onMounted, watch } from "vue";
 
@@ -29,15 +43,33 @@ function normalize(s = "") {
 }
 
 function buildIndex(items) {
-  // Filtrar productos de tipo RAW_MATERIAL (insumos)
-  const filteredItems = items.filter((p) => p.type !== "RAW_MATERIAL");
+  let filteredItems = items;
+
+  // Filtrar según el modo
+  if (props.mode === "transaction") {
+    // Modo transacción: excluir RAW_MATERIAL
+    filteredItems = items.filter((p) => p.type !== "RAW_MATERIAL");
+  } else if (props.mode === "materials") {
+    // Modo materiales: solo productos con trackStock = true
+    filteredItems = items.filter((p) => p.trackStock === true);
+  }
+
+  // Excluir el producto específico si se proporciona
+  if (props.excludeProductId) {
+    filteredItems = filteredItems.filter(
+      (p) => p.uuid !== props.excludeProductId,
+    );
+  }
 
   index.value = filteredItems.map((p) => ({
     productId: p.uuid,
     productDescription: p.description,
     productDescription_lc: normalize(p.description || ""),
     productPrice: p.price,
+    productCost: p.cost,
     productUnit: p.unit || "uni",
+    productStock: p.stock ?? 0,
+    trackStock: p.trackStock ?? false,
   }));
 }
 
@@ -50,6 +82,18 @@ watch(
   () => inventoryStore.allItemsInInventory.value,
   (val) => buildIndex(val),
   { deep: true },
+);
+
+// Reconstruir índice cuando cambie el modo
+watch(
+  () => props.mode,
+  () => buildIndex(inventoryStore.allItemsInInventory.value),
+);
+
+// Reconstruir índice cuando cambie excludeProductId
+watch(
+  () => props.excludeProductId,
+  () => buildIndex(inventoryStore.allItemsInInventory.value),
 );
 
 // Función legacy mantenida por compatibilidad (ahora solo retorna el índice)
@@ -69,16 +113,21 @@ function getItemsDebounced(query) {
         ? index.value.filter((i) => i.productDescription_lc.includes(q))
         : index.value;
 
-      resolve(
-        dataFiltered.length
-          ? dataFiltered.slice(0, 5)
-          : [
-              {
-                productDescription: `Registrar nuevo producto: ${query}`,
-                isNewProduct: true,
-              },
-            ],
-      );
+      // En modo materials, no mostrar opción de "nuevo producto"
+      if (props.mode === "materials") {
+        resolve(dataFiltered.length ? dataFiltered.slice(0, 8) : []);
+      } else {
+        resolve(
+          dataFiltered.length
+            ? dataFiltered.slice(0, 5)
+            : [
+                {
+                  productDescription: `Registrar nuevo producto: ${query}`,
+                  isNewProduct: true,
+                },
+              ],
+        );
+      }
     }, 120);
   });
 }
@@ -96,7 +145,8 @@ function clearAutocompleteInput() {
 onMounted(() => {
   autocomplete({
     container: "#autocomplete",
-    placeholder: "Buscar producto...",
+    placeholder:
+      props.mode === "materials" ? "Buscar material..." : "Buscar producto...",
     detachedMediaQuery: "none", // 👈 Fuerza inline en móviles
     getSources({ query }) {
       return [
@@ -106,8 +156,8 @@ onMounted(() => {
             return getItemsDebounced(query);
           },
           onSelect({ item }) {
-            // Manejar nuevo producto
-            if (item.isNewProduct) {
+            // Manejar nuevo producto (solo en modo transaction)
+            if (item.isNewProduct && props.mode === "transaction") {
               const description = (item.productDescription || "")
                 .replace("Registrar nuevo producto: ", "")
                 .trim();
@@ -129,17 +179,26 @@ onMounted(() => {
             const selected = inventoryStore.allItemsInInventory.value.find(
               (p) => p.uuid === item.productId,
             );
+
             if (selected) {
-              transactionStore.modifyItemToAddInTransaction({
-                description: selected.description,
-                price: selected.price,
-                oldOrNewProduct: "old",
-                selectedProductUuid: selected.uuid,
-                unit: selected.unit || "uni",
-                stock: selected.stock ?? 0,
-                trackStock: selected.trackStock ?? false,
-              });
-              clearAutocompleteInput();
+              // Determinar qué emit usar según el modo
+              if (props.mode === "materials") {
+                // Emit para modo materiales
+                emit("material-selected", selected);
+                clearAutocompleteInput();
+              } else {
+                // Emit para modo transacción (legacy)
+                transactionStore.modifyItemToAddInTransaction({
+                  description: selected.description,
+                  price: selected.price,
+                  oldOrNewProduct: "old",
+                  selectedProductUuid: selected.uuid,
+                  unit: selected.unit || "uni",
+                  stock: selected.stock ?? 0,
+                  trackStock: selected.trackStock ?? false,
+                });
+                clearAutocompleteInput();
+              }
             } else {
               console.error(
                 "Producto seleccionado no encontrado:",
@@ -167,6 +226,19 @@ onMounted(() => {
                 `;
               } else {
                 // Plantilla para producto existente
+                // Mostrar costo en modo materials, precio en modo transaction
+                const displayValue =
+                  props.mode === "materials"
+                    ? item.productCost
+                      ? `S/ ${item.productCost.toFixed(2)}`
+                      : "Sin costo"
+                    : `S/ ${item.productPrice?.toFixed(2) || "0.00"}`;
+
+                const valueClass =
+                  props.mode === "materials" && !item.productCost
+                    ? "text-amber-600"
+                    : "text-gray-700";
+
                 return html`
                   <div
                     class="py-3 px-4 flex items-center justify-between border-b border-gray-100 hover:bg-gray-50 transition-all duration-150 cursor-pointer active:bg-gray-100"
@@ -184,10 +256,16 @@ onMounted(() => {
                         <span class="text-sm text-gray-600 font-medium">
                           ${item.productUnit || "uni"}
                         </span>
+                        ${props.mode === "materials" &&
+                        item.productStock !== undefined
+                          ? html`<span class="text-sm text-gray-500">
+                              • Stock: ${item.productStock}</span
+                            >`
+                          : ""}
                       </div>
                       <div class="ml-3 text-right flex-shrink-0">
-                        <span class="text-base font-semibold text-gray-700">
-                          S/ ${item.productPrice?.toFixed(2) || "0.00"}
+                        <span class="text-base font-semibold ${valueClass}">
+                          ${displayValue}
                         </span>
                       </div>
                     </div>
@@ -196,7 +274,9 @@ onMounted(() => {
               }
             },
             noResults() {
-              return "No se encontraron resultados.";
+              return props.mode === "materials"
+                ? "No se encontraron materiales."
+                : "No se encontraron resultados.";
             },
           },
         },
