@@ -11,6 +11,7 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
+  deleteDoc,
   query,
   where,
   orderBy,
@@ -272,8 +273,11 @@ export function useInventory() {
         }
       }
 
-      await updateDoc(productRef, {
-        stockLog: arrayUnion({ ...stockLog, createdAt: new Date() }),
+      // ✅ CREAR STOCKLOG EN SUBCOLLECTION (nueva estructura)
+      const stockLogRef = doc(db, `businesses/${businessId}/products/${item.uuid}/stockLog`, stockLog.uuid);
+      await setDoc(stockLogRef, {
+        ...stockLog,
+        createdAt: serverTimestamp(),
       });
 
       // Pasar quantityForStock si existe para ajustar el stock correctamente
@@ -311,7 +315,6 @@ export function useInventory() {
         return null;
       }
 
-
       for (const pair of transactionDataById[0].itemsAndStockLogs) {
         const itemUuid = pair.itemUuid;
         const stockLogUuid = pair.stockLogUuid;
@@ -322,17 +325,22 @@ export function useInventory() {
           throw new Error(`Item with UUID ${itemUuid} does not exist`);
         }
 
-        const itemData = itemDoc.data();
+        // ✅ OBTENER STOCKLOG DE SUBCOLLECTION
+        const stockLogRef = doc(db, `businesses/${businessId}/products/${itemUuid}/stockLog`, stockLogUuid);
+        const stockLogDoc = await getDoc(stockLogRef);
 
-        const stockLog = itemData.stockLog.find(log => log.uuid == stockLogUuid);
+        if (!stockLogDoc.exists()) {
+          console.warn(`StockLog ${stockLogUuid} no encontrado en subcollection`);
+          continue;
+        }
+
+        const stockLog = stockLogDoc.data();
         stockLog.type = 'return';
 
-        const updatedStockLog = itemData.stockLog.filter(log => log.uuid !== stockLogUuid);
+        // ✅ ELIMINAR DE SUBCOLLECTION
+        await deleteDoc(stockLogRef);
 
-        await updateDoc(itemRef, {
-          stockLog: updatedStockLog
-        });
-
+        // Actualizar stock del producto
         await updateStock(itemRef, stockLog);
       }
 
@@ -340,6 +348,100 @@ export function useInventory() {
       console.error('Error deleting stock log: ', error);
       throw error;
     }
+  };
+
+  /**
+   * Obtiene todos los stockLogs de un producto con filtros opcionales
+   * @param {string} productId - UUID del producto
+   * @param {Object} filters - Filtros opcionales
+   * @param {string} filters.type - Tipo de stockLog: 'sell', 'buy', 'return', 'waste', 'count'
+   * @param {Date|Timestamp} filters.startDate - Fecha de inicio
+   * @param {Date|Timestamp} filters.endDate - Fecha de fin
+   * @returns {Promise<Array>} Array de stockLogs
+   */
+  const getStockLogsByProduct = async (productId, filters = {}) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        console.warn('No se puede obtener stockLogs sin businessId activo');
+        return [];
+      }
+
+      const stockLogCollectionRef = collection(db, `businesses/${businessId}/products/${productId}/stockLog`);
+      let stockLogQuery = stockLogCollectionRef;
+
+      // Construir query con filtros
+      const queryConstraints = [];
+
+      if (filters.type) {
+        queryConstraints.push(where('type', '==', filters.type));
+      }
+
+      if (filters.startDate) {
+        const startTimestamp = filters.startDate instanceof Timestamp
+          ? filters.startDate
+          : Timestamp.fromDate(filters.startDate);
+        queryConstraints.push(where('createdAt', '>=', startTimestamp));
+      }
+
+      if (filters.endDate) {
+        const endTimestamp = filters.endDate instanceof Timestamp
+          ? filters.endDate
+          : Timestamp.fromDate(filters.endDate);
+        queryConstraints.push(where('createdAt', '<=', endTimestamp));
+      }
+
+      // Ordenar por fecha descendente
+      queryConstraints.push(orderBy('createdAt', 'desc'));
+
+      if (queryConstraints.length > 0) {
+        stockLogQuery = query(stockLogCollectionRef, ...queryConstraints);
+      } else {
+        stockLogQuery = query(stockLogCollectionRef, orderBy('createdAt', 'desc'));
+      }
+
+      const querySnapshot = await getDocs(stockLogQuery);
+
+      if (querySnapshot.empty) {
+        console.log('📋 No se encontraron stockLogs para este producto con los filtros aplicados');
+        return [];
+      }
+
+      const stockLogs = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log(`📋 StockLogs encontrados: ${stockLogs.length}`, {
+        productId,
+        filters,
+        count: stockLogs.length
+      });
+
+      return stockLogs;
+
+    } catch (error) {
+      console.error('Error obteniendo stockLogs:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Obtiene stockLogs de un producto filtrados por rango de fechas y tipo
+   * Específico para análisis de períodos (útil para calcular ventas de un mes)
+   * @param {string} productId - UUID del producto
+   * @param {Date|Timestamp} startDate - Fecha de inicio
+   * @param {Date|Timestamp} endDate - Fecha de fin
+   * @param {string} type - Tipo de stockLog (default: 'sell')
+   * @returns {Promise<Array>} Array de stockLogs filtrados
+   */
+  const getStockLogsByDateRange = async (productId, startDate, endDate, type = 'sell') => {
+    return await getStockLogsByProduct(productId, {
+      type,
+      startDate,
+      endDate
+    });
   };
 
   const updateStock = async (productRef, stockLog, quantityForStock = undefined) => {
@@ -1433,6 +1535,9 @@ export function useInventory() {
     getAllItemsInInventory,
     getProductById,
     updateProduct,
+    // 🆕 Métodos de stockLog
+    getStockLogsByProduct,
+    getStockLogsByDateRange,
     // 🆕 Métodos de clasificación IA
     classifyProduct,
     correctClassification,

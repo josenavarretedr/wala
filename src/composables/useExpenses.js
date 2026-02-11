@@ -1,6 +1,6 @@
 // src/composables/useExpenses.js
 
-import { getFirestore, collection, setDoc, query, where, doc, getDocs, getDoc, deleteDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, query, where, doc, getDocs, getDoc, deleteDoc, updateDoc, serverTimestamp, arrayUnion, Timestamp } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from "uuid";
@@ -453,6 +453,97 @@ export function useExpenses() {
     }
   };
 
+  /**
+   * Obtiene expenses por bucket y rango de fechas
+   * Suma solo los logs que caen dentro del rango de fechas
+   * @param {string} bucket - Ej: 'DIRECT_LABOR', 'OVERHEAD', 'DIRECT_MATERIAL'
+   * @param {Date|Timestamp} startDate - Fecha de inicio
+   * @param {Date|Timestamp} endDate - Fecha de fin
+   * @returns {Promise<Array>} Array de expenses con sus logs filtrados y total calculado
+   */
+  const getExpensesByBucketAndDateRange = async (bucket, startDate, endDate) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!bucket) {
+        throw new Error('Bucket es requerido para filtrar expenses');
+      }
+
+      // Convertir fechas a Timestamp si son Date
+      const startTimestamp = startDate instanceof Timestamp
+        ? startDate
+        : Timestamp.fromDate(startDate);
+      const endTimestamp = endDate instanceof Timestamp
+        ? endDate
+        : Timestamp.fromDate(endDate);
+
+      // Query por bucket
+      const expensesQuery = query(
+        collection(db, `businesses/${businessId}/expenses`),
+        where('bucket', '==', bucket)
+      );
+
+      const expensesSnapshot = await getDocs(expensesQuery);
+
+      const expensesInRange = [];
+      let totalAmount = 0;
+
+      for (const docSnapshot of expensesSnapshot.docs) {
+        const expenseData = docSnapshot.data();
+        const expenseId = docSnapshot.id;
+
+        // ✅ Obtener logs del array dentro del documento (NO es una subcollection)
+        const logs = expenseData.logs || [];
+
+        // Filtrar logs por rango de fechas
+        const logsInRange = [];
+        let expenseAmountInRange = 0;
+
+        logs.forEach(log => {
+          const logDate = log.date;
+
+          // Comparar fechas (logDate puede ser Timestamp o Date)
+          const logTimestamp = logDate instanceof Timestamp ? logDate : Timestamp.fromDate(logDate);
+
+          if (logTimestamp >= startTimestamp && logTimestamp <= endTimestamp) {
+            logsInRange.push(log);
+            expenseAmountInRange += Number(log.amount || 0);
+          }
+        });
+
+        // Solo incluir expense si tiene logs en el rango
+        if (logsInRange.length > 0) {
+          expensesInRange.push({
+            id: expenseId,
+            ...expenseData,
+            logsInRange, // Logs filtrados del período
+            amountInRange: expenseAmountInRange // Total del período
+          });
+
+          totalAmount += expenseAmountInRange;
+        }
+      }
+
+      console.log(`✅ Expenses encontrados:`, {
+        bucket,
+        startDate: startTimestamp.toDate(),
+        endDate: endTimestamp.toDate(),
+        count: expensesInRange.length,
+        totalAmount
+      });
+
+      return {
+        expenses: expensesInRange,
+        totalAmount,
+        count: expensesInRange.length
+      };
+
+    } catch (error) {
+      console.error('❌ Error obteniendo expenses por bucket y fecha:', error);
+      throw error;
+    }
+  };
+
   // ============================================
   // FUNCIONES LEGACY (mantener por compatibilidad)
   // ============================================
@@ -550,6 +641,7 @@ export function useExpenses() {
     updateExpenseMetadata,
     getExpenseById,
     getAllExpensesWithMetadata,
+    getExpensesByBucketAndDateRange,
     // Funciones legacy
     createExpense,
     getAllExpenses,

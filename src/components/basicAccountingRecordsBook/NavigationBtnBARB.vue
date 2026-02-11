@@ -160,7 +160,7 @@ const isNextButtonEnabled = computed(() => {
         }
         // Para labor/overhead, verificar descripción, monto y categoría
         else {
-          result =
+          const baseValid =
             transactionData.description &&
             transactionData.description.trim() !== "" &&
             transactionData.amount !== null &&
@@ -168,6 +168,43 @@ const isNextButtonEnabled = computed(() => {
             transactionData.amount > 0 &&
             transactionData.category !== null &&
             transactionData.category !== undefined;
+
+          if (!baseValid) {
+            result = false;
+          } else {
+            // ✅ VALIDAR CLASIFICACIÓN PARA LABOR/OVERHEAD (gastos nuevos)
+            const isNewExpense = transactionData.oldOrNewExpense === "new";
+
+            if (isNewExpense) {
+              // Labor requiere paylabor
+              if (transactionData.category === "labor") {
+                result =
+                  transactionData.paylabor !== null &&
+                  transactionData.paylabor !== undefined;
+              }
+              // Overhead requiere overheadUsage
+              else if (transactionData.category === "overhead") {
+                const hasOverheadUsage =
+                  transactionData.overheadUsage !== null &&
+                  transactionData.overheadUsage !== undefined;
+
+                // Si es MIXED, validar splits
+                if (transactionData.overheadUsage === "MIXED") {
+                  const hasSplits =
+                    transactionData.splits && transactionData.splits.length > 0;
+                  result = hasOverheadUsage && hasSplits;
+                } else {
+                  result = hasOverheadUsage;
+                }
+              } else {
+                // Otra categoría sin clasificación especial
+                result = baseValid;
+              }
+            } else {
+              // Gasto existente: solo validar base
+              result = baseValid;
+            }
+          }
         }
       }
       // Para transferencias, verificar que haya cuenta origen, destino y monto

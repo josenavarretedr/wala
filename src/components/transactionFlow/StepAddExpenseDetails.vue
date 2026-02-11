@@ -580,8 +580,7 @@
         <div
           v-if="
             transactionStore.transactionToAdd.value.category === 'labor' &&
-            expenseType === 'new' &&
-            amount > 0
+            expenseType === 'new'
           "
           class="space-y-4"
         >
@@ -724,7 +723,7 @@
                   >Administración / apoyo</span
                 >
                 <span class="text-xs opacity-80 block mt-0.5"
-                  >No produce ni atiende directamente (caja, ventas,
+                  >No produce ni atiende directamente (personal de caja, ventas,
                   limpieza)</span
                 >
               </div>
@@ -877,7 +876,7 @@
               </div>
               <div class="flex-1 min-w-0">
                 <span class="text-sm font-semibold block"
-                  >En todo el negocio</span
+                  >Ambas (En todo el negocio)</span
                 >
                 <span class="text-xs opacity-80 block mt-0.5"
                   >Apoya ambas áreas (alquiler, servicios generales)</span
