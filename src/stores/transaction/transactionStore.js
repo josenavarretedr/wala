@@ -32,6 +32,24 @@ const transactionToAdd = ref({
   account: null,
   // Campos para transacciones de ingreso:
   items: [],
+  /**
+   * itemsAndStockLogs: Relación entre items vendidos y sus stockLogs
+   * Estructura extendida para soportar afectación de materiales en composición:
+   * [
+   *   {
+   *     itemUuid: "prod-123",           // UUID del producto vendido
+   *     stockLogUuid: "log-456",        // UUID del stockLog del producto
+   *     materialStockLogs: [             // NUEVO: StockLogs de materiales en composición
+   *       {
+   *         materialId: "mat-001",       // UUID del material
+   *         stockLogUuid: "log-789",     // UUID del stockLog del material
+   *         quantityUsed: 0.15,          // Cantidad usada por unidad
+   *         description: "CARNE MOLIDA"  // Nombre del material (denormalizado)
+   *       }
+   *     ]
+   *   }
+   * ]
+   */
   itemsAndStockLogs: [],
   // NUEVOS CAMPOS PARA PAGOS PARCIALES Y CLIENTES:
   payments: [],           // Array de pagos realizados
@@ -71,6 +89,9 @@ const itemToAddInTransaction = ref({
   stock: null,
   trackStock: true, // ✅ true por defecto para productos MERCH
   proceedAnyway: false, // Flag para indicar que se procedió con stock insuficiente
+  composition: null, // Composición de materiales del producto (si aplica)
+  compositionStockValidation: null, // Resultado de validación de stock de materiales
+  type: null, // Tipo de producto: MERCH, PRODUCT, SERVICE, RAW_MATERIAL
 });
 
 const itemToAddInExpenseMaterial = ref({
@@ -89,8 +110,120 @@ const currentStepOfAddTransaction = ref(0);
 
 export function useTransactionStore() {
   const { createTransaction, updateTransaction, getAllTransactions, deleteTransactionByID, getTransactionsTodayCmps, getTransactionsByDay, getLastClosureTransactions } = useTransaccion();
-  const { createStockLog, deleteStockLog } = useInventory();
+  const { createStockLog, deleteStockLog, getProductById } = useInventory();
   const { logTransactionOperation, logInventoryOperation, startOperationChain } = useTraceability();
+
+  /**
+   * Procesa los stockLogs de materiales en la composición de un producto
+   * @param {string} productId - UUID del producto que contiene la composición
+   * @param {number} quantitySold - Cantidad vendida del producto final
+   * @param {string} transactionId - UUID de la transacción
+   * @returns {Promise<Array>} Array de materialStockLogs creados
+   */
+  const processCompositionStockLogs = async (productId, quantitySold, transactionId) => {
+    try {
+      // Obtener el producto completo
+      const product = await getProductById(productId);
+
+      if (!product) {
+        console.warn('⚠️ [COMPOSITION] Producto no encontrado:', productId);
+        return [];
+      }
+
+      // Verificar si tiene composición
+      if (!product.composition || !Array.isArray(product.composition) || product.composition.length === 0) {
+        return [];
+      }
+
+      console.log('🧩 [COMPOSITION] Procesando stock de composición:', {
+        productId,
+        productName: product.description,
+        quantitySold,
+        materialsCount: product.composition.length
+      });
+
+      const materialStockLogs = [];
+
+      // Procesar cada material en la composición
+      for (const material of product.composition) {
+        try {
+          const materialProductId = material.productId;
+          const quantityPerUnit = parseFloat(material.quantity) || 0;
+          const totalQuantityNeeded = quantityPerUnit * quantitySold;
+
+          // Validar que el material existe
+          const materialProduct = await getProductById(materialProductId);
+
+          if (!materialProduct) {
+            console.warn('⚠️ [COMPOSITION] Material no encontrado, saltando:', {
+              materialId: materialProductId,
+              description: material.description
+            });
+            continue;
+          }
+
+          // Solo procesar si el material tiene trackStock activado
+          if (!materialProduct.trackStock) {
+            console.log('ℹ️ [COMPOSITION] Material sin trackStock, saltando:', {
+              materialId: materialProductId,
+              description: materialProduct.description
+            });
+            continue;
+          }
+
+          // Crear el item para createStockLog
+          const materialItem = {
+            uuid: materialProductId,
+            quantity: Math.round(totalQuantityNeeded * 100) / 100, // Redondear a 2 decimales
+            transactionId: transactionId,
+            oldOrNewProduct: 'old', // Los materiales siempre deben existir
+            description: materialProduct.description,
+            unit: materialProduct.unit || 'uni',
+            trackStock: true,
+            cost: materialProduct.cost,
+            price: materialProduct.price,
+            relatedProductId: productId, // Vincular con el producto padre
+            relatedTransactionType: 'income_composition' // Tipo especial para materiales de composición
+          };
+
+          console.log('  📦 Descontando material:', {
+            material: materialProduct.description,
+            quantityPerUnit,
+            quantitySold,
+            totalQuantity: materialItem.quantity,
+            currentStock: materialProduct.stock
+          });
+
+          // Crear stockLog para el material
+          const stockLogUuid = await createStockLog(materialItem, 'sell');
+
+          // Agregar a la lista de stockLogs de materiales
+          materialStockLogs.push({
+            materialId: materialProductId,
+            stockLogUuid: stockLogUuid,
+            quantityUsed: materialItem.quantity,
+            description: materialProduct.description
+          });
+
+          console.log('  ✅ StockLog creado para material:', stockLogUuid);
+
+        } catch (materialError) {
+          console.error('❌ [COMPOSITION] Error procesando material:', {
+            materialId: material.productId,
+            error: materialError.message
+          });
+          // Continuar con el siguiente material
+        }
+      }
+
+      console.log(`✅ [COMPOSITION] Procesados ${materialStockLogs.length} materiales`);
+      return materialStockLogs;
+
+    } catch (error) {
+      console.error('❌ [COMPOSITION] Error procesando composición:', error);
+      return [];
+    }
+  };
 
   const addTransaction = async () => {
     let traceId = null;
@@ -170,7 +303,25 @@ export function useTransactionStore() {
 
           const stockLogUuid = await createStockLog(itemWithTransaction);
           const itemUuid = item.uuid;
-          const itemStockLog = { itemUuid, stockLogUuid };
+
+          // 🧩 NUEVO: Procesar stock de materiales en composición
+          console.log('🔍 Verificando composición para producto:', itemUuid);
+          const materialStockLogs = await processCompositionStockLogs(
+            itemUuid,
+            item.quantity,
+            transactionToAdd.value.uuid
+          );
+
+          if (materialStockLogs.length > 0) {
+            console.log(`✅ Afectados ${materialStockLogs.length} materiales en composición`);
+          }
+
+          // Crear el registro con stockLogs de producto y materiales
+          const itemStockLog = {
+            itemUuid,
+            stockLogUuid,
+            materialStockLogs // Array de stockLogs de materiales (puede estar vacío)
+          };
           transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
         }
       } else if (transactionToAdd.value.type === 'expense') {
@@ -900,6 +1051,9 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.unit = product.unit;
     itemToAddInTransaction.value.stock = product.stock ?? null;
     itemToAddInTransaction.value.trackStock = product.trackStock ?? true;
+    itemToAddInTransaction.value.composition = product.composition ?? null;
+    itemToAddInTransaction.value.compositionStockValidation = null; // Se validará reactivamente
+    itemToAddInTransaction.value.type = product.type ?? null;
   }
 
   const modifyItemToAddInExpenseMaterial = (material) => {
@@ -929,6 +1083,9 @@ export function useTransactionStore() {
       stock: null,
       trackStock: true, // ✅ true por defecto para productos MERCH
       proceedAnyway: false,
+      composition: null,
+      compositionStockValidation: null,
+      type: null,
     };
   }
 
@@ -1213,6 +1370,70 @@ export function useTransactionStore() {
             previousStock: productData.stock,
             newStock
           });
+
+          // 🧩 NUEVO: Revertir stock de materiales en composición
+          if (itemLog.materialStockLogs && itemLog.materialStockLogs.length > 0) {
+            console.log(`  🔄 Revirtiendo ${itemLog.materialStockLogs.length} materiales de composición...`);
+
+            for (const materialLog of itemLog.materialStockLogs) {
+              const { materialId, stockLogUuid: materialStockLogUuid, description } = materialLog;
+
+              try {
+                console.log(`    📦 Revirtiendo material: ${description}`);
+
+                // a) Obtener el producto material
+                const materialRef = doc(db, `businesses/${businessId}/products`, materialId);
+                const materialDoc = await getDoc(materialRef);
+
+                if (!materialDoc.exists()) {
+                  console.warn(`    ⚠️ Material ${materialId} no encontrado, saltando...`);
+                  continue;
+                }
+
+                const materialData = materialDoc.data();
+
+                // b) Encontrar el stockLog específico del material
+                const materialStockLog = materialData.stockLog?.find(log => log.uuid === materialStockLogUuid);
+
+                if (!materialStockLog) {
+                  console.warn(`    ⚠️ StockLog ${materialStockLogUuid} no encontrado en material, saltando...`);
+                  continue;
+                }
+
+                // c) Sumar la cantidad usada al stock actual del material
+                const newMaterialStock = (materialData.stock || 0) + (materialStockLog.quantity || 0);
+
+                // d) Eliminar el stockLog del array
+                const updatedMaterialStockLogs = materialData.stockLog.filter(
+                  log => log.uuid !== materialStockLogUuid
+                );
+
+                await updateDoc(materialRef, {
+                  stock: newMaterialStock,
+                  stockLog: updatedMaterialStockLogs
+                });
+
+                console.log(`    ✅ Material revertido: ${materialData.stock} + ${materialStockLog.quantity} = ${newMaterialStock}`);
+
+                // e) Log de trazabilidad para el material
+                await logInventoryOperation('revert', materialId, {
+                  reason: 'income_transaction_deleted_composition_material',
+                  stockLogId: materialStockLogUuid,
+                  quantityReverted: materialStockLog.quantity,
+                  previousStock: materialData.stock,
+                  newStock: newMaterialStock,
+                  relatedProductId: itemUuid
+                });
+
+              } catch (materialError) {
+                console.error(`    ❌ Error revirtiendo material ${materialId}:`, materialError);
+                // Continuar con los demás materiales
+              }
+            }
+
+            console.log(`  ✅ Materiales de composición revertidos exitosamente`);
+          }
+
         } catch (itemError) {
           console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
           // Continuar con los demás items

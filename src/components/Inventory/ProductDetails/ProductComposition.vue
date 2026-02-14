@@ -75,8 +75,17 @@
           </div>
         </div>
 
-        <!-- Botón de edición -->
+        <!-- Botón de edición o Badge Premium -->
+        <button
+          v-if="!isPremium"
+          @click="handleEditComposition"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full border border-orange-600 shadow-lg hover:shadow-xl transition-all hover:scale-105"
+        >
+          <BrightCrown class="w-4 h-4" />
+          Premium
+        </button>
         <router-link
+          v-else
           :to="editProductCompositionLink"
           class="p-2 bg-white hover:bg-purple-50 rounded-lg shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md hover:scale-105 group"
           :title="
@@ -93,11 +102,16 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from "vue";
-import { EditPencil } from "@iconoir/vue";
-import { useRoute } from "vue-router";
+import { defineProps, computed, nextTick } from "vue";
+import { EditPencil, BrightCrown } from "@iconoir/vue";
+import { useRoute, useRouter } from "vue-router";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
+const router = useRouter();
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 const props = defineProps({
   productId: {
@@ -163,4 +177,27 @@ const hasCompositionData = computed(() => {
 
   return false;
 });
+
+// ==========================================
+// MÉTODOS: Manejo de edición con validación premium
+// ==========================================
+const handleEditComposition = () => {
+  if (!isPremium.value) {
+    // Mostrar toast informativo
+    nextTick(() => {
+      premium("Define la composición de tus productos", {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      });
+
+      console.log("🔔 Toast de Composición Premium mostrado");
+    });
+    return;
+  }
+
+  // Si es premium, navegar a edición
+  router.push(editProductCompositionLink.value);
+};
 </script>

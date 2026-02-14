@@ -196,6 +196,8 @@ onMounted(() => {
                   unit: selected.unit || "uni",
                   stock: selected.stock ?? 0,
                   trackStock: selected.trackStock ?? false,
+                  composition: selected.composition ?? null, // ✅ Incluir composición del producto
+                  type: selected.type || "MERCH", // ✅ Incluir tipo de producto
                 });
                 clearAutocompleteInput();
               }

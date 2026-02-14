@@ -99,78 +99,57 @@
     </div>
 
     <!-- Botón de Costeo Asistido Premium -->
-    <div class="relative group">
-      <!-- Badge Premium flotante -->
-      <div class="absolute -top-2 -right-2 z-20">
-        <span
-          class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg animate-pulse"
-        >
-          <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-            ></path>
-          </svg>
-          PREMIUM
-        </span>
-      </div>
-
-      <!-- Contenedor con blur -->
-      <div
-        class="relative overflow-hidden rounded-xl border-2 border-dashed border-purple-300 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 p-6"
+    <div
+      class="bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-xl border border-purple-100 p-4"
+    >
+      <button
+        @click="navigateToCosting"
+        type="button"
+        class="w-full flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all shadow-sm hover:shadow-md transform hover:scale-[1.01] group"
       >
-        <!-- Efecto blur en el contenido -->
-        <div
-          class="absolute inset-0 backdrop-blur-[2px] bg-white/30 z-10 group-hover:backdrop-blur-[1px] transition-all"
-        ></div>
-
-        <button
-          @click="navigateToCosting"
-          type="button"
-          class="relative z-20 w-full flex items-center justify-between p-5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] group"
-        >
-          <div class="flex items-center gap-4">
-            <!-- Icono -->
-            <div
-              class="w-12 h-12 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0"
+        <div class="flex items-center gap-3">
+          <!-- Icono -->
+          <div
+            class="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0"
+          >
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <svg
-                class="w-7 h-7 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                ></path>
-              </svg>
-            </div>
-
-            <!-- Texto -->
-            <div class="text-left">
-              <div class="font-bold text-lg mb-1 flex items-center gap-2">
-                Costeo Asistido
-                <svg
-                  class="w-4 h-4 text-amber-300"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-                  ></path>
-                </svg>
-              </div>
-              <p class="text-sm text-purple-100">
-                Calcula el costo real de tu producto automáticamente
-              </p>
-            </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+              ></path>
+            </svg>
           </div>
 
-          <!-- Flecha -->
+          <!-- Texto -->
+          <div class="text-left">
+            <div class="font-semibold text-base">Costeo Asistido</div>
+            <p class="text-xs text-purple-100">
+              Calcula el costo real automáticamente
+            </p>
+          </div>
+        </div>
+
+        <!-- Badge Premium -->
+        <span
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full border border-white shadow-lg"
+        >
+          <BrightCrown class="w-4 h-4" />
+          Premium
+        </span>
+      </button>
+
+      <!-- Features list -->
+      <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div class="flex items-center gap-2 text-purple-700">
           <svg
-            class="w-6 h-6 text-white transform group-hover:translate-x-1 transition-transform"
+            class="w-3.5 h-3.5 text-green-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -179,77 +158,58 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 5l7 7-7 7"
+              d="M5 13l4 4L19 7"
             ></path>
           </svg>
-        </button>
-
-        <!-- Features list con blur -->
-        <div class="relative z-20 mt-4 grid grid-cols-2 gap-3 text-xs">
-          <div class="flex items-center gap-2 text-purple-700">
-            <svg
-              class="w-4 h-4 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
-            Materiales
-          </div>
-          <div class="flex items-center gap-2 text-purple-700">
-            <svg
-              class="w-4 h-4 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
-            Mano de Obra
-          </div>
-          <div class="flex items-center gap-2 text-purple-700">
-            <svg
-              class="w-4 h-4 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
-            Costos Indirectos
-          </div>
-          <div class="flex items-center gap-2 text-purple-700">
-            <svg
-              class="w-4 h-4 text-green-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              ></path>
-            </svg>
-            Gastos Generales
-          </div>
+          <span class="font-medium">Materiales</span>
+        </div>
+        <div class="flex items-center gap-2 text-purple-700">
+          <svg
+            class="w-3.5 h-3.5 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          <span class="font-medium">Mano de Obra</span>
+        </div>
+        <div class="flex items-center gap-2 text-purple-700">
+          <svg
+            class="w-3.5 h-3.5 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          <span class="font-medium">Costos Indirectos</span>
+        </div>
+        <div class="flex items-center gap-2 text-purple-700">
+          <svg
+            class="w-3.5 h-3.5 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          <span class="font-medium">Gastos Generales</span>
         </div>
       </div>
     </div>
@@ -318,13 +278,20 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { BrightCrown } from "@iconoir/vue";
+import { useSubscription } from "@/composables/useSubscription";
+import { useToast } from "@/composables/useToast";
 import NavigationBtnEditProduct from "./NavigationBtnEditProduct.vue";
 
 // Router
 const router = useRouter();
 const route = useRoute();
+
+// Subscription & Toast
+const { isPremium } = useSubscription();
+const { premium } = useToast();
 
 // Props
 const props = defineProps({
@@ -373,6 +340,23 @@ const calculateMarginPercentage = computed(() => {
 
 // Método para navegar al costeo asistido
 const navigateToCosting = () => {
+  // Validar si el usuario es premium
+  if (!isPremium.value) {
+    // Mostrar toast informativo
+    nextTick(() => {
+      premium("Costea cada producto adecuadamente", {
+        actionLink: {
+          text: "Actualiza a Wala Premium",
+          route: `/business/${route.params.businessId}/premium`,
+        },
+      });
+
+      console.log("🔔 Toast de Costeo Asistido Premium mostrado");
+    });
+    return;
+  }
+
+  // Si es premium, navegar al costeo asistido
   router.push({
     name: "InventoryProductCosting",
     params: {

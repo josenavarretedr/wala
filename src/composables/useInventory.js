@@ -562,10 +562,40 @@ export function useInventory() {
         return null;
       }
 
-      return {
+      const productData = {
         uuid: productDoc.id,
         ...productDoc.data(),
       };
+
+      // 📦 OBTENER STOCKLOGS DE LA SUBCOLLECTION
+      try {
+        const stockLogCollectionRef = collection(db, 'businesses', businessId, 'products', productId, 'stockLog');
+        const stockLogSnapshot = await getDocs(stockLogCollectionRef);
+
+        const stockLogs = [];
+        stockLogSnapshot.forEach((doc) => {
+          stockLogs.push({
+            uuid: doc.id,
+            ...doc.data(),
+          });
+        });
+
+        // Ordenar por fecha (más reciente primero)
+        stockLogs.sort((a, b) => {
+          const dateA = a.createdAt?.seconds || 0;
+          const dateB = b.createdAt?.seconds || 0;
+          return dateB - dateA;
+        });
+
+        productData.stockLog = stockLogs;
+
+        console.log(`📦 [getProductById] Producto ${productId} con ${stockLogs.length} stockLogs`);
+      } catch (stockLogError) {
+        console.error('⚠️ Error obteniendo stockLogs:', stockLogError);
+        productData.stockLog = []; // Array vacío si hay error
+      }
+
+      return productData;
     } catch (error) {
       console.error("Error fetching product: ", error);
       throw error;

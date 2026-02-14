@@ -158,6 +158,17 @@
                   transactionStore.itemToAddInTransaction.value.unit || "uni"
                 }})
               </p>
+              <!-- Info tooltip sobre composición faltante -->
+              <p
+                v-if="
+                  needsCompositionSetup &&
+                  transactionStore.itemToAddInTransaction.value
+                    .oldOrNewProduct !== 'new'
+                "
+                class="text-xs text-purple-600 font-medium"
+              >
+                💡 Este producto aún no tiene composición de materiales definida
+              </p>
             </div>
           </div>
 
@@ -204,7 +215,7 @@
         <!-- Checkbox "Proceder de todos modos" - Solo si hay advertencia de stock -->
         <div
           v-if="hasStockWarning"
-          class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl"
+          class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3"
         >
           <label class="flex items-start gap-3 cursor-pointer group">
             <input
@@ -218,8 +229,13 @@
               >
                 Vender igual
               </span>
-              <p class="text-xs text-amber-700 mt-1">
-                Te quedan solo
+
+              <!-- Mensaje para stock del producto -->
+              <p
+                v-if="hasProductStockWarning"
+                class="text-xs text-amber-700 mt-1"
+              >
+                ⚠️ <strong>Stock del producto:</strong> Te quedan solo
                 {{ transactionStore.itemToAddInTransaction.value.stock }}
                 {{
                   transactionStore.itemToAddInTransaction.value.unit || "uni"
@@ -227,6 +243,35 @@
                 en stock. Si vendes
                 {{ transactionStore.itemToAddInTransaction.value.quantity }},
                 Wala ajustará automáticamente.
+              </p>
+
+              <!-- Mensaje para stock de materiales -->
+              <div v-if="hasCompositionStockWarning" class="mt-2">
+                <p class="text-xs text-amber-700 font-medium">
+                  ⚠️ <strong>Materiales insuficientes:</strong>
+                </p>
+                <ul class="mt-1 ml-4 space-y-1">
+                  <li
+                    v-for="material in insufficientMaterialsDetails"
+                    :key="material.productId"
+                    class="text-xs text-amber-700"
+                  >
+                    • <strong>{{ material.description }}</strong
+                    >: necesitas {{ material.needed.toFixed(2) }}
+                    {{ material.unit }}, solo tienes
+                    {{ material.available.toFixed(2) }} {{ material.unit }}
+                    <span class="text-red-600 font-semibold"
+                      >(faltan {{ material.missing.toFixed(2) }}
+                      {{ material.unit }})</span
+                    >
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Nota sobre proceder de todos modos -->
+              <p class="text-xs text-amber-600 mt-2 italic">
+                Al marcar esta opción, Wala registrará la venta con el stock
+                disponible actual.
               </p>
             </div>
           </label>
@@ -240,8 +285,16 @@
       :disabled="!canAddProduct"
       class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
     >
-      <KeyframePlus class="w-5 h-5" />
-      Agregar Producto
+      <template v-if="isValidatingComposition">
+        <div
+          class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+        ></div>
+        Validando materiales...
+      </template>
+      <template v-else>
+        <KeyframePlus class="w-5 h-5" />
+        Agregar Producto
+      </template>
     </button>
 
     <!-- Lista de productos agregados -->
@@ -276,9 +329,7 @@
             :key="item.uuid"
             class="bg-gray-50 rounded-xl p-4 flex items-center gap-3"
             :class="{
-              'border-2 border-amber-300 bg-amber-50':
-                item.proceedAnyway &&
-                item.requestedQuantity > item.actualQuantity,
+              'border-2 border-amber-300 bg-amber-50': item.proceedAnyway,
             }"
           >
             <div class="flex-1 min-w-0">
@@ -358,12 +409,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { KeyframePlus, Xmark } from "@iconoir/vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useCompositionStockValidation } from "@/composables/useCompositionStockValidation";
 
 const transactionStore = useTransactionStore();
+const { validateProductAndCompositionStock } = useCompositionStockValidation();
 
 // Referencias a los inputs
 const quantityInput = ref(null);
@@ -372,11 +425,64 @@ const priceInput = ref(null);
 // Estado local para "proceder de todos modos"
 const proceedAnyway = ref(false);
 
+// Estado para validación de composición (se actualizará reactivamente)
+const compositionValidationResult = ref(null);
+const isValidatingComposition = ref(false);
+
 /**
- * Computed: Verifica si hay advertencia de stock
+ * Watch: Validar stock de composición cuando cambie la cantidad o el producto
+ */
+watch(
+  () => [
+    transactionStore.itemToAddInTransaction.value.quantity,
+    transactionStore.itemToAddInTransaction.value.selectedProductUuid,
+  ],
+  async ([quantity, productId]) => {
+    // Solo validar si hay producto, cantidad, y composición
+    const item = transactionStore.itemToAddInTransaction.value;
+
+    if (
+      !item.composition ||
+      !quantity ||
+      !productId ||
+      item.oldOrNewProduct === "new"
+    ) {
+      compositionValidationResult.value = null;
+      isValidatingComposition.value = false;
+      return;
+    }
+
+    // Iniciar validación
+    isValidatingComposition.value = true;
+
+    try {
+      // Validar stock de composición de forma reactiva
+      const result = await validateProductAndCompositionStock(
+        {
+          uuid: productId,
+          trackStock: item.trackStock,
+          stock: item.stock,
+          composition: item.composition,
+        },
+        parseFloat(quantity),
+      );
+
+      compositionValidationResult.value = result;
+    } catch (error) {
+      console.error("Error validando composición:", error);
+      compositionValidationResult.value = null;
+    } finally {
+      isValidatingComposition.value = false;
+    }
+  },
+  { immediate: true },
+);
+
+/**
+ * Computed: Verifica si hay advertencia de stock del producto final
  * Solo aplica si el producto tiene trackStock = true
  */
-const hasStockWarning = computed(() => {
+const hasProductStockWarning = computed(() => {
   if (transactionStore.itemToAddInTransaction.value.oldOrNewProduct === "new") {
     return false;
   }
@@ -397,6 +503,56 @@ const hasStockWarning = computed(() => {
 });
 
 /**
+ * Computed: Verifica si hay advertencia de stock de materiales en composición
+ */
+const hasCompositionStockWarning = computed(() => {
+  if (!compositionValidationResult.value) return false;
+  return compositionValidationResult.value.hasCompositionStockIssue;
+});
+
+/**
+ * Computed: Advertencia combinada de stock (producto + composición)
+ */
+const hasStockWarning = computed(() => {
+  return hasProductStockWarning.value || hasCompositionStockWarning.value;
+});
+
+/**
+ * Computed: Tipo de advertencia de stock
+ */
+const stockWarningType = computed(() => {
+  if (hasProductStockWarning.value && hasCompositionStockWarning.value)
+    return "both";
+  if (hasProductStockWarning.value) return "product";
+  if (hasCompositionStockWarning.value) return "materials";
+  return null;
+});
+
+/**
+ * Computed: Lista detallada de materiales insuficientes
+ */
+const insufficientMaterialsDetails = computed(() => {
+  if (!compositionValidationResult.value?.compositionValidation) return [];
+  return (
+    compositionValidationResult.value.compositionValidation
+      .insufficientMaterials || []
+  );
+});
+
+/**
+ * Computed: Información de que el producto no tiene composición definida
+ */
+const needsCompositionSetup = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+
+  // Solo para productos tipo PRODUCT o SERVICE
+  if (!["PRODUCT", "SERVICE"].includes(item.type)) return false;
+
+  // Si no tiene composición definida
+  return !item.composition || item.composition.length === 0;
+});
+
+/**
  * Computed: Determina si se puede agregar el producto
  */
 const canAddProduct = computed(() => {
@@ -404,6 +560,11 @@ const canAddProduct = computed(() => {
 
   // Validaciones básicas
   if (!item.description || !item.quantity || !item.price || !item.unit) {
+    return false;
+  }
+
+  // Si está validando composición, deshabilitar
+  if (isValidatingComposition.value) {
     return false;
   }
 
