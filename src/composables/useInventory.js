@@ -22,6 +22,7 @@ import { httpsCallable } from "firebase/functions";
 
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from 'uuid';
+import { round2, addMoney } from '@/utils/mathUtils';
 
 const db = getFirestore(appFirebase);
 
@@ -1458,17 +1459,23 @@ export function useInventory() {
       const currentHistory = currentCostStructure.materialsHistory || [];
       const updatedHistory = [...currentHistory, historyEntry];
 
+      // Calcular costo total del producto (materials + mod)
+      const modValue = currentCostStructure.mod || 0;
+      const totalProductCost = addMoney(totalCost, modValue);
+
       // Actualizar el producto
       await updateDoc(productRef, {
         composition: composition,
         'costStructure.materials': totalCost,
-        'costStructure.materialsHistory': updatedHistory
+        'costStructure.materialsHistory': updatedHistory,
+        'cost': totalProductCost, // Actualizar cost total
       });
 
       console.log('💾 Composición guardada exitosamente:', {
         productId,
         totalCost,
-        materialsCount: composition.length
+        materialsCount: composition.length,
+        totalProductCost,
       });
 
       return true;

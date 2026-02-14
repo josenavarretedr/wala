@@ -65,6 +65,14 @@
         class="mb-6"
       />
 
+      <ProductComposition
+        v-if="product.type === 'PRODUCT' || product.type === 'SERVICE'"
+        :product-id="product.uuid"
+        :product-type="product.type"
+        :composition="product.composition"
+        class="mb-6"
+      />
+
       <ProductEconomicInfo
         :price="product.price"
         :cost="product.cost"
@@ -111,6 +119,7 @@ import { ref, onMounted, watch, onActivated, nextTick } from "vue";
 import { useRoute, useRouter, onBeforeRouteUpdate } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
 import ProductHeader from "@/components/Inventory/ProductDetails/ProductHeader.vue";
+import ProductComposition from "@/components/Inventory/ProductDetails/ProductComposition.vue";
 import ProductMoves from "@/components/Inventory/ProductDetails/ProductMoves.vue";
 import ProductEconomicInfo from "@/components/Inventory/ProductDetails/ProductEconomicInfo.vue";
 import ProductStockAlert from "@/components/Inventory/ProductDetails/ProductStockAlert.vue";

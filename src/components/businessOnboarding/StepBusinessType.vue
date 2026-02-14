@@ -17,35 +17,15 @@
       <button
         type="button"
         @click="selectBusinessType('FOOD_PRODUCTION')"
-        :class="[
-          'w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md',
-          localBusinessType === 'FOOD_PRODUCTION'
-            ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white shadow-yellow-500/25'
-            : 'bg-white text-gray-600 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200',
-        ]"
+        :class="getButtonClasses('FOOD_PRODUCTION')"
       >
-        <div
-          class="p-2 sm:p-3 rounded-full backdrop-blur-sm shrink-0"
-          :class="
-            localBusinessType === 'FOOD_PRODUCTION'
-              ? 'bg-white/20'
-              : 'bg-yellow-50'
-          "
-        >
+        <div :class="getIconContainerClasses('FOOD_PRODUCTION')">
           <!-- Icono Comida (tenedor y cuchillo) -->
-          <svg
+          <img
+            src="/icons/cubiertos.png"
+            alt="Producción de alimentos"
             class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M7 7v10M11 7v10M5 7c0 1.657 1.343 3 3 3v0c1.657 0 3-1.343 3-3V7M17 6v6a3 3 0 01-3 3h0"
-            />
-          </svg>
+          />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -61,33 +41,11 @@
       <button
         type="button"
         @click="selectBusinessType('RETAIL')"
-        :class="[
-          'w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md',
-          localBusinessType === 'RETAIL'
-            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-orange-500/25'
-            : 'bg-white text-gray-600 hover:bg-orange-50 hover:text-orange-600 border border-gray-200',
-        ]"
+        :class="getButtonClasses('RETAIL')"
       >
-        <div
-          class="p-2 sm:p-3 rounded-full backdrop-blur-sm shrink-0"
-          :class="
-            localBusinessType === 'RETAIL' ? 'bg-white/20' : 'bg-orange-50'
-          "
-        >
+        <div :class="getIconContainerClasses('RETAIL')">
           <!-- Icono Comercio (carrito) -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2 6h12"
-            />
-          </svg>
+          <Cart class="w-8 h-8" fill="none" stroke="currentColor" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -103,21 +61,9 @@
       <button
         type="button"
         @click="selectBusinessType('APPOINTMENT_SERVICES')"
-        :class="[
-          'w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md',
-          localBusinessType === 'APPOINTMENT_SERVICES'
-            ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-indigo-500/25'
-            : 'bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200',
-        ]"
+        :class="getButtonClasses('APPOINTMENT_SERVICES')"
       >
-        <div
-          class="p-2 sm:p-3 rounded-full backdrop-blur-sm shrink-0"
-          :class="
-            localBusinessType === 'APPOINTMENT_SERVICES'
-              ? 'bg-white/20'
-              : 'bg-indigo-50'
-          "
-        >
+        <div :class="getIconContainerClasses('APPOINTMENT_SERVICES')">
           <!-- Icono Cita (calendario) -->
           <svg
             class="w-8 h-8"
@@ -147,35 +93,15 @@
       <button
         type="button"
         @click="selectBusinessType('MACHINE_SERVICES')"
-        :class="[
-          'w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md',
-          localBusinessType === 'MACHINE_SERVICES'
-            ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-teal-500/25'
-            : 'bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-600 border border-gray-200',
-        ]"
+        :class="getButtonClasses('MACHINE_SERVICES')"
       >
-        <div
-          class="p-2 sm:p-3 rounded-full backdrop-blur-sm shrink-0"
-          :class="
-            localBusinessType === 'MACHINE_SERVICES'
-              ? 'bg-white/20'
-              : 'bg-teal-50'
-          "
-        >
+        <div :class="getIconContainerClasses('MACHINE_SERVICES')">
           <!-- Icono Máquina (engranaje) -->
-          <svg
+          <img
+            src="/icons/maquina2.svg"
+            alt="Producción de alimentos"
             class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4l3 3M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06A2 2 0 114.27 19.2l.06-.06A1.65 1.65 0 004.66 17a1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.15c.68 0 1.31-.35 1.65-.92.34-.57.28-1.27-.14-1.82L4.5 6.5A2 2 0 116.33 4.67l.06.06c.55.42 1.25.48 1.82.14.57-.34.92-.97.92-1.65V3a2 2 0 114 0v.15c0 .68.35 1.31.92 1.65.57.34 1.27.28 1.82-.14l.06-.06A2 2 0 1119.5 6.33l-.06.06c-.42.55-.48 1.25-.14 1.82.34.57.97.92 1.65.92H21a2 2 0 110 4h-.15c-.68 0-1.31.35-1.65.92-.34.57-.28 1.27.14 1.82l.06.06A2 2 0 1119.4 15z"
-            />
-          </svg>
+          />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -191,31 +117,17 @@
       <button
         type="button"
         @click="selectBusinessType('MIXED')"
-        :class="[
-          'w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md',
-          localBusinessType === 'MIXED'
-            ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white shadow-gray-500/25'
-            : 'bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 border border-gray-200',
-        ]"
+        :class="getButtonClasses('MIXED')"
       >
-        <div
-          class="p-2 sm:p-3 rounded-full backdrop-blur-sm shrink-0"
-          :class="localBusinessType === 'MIXED' ? 'bg-white/20' : 'bg-gray-50'"
-        >
+        <div :class="getIconContainerClasses('MIXED')">
           <!-- Icono Mixto (cuadrícula) -->
-          <svg
+          <ViewGrid
             class="w-8 h-8"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z"
-            />
-          </svg>
+          </ViewGrid>
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block">Mixto</span>
@@ -249,6 +161,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowStore";
+import { Cart, ViewGrid } from "@iconoir/vue";
 
 const flowStore = useBusinessOnboardingFlowStore();
 
@@ -258,6 +171,55 @@ const localBusinessType = ref(flowStore.businessOnboardingData.businessType);
 const selectBusinessType = (type) => {
   localBusinessType.value = type;
   flowStore.updateField("businessType", type);
+};
+
+const getButtonClasses = (businessType) => {
+  const isSelected = localBusinessType.value === businessType;
+
+  const baseClasses =
+    "w-full p-4 sm:p-6 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row sm:flex-col items-center gap-3 sm:gap-4 shadow-sm hover:shadow-md";
+
+  if (isSelected) {
+    const selectedClasses = {
+      FOOD_PRODUCTION:
+        "bg-yellow-50 text-yellow-600 border-2 border-yellow-600",
+      RETAIL: "bg-orange-50 text-orange-600 border-2 border-orange-600",
+      APPOINTMENT_SERVICES:
+        "bg-indigo-50 text-indigo-600 border-2 border-indigo-600",
+      MACHINE_SERVICES: "bg-teal-50 text-teal-600 border-2 border-teal-600",
+      MIXED: "bg-gray-50 text-gray-700 border-2 border-gray-600",
+    };
+    return [baseClasses, selectedClasses[businessType]];
+  }
+
+  const hoverClasses = {
+    FOOD_PRODUCTION:
+      "bg-white text-gray-600 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200",
+    RETAIL:
+      "bg-white text-gray-600 hover:bg-orange-50 hover:text-orange-600 border border-gray-200",
+    APPOINTMENT_SERVICES:
+      "bg-white text-gray-600 hover:bg-indigo-50 hover:text-indigo-600 border border-gray-200",
+    MACHINE_SERVICES:
+      "bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-600 border border-gray-200",
+    MIXED:
+      "bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-700 border border-gray-200",
+  };
+
+  return [baseClasses, hoverClasses[businessType]];
+};
+
+const getIconContainerClasses = (businessType) => {
+  const baseClasses = "p-2 sm:p-3 rounded-full shrink-0";
+
+  const bgClasses = {
+    FOOD_PRODUCTION: "bg-yellow-50",
+    RETAIL: "bg-orange-50",
+    APPOINTMENT_SERVICES: "bg-indigo-50",
+    MACHINE_SERVICES: "bg-teal-50",
+    MIXED: "bg-gray-50",
+  };
+
+  return [baseClasses, bgClasses[businessType]];
 };
 
 const getTypeLabel = (type) => {

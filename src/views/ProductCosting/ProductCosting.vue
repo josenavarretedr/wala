@@ -333,6 +333,7 @@
         <button
           type="button"
           @click="navigateToCost('costs-overhead')"
+          v-if="showOverhead"
           :class="[
             'relative p-5 rounded-xl border-2 transition-all text-left group',
             costingStore.hasOverheadCost
@@ -498,6 +499,11 @@ const showMOD = computed(() => {
 const showCIF = computed(() => {
   if (!product.value) return false;
   return ["PRODUCT", "SERVICE"].includes(product.value.type);
+});
+
+const showOverhead = computed(() => {
+  if (!product.value) return false;
+  return ["PRODUCT", "SERVICE", "COMBO", "MERCH"].includes(product.value.type);
 });
 
 // Computed para detectar si tiene costStructure configurado

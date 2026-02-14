@@ -33,45 +33,10 @@
         <h2
           class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight mb-8"
         >
-          WALA te acompaña mientras manejas tu
+          <span class="text-orange-500">WALA</span> te acompaña en tu
           <span class="text-purple-600">negocio</span>
         </h2>
 
-        <!-- Subtexto -->
-        <p
-          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed md:leading-relaxed max-w-4xl mx-auto mb-6"
-          style="line-height: 1.6"
-        >
-          Tu negocio no avanza solo con una clase.
-        </p>
-
-        <p
-          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed md:leading-relaxed max-w-4xl mx-auto mb-8"
-          style="line-height: 1.6"
-        >
-          Avanza con decisiones que tomas todos los días.
-        </p>
-
-        <p
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto mb-4"
-          style="line-height: 1.6"
-        >
-          Por eso, con WALA la asesoría no se queda en una sesión.
-        </p>
-
-        <p
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-4xl mx-auto"
-          style="line-height: 1.6"
-        >
-          Continúa mientras
-          <span class="font-semibold text-gray-800"
-            >registras, revisas y entiendes</span
-          >
-          lo que pasa en tu negocio.
-        </p>
-      </div>
-      <!-- Acompañamiento -->
-      <div class="mb-12 text-center max-w-5xl mx-auto">
         <p
           class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed mb-8"
           style="line-height: 1.6"
@@ -120,25 +85,6 @@
         </p>
       </div>
 
-      <!-- Mensaje de crecimiento -->
-      <div
-        class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl border border-blue-100 p-8 sm:p-10 md:p-12 mb-12 text-center"
-      >
-        <p
-          class="text-2xl sm:text-3xl md:text-4xl text-gray-800 font-bold leading-tight mb-4"
-        >
-          Porque crecer no es solo aprender algo una vez.
-        </p>
-        <p
-          class="text-xl sm:text-2xl md:text-3xl text-gray-700 leading-relaxed"
-        >
-          Es
-          <span class="font-semibold text-blue-600"
-            >ordenar, revisar y mejorar</span
-          >, día a día.
-        </p>
-      </div>
-
       <!-- CTAs: Dos opciones -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         <!-- CTA 1: Estás en un programa -->
@@ -173,13 +119,13 @@
 
         <!-- CTA 2: No estás en un programa -->
         <div
-          class="bg-white rounded-2xl shadow-lg border border-blue-200 p-8 sm:p-10 transition-all duration-200 hover:shadow-xl"
+          class="bg-white rounded-2xl shadow-lg border border-orange-200 p-8 sm:p-10 transition-all duration-200 hover:shadow-xl"
         >
           <div class="flex justify-center mb-6">
             <div
-              class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center"
+              class="w-14 h-14 bg-orange-100 rounded-xl flex items-center justify-center"
             >
-              <BrightCrown class="w-7 h-7 text-blue-600" />
+              <BrightCrown class="w-7 h-7 text-orange-600" />
             </div>
           </div>
           <h3
@@ -194,7 +140,7 @@
           <div class="flex justify-center">
             <button
               @click="goToPremium"
-              class="w-full sm:w-auto bg-blue-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:bg-blue-700"
+              class="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:bg-orange-600"
             >
               Ver WALA Premium
             </button>

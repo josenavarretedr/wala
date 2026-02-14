@@ -25,64 +25,46 @@
       <!-- Selector de Período (compartido) -->
       <PeriodSelector v-model="selectedPeriod" :allow-custom-range="true" />
 
-      <!-- Step 1: MOD Total -->
+      <!-- Step 1: Costo por Hora -->
       <Step1Card
         :period="selectedPeriod"
+        :product-id="productId"
+        :product-name="productName"
         :expanded="steps.step1.expanded"
         :completed="steps.step1.completed"
-        :initial-value="steps.step1.data.totalMOD"
+        :initial-data="steps.step1.data"
         @toggle="toggleStep('step1')"
         @confirm="handleStep1Confirm"
       />
 
-      <!-- Step 2: Cantidad Vendida -->
+      <!-- Step 2: Tiempo Necesario -->
       <Step2Card
         :product-id="productId"
         :product-name="productName"
         :product-unit="productUnit"
-        :period="selectedPeriod"
         :expanded="steps.step2.expanded"
         :completed="steps.step2.completed"
-        :initial-value="steps.step2.data.totalQuantity"
+        :initial-data="steps.step2.data"
         @toggle="toggleStep('step2')"
         @confirm="handleStep2Confirm"
       />
 
       <!-- Step 3: MOD por Unidad -->
       <Step3Card
-        :total-m-o-d="steps.step1.data.totalMOD || 0"
-        :total-quantity="steps.step2.data.totalQuantity || 0"
+        :cost-per-hour="steps.step1.data.costPerHour || 0"
+        :total-time-required="steps.step2.data.totalTimeRequired || 0"
+        :step1-data="steps.step1.data"
+        :step2-data="steps.step2.data"
+        :product-id="productId"
         :product-unit="productUnit"
         :period-summary="periodSummaryText"
+        :period="selectedPeriod"
         :expanded="steps.step3.expanded"
         :completed="steps.step3.completed"
         @toggle="toggleStep('step3')"
         @save="handleSave"
       />
     </div>
-
-    <!-- Success Message -->
-    <transition name="slide-up">
-      <div
-        v-if="showSuccess"
-        class="fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 flex items-center gap-3"
-      >
-        <svg
-          class="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-        <span class="font-semibold">¡Costo MOD guardado exitosamente!</span>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -91,6 +73,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProductCostingStore } from "@/stores/productCostingStore";
 import { useInventory } from "@/composables/useInventory";
+import { useToast } from "@/composables/useToast";
 import BackBtn from "@/components/ui/BackBtn.vue";
 import PeriodSelector from "@/components/ProductCosting/PeriodSelector.vue";
 import Step1Card from "@/components/ProductCosting/Step1Card.vue";
@@ -104,12 +87,12 @@ const router = useRouter();
 // Stores & Composables
 const costingStore = useProductCostingStore();
 const { getProductById } = useInventory();
+const toast = useToast();
 
 // State
 const productId = ref(route.params.productId);
 const productName = ref("Cargando...");
 const productUnit = ref("uni");
-const showSuccess = ref(false);
 
 const selectedPeriod = ref({
   period: "current_month",
@@ -121,17 +104,30 @@ const steps = ref({
   step1: {
     expanded: true,
     completed: false,
-    data: { totalMOD: null, hasHistoricalData: false },
+    data: {
+      costPerHour: null,
+      totalMOD: null,
+      workingDays: null,
+      productiveHoursPerDay: null,
+      selectedExpenseIds: [],
+      selectedExpensesDetails: [],
+    },
   },
   step2: {
     expanded: false,
     completed: false,
-    data: { totalQuantity: null, hasHistoricalData: false },
+    data: {
+      baseTimeRequired: null,
+      managementTimeAdded: false,
+      totalTimeRequired: null,
+    },
   },
   step3: {
     expanded: false,
     completed: false,
-    data: { modPerUnit: null },
+    data: {
+      modPerUnit: null,
+    },
   },
 });
 
@@ -170,6 +166,7 @@ const handleStep1Confirm = (data) => {
   steps.value.step1.expanded = false;
   steps.value.step2.expanded = true;
 
+  toast.success("Costo por hora calculado correctamente", { duration: 2000 });
   console.log("✅ Step 1 completado:", data);
 };
 
@@ -182,6 +179,7 @@ const handleStep2Confirm = (data) => {
   steps.value.step2.expanded = false;
   steps.value.step3.expanded = true;
 
+  toast.success("Tiempo necesario configurado", { duration: 2000 });
   console.log("✅ Step 2 completado:", data);
 };
 
@@ -193,28 +191,32 @@ const handleSave = async (data) => {
       productId: productId.value,
       modPerUnit,
       period: selectedPeriod.value,
-      totalMOD: steps.value.step1.data.totalMOD,
-      totalQuantity: steps.value.step2.data.totalQuantity,
+      step1: steps.value.step1.data,
+      step2: steps.value.step2.data,
     });
 
     // Guardar en el store
-    costingStore.updateMODCost(modPerUnit);
+    costingStore.updateMODCost(modPerUnit, data.modData?.calculation);
 
     // Marcar step 3 como completado
     steps.value.step3.completed = true;
     steps.value.step3.data.modPerUnit = modPerUnit;
 
-    // Mostrar mensaje de éxito
-    showSuccess.value = true;
+    // Mostrar mensaje de éxito con toast
+    toast.success(
+      `¡Costo MOD guardado! S/ ${modPerUnit.toFixed(2)} por ${productUnit.value}`,
+      { duration: 3000 },
+    );
 
     // Redireccionar después de 2 segundos
     setTimeout(() => {
-      showSuccess.value = false;
       goBack();
     }, 2000);
   } catch (error) {
     console.error("Error guardando costo MOD:", error);
-    alert("Error al guardar el costo MOD. Por favor, intenta nuevamente.");
+    toast.error("Error al guardar el costo MOD. Intenta nuevamente.", {
+      duration: 4000,
+    });
   }
 };
 
@@ -261,23 +263,5 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Animación para el mensaje de éxito */
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 20px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-}
-
-.slide-up-enter-active {
-  animation: slide-up 0.3s ease-out;
-}
-
-.slide-up-leave-active {
-  animation: slide-up 0.3s ease-out reverse;
-}
+/* Estilos específicos si son necesarios */
 </style>

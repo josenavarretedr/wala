@@ -301,6 +301,11 @@ const routes = [
         component: () => import('@/views/Inventory/EditProductGeneralInfo.vue')
       },
       {
+        path: 'inventory/product/:productId/edit-composition',
+        name: 'InventoryEditProductComposition',
+        component: () => import('@/views/ProductCosting/CostsMaterials.vue')
+      },
+      {
         path: 'inventory/product/:productId/edit-economic-info',
         name: 'InventoryEditProductEconomicInfo',
         component: () => import('@/views/Inventory/EditProductEconomicInfo.vue')

@@ -31,18 +31,20 @@
         </div>
         <div>
           <h3 class="font-semibold text-gray-900">
-            Paso 2: Cantidad Vendida del Producto
+            Paso 2: Tiempo Necesario del Equipo
           </h3>
-          <p class="text-sm text-gray-600">Historial de ventas del período</p>
+          <p class="text-sm text-gray-600">
+            ¿Cuánto tiempo del equipo necesita?
+          </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2">
         <span
-          v-if="completed && !expanded"
+          v-if="completed && !expanded && isValid"
           class="text-green-700 font-semibold"
         >
-          {{ formatNumber(localQuantity) }} {{ productUnit }}
+          {{ formatNumber(totalTimeRequired) }} hrs
         </span>
         <svg
           :class="[
@@ -65,132 +67,119 @@
 
     <!-- Body -->
     <div v-if="expanded" class="p-4 pt-0 space-y-4">
-      <!-- Loading State -->
-      <div v-if="loading" class="py-8">
-        <Loader />
-        <p class="text-center text-gray-600 text-sm mt-2">
-          Calculando ventas del período...
+      <!-- Card de Información del Producto -->
+      <div
+        class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🎯</span>
+          <div>
+            <p class="font-semibold text-gray-900">{{ productName }}</p>
+            <p class="text-sm text-gray-600">
+              Define cuánto tiempo del equipo/personal necesita este producto
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input: Tiempo Base Requerido -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          ¿Cuántas horas necesita el equipo para este producto?
+        </label>
+        <div class="relative">
+          <input
+            type="number"
+            v-model.number="baseTimeRequired"
+            step="0.25"
+            min="0.25"
+            placeholder="Ejemplo: 2.5 horas"
+            class="w-full px-4 py-3 pr-16 border-2 border-blue-300 rounded-lg text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <span
+            class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium"
+          >
+            horas
+          </span>
+        </div>
+        <p class="text-xs text-gray-500 mt-1">
+          💡 Tiempo promedio que dedica tu equipo a producir/generar
+          {{ productName }}
         </p>
       </div>
 
-      <!-- Content -->
-      <template v-else>
-        <!-- Sin datos históricos -->
-        <div
-          v-if="!hasHistoricalData"
-          class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3"
-        >
-          <span class="text-2xl">⚠️</span>
-          <div>
-            <p class="font-medium text-yellow-900">
-              No encontramos ventas para este producto en el período.
-            </p>
-            <p class="text-sm text-yellow-800 mt-1">
-              Por favor, ingresa una cantidad estimada para continuar.
-            </p>
-          </div>
-        </div>
-
-        <!-- Información del Producto -->
-        <div
-          v-if="productName"
-          class="bg-blue-50 border border-blue-200 rounded-lg p-4"
-        >
-          <p class="text-sm text-blue-800">
-            <span class="font-medium">Producto:</span> {{ productName }}
-          </p>
-          <p class="text-xs text-blue-700 mt-1">
-            Analizando ventas del período seleccionado
-          </p>
-        </div>
-
-        <!-- Resumen de Ventas -->
-        <div v-if="stockLogs.length > 0" class="bg-gray-50 rounded-lg p-4">
-          <h4 class="font-medium text-gray-900 mb-3">Historial de Ventas</h4>
-          <div class="grid grid-cols-2 gap-4 mb-3">
-            <div class="bg-white rounded-lg p-3 border border-gray-200">
-              <p class="text-xs text-gray-600">Total Transacciones</p>
-              <p class="text-2xl font-bold text-gray-900">
-                {{ stockLogs.length }}
-              </p>
-            </div>
-            <div class="bg-white rounded-lg p-3 border border-gray-200">
-              <p class="text-xs text-gray-600">Cantidad Total</p>
-              <p class="text-2xl font-bold text-blue-600">
-                {{ formatNumber(calculatedQuantity) }}
-              </p>
-            </div>
-          </div>
-
-          <!-- Lista de ventas (últimas 5) -->
-          <div
-            v-if="stockLogs.length > 0"
-            class="space-y-2 max-h-40 overflow-y-auto"
-          >
-            <p class="text-xs text-gray-600 mb-2">Últimas transacciones:</p>
-            <div
-              v-for="(log, index) in stockLogs.slice(0, 5)"
-              :key="log.id"
-              class="bg-white rounded-lg p-2 flex justify-between items-center text-sm border border-gray-200"
-            >
-              <div>
-                <p class="font-medium text-gray-700">
-                  {{ formatDate(log.createdAt) }}
-                </p>
-              </div>
-              <span class="font-semibold text-gray-900">
-                {{ formatNumber(log.quantity) }} {{ productUnit }}
-              </span>
-            </div>
-            <p
-              v-if="stockLogs.length > 5"
-              class="text-xs text-gray-500 text-center pt-2"
-            >
-              + {{ stockLogs.length - 5 }} transacciones más
-            </p>
-          </div>
-        </div>
-
-        <!-- Input de Cantidad -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            Cantidad Total Vendida ({{ productUnit }})
-          </label>
+      <!-- Checkbox: Tiempo de Gestión -->
+      <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <label class="flex items-start gap-3 cursor-pointer">
           <input
-            type="number"
-            v-model.number="localQuantity"
-            step="0.01"
-            min="0.01"
-            placeholder="0.00"
-            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-lg font-semibold focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            type="checkbox"
+            v-model="addManagementTime"
+            class="w-5 h-5 text-blue-600 border-gray-300 rounded mt-0.5 focus:ring-2 focus:ring-blue-500"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            Puedes editar este valor si lo consideras necesario
-          </p>
+          <div class="flex-1">
+            <p class="font-medium text-gray-900">
+              Agregar 30 minutos adicionales para gestión del producto/servicio
+            </p>
+            <p class="text-xs text-gray-600 mt-1">
+              Incluye coordinación, preparación y supervisión administrativa
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Display: Tiempo Total (calculado) -->
+      <div
+        v-if="baseTimeRequired && baseTimeRequired > 0"
+        class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300"
+      >
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          ⏱️ Tiempo Total Requerido
+        </label>
+        <div class="text-3xl font-bold text-green-600 mb-2">
+          {{ formatNumber(totalTimeRequired) }} horas
+        </div>
+        <div
+          v-if="addManagementTime"
+          class="text-sm text-gray-600 bg-white rounded p-2"
+        >
+          Base: {{ formatNumber(baseTimeRequired) }} hrs + Gestión:
+          {{ MANAGEMENT_TIME_EXTRA }} hrs =
+          {{ formatNumber(totalTimeRequired) }} hrs
         </div>
 
-        <!-- Botón de Confirmar -->
-        <button
-          @click="confirmStep"
-          :disabled="!isValid"
-          :class="[
-            'w-full py-3 rounded-lg font-semibold transition-all',
-            isValid
-              ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed',
-          ]"
+        <!-- Warning: Tiempo alto -->
+        <div
+          v-if="showHighTimeWarning"
+          class="mt-3 text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded p-2 flex items-start gap-2"
         >
-          {{ completed ? "Actualizar y Continuar" : "Confirmar y Continuar" }}
-        </button>
-      </template>
+          <span>⚠️</span>
+          <span
+            >¿Este producto requiere más de 24 horas? Verifica el valor
+            ingresado.</span
+          >
+        </div>
+      </div>
+
+      <!-- Botón de Confirmar -->
+      <button
+        @click="confirmStep"
+        :disabled="!isValid"
+        :class="[
+          'w-full py-3 rounded-lg font-semibold transition-all',
+          isValid
+            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed',
+        ]"
+      >
+        {{ completed ? "Actualizar y Continuar" : "Confirmar y Continuar" }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
-import { useInventory } from "@/composables/useInventory";
-import Loader from "@/components/ui/Loader.vue";
+import { ref, computed } from "vue";
+import { MANAGEMENT_TIME_EXTRA } from "../ProductCosting/constants";
 
 const props = defineProps({
   productId: {
@@ -205,10 +194,6 @@ const props = defineProps({
     type: String,
     default: "uni",
   },
-  period: {
-    type: Object,
-    required: true,
-  },
   expanded: {
     type: Boolean,
     default: false,
@@ -217,45 +202,37 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
-  initialValue: {
-    type: Number,
+  initialData: {
+    type: Object,
     default: null,
   },
 });
 
 const emit = defineEmits(["toggle", "confirm"]);
 
-const { getStockLogsByDateRange } = useInventory();
-
 // State
-const loading = ref(false);
-const stockLogs = ref([]);
-const localQuantity = ref(props.initialValue || 0);
-const hasHistoricalData = ref(false);
+const baseTimeRequired = ref(props.initialData?.baseTimeRequired || null);
+const addManagementTime = ref(props.initialData?.managementTimeAdded || false);
 
 // Computed
-const isValid = computed(() => {
-  return localQuantity.value !== null && localQuantity.value > 0;
+const totalTimeRequired = computed(() => {
+  const base = baseTimeRequired.value || 0;
+  const extra = addManagementTime.value ? MANAGEMENT_TIME_EXTRA : 0;
+  return base + extra;
 });
 
-const calculatedQuantity = computed(() => {
-  return stockLogs.value.reduce((sum, log) => sum + (log.quantity || 0), 0);
+const isValid = computed(() => {
+  return baseTimeRequired.value !== null && baseTimeRequired.value > 0;
+});
+
+const showHighTimeWarning = computed(() => {
+  return totalTimeRequired.value > 24;
 });
 
 // Methods
 const formatNumber = (value) => {
   if (value === null || value === undefined) return "0.00";
   return parseFloat(value).toFixed(2);
-};
-
-const formatDate = (timestamp) => {
-  if (!timestamp) return "";
-  const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-  return new Intl.DateTimeFormat("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
 };
 
 const toggleExpand = () => {
@@ -266,75 +243,11 @@ const confirmStep = () => {
   if (!isValid.value) return;
 
   emit("confirm", {
-    totalQuantity: localQuantity.value,
-    hasHistoricalData: hasHistoricalData.value,
+    baseTimeRequired: baseTimeRequired.value,
+    managementTimeAdded: addManagementTime.value,
+    totalTimeRequired: totalTimeRequired.value,
   });
 };
-
-const loadStockLogs = async () => {
-  if (!props.period.startDate || !props.period.endDate) {
-    console.warn("No se puede cargar stockLogs sin rango de fechas");
-    return;
-  }
-
-  loading.value = true;
-
-  try {
-    const logs = await getStockLogsByDateRange(
-      props.productId,
-      props.period.startDate,
-      props.period.endDate,
-      "sell",
-    );
-
-    stockLogs.value = logs;
-    hasHistoricalData.value = logs.length > 0;
-
-    // Actualizar la cantidad con los datos encontrados
-    if (hasHistoricalData.value) {
-      localQuantity.value = calculatedQuantity.value;
-    } else {
-      // Si no hay datos históricos, mantener el valor anterior o 0
-      localQuantity.value = props.initialValue || 0;
-    }
-
-    console.log("✅ StockLogs de ventas cargados:", {
-      count: logs.length,
-      totalQuantity: calculatedQuantity.value,
-    });
-  } catch (error) {
-    console.error("Error cargando stockLogs:", error);
-    hasHistoricalData.value = false;
-    stockLogs.value = [];
-  } finally {
-    loading.value = false;
-  }
-};
-
-// Watchers
-watch(
-  () => props.period,
-  (newPeriod) => {
-    if (newPeriod.startDate && newPeriod.endDate && props.expanded) {
-      loadStockLogs();
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.expanded,
-  (isExpanded) => {
-    if (isExpanded && props.period.startDate && props.period.endDate) {
-      loadStockLogs();
-    }
-  },
-);
-
-// Cargar al montar si está expandido
-if (props.expanded && props.period.startDate && props.period.endDate) {
-  loadStockLogs();
-}
 </script>
 
 <style scoped>

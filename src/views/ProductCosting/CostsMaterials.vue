@@ -1,15 +1,11 @@
 <template>
   <div class="max-w-4xl mx-auto p-4 sm:p-6 pb-32">
-    <!-- Header con botón de volver -->
-    <div class="flex items-center gap-3 mb-6">
+    <!-- Header con botones de navegación -->
+    <div class="flex items-center justify-between gap-3 mb-6">
       <BackBtn
-        :route-name="'InventoryProductCosting'"
-        :route-params="{
-          businessId: route.params.businessId,
-          productId: route.params.productId,
-        }"
-        tooltip-text="Volver al costeo"
-        @before-leave="handleBeforeLeave"
+        :use-back="true"
+        tooltip-text="Volver atrás"
+        :before-navigate="handleBeforeLeave"
       />
     </div>
 
@@ -678,6 +674,7 @@ import { useProductCostingStore } from "@/stores/productCostingStore";
 import { useInventory } from "@/composables/useInventory";
 import { useToast } from "@/composables/useToast";
 import BackBtn from "@/components/ui/BackBtn.vue";
+import CloseBtn from "@/components/ui/CloseBtn.vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 
 // Router
@@ -698,6 +695,13 @@ const productData = ref(null);
 const loading = ref(true);
 const saving = ref(false);
 const showCostingDetails = ref(false);
+
+// Configuración para CloseBtn
+const closeBtnConfig = {
+  autoNavigate: true,
+  navigationType: "back",
+  tooltipText: "Cerrar",
+};
 
 // Material selection state
 const selectedMaterial = ref(null);
@@ -1031,15 +1035,11 @@ const handleGoBack = () => {
   });
 };
 
-const handleBeforeLeave = (event) => {
+const handleBeforeLeave = async () => {
   if (hasUnsavedChanges.value) {
     const confirmed = confirm(
       "¿Seguro que deseas salir sin guardar?\n\nSe perderán los cambios realizados.",
     );
-
-    if (!confirmed && event) {
-      event.preventDefault();
-    }
 
     return confirmed;
   }

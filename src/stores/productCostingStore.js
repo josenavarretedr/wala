@@ -4,6 +4,7 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { addMoney, multiplyMoney, round2 } from '@/utils/mathUtils';
 
 export const useProductCostingStore = defineStore('productCosting', () => {
   // ==========================================
@@ -68,14 +69,14 @@ export const useProductCostingStore = defineStore('productCosting', () => {
    * Calcula el costo total sumando todos los costos disponibles
    */
   const totalCost = computed(() => {
-    let total = 0;
+    const values = [];
 
-    if (hasMaterialsCost.value) total += parseFloat(costs.value.materials);
-    if (hasMODCost.value) total += parseFloat(costs.value.mod);
-    if (hasCIFCost.value) total += parseFloat(costs.value.cif);
-    if (hasOverheadCost.value) total += parseFloat(costs.value.overhead);
+    if (hasMaterialsCost.value) values.push(costs.value.materials);
+    if (hasMODCost.value) values.push(costs.value.mod);
+    if (hasCIFCost.value) values.push(costs.value.cif);
+    if (hasOverheadCost.value) values.push(costs.value.overhead);
 
-    return total > 0 ? total : null;
+    return values.length > 0 ? addMoney(...values) : null;
   });
 
   /**
@@ -264,7 +265,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
       quantity: material.quantity,
       unit: material.unit,
       costPerUnit: material.costPerUnit || null,
-      subtotal: material.costPerUnit ? (material.quantity * material.costPerUnit) : null
+      subtotal: material.costPerUnit ? multiplyMoney(material.quantity, material.costPerUnit) : null
     });
 
     materialsComposition.value.hasChanges = true;
@@ -293,7 +294,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
 
     // Recalcular subtotal
     if (material.costPerUnit && material.costPerUnit > 0) {
-      material.subtotal = material.quantity * material.costPerUnit;
+      material.subtotal = multiplyMoney(material.quantity, material.costPerUnit);
     }
 
     materialsComposition.value.hasChanges = true;
@@ -327,14 +328,11 @@ export const useProductCostingStore = defineStore('productCosting', () => {
    * Calcula el costo total de la composición
    */
   function calculateTotalCost() {
-    const total = materialsComposition.value.items.reduce((sum, item) => {
-      if (item.subtotal && item.subtotal > 0) {
-        return sum + item.subtotal;
-      }
-      return sum;
-    }, 0);
+    const subtotals = materialsComposition.value.items
+      .filter(item => item.subtotal && item.subtotal > 0)
+      .map(item => item.subtotal);
 
-    materialsComposition.value.totalCost = parseFloat(total.toFixed(2));
+    materialsComposition.value.totalCost = subtotals.length > 0 ? addMoney(...subtotals) : 0;
 
     // Sincronizar con costs.materials
     costs.value.materials = materialsComposition.value.totalCost;
