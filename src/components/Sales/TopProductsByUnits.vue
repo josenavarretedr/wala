@@ -87,9 +87,16 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed, ref, watch } from "vue";
+import { defineProps, defineEmits, computed, ref, watch, onMounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
+import { useInventoryStore } from "@/stores/inventoryStore";
+
+// Acceso al inventario para nombres actualizados
+const inventoryStore = useInventoryStore();
+const { allItemsInInventory, getItemsInInventory } = inventoryStore;
+
+console.log("🔵 [TopProductsByUnits] Componente inicializado");
 
 const props = defineProps({
   transactions: { type: Array, required: true }, // cada tx puede tener items: [{ uuid, description, quantity, price? }]
@@ -113,8 +120,47 @@ defineEmits(["select"]);
 
 const isLoading = ref(true);
 
+/**
+ * Obtiene el nombre actualizado del producto desde el inventario
+ * @param {string} productUuid - UUID del producto
+ * @param {string} fallbackName - Nombre por defecto si no se encuentra
+ * @returns {string} Nombre actualizado del producto
+ */
+const getUpdatedProductName = (
+  productUuid,
+  fallbackName = "Producto sin nombre",
+) => {
+  if (!productUuid) {
+    console.log(
+      "⚠️ [TopProductsByUnits] Sin UUID, usando fallback:",
+      fallbackName,
+    );
+    return fallbackName;
+  }
+
+  const product = allItemsInInventory.value?.find(
+    (p) => p.uuid === productUuid,
+  );
+
+  console.log("🔍 [TopProductsByUnits] Buscando producto:", {
+    uuid: productUuid,
+    encontrado: !!product,
+    nombreOriginal: fallbackName,
+    nombreActualizado: product?.description,
+    totalEnInventario: allItemsInInventory.value?.length || 0,
+  });
+
+  return product?.description || fallbackName;
+};
+
 /** Construye agregados a partir de transaction.items */
 const buildAggFromTransactions = (txs) => {
+  console.log(
+    "📊 [TopProductsByUnits] Construyendo agregados desde",
+    txs?.length || 0,
+    "transacciones",
+  );
+
   const map = new Map();
   const { uuid: K_UUID, description: K_DESC, quantity: K_QTY } = props.itemKeys;
 
@@ -122,15 +168,27 @@ const buildAggFromTransactions = (txs) => {
     if (!Array.isArray(tx?.items)) continue;
 
     for (const it of tx.items) {
+      console.log("📦 [TopProductsByUnits] Item:", {
+        uuid: it?.[K_UUID],
+        description: it?.[K_DESC],
+        quantity: it?.[K_QTY],
+      });
       const key = (it?.[K_UUID] ?? it?.[K_DESC] ?? "").toString().trim();
       if (!key) continue;
 
       const qty = Number(it?.[K_QTY] ?? 0);
       if (!Number.isFinite(qty) || qty <= 0) continue;
 
-      const label =
-        (it?.[K_DESC]?.toString()?.trim() || "Producto sin nombre") +
-        (it?.[K_UUID] ? "" : " *"); // marca si no tiene uuid
+      // 🔄 Obtener nombre actualizado del inventario
+      const originalName =
+        it?.[K_DESC]?.toString()?.trim() || "Producto sin nombre";
+      const updatedName = it?.[K_UUID]
+        ? getUpdatedProductName(it[K_UUID], originalName)
+        : originalName;
+
+      const label = updatedName + (it?.[K_UUID] ? "" : " *"); // marca si no tiene uuid
+
+      console.log("✅ [TopProductsByUnits] Label final:", label);
 
       const agg = map.get(key) || { key, label, quantity: 0 };
       agg.quantity += qty;
@@ -138,7 +196,9 @@ const buildAggFromTransactions = (txs) => {
     }
   }
 
-  return Array.from(map.values());
+  const result = Array.from(map.values());
+  console.log("📈 [TopProductsByUnits] Resultado agregado:", result);
+  return result;
 };
 
 /** Top N con % relativo al máximo (para ancho de barra) */
@@ -159,16 +219,53 @@ const rows = computed(() => {
     }));
 });
 
-// Simular carga cuando cambien las transacciones
+// Cargar inventario al montar el componente
+onMounted(async () => {
+  console.log("🚀 [TopProductsByUnits] onMounted ejecutado");
+  console.log(
+    "📦 [TopProductsByUnits] Inventario actual:",
+    allItemsInInventory.value?.length || 0,
+    "items",
+  );
+
+  if (!allItemsInInventory.value || allItemsInInventory.value.length === 0) {
+    console.log("⏳ [TopProductsByUnits] Cargando inventario...");
+    await getItemsInInventory();
+    console.log(
+      "✅ [TopProductsByUnits] Inventario cargado:",
+      allItemsInInventory.value?.length || 0,
+      "items",
+    );
+
+    // Mostrar primeros 3 productos para verificar
+    if (allItemsInInventory.value?.length > 0) {
+      console.log(
+        "📋 [TopProductsByUnits] Primeros productos:",
+        allItemsInInventory.value
+          .slice(0, 3)
+          .map((p) => ({ uuid: p.uuid, description: p.description })),
+      );
+    }
+  } else {
+    console.log("✓ [TopProductsByUnits] Inventario ya disponible");
+  }
+});
+
+// Simular carga cuando cambien las transacciones o el inventario
 watch(
-  () => props.transactions,
-  () => {
+  () => [props.transactions, allItemsInInventory.value],
+  ([transactions, inventory]) => {
+    console.log("👀 [TopProductsByUnits] Watch triggered:", {
+      transactions: transactions?.length || 0,
+      inventory: inventory?.length || 0,
+    });
+
     isLoading.value = true;
     setTimeout(() => {
       isLoading.value = false;
     }, 300);
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 </script>
 

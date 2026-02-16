@@ -1,0 +1,575 @@
+{
+  "meta_analisis": {
+    "tema": "Registro y Orden",
+    "sector": "Comercio (bodega, ferretería, minimarket, tienda)",
+    "estrategia_aplicada": "Distribución 4-2 (Voz A/B) con énfasis en educar sobre la diferencia entre anotar y ordenar. Uso de Patrón Disruptor para romper creencia de 'ya anoto todo'. Storytelling causal fuerte en todos los videos con 3-6 micro-hooks según duración. Video 6 como híbrido experimental para transición ToFu→MoFu mostrando implementación real de orden en asesoría.",
+    "propuesta_valor_central": "José enseña que anotar sin ordenar es tiempo perdido. WALA da ese orden automático sin complicar la vida del comerciante."
+  },
+
+  "generacion": {
+    "tema": "Registro y Orden",
+    "fase_funnel": "atraccion",
+    "total_videos": 6,
+    "distribucion": {
+      "voz_a": 4,
+      "voz_b": 2,
+      "razon_distribucion": "José construye autoridad educando sobre el 'por qué' del orden (no solo anotar). WALA complementa con el 'cómo' simple. Proporción permite educar primero, luego presentar herramienta como solución natural."
+    },
+    "estrategia_storytelling": "Todos los guiones usan conexiones causales (por lo tanto, pero, entonces, por eso) en lugar de secuencia pura. Cada punto causa el siguiente generando adicción narrativa y evitando aburrimiento."
+  },
+
+  "videos": [
+    {
+      "numero": 1,
+      "voz": "A",
+      "estructura_usada": "Estructura 1 - Patrón Disruptor",
+      "razon_estructura": "El mito 'ya anoto todo' está muy arraigado en comerciantes. Patrón disruptor rompe esta creencia mostrando que anotar ≠ ordenar, generando controversia y engagement.",
+      "propuesta_valor_enfocada": "Te enseño la diferencia entre trabajo y resultados - anotar es trabajo, ordenar da resultados",
+      "duracion_estimada": "45s",
+      "subtema": "Anotar vs Ordenar (diferencia fundamental)",
+      "sector_ejemplo": "Bodega",
+
+      "hooks": {
+        "texto_visible": "Anotar todo no sirve de nada",
+        "visual": "Parado frente a una bodega, mirando a cámara con cuaderno en mano",
+        "audio_trending": "Nadie te dice esto pero...",
+        "estrategia_hook": "Contradice directamente la creencia común de 'mientras anote, estoy bien'. Genera scroll-stop por controversia inmediata."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-9s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Esto te pasa todo el tiempo, ¿verdad?",
+          "objetivo": "Validar la frustración del comerciante que anota pero sigue perdido, generando conexión emocional inmediata"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[21-24s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "Y lo que viene ahora te va a sorprender...",
+          "objetivo": "Mantener atención justo antes de explicar POR QUÉ pasa esto, generando anticipación"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[35-37s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora sí, prestá atención...",
+          "objetivo": "Preparar para la micro-acción, asegurando máxima atención en el momento clave"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": [
+          "pero",
+          "por lo tanto",
+          "entonces",
+          "por eso"
+        ],
+        "flujo": "Anotás todo → PERO seguís sin saber cuánto ganaste → POR LO TANTO anotar no es suficiente → ENTONCES necesitás ordenar"
+      },
+
+      "guion_completo": {
+        "hook": "[0-5s] Registrar todo no sirve de nada si no sabés qué hacer con eso.",
+        "microhook_1": "[6-9s] Esto te pasa todo el tiempo, ¿verdad?",
+        "desarrollo_1": "[10-20s] Anotás cada venta en el cuaderno. Cada gasto también. PERO cuando llega fin de mes, seguís sin saber si realmente ganaste plata. POR LO TANTO todo ese trabajo de anotar no te dio claridad.",
+        "microhook_2": "[21-24s] Y lo que viene ahora te va a sorprender...",
+        "desarrollo_2": "[25-34s] PORQUE anotar no es lo mismo que ordenar. Si no separás lo del negocio de lo tuyo, los números mienten. POR ESO aunque anotes todo, seguís confundido. ENTONCES el problema no es que no registrás, es que no ordenás.",
+        "microhook_3": "[35-37s] Y ahora sí, prestá atención...",
+        "micro_accion": "[38-43s] Hacé esto hoy: agarrá tu cuaderno y separá en dos listas - gastos del negocio / gastos tuyos. Usá WALA para llevarlo ordenado automático, es gratis. Link en mi perfil.",
+        "cierre": "[44-45s] Probalo y contame qué encontraste."
+      },
+
+      "micro_accion": {
+        "descripcion": "Revisar cuaderno actual y separar gastos del negocio vs personales en dos listas",
+        "herramienta": "WALA",
+        "mencion_wala": "Directa como solución - 'Usá WALA para llevarlo ordenado automático'",
+        "cta_link": "Link en mi perfil (una vez, al final)",
+        "cta_feedback": "Sí - 'Probalo y contame qué encontraste'",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Sensación de control inmediato al ver la diferencia entre tipos de gastos",
+        "funcionalidad_wala_relacionada": "Registro rápido de ingresos y egresos con separación automática",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ No ofrece alternativas / ✓ Tono directo no agresivo"
+      },
+
+      "caption": "Anotar ≠ Ordenar 📝❌\n\nLa mayoría de comerciantes anota TODO pero sigue sin saber cuánto gana.\n\nEl problema no es que no registrás.\nEl problema es que no ORDENÁS lo que registrás.\n\nSeparar gastos del negocio vs tuyos cambia todo.\n\nWALA te da ese orden automático, en 5 minutos.\nGratis. Link en mi perfil 👆\n\n¿Ya anotás pero seguís perdido? Contame 👇\n\n#emprendimiento #negocio #bodega #registrofinanciero #wala #ordenfinanciero",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Frente a una bodega o tienda real",
+        "props_necesarios": "Cuaderno de registro físico en mano",
+        "tono_voz": "Directo, confrontativo pero empático",
+        "momento_del_dia": "Mañana o tarde (luz natural)"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Viralidad por controversia + engagement",
+        "tipo_interaccion": "Comentarios tipo 'yo hago eso y sí, sigo perdido' / Shares a otros comerciantes",
+        "audiencia_target": "Comerciantes que anotan religiosamente pero no ven resultados",
+        "retencion_esperada": "75-80% (hook disruptivo + micro-hooks + causalidad fuerte)"
+      }
+    },
+
+    {
+      "numero": 2,
+      "voz": "A",
+      "estructura_usada": "Estructura 3 - Error Común + Corrección Rápida",
+      "razon_estructura": "Hay un error específico muy repetido: registrar TODO sin criterio. Estructura directa da la corrección práctica inmediata que el comerciante necesita.",
+      "propuesta_valor_enfocada": "Te doy la corrección directa, sin rodeos - qué sí registrar y qué no importa",
+      "duracion_estimada": "42s",
+      "subtema": "Qué registrar y qué no (criterio práctico)",
+      "sector_ejemplo": "Ferretería",
+
+      "hooks": {
+        "texto_visible": "Estás registrando cosas que no importan",
+        "visual": "En una ferretería, señalando productos mientras habla a cámara",
+        "audio_trending": "Ojo con esto...",
+        "estrategia_hook": "Genera inseguridad inmediata ('¿qué estoy haciendo mal?') y curiosidad por saber qué sí importa"
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-8s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te pasa todo el tiempo, ¿no?",
+          "objetivo": "Validar la frustración de invertir tiempo en registrar cosas irrelevantes"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[20-22s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá es donde todo cambia...",
+          "objetivo": "Marcar transición de problema a solución, manteniendo atención"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[33-35s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora viene lo que realmente te va a servir...",
+          "objetivo": "Preparar para micro-acción con máxima expectativa"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["por lo tanto", "pero", "entonces"],
+        "flujo": "Anotás hasta el café → POR LO TANTO perdés tiempo → PERO solo importan 3 cosas → ENTONCES enfocate en esas"
+      },
+
+      "guion_completo": {
+        "hook": "[0-5s] Estás perdiendo tiempo si anotás hasta el café que tomaste.",
+        "microhook_1": "[6-8s] Te pasa todo el tiempo, ¿no?",
+        "desarrollo_1": "[9-19s] Registrás TODO. El café, el pan, hasta la propina. POR LO TANTO al final tenés un cuaderno lleno pero no sabés qué números importan. ENTONCES perdiste tiempo anotando cosas irrelevantes.",
+        "microhook_2": "[20-22s] Pero acá es donde todo cambia...",
+        "desarrollo_2": "[23-32s] Solo necesitás registrar 3 cosas: lo que vendiste HOY, lo que gastaste del NEGOCIO hoy, lo que te deben. PERO si anotás gastos tuyos personales ahí, cagaste todo. POR ESO simplificá.",
+        "microhook_3": "[33-35s] Y ahora viene lo que realmente te va a servir...",
+        "micro_accion": "[36-40s] Hoy, registrá solo esas 3 cosas. Nada más. WALA te ordena esto automático, es gratis. Link en mi perfil.",
+        "cierre": "[41-42s] Probalo y contame."
+      },
+
+      "micro_accion": {
+        "descripcion": "Registrar solo 3 cosas hoy: ventas, gastos del negocio, cuentas por cobrar (eliminar todo lo demás)",
+        "herramienta": "WALA",
+        "mencion_wala": "Directa - 'WALA te ordena esto automático'",
+        "cta_link": "Link en mi perfil (una vez, al final)",
+        "cta_feedback": "Sí - 'Probalo y contame'",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Alivio al simplificar (menos es más) + control al enfocarse en lo importante",
+        "funcionalidad_wala_relacionada": "Registro rápido + Cuentas por cobrar + Resumen diario",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ No ofrece alternativas / ✓ Tono directo no agresivo"
+      },
+
+      "caption": "No anotes TODO ❌\n\nSolo necesitás 3 cosas:\n→ Lo que vendiste HOY\n→ Lo que gastaste del NEGOCIO hoy\n→ Lo que te deben\n\nTodo lo demás es ruido.\n\nWALA te ordena estos 3 datos automático.\nEn 5 minutos ves si ganaste o perdiste.\n\nGratis. Link en mi perfil 👆\n\n¿Anotás hasta el café? Comentá 👇\n\n#ferreteria #negocio #registrofinanciero #emprendimiento #wala #ordenfinanciero",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Dentro de ferretería o comercio con productos visibles",
+        "props_necesarios": "Ninguno (señalar productos del local)",
+        "tono_voz": "Directo, casi confrontativo pero liberador",
+        "momento_del_dia": "Flexible"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Engagement + acción inmediata",
+        "tipo_interaccion": "Comentarios tipo 'no sabía que estaba perdiendo tiempo' / Guardados para aplicar",
+        "audiencia_target": "Comerciantes que anotan obsesivamente todo sin criterio",
+        "retencion_esperada": "75-80% (valor directo + solución simple)"
+      }
+    },
+
+    {
+      "numero": 3,
+      "voz": "B",
+      "estructura_usada": "Estructura 3 - Error Común + Corrección Rápida",
+      "razon_estructura": "WALA resuelve el 'no sé cómo ordenar' de manera directa. Estructura muestra problema común y cómo WALA lo soluciona automáticamente.",
+      "propuesta_valor_enfocada": "Claridad automática sin que te compliques - WALA hace el trabajo pesado por vos",
+      "duracion_estimada": "40s",
+      "subtema": "Del caos al orden en 5 minutos diarios",
+      "sector_ejemplo": "General (comercio)",
+
+      "hooks": {
+        "texto_visible": "No sabés cómo ordenar lo que anotás",
+        "visual": "Pantalla de celular mostrando WALA mientras una mano registra algo rápido",
+        "audio_trending": "Te pasa esto...",
+        "estrategia_hook": "Identifica el dolor exacto: tienen los datos pero no saben qué hacer con ellos"
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[5-7s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Y ahí es donde te trabás, ¿no?",
+          "objetivo": "Validar el punto exacto de frustración (tener datos sin orden)"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[18-20s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá está la diferencia...",
+          "objetivo": "Marcar el cambio de problema a solución con WALA"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[30-32s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora viene lo mejor...",
+          "objetivo": "Preparar para demostración de simplicidad de WALA"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["por eso", "pero", "entonces"],
+        "flujo": "Tenés datos desordenados → POR ESO no sabés qué hacer → PERO WALA ordena automático → ENTONCES ves claridad en 5 min"
+      },
+
+      "guion_completo": {
+        "hook": "[0-4s] Tenés el cuaderno lleno pero no sabés si ganaste o perdiste.",
+        "microhook_1": "[5-7s] Y ahí es donde te trabás, ¿no?",
+        "desarrollo_1": "[8-17s] Anotás todo. PERO cuando querés saber cuánto ganaste, tenés que sumar, restar, revisar. POR ESO te da fiaca y lo dejás para después. ENTONCES nunca tenés claridad.",
+        "microhook_2": "[18-20s] Pero acá está la diferencia...",
+        "desarrollo_2": "[21-29s] WALA ordena eso automático. Registrás rápido lo que vendiste y gastaste. ENTONCES en un segundo te dice si ganaste o perdiste HOY. POR ESO no necesitás hacer cuentas.",
+        "microhook_3": "[30-32s] Y ahora viene lo mejor...",
+        "micro_accion": "[33-38s] Es gratis. Registrate y empezá hoy. En 5 minutos vas a tener claridad que no tenías hace meses. Link en mi perfil.",
+        "cierre": "[39-40s] Probalo hoy."
+      },
+
+      "micro_accion": {
+        "descripcion": "Registrarse en WALA y hacer el primer registro de venta y gasto para ver resultado inmediato",
+        "herramienta": "WALA",
+        "mencion_wala": "Directa institucional - 'WALA ordena eso automático'",
+        "cta_link": "Link en mi perfil (una vez, al final)",
+        "cta_feedback": "Implícito - 'Probalo hoy'",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Alivio inmediato al ver claridad sin esfuerzo manual",
+        "funcionalidad_wala_relacionada": "Registro rápido + Resumen automático diario",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ No ofrece alternativas / ✓ Tono directo no agresivo"
+      },
+
+      "caption": "Del caos al orden en 5 minutos 📊\n\n¿Tenés el cuaderno lleno pero no sabés si ganaste?\n\nWALA ordena eso automático:\n→ Registrás rápido lo que vendiste\n→ Registrás lo que gastaste\n→ En un segundo ves si ganaste o perdiste\n\nSin hacer cuentas. Sin complicarte.\n\n100% gratis. Registrate y empezá hoy 👆\n\n#wala #negocio #ordenfinanciero #comercio #emprendimiento #registrofinanciero",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Comercio real o setup con celular visible mostrando WALA",
+        "props_necesarios": "Celular con WALA abierto",
+        "tono_voz": "Directo, cercano, startup ágil",
+        "momento_del_dia": "Flexible"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Conversión a registro en WALA",
+        "tipo_interaccion": "Comentarios tipo 'ya me registré' / Clicks en link del perfil",
+        "audiencia_target": "Comerciantes frustrados con métodos manuales complicados",
+        "retencion_esperada": "70-75% (demostración de simplicidad)"
+      }
+    },
+
+    {
+      "numero": 4,
+      "voz": "A",
+      "estructura_usada": "Estructura 2 - Caso Real + Lección",
+      "razon_estructura": "Historia de bodega genera identificación profunda. Muestra transformación real de caos a orden, humanizando el expertise de José.",
+      "propuesta_valor_enfocada": "Te muestro desde la práctica real - esto pasó con un bodeguero que asesoré",
+      "duracion_estimada": "50s",
+      "subtema": "Separación de cuentas personal/negocio (caso práctico)",
+      "sector_ejemplo": "Bodega",
+
+      "hooks": {
+        "texto_visible": "Este bodeguero trabajaba 12 horas y no ganaba nada",
+        "visual": "Caminando por la calle hacia una bodega, hablando a cámara",
+        "audio_trending": "Hace poco pasó esto...",
+        "estrategia_hook": "Historia personal genera curiosidad inmediata ('¿qué le pasó?') + identificación ('eso me pasa a mí')"
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-8s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te suena familiar, ¿verdad?",
+          "objetivo": "Conectar emocionalmente con comerciantes que trabajan mucho sin ver ganancia"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[22-25s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "Y cuando descubrimos el problema, todo cambió...",
+          "objetivo": "Generar anticipación hacia la revelación del error"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[36-38s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora viene lo que realmente ayudó...",
+          "objetivo": "Preparar para la micro-acción práctica aplicable"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": [
+          "pero",
+          "por lo tanto",
+          "entonces",
+          "por eso"
+        ],
+        "flujo": "Trabajaba 12hs → PERO no ganaba → Revisamos registros → ENTONCES encontramos que mezclaba gastos → POR LO TANTO números eran mentira → Separamos → ENTONCES tuvo claridad"
+      },
+
+      "guion_completo": {
+        "hook": "[0-5s] Hace poco hablé con un bodeguero que trabajaba 12 horas al día.",
+        "microhook_1": "[6-8s] Te suena familiar, ¿verdad?",
+        "desarrollo_1": "[9-21s] Vendía bien todos los días. Anotaba cada venta, cada gasto. PERO cuando le pregunté cuánto ganó el mes pasado, no supo decirme. POR LO TANTO todo ese trabajo de registrar no le sirvió de nada. ENTONCES ahí supe cuál era el problema.",
+        "microhook_2": "[22-25s] Y cuando descubrimos el problema, todo cambió...",
+        "desarrollo_2": "[26-35s] Resulta que anotaba TODO junto: la luz de su casa, el almuerzo, los productos. POR ESO cuando sumaba no sabía qué era qué. ENTONCES su 'ganancia' incluía gastos personales. PERO en realidad no estaba ganando lo que pensaba.",
+        "microhook_3": "[36-38s] Y ahora viene lo que realmente ayudó...",
+        "micro_accion": "[39-48s] Hicimos esto: separamos en dos listas todo - negocio / personal. ENTONCES vio la realidad. Le faltaba plata. POR ESO ajustamos precios. Vos podés hacer lo mismo hoy. Usá WALA para separarlo automático, es gratis. Link en mi perfil.",
+        "cierre": "[49-50s] Hacelo y contame qué encontraste."
+      },
+
+      "micro_accion": {
+        "descripcion": "Revisar últimas 2 semanas de gastos y separarlos en dos listas: negocio vs personal",
+        "herramienta": "WALA",
+        "mencion_wala": "Con funcionalidad - 'Usá WALA para separarlo automático'",
+        "cta_link": "Link en mi perfil (una vez, al final)",
+        "cta_feedback": "Sí - 'Hacelo y contame qué encontraste'",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Revelación ('mi ganancia es mentira') + control al ver números reales",
+        "funcionalidad_wala_relacionada": "Registro separado de categorías + Resumen con diferenciación automática",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ No ofrece alternativas / ✓ Tono directo no agresivo"
+      },
+
+      "caption": "La historia del bodeguero que trabajaba 12 horas y no ganaba nada 💔\n\nEl problema: anotaba TODO junto.\nLuz de su casa + productos del negocio = números mentira.\n\nLa solución: separar gastos personales vs negocio.\n\nCuando lo hizo, vio la realidad.\nY pudo ajustar.\n\nHacé lo mismo hoy con tus últimas 2 semanas.\nWALA lo separa automático. Gratis. Link en mi perfil 👆\n\n¿Te pasa esto? Contame 👇\n\n#bodega #negocio #emprendimiento #registrofinanciero #wala #comercio",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Caminando hacia bodega o frente a una",
+        "props_necesarios": "Ninguno",
+        "tono_voz": "Conversacional, narrativo, empático",
+        "momento_del_dia": "Mañana o tarde"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Identificación profunda + acción",
+        "tipo_interaccion": "Comentarios tipo 'esto me pasa a mí' / 'lo voy a probar' / Shares a otros bodegueros",
+        "audiencia_target": "Bodegueros y comerciantes que trabajan mucho sin ver ganancia clara",
+        "retencion_esperada": "75-80% (storytelling causal + identificación emocional)"
+      }
+    },
+
+    {
+      "numero": 5,
+      "voz": "B",
+      "estructura_usada": "Estructura 3 - Error Común + Corrección Rápida",
+      "razon_estructura": "Transición cuaderno→digital es un miedo común. WALA muestra que es simple y sin trauma, desmitificando la tecnología.",
+      "propuesta_valor_enfocada": "Transición simple, sin perder tu forma de trabajar - WALA es el cuaderno, pero inteligente",
+      "duracion_estimada": "43s",
+      "subtema": "De cuaderno a sistema digital (sin trauma)",
+      "sector_ejemplo": "General (comercio)",
+
+      "hooks": {
+        "texto_visible": "No tenés que abandonar tu cuaderno",
+        "visual": "Mano sosteniendo cuaderno en una mano y celular con WALA en otra",
+        "audio_trending": "Esto no te lo dicen pero...",
+        "estrategia_hook": "Rompe objeción principal ('no quiero apps complicadas') mientras valida método actual"
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-8s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Sé que te da fiaca aprender algo nuevo...",
+          "objetivo": "Validar la resistencia al cambio tecnológico sin juzgar"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[20-22s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá es donde todo cambia...",
+          "objetivo": "Marcar transición de resistencia a simplicidad de WALA"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[33-35s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora viene lo mejor...",
+          "objetivo": "Preparar para demostración de facilidad de uso"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["pero", "por eso", "entonces"],
+        "flujo": "Cuaderno funciona → PERO no te da claridad automática → WALA es igual de simple → ENTONCES podés empezar sin drama"
+      },
+
+      "guion_completo": {
+        "hook": "[0-5s] Tu cuaderno está bien. PERO no te dice si ganaste o perdiste hoy.",
+        "microhook_1": "[6-8s] Sé que te da fiaca aprender algo nuevo...",
+        "desarrollo_1": "[9-19s] El cuaderno funciona para anotar. PERO cuando querés saber si ganaste, tenés que hacer cuentas. POR ESO muchas veces ni lo revisás. ENTONCES no tenés claridad diaria.",
+        "microhook_2": "[20-22s] Pero acá es donde todo cambia...",
+        "desarrollo_2": "[23-32s] WALA es tu cuaderno, pero inteligente. Anotás igual de rápido. PERO él hace las cuentas automático. ENTONCES en un segundo ves si ganaste hoy. Sin calculadora. Sin quebraderos de cabeza.",
+        "microhook_3": "[33-35s] Y ahora viene lo mejor...",
+        "micro_accion": "[36-41s] No abandonés tu cuaderno. Empezá a registrar en WALA en paralelo. Una semana. Vas a ver la diferencia. Es gratis, link en mi perfil.",
+        "cierre": "[42-43s] Probalo sin compromiso."
+      },
+
+      "micro_accion": {
+        "descripcion": "Usar cuaderno Y WALA en paralelo durante 1 semana para comparar y ganar confianza en lo digital",
+        "herramienta": "WALA",
+        "mencion_wala": "Directa institucional con empatía - 'WALA es tu cuaderno, pero inteligente'",
+        "cta_link": "Link en mi perfil (una vez, al final)",
+        "cta_feedback": "Implícito - 'Probalo sin compromiso'",
+        "tiempo_estimado": "5 minutos diarios por 1 semana",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Eliminar miedo al cambio + confianza al ver resultados sin abandonar lo conocido",
+        "funcionalidad_wala_relacionada": "Registro rápido + Comparativa semanal para ver diferencia vs cuaderno",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ No ofrece alternativas / ✓ Tono empático no agresivo"
+      },
+
+      "caption": "No tenés que abandonar tu cuaderno 📓✅\n\nPero sí podés mejorarlo.\n\nWALA es tu cuaderno, pero inteligente:\n→ Anotás igual de rápido\n→ Él hace las cuentas automático\n→ En un segundo ves si ganaste\n\nUsá los dos en paralelo 1 semana.\nVas a ver la diferencia.\n\n100% gratis. Sin tarjeta. Link en mi perfil 👆\n\n¿Todavía con cuaderno? Contá tu experiencia 👇\n\n#wala #cuaderno #registrofinanciero #negocio #comercio #digitalizacion",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Comercio o setup mostrando cuaderno y celular lado a lado",
+        "props_necesarios": "Cuaderno físico + celular con WALA",
+        "tono_voz": "Empático, cercano, sin presión",
+        "momento_del_dia": "Flexible"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Conversión de usuarios resistentes a tecnología",
+        "tipo_interaccion": "Comentarios tipo 'me da miedo las apps' / 'voy a probar' / Guardados",
+        "audiencia_target": "Comerciantes tradicionales con resistencia al cambio tecnológico",
+        "retencion_esperada": "70-75% (empatía + solución sin presión)"
+      }
+    },
+
+    {
+      "numero": 6,
+      "voz": "A",
+      "estructura_usada": "Estructura 4 - Video Híbrido Consultor",
+      "razon_estructura": "Video experimental ToFu→MoFu. Muestra proceso real de asesoría donde implementamos orden desde cero. Genera aspiración sin presionar. Posiciona a José como consultor de alto valor.",
+      "propuesta_valor_enfocada": "Así trabajo yo, esto logramos juntos - resultados tangibles en asesoría real",
+      "duracion_estimada": "1.5 min",
+      "subtema": "Implementación de sistema de orden completo en asesoría (caso transformación)",
+      "sector_ejemplo": "Minimarket",
+
+      "hooks": {
+        "texto_visible": "En mi última asesoría pasó algo que tengo que contarte",
+        "visual": "Caminando en parque o calle tranquila, mirando a cámara, tono reflexivo",
+        "audio_trending": "No te lo vas a creer...",
+        "estrategia_hook": "Entrada desde rol de asesor genera autoridad + curiosidad por caso real"
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-10s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "No te lo vas a creer...",
+          "objetivo": "Generar anticipación inmediata hacia la historia"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[31-34s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "Y cuando encontramos el problema, todo cambió...",
+          "objetivo": "Mantener enganche antes de revelar el error específico"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[56-59s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y ahora viene la parte que te va a servir...",
+          "objetivo": "Preparar para micro-acción derivada que el espectador puede aplicar"
+        },
+        {
+          "numero": 4,
+          "timestamp": "[76-79s]",
+          "categoria": "Anticipación",
+          "texto": "Y esto es lo que realmente hizo la diferencia...",
+          "objetivo": "Introducir mención de WALA Premium y posibilidad de asesoría"
+        }
+      ],
+
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales fuertes",
+        "palabras_causales_usadas": [
+          "pero",
+          "por lo tanto",
+          "entonces",
+          "por eso",
+          "así que"
+        ],
+        "flujo": "Minimarket caótico → PERO dueña anotaba todo → Revisamos registros → ENTONCES encontramos mezcla de gastos → POR LO TANTO números mentira → Separamos y ordenamos con WALA Premium → POR ESO en 3 semanas claridad total → ENTONCES pudo tomar decisiones"
+      },
+
+      "guion_completo": {
+        "hook": "[0-5s] En mi última asesoría pasó algo que tengo que contarte.",
+        "microhook_1": "[6-10s] No te lo vas a creer...",
+        "desarrollo_1": "[11-30s] Un minimarket. 2 años trabajando. La dueña trabajaba 10 horas diarias, vendía bien. Anotaba TODO en un cuaderno enorme. PERO cuando le pregunté cuánto ganó el trimestre, no supo decirme. POR LO TANTO todo ese esfuerzo de registrar no le daba claridad. ENTONCES decidimos revisar todo desde cero.",
+        "microhook_2": "[31-34s] Y cuando encontramos el problema, todo cambió...",
+        "desarrollo_2": "[35-55s] Resulta que mezclaba TODO: la comida de su familia, la luz de su casa, los productos del negocio. POR ESO cuando sumaba, los números no tenían sentido. PERO además no tenía forma de ver tendencias. ENTONCES no sabía si estaba mejorando o empeorando. ASÍ QUE empezamos de cero. Separamos gastos personales vs negocio. Organizamos por categorías. Usamos WALA Premium para tener todo en tiempo real.",
+        "microhook_3": "[56-59s] Y ahora viene la parte que te va a servir...",
+        "desarrollo_3": "[60-75s] En 3 semanas ya tenía claridad total. Podía ver cuánto ganaba por semana. Identificamos productos que no dejaban margen. Ajustamos precios. ENTONCES empezó a tomar decisiones con datos, no con intuición. POR ESO su negocio mejoró sin trabajar más horas.",
+        "microhook_4": "[76-79s] Y esto es lo que realmente hizo la diferencia...",
+        "micro_accion": "[80-88s] Vos podés empezar esto hoy: elegí tus gastos de esta semana. Separalos - negocio / personal. Anotá cuánto de cada uno. WALA te ayuda a mantener eso ordenado con Resumen Semanal. Es gratis para empezar, link en mi perfil.",
+        "cierre_consultor": "[89-95s] Este es el tipo de transformaciones que trabajamos en las asesorías. En mis sesiones uso WALA Premium para tener análisis completo en tiempo real. Si querés resultados así en tu negocio, escribime. Pero podés empezar gratis hoy con WALA básico. Link en mi perfil, probalo y contame qué descubriste."
+      },
+
+      "micro_accion": {
+        "descripcion": "Revisar gastos de esta semana y separarlos en negocio vs personal, luego registrar en WALA con Resumen Semanal",
+        "herramienta": "WALA",
+        "mencion_wala": "Premium en asesorías + básico gratuito para empezar - 'En mis sesiones uso WALA Premium para análisis completo. Pero podés empezar gratis'",
+        "cta_link": "Link en mi perfil (dos veces: una para acción inmediata, otra en cierre final)",
+        "cta_feedback": "Sí - 'Probalo y contame qué descubriste'",
+        "tiempo_estimado": "5-10 minutos",
+        "nivel_esfuerzo": "bajo",
+        "objetivo_psicologico": "Aspiración ('quiero esos resultados') + sensación de que puede empezar hoy mismo sin contratar",
+        "funcionalidad_wala_relacionada": "Resumen Semanal (freemium) + mención de WALA Premium en asesorías",
+        "validacion": "✓ Ejecutable hoy con WALA / ✓ Menciona Premium en contexto de asesoría / ✓ Tono aspiracional no agresivo"
+      },
+
+      "caption": "La transformación de un minimarket en 3 semanas 🚀\n\nCaso real de asesoría:\n→ Trabajaba 10hs diarias\n→ Anotaba TODO\n→ Pero no sabía cuánto ganaba\n\nEl problema: mezclaba gastos personales con del negocio.\n\nLa solución:\n→ Separamos todo\n→ Organizamos con WALA Premium\n→ Claridad en tiempo real\n\nResultado: decisiones con datos, no intuición.\nMejoró sin trabajar más horas.\n\nEmpezá vos hoy:\nSepará tus gastos de esta semana.\nWALA te ayuda con Resumen Semanal.\n\nGratis para empezar. Link en mi perfil 👆\n\nSi querés resultados así, escribime para asesoría.\n\n¿Te pasa esto? Contame 👇\n\n#asesoria #minimarket #negocio #registrofinanciero #wala #comercio #emprendimiento",
+
+      "notas_produccion": {
+        "locacion_sugerida": "Parque o calle tranquila para tono reflexivo/profesional",
+        "props_necesarios": "Ninguno (solo hablar a cámara con confianza)",
+        "tono_voz": "Profesional, narrativo, aspiracional pero accesible",
+        "momento_del_dia": "Mañana o tarde (luz suave)"
+      },
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Transición ToFu→MoFu + posicionamiento consultor + conversión WALA",
+        "tipo_interaccion": "Comentarios tipo 'necesito eso' / DMs preguntando por asesoría / Clicks en link para WALA",
+        "audiencia_target": "Comerciantes que buscan transformación real y están considerando invertir en asesoría",
+        "retencion_esperada": "65-70% (video más largo pero storytelling causal fuerte + micro-hooks mantienen)"
+      }
+    }
+  ]
+}

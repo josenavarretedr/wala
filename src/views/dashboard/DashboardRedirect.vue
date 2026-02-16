@@ -61,8 +61,6 @@
             <Loader />
           </template>
         </Suspense>
-
-        <!-- <ClasificationTest /> -->
       </div>
 
       <!-- Botones principales fijos -->

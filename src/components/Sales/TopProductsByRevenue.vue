@@ -95,9 +95,16 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed, ref, watch } from "vue";
+import { defineProps, defineEmits, computed, ref, watch, onMounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
+import { useInventoryStore } from "@/stores/inventoryStore";
+
+// Acceso al inventario para nombres actualizados
+const inventoryStore = useInventoryStore();
+const { allItemsInInventory, getItemsInInventory } = inventoryStore;
+
+console.log("🔵 [TopProductsByRevenue] Componente inicializado");
 
 const props = defineProps({
   /** Transacciones (ej. type: 'income') que incluyen items: [{ uuid, description, quantity, price }] */
@@ -148,8 +155,47 @@ const formatCurrency = (value) =>
     maximumFractionDigits: 0,
   }).format(Number(value) || 0);
 
+/**
+ * Obtiene el nombre actualizado del producto desde el inventario
+ * @param {string} productUuid - UUID del producto
+ * @param {string} fallbackName - Nombre por defecto si no se encuentra
+ * @returns {string} Nombre actualizado del producto
+ */
+const getUpdatedProductName = (
+  productUuid,
+  fallbackName = "Producto sin nombre",
+) => {
+  if (!productUuid) {
+    console.log(
+      "⚠️ [TopProductsByRevenue] Sin UUID, usando fallback:",
+      fallbackName,
+    );
+    return fallbackName;
+  }
+
+  const product = allItemsInInventory.value?.find(
+    (p) => p.uuid === productUuid,
+  );
+
+  console.log("🔍 [TopProductsByRevenue] Buscando producto:", {
+    uuid: productUuid,
+    encontrado: !!product,
+    nombreOriginal: fallbackName,
+    nombreActualizado: product?.description,
+    totalEnInventario: allItemsInInventory.value?.length || 0,
+  });
+
+  return product?.description || fallbackName;
+};
+
 /** ---- Agregación desde transacciones.items ---- */
 const buildAggFromTransactions = (txs) => {
+  console.log(
+    "📊 [TopProductsByRevenue] Construyendo agregados desde",
+    txs?.length || 0,
+    "transacciones",
+  );
+
   const map = new Map();
   const {
     uuid: K_UUID,
@@ -161,6 +207,12 @@ const buildAggFromTransactions = (txs) => {
   for (const tx of txs || []) {
     const items = Array.isArray(tx?.items) ? tx.items : [];
     for (const it of items) {
+      console.log("📦 [TopProductsByRevenue] Item:", {
+        uuid: it?.[K_UUID],
+        description: it?.[K_DESC],
+        quantity: it?.[K_QTY],
+        price: it?.[K_PRICE],
+      });
       const key = (it?.[K_UUID] ?? it?.[K_DESC] ?? "").toString().trim();
       if (!key) continue;
 
@@ -169,9 +221,21 @@ const buildAggFromTransactions = (txs) => {
       if (!Number.isFinite(qty) || qty <= 0) continue;
       const revenue = price * qty;
 
-      const label =
-        (it?.[K_DESC]?.toString()?.trim() || "Producto sin nombre") +
-        (it?.[K_UUID] ? "" : " *");
+      // 🔄 Obtener nombre actualizado del inventario
+      const originalName =
+        it?.[K_DESC]?.toString()?.trim() || "Producto sin nombre";
+      const updatedName = it?.[K_UUID]
+        ? getUpdatedProductName(it[K_UUID], originalName)
+        : originalName;
+
+      const label = updatedName + (it?.[K_UUID] ? "" : " *");
+
+      console.log(
+        "✅ [TopProductsByRevenue] Label final:",
+        label,
+        "Revenue:",
+        revenue,
+      );
 
       const agg = map.get(key) || {
         key,
@@ -186,7 +250,9 @@ const buildAggFromTransactions = (txs) => {
       map.set(key, agg);
     }
   }
-  return Array.from(map.values());
+  const result = Array.from(map.values());
+  console.log("📈 [TopProductsByRevenue] Resultado agregado:", result);
+  return result;
 };
 
 /** ---- Agregación desde sellLogs (si se proveen) ---- */
@@ -210,9 +276,14 @@ const buildAggFromLogs = (logs) => {
     if (!Number.isFinite(qty) || qty <= 0) continue;
     const revenue = price * qty;
 
-    const label =
-      (log?.[K_DESC]?.toString()?.trim() || "Producto sin nombre") +
-      (log?.[K_UUID] ? "" : " *");
+    // 🔄 Obtener nombre actualizado del inventario
+    const originalName =
+      log?.[K_DESC]?.toString()?.trim() || "Producto sin nombre";
+    const updatedName = log?.[K_UUID]
+      ? getUpdatedProductName(log[K_UUID], originalName)
+      : originalName;
+
+    const label = updatedName + (log?.[K_UUID] ? "" : " *");
 
     const agg = map.get(key) || {
       key,
@@ -253,16 +324,54 @@ const rows = computed(() => {
     }));
 });
 
-// Simular carga cuando cambien las transacciones o logs
+// Cargar inventario al montar el componente
+onMounted(async () => {
+  console.log("🚀 [TopProductsByRevenue] onMounted ejecutado");
+  console.log(
+    "📦 [TopProductsByRevenue] Inventario actual:",
+    allItemsInInventory.value?.length || 0,
+    "items",
+  );
+
+  if (!allItemsInInventory.value || allItemsInInventory.value.length === 0) {
+    console.log("⏳ [TopProductsByRevenue] Cargando inventario...");
+    await getItemsInInventory();
+    console.log(
+      "✅ [TopProductsByRevenue] Inventario cargado:",
+      allItemsInInventory.value?.length || 0,
+      "items",
+    );
+
+    // Mostrar primeros 3 productos para verificar
+    if (allItemsInInventory.value?.length > 0) {
+      console.log(
+        "📋 [TopProductsByRevenue] Primeros productos:",
+        allItemsInInventory.value
+          .slice(0, 3)
+          .map((p) => ({ uuid: p.uuid, description: p.description })),
+      );
+    }
+  } else {
+    console.log("✓ [TopProductsByRevenue] Inventario ya disponible");
+  }
+});
+
+// Simular carga cuando cambien las transacciones, logs o el inventario
 watch(
-  () => [props.transactions, props.sellLogs],
-  () => {
+  () => [props.transactions, props.sellLogs, allItemsInInventory.value],
+  ([transactions, logs, inventory]) => {
+    console.log("👀 [TopProductsByRevenue] Watch triggered:", {
+      transactions: transactions?.length || 0,
+      logs: logs?.length || 0,
+      inventory: inventory?.length || 0,
+    });
+
     isLoading.value = true;
     setTimeout(() => {
       isLoading.value = false;
     }, 300);
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 </script>
 

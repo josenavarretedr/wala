@@ -151,7 +151,7 @@ const selectTimeRange = (value) => {
           text: "Actualiza a Wala Premium",
           route: `/business/${route.params.businessId}/premium`,
         },
-      }
+      },
     );
   }
 
@@ -199,7 +199,7 @@ const handleLockedClick = (widgetType) => {
         text: "Actualiza a Wala Premium",
         route: `/business/${route.params.businessId}/premium`,
       },
-    }
+    },
   );
 };
 
@@ -232,7 +232,7 @@ watch(selectedTimeRange, (newValue) => {
   fetchTransactions();
   console.log(
     "Updated filtered transactions:",
-    filteredTransactionsIncomeNotAdjusted.value
+    filteredTransactionsIncomeNotAdjusted.value,
   );
 });
 
@@ -249,19 +249,19 @@ const fetchTransactions = async () => {
     currentStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate()
+      today.getDate(),
     );
     currentEnd = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() + 1
+      today.getDate() + 1,
     );
 
     // Período anterior: ayer
     previousStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - 1
+      today.getDate() - 1,
     );
     previousEnd = currentStart;
 
@@ -271,33 +271,33 @@ const fetchTransactions = async () => {
     // Y obtenemos ayer por separado
     previousTransactions.value = await getTransactionsRange(
       previousStart,
-      previousEnd
+      previousEnd,
     );
   } else if (selectedTimeRange.value === "last15d") {
     // Período actual: últimos 15 días (hoy - 14 días hasta hoy)
     currentStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - 14
+      today.getDate() - 14,
     );
     currentEnd = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() + 1
+      today.getDate() + 1,
     );
 
     // Período anterior: 15 días previos
     previousStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - 29
+      today.getDate() - 29,
     );
     previousEnd = currentStart;
 
     // Una consulta grande para ambos períodos
     const allTransactions = await getTransactionsRange(
       previousStart,
-      currentEnd
+      currentEnd,
     );
 
     // Separar en cliente
@@ -315,26 +315,26 @@ const fetchTransactions = async () => {
     currentStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - 29
+      today.getDate() - 29,
     );
     currentEnd = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() + 1
+      today.getDate() + 1,
     );
 
     // Período anterior: 30 días previos
     previousStart = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate() - 59
+      today.getDate() - 59,
     );
     previousEnd = currentStart;
 
     // Una consulta grande para ambos períodos
     const allTransactions = await getTransactionsRange(
       previousStart,
-      currentEnd
+      currentEnd,
     );
 
     // Separar en cliente
