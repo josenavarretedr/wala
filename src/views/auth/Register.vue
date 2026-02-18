@@ -199,13 +199,42 @@
         <!-- Botón de registro -->
         <button
           type="submit"
-          :disabled="isLoading"
+          :disabled="isLoading || !termsAccepted"
           class="w-full flex justify-center items-center bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl font-semibold py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
         >
           <UserPlus v-if="!isLoading" class="w-6 h-6 mr-2" />
           <span v-if="!isLoading">Registrarse</span>
           <span v-else>🔄 Creando cuenta...</span>
         </button>
+      </div>
+
+      <!-- Aceptación de términos y condiciones (siempre visible) -->
+      <div class="pt-4 border-t border-gray-200">
+        <label class="flex items-start gap-3 cursor-pointer group">
+          <input
+            v-model="termsAccepted"
+            type="checkbox"
+            class="mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer"
+          />
+          <span class="text-sm text-gray-700 leading-relaxed">
+            He leído y acepto los
+            <router-link
+              to="/legal/terminos-condiciones"
+              target="_blank"
+              class="text-green-600 hover:text-green-700 font-semibold underline"
+            >
+              Términos y Condiciones </router-link
+            >, y autorizo expresamente el tratamiento de mis datos personales
+            conforme a la
+            <router-link
+              to="/legal/politica-privacidad"
+              target="_blank"
+              class="text-green-600 hover:text-green-700 font-semibold underline"
+            >
+              Política de Privacidad </router-link
+            >.
+          </span>
+        </label>
       </div>
 
       <!-- Enlace al login (siempre visible) -->
@@ -245,6 +274,7 @@ const error = ref(null);
 const isLoading = ref(false);
 const roleSelected = ref(false);
 const userRole = ref(""); // "business_owner" o "facilitator"
+const termsAccepted = ref(false);
 
 // 🏪 Stores (solo estado reactivo)
 const authStore = useAuthStore();
@@ -270,7 +300,7 @@ const register = async () => {
     const userData = await authStore.register(
       email.value,
       password.value,
-      name.value
+      name.value,
     );
     console.log("✅ Usuario registrado en Firebase Auth:", userData.email);
 
@@ -292,7 +322,7 @@ const register = async () => {
     await userStore.createUserProfile(userProfileData);
     console.log(
       "✅ Perfil de usuario creado en Firestore con rol:",
-      userRole.value
+      userRole.value,
     );
 
     // 3. Redirigir según el rol

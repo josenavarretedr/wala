@@ -36,6 +36,25 @@ const routes = [
     ]
   },
 
+  // Rutas legales (públicas)
+  {
+    path: '/legal',
+    children: [
+      {
+        path: 'terminos-condiciones',
+        name: 'TerminosCondiciones',
+        component: () => import('@/views/legal/TerminosCondiciones.vue'),
+        meta: { title: 'Términos y Condiciones' }
+      },
+      {
+        path: 'politica-privacidad',
+        name: 'PoliticaPrivacidad',
+        component: () => import('@/views/legal/PoliticaPrivacidad.vue'),
+        meta: { title: 'Política de Privacidad' }
+      }
+    ]
+  },
+
   // Layout principal para rutas autenticadas (incluye onboarding y selector)
   {
     path: '/',
@@ -407,6 +426,41 @@ const routes = [
     name: 'Security',
     component: () => import('@/views/profile/Security.vue'),
     meta: { requiresAuth: true, title: 'Seguridad' }
+  },
+
+  // ═════════════════════════════════════════════════════════════
+  // 🎬 RUTAS DE GESTIÓN DE GUIONES (Marketing)
+  // ═════════════════════════════════════════════════════════════
+
+  {
+    path: '/guiones',
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'GuionesLanding',
+        component: () => import('@/views/guiones/GuionesLanding.vue'),
+        meta: { title: 'Gestión de Guiones' }
+      },
+      {
+        path: 'crear',
+        name: 'CrearGuion',
+        component: () => import('@/views/guiones/CrearGuion.vue'),
+        meta: { title: 'Crear Guiones' }
+      },
+      {
+        path: 'dashboard',
+        name: 'DashboardGuiones',
+        component: () => import('@/views/guiones/DashboardGuiones.vue'),
+        meta: { title: 'Dashboard de Guiones' }
+      },
+      {
+        path: 'dashboard/:videoId',
+        name: 'DetalleVideo',
+        component: () => import('@/views/guiones/DetalleVideo.vue'),
+        meta: { title: 'Detalle de Video' }
+      }
+    ]
   },
 
   // ═════════════════════════════════════════════════════════════

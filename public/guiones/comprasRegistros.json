@@ -1,0 +1,387 @@
+{
+  "meta_analisis": {
+    "tema": "Flujo de Caja y Reposición",
+    "sector": "Bodega y Ferretería",
+    "estrategia_aplicada": "Opción C (Híbrido) + Enfoque en 'Bolsillo Roto' y 'Stock Muerto'",
+    "propuesta_valor_central": "La venta no termina cuando cobrás, termina cuando reponés."
+  },
+
+  "generacion": {
+    "tema": "Ciclo del dinero",
+    "fase_funnel": "atraccion",
+    "total_videos": 5,
+    "distribucion": {
+      "voz_a": 3,
+      "voz_b": 2,
+      "razon_distribucion": "José educa sobre el peligro de gastar el capital de trabajo; WALA ofrece el control para evitarlo."
+    },
+    "estrategia_storytelling": "Uso estricto de causalidad (Por eso, Pero, Entonces) para explicar la quiebra técnica por falta de flujo."
+  },
+
+  "videos": [
+    {
+      "numero": 1,
+      "voz": "A",
+      "estructura_usada": "Estructura 1: Patrón Disruptor",
+      "razon_estructura": "Romper la creencia inmediata del bodeguero de que 'dinero en caja = ganancia'.",
+      "propuesta_valor_enfocada": "Diferenciar plata del negocio vs. plata tuya.",
+      "duracion_estimada": "50s",
+      "subtema": "Gastos hormiga vs. Reposición",
+      "sector_ejemplo": "Bodega",
+
+      "hooks": {
+        "texto_visible": "¡NO TE COMAS EL NEGOCIO!",
+        "visual": "José sacando un billete de la caja y comprando una empanada o gaseosa.",
+        "audio_trending": "Sonido de caja registradora + error (buzzer).",
+        "estrategia_hook": "Ataque directo a un hábito destructivo muy común en bodegas."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-10s]",
+          "categoria": "Validación",
+          "texto": "Te pasa todos los mediodías, ¿verdad?",
+          "objetivo": "Generar culpa/identificación inmediata."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[22-24s]",
+          "categoria": "Revelación",
+          "texto": "Y acá es donde matás tu negocio...",
+          "objetivo": "Introducir la consecuencia fatal."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[35-37s]",
+          "categoria": "Anticipación",
+          "texto": "Pero hay una forma de frenarlo hoy...",
+          "objetivo": "Preparar la micro-acción."
+        }
+      ],
+
+      "guion_completo": {
+        "hook": "[0-5s] Si tenés bodega y sacás plata de la caja para el almuerzo... te estás comiendo tu propio negocio.",
+        "microhook_1": "[6-9s] Te pasa todos los mediodías, ¿verdad?",
+        "desarrollo_1": "[10-21s] Ves efectivo y pensás que es tuyo. PERO esa plata es del proveedor de leche que viene mañana. POR LO TANTO, cuando te gastás esos 20 soles hoy, mañana no tenés para reponer.",
+        "microhook_2": "[22-24s] Y acá es donde matás tu negocio...",
+        "desarrollo_2": "[25-34s] ENTONCES, como no podés comprar, tu estantería se vacía. POR ESO, vendés menos pasado mañana. ES UN CÍRCULO que te deja sin capital en un mes.",
+        "microhook_3": "[35-37s] Pero hay una forma de frenarlo hoy...",
+        "micro_accion": "[38-45s] Hacé esto hoy: Agarrá un sobre o una cajita aparte. Poné ahí SOLO la plata que necesitás para reponer mañana. Esa NO SE TOCA. WALA te ayuda a separar esto en la app, pero arrancá con el sobre.",
+        "cierre": "[46-50s] Probá el 'método del sobre' hoy y contame si te sobró plata."
+      },
+
+      "micro_accion": {
+        "descripcion": "Separar físicamente el dinero de reposición en un sobre",
+        "tiempo_estimado": "2 minutos",
+        "nivel_esfuerzo": "bajo",
+        "objetivo_psicologico": "Protección visual del capital de trabajo",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Registro de Egresos",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta"
+      },
+
+      "caption": "¿Almorzás con la plata de la venta? 🍔💸\n\nEse es el error #1 que veo en bodegas. Creés que ganaste, pero te estás comiendo el capital de reposición.\n\nEl negocio no muere por no vender, muere por quedarse sin con qué comprar.\n\n👇 ¿Usás la caja como billetera o tenés sueldo aparte? Te leo.\n\n#Bodega #FinanzasPymes #Emprendedor #NegocioPropio #Wala",
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Engagement (Comentarios de culpa)",
+        "audiencia_target": "Dueños de bodegas familiares"
+      }
+    },
+    {
+      "numero": 2,
+      "voz": "A",
+      "estructura_usada": "Estructura 3: Error Común + Corrección",
+      "razon_estructura": "La ferretería tiene un dolor específico (stock dormido) que necesita corrección lógica.",
+      "propuesta_valor_enfocada": "Liquidez vs. Patrimonio.",
+      "duracion_estimada": "45s",
+      "subtema": "Stock Inmovilizado",
+      "sector_ejemplo": "Ferretería",
+
+      "hooks": {
+        "texto_visible": "TU FERRETERÍA ESTÁ 'LLENA' PERO ESTÁS POBRE",
+        "visual": "José señalando estantes llenos y luego mostrando bolsillos vacíos.",
+        "audio_trending": "Audio viral de 'Oh no, oh no'.",
+        "estrategia_hook": "Contraste visual fuerte entre abundancia de producto y escasez de efectivo."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[7-9s]",
+          "categoria": "Validación",
+          "texto": "Es frustrante ver mercadería y no tener efectivo, ¿no?",
+          "objetivo": "Empatía con la falta de liquidez."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[20-22s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá está la verdad dolorosa...",
+          "objetivo": "Cambio de perspectiva."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[33-35s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y esto es lo único que te va a salvar...",
+          "objetivo": "Introducir micro-acción."
+        }
+      ],
+
+      "guion_completo": {
+        "hook": "[0-6s] Tenés la ferretería llena de cajas, pero cuando llega la luz no tenés efectivo para pagar.",
+        "microhook_1": "[7-9s] Es frustrante ver mercadería y no tener plata, ¿no?",
+        "desarrollo_1": "[10-19s] El problema es que compraste 'por si acaso'. PERO esos tornillos raros llevan 6 meses ahí. POR LO TANTO, tu plata está secuestrada en el estante.",
+        "microhook_2": "[20-22s] Pero acá está la verdad dolorosa...",
+        "desarrollo_2": "[23-32s] La mercadería que no rota NO es ganancia, es un gasto de almacenamiento. ENTONCES, te falta flujo para comprar lo que SÍ sale rápido, como el cemento.",
+        "microhook_3": "[33-35s] Y esto es lo único que te va a salvar...",
+        "micro_accion": "[36-42s] Hacé esto: Identificá 3 productos que no vendiste en el último mes. Ponelos en oferta HOY. Recuperá ese efectivo, aunque sea al costo. WALA te ayuda a detectar esto rápido, pero hacelo a ojo hoy.",
+        "cierre": "[43-45s] Mejor plata en mano que tornillo en estante. Probalo."
+      },
+
+      "micro_accion": {
+        "descripcion": "Identificar y liquidar 3 productos de baja rotación",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "bajo",
+        "objetivo_psicologico": "Generar liquidez inmediata",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Control de Inventarios",
+        "validacion": "✓ Ejecutable hoy / ✓ Genera flujo real"
+      },
+
+      "caption": "Tener el local lleno no sirve si no tenés liquidez. 🛠️📉\n\nEn ferretería, el stock muerto es el asesino silencioso. Creés que tenés capital, pero tenés plata congelada.\n\n¿Tenés productos que llevan meses juntando polvo? 🕸️\n\n#Ferreteria #Stock #Inventario #Negocio #WalaApp",
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Autoridad (José sabe de lo que habla)",
+        "audiencia_target": "Ferreteros con problemas de cashflow"
+      }
+    },
+    {
+      "numero": 3,
+      "voz": "B",
+      "estructura_usada": "Estructura 2: Caso Real + Solución WALA",
+      "razon_estructura": "Mostrar cómo la herramienta resuelve el problema de la reposición a ciegas.",
+      "propuesta_valor_enfocada": "WALA es tu memoria para no comprar de más.",
+      "duracion_estimada": "50s",
+      "subtema": "Reposición Inteligente",
+      "sector_ejemplo": "General (Bodega/Ferretería)",
+
+      "hooks": {
+        "texto_visible": "¿COMPRÁS A OJO? 👁️❌",
+        "visual": "Alguien mirando estantes dudando y comprando cualquier cosa.",
+        "audio_trending": "Voz en off rápida.",
+        "estrategia_hook": "Cuestionar el método tradicional de reposición."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-10s]",
+          "categoria": "Validación",
+          "texto": "Y siempre te equivocás, ¿verdad?",
+          "objetivo": "Validar el dolor del sobre-stock."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[20-22s]",
+          "categoria": "Intriga",
+          "texto": "Pero WALA te cambia el juego...",
+          "objetivo": "Presentar la solución."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[35-37s]",
+          "categoria": "Revelación",
+          "texto": "Mirá lo fácil que es...",
+          "objetivo": "Demo rápida."
+        }
+      ],
+
+      "guion_completo": {
+        "hook": "[0-7s] Vas al mayorista y comprás 'lo que te parece' que falta. Llegas al negocio y... ¡ya tenías tres cajas de eso!",
+        "microhook_1": "[8-10s] Y siempre te equivocás, ¿verdad?",
+        "desarrollo_1": "[11-19s] Comprar a ojo mata tu flujo de caja. PORQUE gastás plata en lo que ya tenés. ENTONCES te quedás sin plata para lo que realmente falta.",
+        "microhook_2": "[20-22s] Pero WALA te cambia el juego...",
+        "desarrollo_2": "[23-34s] Con WALA, antes de salir, mirás tu celular. Sabés qué vendiste y qué te queda. POR LO TANTO, comprás justo lo necesario y cuidás tu capital.",
+        "microhook_3": "[35-37s] Mirá lo fácil que es...",
+        "micro_accion": "[38-46s] Antes de tu próxima compra, hacé una lista en papel de lo que CREÉS que falta y comparala con lo que REALMENTE hay. Si usaras WALA, esto te sale automático. Pero hacé el chequeo hoy.",
+        "cierre": "[47-50s] WALA es gratis. Descargalo y dejá de adivinar."
+      },
+
+      "micro_accion": {
+        "descripcion": "Comparar lista mental vs inventario real antes de comprar",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "bajo",
+        "objetivo_psicologico": "Evidencia del error de percepción",
+        "mencion_wala": "Directa pero opcional",
+        "funcionalidad_wala_relacionada": "Gestión de Inventario",
+        "validacion": "✓ Prepara para adopción de app"
+      },
+
+      "caption": "Dejá de comprar a ojo. Tu negocio no es una adivinanza. 🔮🚫\n\nSaber qué tenés antes de gastar es la regla #1 para cuidar el flujo de caja. WALA te lo dice en un segundo.\n\n👇 ¿Te pasó de comprar algo que ya tenías? Contame.\n\n#Inventario #Compras #Pymes #Wala #Startup",
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Descargas de WALA",
+        "audiencia_target": "Comerciantes desorganizados"
+      }
+    },
+    {
+      "numero": 4,
+      "voz": "B",
+      "estructura_usada": "Estructura 3: Error Común + Corrección",
+      "razon_estructura": "Atacar la falta de registro de costos variables que afectan la reposición.",
+      "propuesta_valor_enfocada": "Claridad en el margen para reponer.",
+      "duracion_estimada": "45s",
+      "subtema": "Costo de Reposición",
+      "sector_ejemplo": "Bodega",
+
+      "hooks": {
+        "texto_visible": "VENDISTE... ¿PERO GANASTE?",
+        "visual": "Pantalla dividida: Venta vs Costo de Reposición.",
+        "audio_trending": "Sonido de 'Cha-ching' seguido de sonido de desinfle.",
+        "estrategia_hook": "Duda razonable sobre la rentabilidad real."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[7-9s]",
+          "categoria": "Validación",
+          "texto": "Seguro te pasó esta semana...",
+          "objetivo": "Conectar con la inflación de precios."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[18-20s]",
+          "categoria": "Contraste",
+          "texto": "Y ahí te das cuenta del problema...",
+          "objetivo": "Revelar la pérdida."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[30-32s]",
+          "categoria": "Revelación",
+          "texto": "Por eso WALA te ayuda así...",
+          "objetivo": "Solución."
+        }
+      ],
+
+      "guion_completo": {
+        "hook": "[0-6s] Vendiste el aceite a 10 soles. ¡Qué bien! PERO cuando fuiste a reponer, el mayorista lo subió a 10.50.",
+        "microhook_1": "[7-9s] Seguro te pasó esta semana, ¿no?",
+        "desarrollo_1": "[10-17s] POR LO TANTO, no ganaste nada. Perdiste 50 céntimos y tu tiempo. Esto pasa por no actualizar costos al día.",
+        "microhook_2": "[18-20s] Y ahí te das cuenta del problema...",
+        "desarrollo_2": "[21-29s] Si no sabés tu costo de reposición actual, estás vendiendo a ciegas. ENTONCES tu capital se achica cada vez que vendés.",
+        "microhook_3": "[30-32s] Por eso WALA te ayuda así...",
+        "micro_accion": "[33-40s] Revisá hoy la última factura de tu proveedor. ¿Subió algún precio? Actualizalo YA en tu etiqueta. En WALA esto es rápido, pero hacelo en la góndola hoy mismo.",
+        "cierre": "[41-45s] No regales tu trabajo. Controlá tus costos con WALA."
+      },
+
+      "micro_accion": {
+        "descripcion": "Chequear última factura proveedor vs precio venta actual",
+        "tiempo_estimado": "3 minutos",
+        "nivel_esfuerzo": "bajo",
+        "objetivo_psicologico": "Alerta de pérdida de margen",
+        "mencion_wala": "Balanceada",
+        "funcionalidad_wala_relacionada": "Actualización de Costos",
+        "validacion": "✓ Crítico en economías inflacionarias"
+      },
+
+      "caption": "¿Estás trabajando gratis? 📉🤔\n\nSi el costo de reposición sube y vos no subís precios, estás perdiendo capital cada vez que vendés.\n\nWALA te ayuda a llevar tus costos al día para que siempre ganes de verdad.\n\n#Precios #Costos #Bodega #Inflacion #Wala",
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Conciencia de problema (Problem Aware)",
+        "audiencia_target": "Bodegueros en zonas de precios cambiantes"
+      }
+    },
+    {
+      "numero": 5,
+      "voz": "A",
+      "estructura_usada": "Estructura 4: Híbrido Consultor (El Huevo de Oro)",
+      "razon_estructura": "Caso completo de transformación para transición ToFu -> MoFu. Muestra el peligro real de quebrar vendiendo mucho.",
+      "propuesta_valor_enfocada": "Consultoría José + Herramienta WALA = Salud del negocio.",
+      "duracion_estimada": "1.5 min",
+      "subtema": "Caso 'La Bodega Caníbal'",
+      "sector_ejemplo": "Bodega Grande",
+
+      "hooks": {
+        "texto_visible": "VENDÍA MILLONES... Y QUEBRÓ",
+        "visual": "José en modo serio, quizás caminando o sentado en escritorio.",
+        "audio_trending": "Música de tensión suave de fondo.",
+        "estrategia_hook": "La paradoja de vender mucho y quebrar genera curiosidad máxima."
+      },
+
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-10s]",
+          "categoria": "Intriga",
+          "texto": "No vas a creer por qué...",
+          "objetivo": "Mantener atención inicial."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[25-27s]",
+          "categoria": "Validación",
+          "texto": "Y sentía que trabajaba para nada...",
+          "objetivo": "Empatía profunda."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[45-47s]",
+          "categoria": "Revelación",
+          "texto": "Y cuando vimos los números, nos asustamos...",
+          "objetivo": "Pico de drama en la historia."
+        },
+        {
+          "numero": 4,
+          "timestamp": "[60-62s]",
+          "categoria": "Anticipación",
+          "texto": "Pero acá viene la solución...",
+          "objetivo": "Transición a la enseñanza."
+        },
+        {
+          "numero": 5,
+          "timestamp": "[75-77s]",
+          "categoria": "Revelación Próxima",
+          "texto": "Y esto te va a servir a vos...",
+          "objetivo": "Conexión con el espectador."
+        }
+      ],
+
+      "guion_completo": {
+        "hook": "[0-7s] Hace poco asesoré una bodega que vendía muchísimo. La dueña no paraba un segundo. PERO estaba a punto de cerrar.",
+        "microhook_1": "[8-10s] No vas a creer por qué...",
+        "desarrollo_1": "[11-24s] Ella veía la caja llena al final del día. POR ESO, sacaba plata para el mercado, para el colegio de los chicos, para la nafta. Pensaba que todo eso era su sueldo.",
+        "microhook_2": "[25-27s] Y sentía que trabajaba para nada...",
+        "desarrollo_2": "[28-44s] PERO la realidad era otra. De cada 100 soles que vendía, 85 eran para pagar al proveedor. Solo 15 eran ganancia. SIN EMBARGO, ella se gastaba 30. POR LO TANTO, se estaba comiendo el capital de trabajo todos los días.",
+        "microhook_3": "[45-47s] Y cuando vimos los números, nos asustamos...",
+        "desarrollo_3": "[48-59s] Los proveedores le cortaron el crédito. La estantería se empezó a vaciar. ENTONCES tuvimos que intervenir urgente. Separamos tajantemente: Sueldo fijo para ella vs. Plata del negocio.",
+        "microhook_4": "[60-62s] Pero acá viene la solución...",
+        "desarrollo_4": "[63-74s] Usamos WALA para que ella viera en tiempo real: 'Hoy vendiste 1000, pero solo 150 son tuyos'. Eso le cambió la cabeza. Empezó a respetar el dinero de reposición como sagrado.",
+        "microhook_5": "[75-77s] Y esto te va a servir a vos...",
+        "micro_accion": "[78-85s] Hacé este cálculo hoy: De todo lo que vendiste ayer, restale lo que te costó esa mercadería. Esa diferencia chiquita es lo ÚNICO que podés gastar. El resto, guardalo. Si querés verlo automático, WALA te lo muestra.",
+        "cierre": "[86-90s] Si querés ordenar tu negocio así, escribime. O empezá descargando WALA hoy."
+      },
+
+      "micro_accion": {
+        "descripcion": "Calcular Ganancia Real de un día (Venta - Costo)",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "medio",
+        "objetivo_psicologico": "Shock de realidad sobre el margen real",
+        "mencion_wala": "Como herramienta de consultoría",
+        "funcionalidad_wala_relacionada": "Reporte de Ganancias",
+        "validacion": "✓ Transición perfecta a consultoría"
+      },
+
+      "caption": "La historia de la 'Bodega Caníbal' 🏪🦁\n\nSe comía a sí misma. Vendía mucho, pero la dueña gastaba más de lo que el margen permitía. \n\nResultado: Se quedó sin capital para reponer.\n\nEn mis asesorías siempre empiezo por acá: Separar las aguas. Tu negocio no es tu caja chica.\n\n¿Te sentís identificado? Mandame un DM si querés que revisemos tu caso.\n\n#AsesoriaDeNegocios #CasoReal #Bodega #Finanzas #Wala",
+
+      "metricas_esperadas": {
+        "objetivo_principal": "Leads para asesoría + Autoridad Alta",
+        "audiencia_target": "Emprendedores facturando pero sufriendo",
+        "retencion_esperada": "Alta por storytelling"
+      }
+    }
+  ]
+}

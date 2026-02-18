@@ -1,0 +1,422 @@
+{
+  "meta_analisis": {
+    "tema": "Registro de ingresos y Egresos",
+    "sector": "Mezcla de sectores como Bodega, Restaurante, Ferretería, Panadería y otros para variar y mantener viralidad",
+    "estrategia_aplicada": "Se prioriza el subtema 'Hábito diario de registro' para fomentar acciones inmediatas y engagement. Se distribuyen 4 videos en Voz A para construir autoridad y 1 en Voz B para complementar con herramientas prácticas. Estructuras seleccionadas: 2 de Caso Real para empatía, 2 de Error Común para tips directos, y 1 Híbrido Consultor como 'Huevo de Oro' para transición a MoFu. Mezclar sectores en videos genera identificación amplia, evitando repetición y maximizando viralidad. Storytelling causal se usa para mantener retención, con micro-hooks cada 10-15 segundos.",
+    "propuesta_valor_central": "José te enseña a formar el hábito diario de registro para claridad real en tu negocio; WALA complementa con herramientas simples para ejecutarlo sin esfuerzo."
+  },
+  "generacion": {
+    "tema": "Registro de ingresos y Egresos",
+    "fase_funnel": "atraccion",
+    "total_videos": 5,
+    "distribucion": {
+      "voz_a": 4,
+      "voz_b": 1,
+      "razon_distribucion": "4 videos en Voz A para enfatizar enseñanza práctica y construir autoridad, y 1 en Voz B para mostrar WALA como solución accesible, alineado con el enfoque en 'Hábito diario de registro' y el 'Huevo de Oro' en Video 5."
+    },
+    "estrategia_storytelling": "Todos los guiones usan conexiones causales (POR LO TANTO, PERO, ENTONCES) para crear progresión lógica y evitar secuencia pura, asegurando retención y expectativa continua."
+  },
+  "videos": [
+    {
+      "numero": 1,
+      "voz": "A",
+      "estructura_usada": "Caso Real + Lección",
+      "razon_estructura": "Mejor para temas con historias identificables, como el hábito diario de registro, para generar empatía y posicionar a José como experto práctico con ejemplos de sectores variados.",
+      "propuesta_valor_enfocada": "Te enseño a entender tu negocio aplicando conceptos a tu realidad, usando casos reales para destacar el hábito diario.",
+      "duracion_estimada": "50s",
+      "subtema": "Hábito diario de registro",
+      "sector_ejemplo": "Mezcla: Bodega y Panadería",
+      "hooks": {
+        "texto_visible": "¿Por qué anotar ingresos no cambia nada?",
+        "visual": "José caminando por un mercado local, revisando un cuaderno mientras habla directamente a la cámara.",
+        "audio_trending": "Ojo con esto que nadie te cuenta...",
+        "estrategia_hook": "Rompe el mito común de que anotar es suficiente, generando curiosidad inmediata sobre el hábito real."
+      },
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-10s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te suena familiar esto, ¿verdad?",
+          "objetivo": "Conectar con la frustración del emprendedor para mantener atención antes del desarrollo."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[23-26s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "Y cuando descubrimos el problema, cambió todo...",
+          "objetivo": "Crear anticipación hacia la revelación, evitando abandono en la transición."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[38-40s]",
+          "categoria": "Anticipación",
+          "texto": "Y ahora viene lo que realmente te va a servir...",
+          "objetivo": "Preparar para la micro-acción, manteniendo el espectador enganchado hasta el final."
+        }
+      ],
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["PERO", "POR LO TANTO", "ENTONCES"],
+        "flujo": "Problema en el caso → PERO descubrimos el hábito → POR LO TANTO se ajustó el registro → ENTONCES mejoró la claridad"
+      },
+      "guion_completo": {
+        "hook": "[0-5s] Oye, ayer hablé con un bodeguero que anotaba ingresos todos los días, pero seguía sin saber si ganaba.",
+        "microhook_1": "[6-10s] Te suena familiar esto, ¿verdad?",
+        "desarrollo_1": "[11-22s] Él vendía bien en su bodega, PERO no separaba los ingresos del día de los gastos, POR LO TANTO al final del mes, todo era un lío. ENTONCES en la panadería que también vi, pasaba lo mismo: anotaban ventas, pero no en un hábito fijo.",
+        "microhook_2": "[23-26s] Y cuando descubrimos el problema, cambió todo...",
+        "desarrollo_2": "[27-37s] Resulta que el error era no hacer el registro diario como un hábito, PERO una vez que lo incorporaron, POR LO TANTO vieron patrones claros, como en la panadería donde identificaron picos de ventas.",
+        "microhook_3": "[38-40s] Y ahora viene lo que realmente te va a servir...",
+        "micro_accion": "[41-50s] Hacé esto hoy: dedica 5 minutos al final del día para anotar tus ingresos en un cuaderno simple. Si querés algo más rápido, WALA te permite registrarlo al toque sin complicaciones.",
+        "cierre": "[51-55s] Probá este hábito una semana y contame en comentarios si cambió tu perspectiva."
+      },
+      "micro_accion": {
+        "descripcion": "Dedicar 5 minutos al final del día para anotar ingresos en un cuaderno.",
+        "tiempo_estimado": "5 minutos o menos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "sensación de control y orden en el negocio",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Registro rápido de ingresos y egresos",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para WALA al mostrar su facilidad"
+      },
+      "caption": "¿Anotás tus ingresos pero seguís perdido? Te cuento un caso real de una bodega y una panadería que cambiaron con un simple hábito. \nNo es solo anotar, es hacerlo diario para ver patrones claros. \nProbá hoy y decime qué encontraste. \n#HábitoDiario #RegistroNegocio #EmprendedoresReales #ClaridadFinanciera #WALASimple",
+      "notas_produccion": {
+        "locacion_sugerida": "Mercado local o parque",
+        "props_necesarios": "Cuaderno y bolígrafo",
+        "tono_voz": "Conversacional cercano",
+        "momento_del_dia": "Tarde"
+      },
+      "metricas_esperadas": {
+        "objetivo_principal": "Viralidad y Engagement",
+        "tipo_interaccion": "Comentarios tipo 'lo probé y funcionó'",
+        "audiencia_target": "Emprendedores de Bodega y Panadería",
+        "retencion_esperada": "75%"
+      }
+    },
+    {
+      "numero": 2,
+      "voz": "A",
+      "estructura_usada": "Error Común + Corrección",
+      "razon_estructura": "Ideal para errores repetidos como saltarse el hábito diario, ofreciendo corrección rápida y accionable para engagement inmediato.",
+      "propuesta_valor_enfocada": "Te doy la solución directa para formar el hábito, basado en experiencias reales.",
+      "duracion_estimada": "45s",
+      "subtema": "Hábito diario de registro",
+      "sector_ejemplo": "Mezcla: Ferretería y Restaurante",
+      "hooks": {
+        "texto_visible": "El error que te hace perder el control de ingresos",
+        "visual": "José en una ferretería, manejando herramientas simbólicas.",
+        "audio_trending": "Esto te está pasando y no lo sabés...",
+        "estrategia_hook": "Señala un error común para detener el scroll y generar identificación."
+      },
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-8s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te pasa todo el tiempo, ¿no?",
+          "objetivo": "Validar el error para mantener el espectador."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[21-23s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá es donde todo cambia...",
+          "objetivo": "Introducir la corrección con contraste para retener atención."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[36-38s]",
+          "categoria": "Revelación",
+          "texto": "Y esto te va a cambiar la forma de verlo...",
+          "objetivo": "Preparar para la micro-acción clave."
+        }
+      ],
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["PERO", "POR LO TANTO", "ENTONCES"],
+        "flujo": "Error común → PERO con corrección → POR LO TANTO mejora el hábito → ENTONCES se gana claridad"
+      },
+      "guion_completo": {
+        "hook": "[0-5s] Estás calculando mal tus ingresos si no lo hacés diario.",
+        "microhook_1": "[6-8s] Te pasa todo el tiempo, ¿no?",
+        "desarrollo_1": "[9-20s] Sumás lo que vendiste en la ferretería, PERO no lo registrás diariamente, POR LO TANTO al final de la semana, perdés track, como en el restaurante que vi.",
+        "microhook_2": "[21-23s] Pero acá es donde todo cambia...",
+        "desarrollo_2": "[24-35s] Hacelo así: registrá ingresos al final de cada día, ENTONCES verás patrones, como en el restaurante donde eso evitó errores.",
+        "microhook_3": "[36-38s] Y esto te va a cambiar la forma de verlo...",
+        "micro_accion": "[39-44s] Probá hoy: anota tus ingresos de hoy en un papel simple. WALA lo hace automático para que sea más fácil.",
+        "cierre": "[45s] Hacelo y contame qué encontraste."
+      },
+      "micro_accion": {
+        "descripcion": "Anotar ingresos del día en un papel",
+        "tiempo_estimado": "5 minutos o menos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "sensación de orden y control diario",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Registro rápido de ingresos",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para WALA"
+      },
+      "caption": "El error común en registrar ingresos que te deja ciego. \nCon ejemplos de ferretería y restaurante, te muestro cómo corregirlo con un hábito simple. \nProbá hoy y compartí tu experiencia. \n#HábitoRegistro #EmprendedoresDiarios #ClaridadNegocio #WALAfacil",
+      "notas_produccion": {
+        "locacion_sugerida": "Ferretería o calle",
+        "props_necesarios": "Papel y lápiz",
+        "tono_voz": "Directo y cercano",
+        "momento_del_dia": "Mañana"
+      },
+      "metricas_esperadas": {
+        "objetivo_principal": "Engagement",
+        "tipo_interaccion": "Comentarios tipo 'lo probé'",
+        "audiencia_target": "Emprendedores de Ferretería y Restaurante",
+        "retencion_esperada": "70%"
+      }
+    },
+    {
+      "numero": 3,
+      "voz": "A",
+      "estructura_usada": "Error Común + Corrección",
+      "razon_estructura": "Para errores como inconsistencias en el hábito diario, esta estructura ofrece tips directos y accionables.",
+      "propuesta_valor_enfocada": "Te doy soluciones prácticas para el hábito diario.",
+      "duracion_estimada": "45s",
+      "subtema": "Hábito diario de registro",
+      "sector_ejemplo": "Mezcla: Minimarket y Cafetería",
+      "hooks": {
+        "texto_visible": "Por qué tu registro diario falla",
+        "visual": "José en un minimarket, con un registro manual.",
+        "audio_trending": "Nadie te dice esto...",
+        "estrategia_hook": "Destaca el fracaso común para captar atención."
+      },
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-8s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Es normal, a todos nos pasa...",
+          "objetivo": "Empatizar con el error."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[21-23s]",
+          "categoria": "Intriga",
+          "texto": "Y lo que viene ahora te va a sorprender...",
+          "objetivo": "Aumentar curiosidad antes de la corrección."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[36-38s]",
+          "categoria": "Anticipación",
+          "texto": "Pero falta lo mejor...",
+          "objetivo": "Llevar al cierre."
+        }
+      ],
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["PERO", "POR LO TANTO", "ENTONCES"],
+        "flujo": "Error en el hábito → PERO con corrección → POR LO TANTO se forma el hábito → ENTONCES se gana control"
+      },
+      "guion_completo": {
+        "hook": "[0-5s] Olvidás registrar ingresos diario y eso te hunde.",
+        "microhook_1": "[6-8s] Es normal, a todos nos pasa...",
+        "desarrollo_1": "[9-20s] En el minimarket, sumás ventas, PERO no lo hacés diario, POR LO TANTO pierdes detalles, como en la cafetería.",
+        "microhook_2": "[21-23s] Y lo que viene ahora te va a sorprender...",
+        "desarrollo_2": "[24-35s] Corregilo registrando al final de cada día, ENTONCES verás el flujo real.",
+        "microhook_3": "[36-38s] Pero falta lo mejor...",
+        "micro_accion": "[39-44s] Hoy, registrá tus ingresos en un app o papel. WALA lo simplifica con actualizaciones instantáneas.",
+        "cierre": "[45s] Probá y contame."
+      },
+      "micro_accion": {
+        "descripcion": "Registrar ingresos al final del día",
+        "tiempo_estimado": "5 minutos o menos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "sensación de claridad diaria",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Registro rápido",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para WALA"
+      },
+      "caption": "El error en tu hábito de registro que te está costando plata. \nEjemplos de minimarket y cafetería para que lo veas claro. \nHacé esto hoy y compartí resultados. \n#RegistroDiario #EmprendedoresTips #WALAclaridad",
+      "notas_produccion": {
+        "locacion_sugerida": "Cafetería",
+        "props_necesarios": "Teléfono",
+        "tono_voz": "Conversacional",
+        "momento_del_dia": "Tarde"
+      },
+      "metricas_esperadas": {
+        "objetivo_principal": "Viralidad",
+        "tipo_interaccion": "Shares y comentarios",
+        "audiencia_target": "Emprendedores de Minimarket y Cafetería",
+        "retencion_esperada": "70%"
+      }
+    },
+    {
+      "numero": 4,
+      "voz": "B",
+      "estructura_usada": "Caso Real + Lección",
+      "razon_estructura": "Para mostrar cómo WALA resuelve problemas de hábito diario, esta estructura humaniza la herramienta con casos reales.",
+      "propuesta_valor_enfocada": "WALA te da claridad financiera diaria sin complicarte la vida.",
+      "duracion_estimada": "50s",
+      "subtema": "Hábito diario de registro",
+      "sector_ejemplo": "Mezcla: Peluquería y Taller Mecánico",
+      "hooks": {
+        "texto_visible": "WALA te ayuda a no olvidar el registro diario",
+        "visual": "Animación simple de WALA en pantalla con fondos de peluquería.",
+        "audio_trending": "Ojo, esto cambia todo...",
+        "estrategia_hook": "Presenta WALA como solución práctica para parar el scroll."
+      },
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-10s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te pasa todo el tiempo, ¿no?",
+          "objetivo": "Conectar con el problema."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[23-26s]",
+          "categoria": "Intriga",
+          "texto": "Y cuando usaron WALA, todo cambió...",
+          "objetivo": "Generar curiosidad sobre la solución."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[38-40s]",
+          "categoria": "Anticipación",
+          "texto": "Y ahora sí, probalo...",
+          "objetivo": "Llevar a la acción."
+        }
+      ],
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["PERO", "POR LO TANTO", "ENTONCES"],
+        "flujo": "Caso problema → PERO con WALA → POR LO TANTO se forma hábito → ENTONCES se gana claridad"
+      },
+      "guion_completo": {
+        "hook": "[0-5s] Oye, en una peluquería, olvidaban registrar ingresos diario y perdían control.",
+        "microhook_1": "[6-10s] Te pasa todo el tiempo, ¿no?",
+        "desarrollo_1": "[11-22s] Ellos anotaban, PERO no era habitual, POR LO TANTO en el taller mecánico pasaba igual.",
+        "microhook_2": "[23-26s] Y cuando usaron WALA, todo cambió...",
+        "desarrollo_2": "[27-37s] WALA hizo el registro diario fácil, ENTONCES vieron ingresos claros.",
+        "microhook_3": "[38-40s] Y ahora sí, probalo...",
+        "micro_accion": "[41-50s] Registrá tus ingresos hoy con un papel o WALA para hacerlo rápido.",
+        "cierre": "[51-55s] Ingresá a nuestra web y probalo, es gratuito."
+      },
+      "micro_accion": {
+        "descripcion": "Registrar ingresos hoy con papel o WALA",
+        "tiempo_estimado": "5 minutos o menos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "sensación de claridad",
+        "mencion_wala": "Directa pero suave",
+        "funcionalidad_wala_relacionada": "Registro rápido",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta agresiva / ✓ Prepara para WALA"
+      },
+      "caption": "¿Olvidás registrar ingresos? Casos de peluquería y taller que cambiaron con WALA. \nEs simple y gratuito, probalo hoy. \n#WALARegistro #HábitoDiario #EmprendedoresFacil",
+      "notas_produccion": {
+        "locacion_sugerida": "Peluquería",
+        "props_necesarios": "Teléfono con WALA",
+        "tono_voz": "Directo y accesible",
+        "momento_del_dia": "Mañana"
+      },
+      "metricas_esperadas": {
+        "objetivo_principal": "Transición a MoFu",
+        "tipo_interaccion": "Saves y respuestas",
+        "audiencia_target": "Emprendedores de Peluquería y Taller",
+        "retencion_esperada": "75%"
+      }
+    },
+    {
+      "numero": 5,
+      "voz": "A",
+      "estructura_usada": "Video Híbrido Consultor",
+      "razon_estructura": "Como 'Huevo de Oro', muestra el proceso de asesoría para generar aspiración y transición a MoFu, ideal para el hábito diario.",
+      "propuesta_valor_enfocada": "Te enseño desde la práctica real para entender tu negocio.",
+      "duracion_estimada": "1.5min",
+      "subtema": "Hábito diario de registro",
+      "sector_ejemplo": "Mezcla: Restaurante y Ferretería",
+      "hooks": {
+        "texto_visible": "Así trabajo yo en mis asesorías",
+        "visual": "José en una sesión simulada, con pantalla de WALA.",
+        "audio_trending": "No te lo vas a creer...",
+        "estrategia_hook": "Intriga sobre el proceso real para captar y retener."
+      },
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[6-10s]",
+          "categoria": "Intriga",
+          "texto": "No te lo vas a creer...",
+          "objetivo": "Aumentar curiosidad sobre el caso."
+        },
+        {
+          "numero": 2,
+          "timestamp": "[31-35s]",
+          "categoria": "Revelación",
+          "texto": "Y cuando encontramos el problema...",
+          "objetivo": "Mantener flujo hacia el proceso."
+        },
+        {
+          "numero": 3,
+          "timestamp": "[56-60s]",
+          "categoria": "Anticipación",
+          "texto": "Y ahora viene la parte que te va a servir...",
+          "objetivo": "Preparar para la acción."
+        },
+        {
+          "numero": 4,
+          "timestamp": "[61-65s]",
+          "categoria": "Contraste",
+          "texto": "Ahí es la diferencia...",
+          "objetivo": "Enfatizar el valor."
+        },
+        {
+          "numero": 5,
+          "timestamp": "[76-80s]",
+          "categoria": "Revelación",
+          "texto": "Y esto te va a cambiar...",
+          "objetivo": "Llevar al cierre."
+        }
+      ],
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": [
+          "PERO",
+          "POR LO TANTO",
+          "ENTONCES",
+          "POR ESO"
+        ],
+        "flujo": "Contexto asesoría → PERO problema → POR LO TANTO proceso → ENTONCES resultado → POR ESO acción"
+      },
+      "guion_completo": {
+        "hook": "[0-5s] En mi última asesoría, un restaurante luchaba con el hábito de registro.",
+        "microhook_1": "[6-10s] No te lo vas a creer...",
+        "desarrollo_1": "[11-30s] Vendían bien, PERO no registraban diario, POR LO TANTO en la ferretería era igual, perdían control.",
+        "microhook_2": "[31-35s] Y cuando encontramos el problema...",
+        "desarrollo_2": "[36-55s] Aplicamos el hábito con WALA, ENTONCES vieron ingresos claros.",
+        "microhook_3": "[56-60s] Y ahora viene la parte que te va a servir...",
+        "microhook_4": "[61-65s] Ahí es la diferencia...",
+        "microhook_5": "[76-80s] Y esto te va a cambiar...",
+        "micro_accion": "[61-75s] Elegí hoy un sector y registrá ingresos diario. WALA lo hace en tiempo real.",
+        "cierre": "[76-90s] Si querés resultados así, escribime. Probá y contame."
+      },
+      "micro_accion": {
+        "descripcion": "Registrar ingresos diario en un sector",
+        "tiempo_estimado": "5 minutos o menos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "sensación de control y aspiración",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Registro rápido y resúmenes",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para WALA"
+      },
+      "caption": "En mis asesorías, veo cómo el hábito de registro cambia negocios. \nEjemplos de restaurante y ferretería que ganaron claridad. \nProbá esto y decime si funciona. \n#AsesoriasReales #HábitoRegistro #WALAexperto",
+      "notas_produccion": {
+        "locacion_sugerida": "Oficina o parque",
+        "props_necesarios": "Computador con WALA",
+        "tono_voz": "Reflexivo y cercano",
+        "momento_del_dia": "Flexible"
+      },
+      "metricas_esperadas": {
+        "objetivo_principal": "Transición a MoFu",
+        "tipo_interaccion": "Mensajes directos",
+        "audiencia_target": "Emprendedores avanzados",
+        "retencion_esperada": "65%"
+      }
+    }
+  ]
+}

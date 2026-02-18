@@ -1,0 +1,465 @@
+{
+  "meta_analisis": {
+    "tema": "Flujo de caja - Ciclo de abastecimiento",
+    "sectores": ["Bodega", "Ferretería"],
+    "estrategia_aplicada": "Mix de aspectos del flujo de caja (ciclo completo, error ventas≠caja, fiado/stock inmovilizado) con videos aplicables a ambos sectores usando ejemplos mezclados. Distribución 2-2-1: 2 casos reales que humanizan + 2 tips directos que dan valor rápido + 1 híbrido consultor experimental que posiciona hacia MoFu.",
+    "propuesta_valor_central": "No es cuánto vendés, es cuánto te queda disponible para seguir girando el ciclo"
+  },
+  
+  "generacion": {
+    "tema": "Flujo de caja - Ciclo de abastecimiento",
+    "fase_funnel": "atraccion",
+    "total_videos": 5,
+    "distribucion": {
+      "voz_a": 3,
+      "voz_b": 2,
+      "razon_distribucion": "60/40 favor Voz A para construcción de autoridad desde experiencia práctica. José muestra el problema en acción (casos reales), WALA presenta la solución tecnológica. Esta distribución posiciona a José como consultor experto y prepara audiencia para adopción de WALA."
+    },
+    "estrategia_storytelling": "Todos los guiones usan conexiones causales (por lo tanto, pero, entonces, por eso) en lugar de secuencia pura. Esto mantiene enganche narrativo y genera expectativa continua de 'qué sigue'."
+  },
+  
+  "videos": [
+    {
+      "numero": 1,
+      "voz": "A",
+      "estructura_usada": "Caso Real + Lección",
+      "razon_estructura": "El problema del bodeguero con fiado necesita storytelling humano para generar identificación profunda. La historia muestra la paradoja: 'vendo bien pero no tengo plata'. Esto genera empatía inmediata y posiciona a José como alguien que ve estos casos todos los días.",
+      "propuesta_valor_enfocada": "Te enseño a identificar cuándo tus ventas no se convierten en caja disponible",
+      "duracion_estimada": "50s",
+      "subtema": "Fiado que rompe el ciclo de abastecimiento",
+      "sector_ejemplo": "Bodega (aplicable a cualquier negocio con ventas a crédito)",
+      
+      "hooks": {
+        "texto_visible": "Vender bien no significa tener plata",
+        "visual": "Caminando por un barrio comercial, mirando a cámara con gesto reflexivo",
+        "audio_trending": "Ojo con esto que nadie te dice...",
+        "estrategia_hook": "Rompe la creencia más arraigada del emprendedor: 'si vendo, gano'. Genera scroll-stop porque contradice lo que parece lógico."
+      },
+      
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-10s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te suena familiar, ¿verdad?",
+          "objetivo": "Validar que el espectador reconoce esta situación, genera conexión inmediata"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[23-26s]",
+          "categoria": "Revelación próxima",
+          "texto": "Y cuando descubrimos el problema, todo cambió...",
+          "objetivo": "Anticipar la revelación del insight clave, mantiene expectativa"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[38-40s]",
+          "categoria": "Anticipación",
+          "texto": "Y ahora viene lo que realmente te va a servir...",
+          "objetivo": "Preparar para la micro-acción, asegura que no abandonen antes del cierre"
+        }
+      ],
+      
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["pero", "por lo tanto", "entonces", "por eso"],
+        "flujo": "Vendía bien → PERO no tenía caja → POR LO TANTO no podía reabastecerse → ENTONCES descubrimos fiado → POR ESO ajustamos política de cobro"
+      },
+      
+      "guion_completo": {
+        "hook": "[0-5s] Hace poco hablé con un bodeguero que vendía $2,000 al día...",
+        "microhook_1": "[8-10s] Te suena familiar, ¿verdad?",
+        "desarrollo_1": "[11-22s] El tipo trabajaba desde las 7 de la mañana hasta las 9 de la noche. Vendía bien. PERO cuando llegaba el momento de ir al mayorista a reabastecerse, no tenía efectivo. POR LO TANTO tenía que pedir prestado o dejar de comprar productos que se vendían rápido.",
+        "microhook_2": "[23-26s] Y cuando descubrimos el problema, todo cambió...",
+        "desarrollo_2": "[27-37s] Resulta que el 70% de sus ventas eran fiado. Los clientes le pagaban 'cuando cobraban'. ENTONCES la plata entraba 15 o 30 días después. PERO él necesitaba reabastecerse cada semana. POR ESO aunque vendiera bien, vivía sin caja.",
+        "microhook_3": "[38-40s] Y ahora viene lo que realmente te va a servir...",
+        "micro_accion": "[41-48s] Hacé esto hoy: anotá en un papel cuánto vendiste esta semana y cuánto de eso YA COBRASTE en efectivo. Ese segundo número es tu caja real. Si querés verlo automático, WALA separa ventas de cobros reales. Pero empezá con papel si preferís.",
+        "cierre": "[49-50s] Probalo hoy y contame qué encontraste. Te va a sorprender."
+      },
+      
+      "micro_accion": {
+        "descripcion": "Anotar ventas de la semana vs lo que ya cobró en efectivo",
+        "tiempo_estimado": "3 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Claridad sobre caja real vs ventas en papel",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Cuentas por cobrar - diferencia entre venta registrada y cobro efectivo",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para WALA"
+      },
+      
+      "caption": "Vendés bien pero no tenés plata para reabastecerte? 👀\n\nEsto le pasaba a un bodeguero con el que trabajé:\nVendía $2,000 diarios pero vivía pidiendo prestado para comprar mercadería.\n\nEl problema? 70% fiado.\nVentas altas ≠ Caja disponible\n\nProbá esto hoy:\n📝 Anotá cuánto vendiste esta semana\n💰 Cuánto de eso YA cobraste\n\nEse segundo número es tu realidad.\n\n#emprendedores #bodega #negocio #flujodecaja #finanzaspersonales #emprendimiento",
+      
+      "notas_produccion": {
+        "locacion_sugerida": "Calle comercial de barrio, frente a bodegas o tiendas",
+        "props_necesarios": "Ninguno",
+        "tono_voz": "Reflexivo, empático, como contando una historia a un conocido",
+        "momento_del_dia": "Tarde (luz natural suave)"
+      },
+      
+      "metricas_esperadas": {
+        "objetivo_principal": "Engagement + Identificación",
+        "tipo_interaccion": "Comentarios tipo 'esto me pasa a mí' / 'lo probé y tengo 60% fiado'",
+        "audiencia_target": "Bodegueros, minimarkets, cualquier negocio que da crédito a clientes",
+        "retencion_esperada": "75-80% (historia identificable + micro-hooks)"
+      }
+    },
+    
+    {
+      "numero": 2,
+      "voz": "B",
+      "estructura_usada": "Error Común + Corrección Rápida",
+      "razon_estructura": "El error 'ventas = ganancia disponible' es tan común y específico que necesita corrección directa. Estructura 3 permite dar valor inmediato sin rodeos, posicionando a WALA como la herramienta que resuelve esto al instante.",
+      "propuesta_valor_enfocada": "WALA te muestra tu caja real, no solo tus ventas en papel",
+      "duracion_estimada": "42s",
+      "subtema": "Diferencia entre ventas y caja disponible",
+      "sector_ejemplo": "General (aplicable a bodega, ferretería, cualquier comercio)",
+      
+      "hooks": {
+        "texto_visible": "Vendiste $5,000 pero tenés $500",
+        "visual": "Primer plano mostrando calculadora o celular con WALA, gesto de sorpresa",
+        "audio_trending": "Esto no te lo dicen pero...",
+        "estrategia_hook": "Contraste numérico extremo que genera perplejidad. El emprendedor piensa 'cómo es posible?' y se queda a ver."
+      },
+      
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[7-9s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te pasa todo el tiempo, ¿no?",
+          "objetivo": "Confirmar que el espectador vive esta confusión constantemente"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[22-24s]",
+          "categoria": "Contraste",
+          "texto": "Pero acá es donde todo cambia...",
+          "objetivo": "Señalar el punto de inflexión hacia la solución"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[35-37s]",
+          "categoria": "Revelación próxima",
+          "texto": "Y esto es lo que realmente importa...",
+          "objetivo": "Enfocar atención en la micro-acción que viene"
+        }
+      ],
+      
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["pero", "por lo tanto", "entonces"],
+        "flujo": "Sumás ventas → PERO no restás lo que gastaste → POR LO TANTO el número es mentira → ENTONCES necesitás ver caja real"
+      },
+      
+      "guion_completo": {
+        "hook": "[0-5s] Vendiste $5,000 este mes y tenés solo $500 en caja...",
+        "microhook_1": "[7-9s] Te pasa todo el tiempo, ¿no?",
+        "desarrollo_1": "[10-21s] Hacés esto: sumás todo lo que vendiste y pensás 'esto gané'. PERO no estás viendo lo que gastaste para comprar esa mercadería, ni lo que todavía no cobraste. POR LO TANTO ese número que ves no es real.",
+        "microhook_2": "[22-24s] Pero acá es donde todo cambia...",
+        "desarrollo_2": "[25-34s] Tu caja real es: lo que vendiste MENOS lo que gastaste MENOS lo que te deben. ENTONCES si vendiste $5,000, gastaste $3,000 en reabastecerte y te deben $1,500... tenés $500 disponibles. Esa es tu realidad.",
+        "microhook_3": "[35-37s] Y esto es lo que realmente importa...",
+        "micro_accion": "[38-41s] WALA te muestra esto en un segundo: caja disponible vs ventas vs cuentas por cobrar. Todo separado. Registrás rápido y ves tu realidad al toque.",
+        "cierre": "[42s] Probalo gratis y entendé dónde está tu plata."
+      },
+      
+      "micro_accion": {
+        "descripcion": "Usar WALA para ver caja disponible vs ventas totales",
+        "tiempo_estimado": "2 minutos (registro inicial)",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Claridad inmediata de dónde está la plata realmente",
+        "mencion_wala": "Directa",
+        "funcionalidad_wala_relacionada": "Registro de ingresos/egresos + Cuentas por cobrar + Vista de caja disponible",
+        "validacion": "✓ Ejecutable hoy / ✓ No es venta agresiva (es prueba gratuita) / ✓ Resuelve el dolor inmediato"
+      },
+      
+      "caption": "Por qué vendés $5,000 pero solo tenés $500? 🤔\n\nPorque ventas ≠ caja disponible\n\nLa cuenta real:\n✅ Vendiste: $5,000\n❌ Gastaste en reabastecerte: $3,000\n❌ Te deben (fiado): $1,500\n= Caja real: $500\n\nWALA te muestra esto automático:\n📊 Caja disponible\n📊 Ventas totales\n📊 Cuentas por cobrar\n\nTodo separado. Todo claro.\n100% gratis para probar.\n\n#flujodecaja #emprendedores #finanzas #wala #negocio #bodega #ferreteria",
+      
+      "notas_produccion": {
+        "locacion_sugerida": "Interior de negocio o escritorio con celular",
+        "props_necesarios": "Celular con WALA abierto mostrando pantalla de caja",
+        "tono_voz": "Directo, práctico, casi tutorial pero sin tecnicismos",
+        "momento_del_dia": "Flexible"
+      },
+      
+      "metricas_esperadas": {
+        "objetivo_principal": "Conversión a prueba de WALA",
+        "tipo_interaccion": "Clicks a web / Comentarios tipo 'necesito esto' / Guardados",
+        "audiencia_target": "Emprendedores que viven confundidos con sus números",
+        "retencion_esperada": "70-75% (directa, práctica, con solución clara)"
+      }
+    },
+    
+    {
+      "numero": 3,
+      "voz": "A",
+      "estructura_usada": "Caso Real + Lección",
+      "razon_estructura": "El problema de stock de rotación lenta en ferretería es complejo y contraintuitivo ('tener mercadería es bueno, ¿no?'). Un caso real permite mostrar cómo stock inmovilizado mata el flujo, generando el 'aha moment' a través de storytelling.",
+      "propuesta_valor_enfocada": "Te enseño a ver que tener stock no es lo mismo que tener capital disponible",
+      "duracion_estimada": "52s",
+      "subtema": "Stock de rotación lenta que inmoviliza capital",
+      "sector_ejemplo": "Ferretería (aplicable a cualquier negocio con inventario variado)",
+      
+      "hooks": {
+        "texto_visible": "Tu stock te está comiendo la plata",
+        "visual": "Parado frente a estantes llenos de productos, señalándolos con gesto preocupado",
+        "audio_trending": "Nadie habla de esto pero...",
+        "estrategia_hook": "Contradice la creencia 'stock lleno = negocio próspero'. Genera curiosidad porque desafía lo obvio."
+      },
+      
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[9-11s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Sé que esto te frustra...",
+          "objetivo": "Empatizar con la frustración de tener local lleno pero sin caja"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[25-28s]",
+          "categoria": "Revelación próxima",
+          "texto": "Y cuando encontramos el problema, cambió todo...",
+          "objetivo": "Anticipar el descubrimiento del insight clave"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[40-42s]",
+          "categoria": "Anticipación",
+          "texto": "Y lo que viene ahora te va a ayudar...",
+          "objetivo": "Preparar para la micro-acción práctica"
+        }
+      ],
+      
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["pero", "por lo tanto", "entonces", "por eso"],
+        "flujo": "Local lleno → PERO sin caja → POR LO TANTO no puede reabastecerse → ENTONCES revisamos inventario → POR ESO descubrimos productos de 6 meses sin vender"
+      },
+      
+      "guion_completo": {
+        "hook": "[0-5s] Hace poco trabajé con una ferretería que tenía el local repleto de productos...",
+        "microhook_1": "[9-11s] Sé que esto te frustra...",
+        "desarrollo_1": "[12-24s] El dueño me decía: 'Tengo de todo, estoy abastecido'. PERO cuando necesitaba comprar lo que SÍ se vendía rápido, no tenía efectivo. POR LO TANTO perdía ventas porque le faltaban productos básicos.",
+        "microhook_2": "[25-28s] Y cuando encontramos el problema, cambió todo...",
+        "desarrollo_2": "[29-39s] Hicimos un inventario simple: qué se compró hace más de 3 meses y no se vendió. ENTONCES descubrimos $8,000 en herramientas pesadas sin rotar. PERO además seguía comprando más. POR ESO tenía el capital inmovilizado en stock que no giraba.",
+        "microhook_3": "[40-42s] Y lo que viene ahora te va a ayudar...",
+        "micro_accion": "[43-50s] Hacé esto hoy: marcá 5 productos que tenés hace más de 2 meses sin vender. Sumá cuánta plata tenés ahí parada. Esa es plata que no está trabajando. Con WALA podés ver esto en tu inventario, pero empezá identificándolo en papel.",
+        "cierre": "[51-52s] Probalo y contame qué encontraste. Seguro te sorprende."
+      },
+      
+      "micro_accion": {
+        "descripcion": "Identificar 5 productos sin vender en 2+ meses y sumar su valor total",
+        "tiempo_estimado": "5 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Consciencia de capital inmovilizado en stock muerto",
+        "mencion_wala": "Sutil",
+        "funcionalidad_wala_relacionada": "Inventario - control de rotación y productos sin movimiento",
+        "validacion": "✓ Ejecutable hoy sin WALA / ✓ No es venta / ✓ Prepara para adoptar control de inventario"
+      },
+      
+      "caption": "Tu local está lleno pero no tenés plata? 🏪\n\nEsto le pasaba a una ferretería:\nProductos por todos lados, pero sin efectivo para comprar lo que SÍ se vendía.\n\nEl problema?\n$8,000 en herramientas de rotación lenta.\nPlata parada. Capital inmovilizado.\n\nProbá esto:\n📦 Identificá 5 productos que tenés hace +2 meses\n💰 Sumá cuánta plata tenés ahí parada\n\nEsa plata debería estar girando.\n\n#ferreteria #inventario #negocio #emprendedores #flujodecaja #stock",
+      
+      "notas_produccion": {
+        "locacion_sugerida": "Interior de ferretería o negocio con estantes visibles",
+        "props_necesarios": "Productos en estantes de fondo",
+        "tono_voz": "Reflexivo, casi investigativo, mostrando el descubrimiento",
+        "momento_del_dia": "Flexible (buena iluminación interior)"
+      },
+      
+      "metricas_esperadas": {
+        "objetivo_principal": "Engagement + Awareness del problema de inventario",
+        "tipo_interaccion": "Comentarios tipo 'tengo $5,000 parados' / Shares a socios de negocio",
+        "audiencia_target": "Ferreterías, librerías, cualquier negocio con inventario variado",
+        "retencion_esperada": "75-80% (caso identificable + revelación sorprendente)"
+      }
+    },
+    
+    {
+      "numero": 4,
+      "voz": "B",
+      "estructura_usada": "Error Común + Corrección Rápida",
+      "razon_estructura": "El error 'más stock = más seguro' es específico y corregible con acción directa. Estructura 3 permite mostrar cómo WALA ayuda a ver qué productos inmovilizan capital vs cuáles generan flujo.",
+      "propuesta_valor_enfocada": "WALA te ayuda a ver qué productos te están trabando el flujo",
+      "duracion_estimada": "44s",
+      "subtema": "Stock inmovilizado vs productos que generan flujo",
+      "sector_ejemplo": "General (aplicable a bodega, ferretería, cualquier comercio con inventario)",
+      
+      "hooks": {
+        "texto_visible": "Tener mucho stock no es tener plata",
+        "visual": "Plano medio mostrando estantes, luego acercamiento a celular con WALA",
+        "audio_trending": "Ojo con lo que sigue...",
+        "estrategia_hook": "Rompe la creencia 'mientras más tenga, mejor'. Genera curiosidad sobre la diferencia entre stock y capital."
+      },
+      
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-10s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Y ahí es donde te trabás, ¿no?",
+          "objetivo": "Validar la frustración de tener stock pero no efectivo"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[23-25s]",
+          "categoria": "Contraste",
+          "texto": "Ahí está la diferencia...",
+          "objetivo": "Marcar el punto clave entre stock y flujo"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[36-38s]",
+          "categoria": "Revelación próxima",
+          "texto": "Mirá esto...",
+          "objetivo": "Dirigir atención a la funcionalidad de WALA"
+        }
+      ],
+      
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales",
+        "palabras_causales_usadas": ["pero", "por lo tanto", "entonces"],
+        "flujo": "Comprás mucho → PERO no se vende rápido → POR LO TANTO plata parada → ENTONCES no podés reabastecerte de lo que sí rota"
+      },
+      
+      "guion_completo": {
+        "hook": "[0-5s] Tenés el local lleno pero no tenés plata para comprar más...",
+        "microhook_1": "[8-10s] Y ahí es donde te trabás, ¿no?",
+        "desarrollo_1": "[11-22s] Hacés esto: comprás stock pensando 'mejor tener de todo'. PERO la mitad no se vende rápido. POR LO TANTO tenés plata inmovilizada en productos que están ahí hace meses. ENTONCES cuando necesitás reabastecerte de lo que SÍ rota, no tenés efectivo.",
+        "microhook_2": "[23-25s] Ahí está la diferencia...",
+        "desarrollo_2": "[26-35s] Stock que no rota = plata parada. Stock que se vende rápido = flujo de caja. Son dos cosas totalmente distintas. ENTONCES necesitás saber qué productos te generan flujo y cuáles te lo traban.",
+        "microhook_3": "[36-38s] Mirá esto...",
+        "micro_accion": "[39-43s] WALA te muestra en tu inventario: qué productos tenés sin movimiento hace semanas. Registrás cada venta y ves al toque qué gira y qué está parado. Eso te ayuda a decidir qué recomprar.",
+        "cierre": "[44s] Probalo gratis y entendé tu inventario real."
+      },
+      
+      "micro_accion": {
+        "descripcion": "Usar WALA para identificar productos sin movimiento en inventario",
+        "tiempo_estimado": "3 minutos",
+        "nivel_esfuerzo": "muy bajo",
+        "objetivo_psicologico": "Claridad sobre qué productos trabajan el flujo vs cuáles lo inmovilizan",
+        "mencion_wala": "Directa",
+        "funcionalidad_wala_relacionada": "Inventario - análisis de rotación y productos sin ventas recientes",
+        "validacion": "✓ Ejecutable hoy / ✓ No es venta agresiva / ✓ Resuelve problema específico de inventario"
+      },
+      
+      "caption": "Local lleno ≠ Plata disponible 📦\n\nEl problema:\nComprás mucho 'para tener de todo'\nPero la mitad no rota\nPlata parada en estantes\n\nLa diferencia:\n✅ Stock que rota = Flujo de caja\n❌ Stock parado = Capital inmovilizado\n\nWALA te muestra:\n📊 Qué productos no se mueven\n📊 Cuánto tiempo llevan sin venderse\n📊 Dónde está tu plata trabada\n\nAsí sabés qué recomprar y qué no.\n100% gratis.\n\n#inventario #stock #emprendedores #wala #negocio #ferreteria #bodega",
+      
+      "notas_produccion": {
+        "locacion_sugerida": "Interior de negocio con productos visibles",
+        "props_necesarios": "Celular con WALA mostrando pantalla de inventario",
+        "tono_voz": "Práctico, educativo, mostrando funcionalidad",
+        "momento_del_dia": "Flexible"
+      },
+      
+      "metricas_esperadas": {
+        "objetivo_principal": "Conversión a prueba + Posicionamiento de funcionalidad inventario",
+        "tipo_interaccion": "Clicks a web / Comentarios tipo 'necesito ver esto' / Saves",
+        "audiencia_target": "Negocios con inventario variado (ferreterías, bodegas, librerías)",
+        "retencion_esperada": "70-75% (problema específico + solución clara)"
+      }
+    },
+    
+    {
+      "numero": 5,
+      "voz": "A",
+      "estructura_usada": "Video Híbrido Consultor (Experimental ToFu→MoFu)",
+      "razon_estructura": "Este es el 'huevo de oro' que muestra el proceso completo de asesoría aplicado al flujo de caja. Storytelling profundo que posiciona a José como consultor de alto valor, genera aspiración hacia las asesorías, y demuestra resultados tangibles sin vender agresivamente. Prepara transición a MoFu.",
+      "propuesta_valor_enfocada": "Así trabajo yo en mis asesorías: identificamos dónde se traba tu flujo y lo desbloqueamos",
+      "duracion_estimada": "1.5min",
+      "subtema": "Proceso completo de análisis de flujo de caja en asesoría",
+      "sector_ejemplo": "Ferretería (con aplicabilidad a bodega y otros comercios)",
+      
+      "hooks": {
+        "texto_visible": "Cómo ayudé a una ferretería a recuperar $12,000",
+        "visual": "Caminando en la calle, mirando a cámara con gesto de 'te tengo que contar esto'",
+        "audio_trending": "No te lo vas a creer pero...",
+        "estrategia_hook": "Promesa de resultado concreto ($12,000 recuperados) genera curiosidad inmediata sobre el proceso"
+      },
+      
+      "micro_hooks": [
+        {
+          "numero": 1,
+          "timestamp": "[8-12s]",
+          "categoria": "Intriga/Curiosidad",
+          "texto": "Y lo que descubrimos te va a sorprender...",
+          "objetivo": "Generar expectativa sobre el descubrimiento en la asesoría"
+        },
+        {
+          "numero": 2,
+          "timestamp": "[28-31s]",
+          "categoria": "Validación/Empatía",
+          "texto": "Te suena familiar esto...",
+          "objetivo": "Conectar el caso con la experiencia del espectador"
+        },
+        {
+          "numero": 3,
+          "timestamp": "[45-48s]",
+          "categoria": "Revelación próxima",
+          "texto": "Y ahí fue cuando todo cambió...",
+          "objetivo": "Anticipar el momento de transformación"
+        },
+        {
+          "numero": 4,
+          "timestamp": "[68-71s]",
+          "categoria": "Anticipación",
+          "texto": "Pero todavía hay más...",
+          "objetivo": "Mantener atención hacia el resultado final"
+        },
+        {
+          "numero": 5,
+          "timestamp": "[82-85s]",
+          "categoria": "Revelación próxima",
+          "texto": "Y ahora viene la parte que te va a servir...",
+          "objetivo": "Preparar para la micro-acción derivada"
+        }
+      ],
+      
+      "storytelling_causal": {
+        "validacion": "✓ Usa conexiones causales profundas",
+        "palabras_causales_usadas": ["pero", "por lo tanto", "entonces", "por eso", "así que"],
+        "flujo": "Ferretería con ventas altas → PERO sin caja → POR LO TANTO revisamos ciclo completo → ENTONCES encontramos 3 problemas → POR ESO aplicamos correcciones → ASÍ QUE recuperó flujo → ENTONCES generó resultados"
+      },
+      
+      "guion_completo": {
+        "hook": "[0-7s] En mi última asesoría ayudé a una ferretería a recuperar $12,000 que tenía trabados...",
+        "microhook_1": "[8-12s] Y lo que descubrimos te va a sorprender...",
+        "desarrollo_1": "[13-27s] Una ferretería. 4 años funcionando. Vendían bien, más de $15,000 mensuales. PERO cuando llegaba el momento de reabastecerse, siempre andaban pidiendo prestado. POR LO TANTO decidimos analizar todo el ciclo de caja desde cero.",
+        "microhook_2": "[28-31s] Te suena familiar esto...",
+        "desarrollo_2": "[32-44s] Primero revisamos su inventario. ENTONCES descubrimos $8,000 en productos de rotación lenta que llevaban más de 6 meses sin venderse. PERO además tenían $4,000 en cuentas por cobrar de hace 3 meses. POR ESO aunque vendieran bien, vivían sin efectivo.",
+        "microhook_3": "[45-48s] Y ahí fue cuando todo cambió...",
+        "desarrollo_3": "[49-67s] Aplicamos tres correcciones: uno, liquidamos el stock muerto con descuento (mejor recuperar 60% que tener plata parada). Dos, implementamos política de cobro: máximo 15 días de crédito. Tres, empezaron a usar WALA para ver diario cuánto tenían disponible vs cuánto debían. ENTONCES en un mes recuperaron $12,000 de flujo.",
+        "microhook_4": "[68-71s] Pero todavía hay más...",
+        "desarrollo_4": "[72-81s] El resultado: ahora saben exactamente cuánto pueden comprar cada semana sin quedarse sin caja. POR LO TANTO dejaron de vivir apagando incendios. ASÍ QUE pasaron de trabajar reactivos a trabajar con estrategia.",
+        "microhook_5": "[82-85s] Y ahora viene la parte que te va a servir...",
+        "micro_accion": "[86-103s] Vos podés hacer esto hoy: primero, identificá cuánta plata tenés en stock que no se mueve hace más de 2 meses. Segundo, cuánto te deben que ya pasó de 30 días. Sumá esos dos números. Esa es plata que podés recuperar. En mis asesorías trabajamos exactamente esto con WALA en tiempo real, pero empezá identificándolo en papel.",
+        "cierre": "[104-110s] Este es el tipo de análisis que hacemos en las asesorías. Si querés resultados así en tu negocio, escribime. Y mientras tanto, probá esto que te dije y contame qué encontraste."
+      },
+      
+      "micro_accion": {
+        "descripcion": "Calcular plata trabada: stock sin movimiento +2 meses + cuentas por cobrar +30 días",
+        "tiempo_estimado": "10 minutos",
+        "nivel_esfuerzo": "medio-bajo",
+        "objetivo_psicologico": "Awareness de capital recuperable + deseo de proceso completo de asesoría",
+        "mencion_wala": "Balance (herramienta en asesorías pero ejecutable en papel)",
+        "funcionalidad_wala_relacionada": "Inventario + Cuentas por cobrar + Vista de caja disponible (análisis integrado)",
+        "validacion": "✓ Ejecutable sin WALA / ✓ No vende agresivamente / ✓ Prepara para asesoría y WALA"
+      },
+      
+      "caption": "Cómo recuperar $12,000 trabados en tu negocio 💰\n\nCaso real de mi última asesoría:\nFerretería con ventas altas pero sin caja.\n\nQué encontramos:\n❌ $8,000 en stock muerto (+6 meses)\n❌ $4,000 en cuentas por cobrar (+3 meses)\n= $12,000 trabados\n\nQué hicimos:\n✅ Liquidamos stock lento (60% > 0%)\n✅ Política de cobro máximo 15 días\n✅ WALA para ver caja diaria real\n\nResultado:\nRecuperaron flujo en 1 mes.\nDejaron de vivir pidiendo prestado.\n\nProbá esto hoy:\n1️⃣ Stock sin mover +2 meses = ?\n2️⃣ Cuentas por cobrar +30 días = ?\n\nEsa plata la podés recuperar.\n\nSi querés este análisis completo en tu negocio, escribime.\n\n#asesoria #flujodecaja #emprendedores #ferreteria #negocio #consultoria",
+      
+      "notas_produccion": {
+        "locacion_sugerida": "Caminando en parque o calle tranquila (storytelling reflexivo)",
+        "props_necesarios": "Ninguno (énfasis en la narrativa)",
+        "tono_voz": "Consultor compartiendo caso: reflexivo, analítico, mostrando proceso",
+        "momento_del_dia": "Mañana o tarde (luz natural buena)"
+      },
+      
+      "metricas_esperadas": {
+        "objetivo_principal": "Posicionamiento como consultor + Generación de interés en asesorías + Transición ToFu→MoFu",
+        "tipo_interaccion": "DMs preguntando por asesorías / Comentarios tipo 'necesito esto en mi negocio' / Saves para referencia",
+        "audiencia_target": "Emprendedores que ya identifican su problema y buscan ayuda profesional",
+        "retencion_esperada": "65-70% (video más largo pero storytelling causal fuerte mantiene enganche)"
+      }
+    }
+  ]
+}
