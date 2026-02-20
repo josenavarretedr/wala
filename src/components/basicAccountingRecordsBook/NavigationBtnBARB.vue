@@ -367,57 +367,57 @@ const finalizarRegistro = async () => {
       console.log("✅ Cotización guardada:", result.quoteNumber);
 
       const businessId = businessStore.getBusinessId;
+      const quoteId = result.quoteUuid;
       flow.transactionLoading = false;
 
       // Toast de éxito para cotización
       success(`Cotización ${result.quoteNumber} creada exitosamente`);
-
       setTimeout(() => {
-        success("Regresando al dashboard...");
+        success("Redirigiendo a detalles de cotización...");
+        router.replace({
+          name: "QuoteDetails",
+          params: {
+            businessId,
+            quoteId,
+          },
+        });
 
-        setTimeout(() => {
-          router.replace({
-            name: "BusinessDashboard",
-            params: { businessId },
-          });
-
-          // Resetear y navegar
-          transactionStore.resetTransactionToAdd();
-          flow.resetFlow();
-          isFinalizando.value = false;
-        }, 500);
-      }, 2000);
+        // Resetear y navegar
+        transactionStore.resetTransactionToAdd();
+        flow.resetFlow();
+        isFinalizando.value = false;
+      }, 500);
     } else {
       // Flujo normal de transacción
-      await transactionStore.addTransaction();
+      const result = await transactionStore.addTransaction();
 
       console.log("✅ Transacción guardada exitosamente");
 
       const businessId = businessStore.getBusinessId;
+      const registerId = result.transactionId;
 
       // NO resetear loading aquí, mantener el botón deshabilitado hasta navegar
       flow.transactionLoading = false;
       // isFinalizando.value sigue en true para mantener botón deshabilitado
 
       // Primer toast: Éxito
-      success("Transacción registrada");
+      success("Se registró la transacción exitosamente");
 
-      // Esperar 2.5 segundos para que se vea el primer toast
       setTimeout(() => {
-        success("Regresando al dashboard...");
+        success("Redirigiendo a detalles de transacción...");
+        router.replace({
+          name: "DetailsRecords",
+          params: {
+            businessId,
+            registerId,
+          },
+        });
 
-        setTimeout(() => {
-          router.replace({
-            name: "BusinessDashboard",
-            params: { businessId },
-          });
-
-          // Resetear y navegar
-          transactionStore.resetTransactionToAdd();
-          flow.resetFlow();
-          isFinalizando.value = false;
-        }, 500); // Pequeña espera antes de navegar
-      }, 2000);
+        // Resetear y navegar
+        transactionStore.resetTransactionToAdd();
+        flow.resetFlow();
+        isFinalizando.value = false;
+      }, 500); // Pequeña espera antes de navegar
     }
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);

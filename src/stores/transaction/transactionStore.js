@@ -706,6 +706,9 @@ export function useTransactionStore() {
     }
 
     console.log('✅ [OPTIMISTIC] Transaction completed successfully');
+
+    // ✅ Retornar el UUID de la transacción creada
+    return { success: true, transactionId: transactionId, transactionUuid: transactionId };
   };
 
   const getTransactions = async () => {
