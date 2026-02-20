@@ -17,6 +17,9 @@ exports.scheduledAutoClose = require('./src/AccountsBalance/scheduledAutoClose')
 exports.onTransactionWrite = require('./src/AccountsBalance/onTransactionWrite');
 exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 
+// 💰 TRANSACTIONS - Procesamiento en background
+exports.processTransactionBackground = require('./src/Transaction/processTransactionBackground').processTransactionBackground;
+
 // 🤖 CLASIFICACIÓN IA - Sistema de 3 Capas
 exports.classifyProductRequest = require('./src/Inventory/classifyProductRequest').classifyProductRequest;
 exports.onProductCorrected = require('./src/Inventory/onProductCorrected').onProductCorrected;

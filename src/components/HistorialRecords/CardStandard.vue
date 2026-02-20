@@ -141,6 +141,28 @@
           }}</span>
         </div>
 
+        <!-- ⚡ FASE 3: Badge de sincronización optimista -->
+        <div
+          v-if="record.isOptimistic"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-700 border border-blue-300 shrink-0 animate-pulse"
+        >
+          <svg
+            class="w-3 h-3 animate-spin"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          <span class="hidden sm:inline">Sincronizando...</span>
+          <span class="sm:hidden">Sync...</span>
+        </div>
+
         <!-- Badge de método de pago -->
         <div
           :class="[
@@ -433,7 +455,8 @@ function formatedDate(date) {
 /* Hover effects para touch devices */
 @media (hover: hover) {
   .hover\:shadow-md:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
       0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 }

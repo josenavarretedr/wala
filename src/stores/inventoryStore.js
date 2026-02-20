@@ -149,9 +149,11 @@ export function useInventoryStore() {
     try {
       let processedCount = 0;
       const relatedEntities = [];
-      const materialStockLogMap = []; // Array para mapear materials con sus stockLogIds
 
-      for (const material of materialItems) {
+      console.log(`⚡ Procesando ${materialItems.length} materials en paralelo...`);
+
+      // ⚡ OPTIMIZACIÓN: Procesar materials en paralelo
+      const materialPromises = materialItems.map(async (material) => {
         const productId = material.uuid || material.selectedProductUuid;
 
         // Verificar si el producto ya existe
@@ -167,13 +169,14 @@ export function useInventoryStore() {
 
             material.oldOrNewProduct = "new";
 
-            await operationChain.addStep('update', 'inventory', productId, {
+            // Log de trazabilidad (fire-and-forget)
+            operationChain.addStep('update', 'inventory', productId, {
               reason: 'auto_convert_old_to_new_material',
               severity: 'medium',
               tags: ['inventory_validation', 'material_purchase', 'auto_correction'],
               previousState: { oldOrNewProduct: 'old' },
               newState: { oldOrNewProduct: 'new' },
-            });
+            }).catch(err => console.warn('⚠️ Traceability log failed:', err));
           }
         }
 
@@ -188,12 +191,13 @@ export function useInventoryStore() {
             trackStock: material.trackStock ?? true,
           };
 
-          await operationChain.addStep('create', 'inventory', productId, {
+          // Log de trazabilidad (fire-and-forget)
+          operationChain.addStep('create', 'inventory', productId, {
             newState: newProduct,
             reason: 'new_material_purchase',
             severity: 'medium',
             tags: ['inventory_creation', 'material_purchase', 'new_material']
-          });
+          }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
           await createItem(newProduct, 'MERCH');
           processedCount++;
@@ -228,24 +232,28 @@ export function useInventoryStore() {
 
         const stockLogId = await addStockLogInInventory(stockLogData, 'buy');
 
-        // Mapear el material UUID con su stockLogId y productId
-        materialStockLogMap.push({
+        console.log(`📦 StockLog creado para compra: ${material.description} (+${material.quantity} ${material.unit}) - ID: ${stockLogId}`);
+
+        // Retornar el mapeo de material con su stockLogId y productId
+        return {
           materialUuid: material.uuid,
           productId: productId, // ✅ Agregar productId para reversión
           stockLogId: stockLogId
-        });
+        };
+      });
 
-        console.log(`📦 StockLog creado para compra: ${material.description} (+${material.quantity} ${material.unit}) - ID: ${stockLogId}`);
-      }
+      // Ejecutar en paralelo
+      const materialStockLogMap = await Promise.all(materialPromises);
 
-      await operationChain.finish({
+      // Log de finalización (fire-and-forget)
+      operationChain.finish({
         reason: 'bulk_material_purchase_completed',
         metadata: {
           totalProcessed: materialItems.length,
           newMaterialsAdded: processedCount,
           relatedEntities
         }
-      });
+      }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
       console.log(`✅ Compra de materiales completada: ${materialItems.length} materiales procesados`);
 
@@ -255,12 +263,12 @@ export function useInventoryStore() {
     } catch (error) {
       console.error('❌ Error procesando compra de materiales:', error);
 
-      await operationChain.addStep('error', 'inventory', 'bulk_purchase', {
+      operationChain.addStep('error', 'inventory', 'bulk_purchase', {
         newState: { error: error.message },
         reason: 'bulk_material_purchase_failed',
         severity: 'high',
         tags: ['inventory_error', 'material_purchase', 'purchase_failure']
-      });
+      }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
       throw error;
     }

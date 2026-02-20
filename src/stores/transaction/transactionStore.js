@@ -13,6 +13,9 @@ import { ANONYMOUS_CLIENT_ID } from '@/types/client';
 import { trackTransactionCreated, isValidTransactionForStreak } from '@/analytics';
 import { ensureBusinessId } from '@/composables/useBusinessUtils';
 import { useDailySummary } from '@/composables/useDailySummary';
+// ⚡ FASE 3: Optimistic UI
+import { useOptimisticSync } from '@/composables/useOptimisticSync';
+import { useProductCache } from '@/composables/useProductCache';
 
 import { v4 as uuidv4 } from "uuid";
 
@@ -113,6 +116,10 @@ export function useTransactionStore() {
   const { createStockLog, deleteStockLog, getProductById } = useInventory();
   const { logTransactionOperation, logInventoryOperation, startOperationChain } = useTraceability();
 
+  // ⚡ FASE 3: Optimistic UI
+  const { executeOptimistically } = useOptimisticSync();
+  const { getProductCached, preloadProducts } = useProductCache();
+
   /**
    * Procesa los stockLogs de materiales en la composición de un producto
    * @param {string} productId - UUID del producto que contiene la composición
@@ -142,10 +149,8 @@ export function useTransactionStore() {
         materialsCount: product.composition.length
       });
 
-      const materialStockLogs = [];
-
-      // Procesar cada material en la composición
-      for (const material of product.composition) {
+      // ⚡ OPTIMIZACIÓN: Procesar materiales en paralelo
+      const materialPromises = product.composition.map(async (material) => {
         try {
           const materialProductId = material.productId;
           const quantityPerUnit = parseFloat(material.quantity) || 0;
@@ -159,7 +164,7 @@ export function useTransactionStore() {
               materialId: materialProductId,
               description: material.description
             });
-            continue;
+            return null; // Retornar null para filtrar después
           }
 
           // Solo procesar si el material tiene trackStock activado
@@ -168,7 +173,7 @@ export function useTransactionStore() {
               materialId: materialProductId,
               description: materialProduct.description
             });
-            continue;
+            return null; // Retornar null para filtrar después
           }
 
           // Crear el item para createStockLog
@@ -197,24 +202,28 @@ export function useTransactionStore() {
           // Crear stockLog para el material
           const stockLogUuid = await createStockLog(materialItem, 'sell');
 
-          // Agregar a la lista de stockLogs de materiales
-          materialStockLogs.push({
+          console.log('  ✅ StockLog creado para material:', stockLogUuid);
+
+          // Retornar objeto con información del material procesado
+          return {
             materialId: materialProductId,
             stockLogUuid: stockLogUuid,
             quantityUsed: materialItem.quantity,
             description: materialProduct.description
-          });
-
-          console.log('  ✅ StockLog creado para material:', stockLogUuid);
+          };
 
         } catch (materialError) {
           console.error('❌ [COMPOSITION] Error procesando material:', {
             materialId: material.productId,
             error: materialError.message
           });
-          // Continuar con el siguiente material
+          return null; // Continuar con otros materiales
         }
-      }
+      });
+
+      // Ejecutar en paralelo y filtrar resultados nulos
+      const results = await Promise.all(materialPromises);
+      const materialStockLogs = results.filter(result => result !== null);
 
       console.log(`✅ [COMPOSITION] Procesados ${materialStockLogs.length} materiales`);
       return materialStockLogs;
@@ -226,350 +235,393 @@ export function useTransactionStore() {
   };
 
   const addTransaction = async () => {
-    let traceId = null;
+    // ⚡ FASE 3: OPTIMISTIC UI - Asignar UUID antes de optimistic update
+    const transactionId = uuidv4();
+    transactionToAdd.value.uuid = transactionId;
 
-    try {
-      // Asignar un UUID para la transacción
-      transactionToAdd.value.uuid = uuidv4();
+    // Crear snapshot de la transacción para local update
+    const optimisticTransaction = {
+      ...JSON.parse(JSON.stringify(transactionToAdd.value)),
+      uuid: transactionId,
+      createdAt: new Date(),
+      isOptimistic: true, // ⚡ Flag para indicar que es optimista
+      processingStatus: 'pending'
+    };
 
-      // === TRAZABILIDAD: Iniciar operación compleja ===
-      const operationChain = startOperationChain('add_transaction');
+    // ⚡ FASE 3: Local Update - Agregar transacción inmediatamente a la UI
+    const localUpdate = () => {
+      console.log('⚡ [OPTIMISTIC] Agregando transacción a UI:', transactionId);
+      transactionsInStore.value.unshift(optimisticTransaction);
+    };
 
-      // Preparar datos para trazabilidad
-      const relatedEntities = [];
+    // ⚡ FASE 3: Remote Update - Toda la lógica de Firestore
+    const remoteUpdate = async () => {
+      let traceId = null;
 
-      if (transactionToAdd.value.type === 'income') {
-        // Procesar transacción de ingreso:
-        transactionToAdd.value.amount = getTransactionToAddTotal();
+      try {
+        // === TRAZABILIDAD: Iniciar operación compleja ===
+        const operationChain = startOperationChain('add_transaction');
 
-        // === TRAZABILIDAD: Log de items relacionados ===
-        for (const item of transactionToAdd.value.items) {
-          relatedEntities.push({
-            type: 'inventory',
-            id: item.uuid || item.selectedProductUuid,
-            relationship: 'stock_affected',
-            impact: 'high'
-          });
-        }
+        // Preparar datos para trazabilidad
+        const relatedEntities = [];
 
-        // Procesar cada ítem y registrar los stockLogs con trazabilidad
-        for (const item of transactionToAdd.value.items) {
-          // === TRAZABILIDAD: Log antes de crear stock log ===
-          await operationChain.addStep('update', 'inventory', item.uuid || item.selectedProductUuid, {
-            previousState: { stock: item.currentStock || 0 },
-            newState: { stock: (item.currentStock || 0) + item.quantity },
-            reason: 'stock_increase_from_income_transaction',
-            severity: 'high',
-            tags: ['stock_update', 'income_transaction']
-          });
+        if (transactionToAdd.value.type === 'income') {
+          // Procesar transacción de ingreso:
+          transactionToAdd.value.amount = getTransactionToAddTotal();
 
-          // Agregar transactionId al item para registrarlo en el stockLog
-          const itemWithTransaction = {
-            ...item,
-            transactionId: transactionToAdd.value.uuid,
-            // IMPORTANTE: quantity siempre es la cantidad solicitada por el usuario
-            // El ajuste de stock se hace en updateStock() de useInventory
-            quantity: item.quantity,
-            // Pasar también la cantidad máxima disponible para el ajuste
-            quantityForStock: item.quantityForStock,
-            // ✅ CAMPOS NECESARIOS PARA CREAR PRODUCTO NUEVO AUTOMÁTICAMENTE
-            oldOrNewProduct: item.oldOrNewProduct,
-            description: item.description,
-            unit: item.unit,
-            price: item.price,
-            trackStock: item.trackStock !== undefined ? item.trackStock : true, // ✅ true para MERCH
-            productType: 'MERCH' // Tipo por defecto para productos de venta
-          };
-
-          console.log('📦 Procesando item para stockLog:', {
-            uuid: itemWithTransaction.uuid,
-            description: itemWithTransaction.description,
-            oldOrNewProduct: itemWithTransaction.oldOrNewProduct,
-            quantity: itemWithTransaction.quantity,
-            price: itemWithTransaction.price,
-            trackStock: itemWithTransaction.trackStock
-          });
-
-          // Log de advertencia si se vendió con stock insuficiente
-          if (item.proceedAnyway && item.requestedQuantity > item.actualQuantity) {
-            console.warn('⚠️ Venta con stock insuficiente:', {
-              producto: item.description,
-              cantidadSolicitada: item.requestedQuantity,
-              cantidadRealDescontada: item.actualQuantity,
-              stockDisponible: item.stock,
-              mensaje: 'StockLog registrará la cantidad solicitada, pero el stock solo se reducirá según disponibilidad'
+          // === TRAZABILIDAD: Log de items relacionados ===
+          for (const item of transactionToAdd.value.items) {
+            relatedEntities.push({
+              type: 'inventory',
+              id: item.uuid || item.selectedProductUuid,
+              relationship: 'stock_affected',
+              impact: 'high'
             });
           }
 
-          const stockLogUuid = await createStockLog(itemWithTransaction);
-          const itemUuid = item.uuid;
+          // ⚡ OPTIMIZACIÓN: Procesar items en paralelo
+          console.log(`🚀 Procesando ${transactionToAdd.value.items.length} items en paralelo...`);
 
-          // 🧩 NUEVO: Procesar stock de materiales en composición
-          console.log('🔍 Verificando composición para producto:', itemUuid);
-          const materialStockLogs = await processCompositionStockLogs(
-            itemUuid,
-            item.quantity,
-            transactionToAdd.value.uuid
-          );
+          const itemsPromises = transactionToAdd.value.items.map(async (item) => {
+            // === TRAZABILIDAD: Log antes de crear stock log (fire-and-forget) ===
+            operationChain.addStep('update', 'inventory', item.uuid || item.selectedProductUuid, {
+              previousState: { stock: item.currentStock || 0 },
+              newState: { stock: (item.currentStock || 0) + item.quantity },
+              reason: 'stock_increase_from_income_transaction',
+              severity: 'high',
+              tags: ['stock_update', 'income_transaction']
+            }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
-          if (materialStockLogs.length > 0) {
-            console.log(`✅ Afectados ${materialStockLogs.length} materiales en composición`);
-          }
-
-          // Crear el registro con stockLogs de producto y materiales
-          const itemStockLog = {
-            itemUuid,
-            stockLogUuid,
-            materialStockLogs // Array de stockLogs de materiales (puede estar vacío)
-          };
-          transactionToAdd.value.itemsAndStockLogs.push(itemStockLog);
-        }
-      } else if (transactionToAdd.value.type === 'expense') {
-        // Importar funciones de useExpenses para gestionar expenses
-        const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
-
-        // Instanciar inventoryStore para gestionar productos y stockLogs
-        const inventoryStore = useInventoryStore();
-
-        // Declarar expenseId al inicio para que esté disponible en todo el bloque
-        let expenseId = null;
-
-        // Para materials, calcular el total desde materialItems
-        if (transactionToAdd.value.category === 'materials') {
-          // 🛒 GESTIÓN DE INVENTARIO: Procesar materials en la colección 'products'
-          console.log('🛒 Iniciando procesamiento de materials en inventario...');
-
-          // Llamar a inventoryStore para crear/actualizar productos y stockLogs
-          // Pasar el transactionId para vincular los stockLogs con la transacción
-          const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(
-            transactionToAdd.value.materialItems,
-            transactionToAdd.value.uuid // Pasar el UUID de la transacción
-          );
-
-          // Actualizar materialItems con los stockLogIds y productIds generados
-          if (materialStockLogMap && materialStockLogMap.length > 0) {
-            transactionToAdd.value.materialItems = transactionToAdd.value.materialItems.map(material => {
-              const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
-              if (mapping) {
-                return {
-                  ...material,
-                  productId: mapping.productId, // ✅ Agregar productId
-                  stockLogId: mapping.stockLogId
-                };
-              }
-              return material;
-            });
-
-            // ✅ GUARDAR materialItemsAndStockLogs para reversión futura
-            transactionToAdd.value.materialItemsAndStockLogs = materialStockLogMap.map(m => ({
-              itemUuid: m.productId, // ID del producto en la colección products
-              stockLogUuid: m.stockLogId // ID del stockLog
-            }));
-
-            console.log('✅ Materials procesados en inventario con stockLogIds:', materialStockLogMap);
-            console.log('✅ materialItemsAndStockLogs guardado:', transactionToAdd.value.materialItemsAndStockLogs);
-          }
-
-
-          const materialTotal = (transactionToAdd.value.materialItems || []).reduce((sum, material) => {
-            return sum + (material.cost || 0) * (material.quantity || 0);
-          }, 0);
-          transactionToAdd.value.amount = materialTotal;
-
-          console.log('🛒 Expense de materials detectado:', {
-            totalMaterials: transactionToAdd.value.materialItems?.length || 0,
-            amount: materialTotal
-          });
-
-          // ✅ NUEVA ESTRUCTURA: Crear expense separado por cada compra
-          const expenseData = {
-            uuid: uuidv4(), // UUID único para cada compra
-            description: transactionToAdd.value.description || 'Compra de materiales',
-            category: 'materials',
-            bucket: transactionToAdd.value.bucket || null, // DIRECT_MATERIAL o COGS_RESALE
-          };
-
-          // Preparar log data con materialItems incluidos
-          const logData = {
-            amount: transactionToAdd.value.amount,
-            date: new Date(),
-            transactionRef: transactionToAdd.value.uuid,
-            account: transactionToAdd.value.account,
-            notes: transactionToAdd.value.notes || null,
-            // Incluir materialItems con totalCost calculado
-            materialItems: transactionToAdd.value.materialItems.map(item => ({
+            // Agregar transactionId al item para registrarlo en el stockLog
+            const itemWithTransaction = {
               ...item,
-              totalCost: (item.cost || 0) * (item.quantity || 0)
-            }))
-          };
-
-          console.log('✨ Creando expense individual para compra de materials');
-
-          expenseId = await createExpenseWithLog(expenseData, logData);
-
-          // Actualizar el expenseId en la transacción
-          transactionToAdd.value.expenseId = expenseId;
-          transactionToAdd.value.oldOrNewExpense = 'new';
-
-          console.log('✅ Expense de materials creado con ID:', expenseId);
-        } else {
-          // Para otros tipos de gastos (labor, overhead)
-          transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
-
-          // Preparar log data (usar new Date() en lugar de serverTimestamp para arrays)
-          const logData = {
-            amount: transactionToAdd.value.amount,
-            date: new Date(),
-            transactionRef: transactionToAdd.value.uuid,
-            account: transactionToAdd.value.account,
-            notes: transactionToAdd.value.notes || null
-          };
-
-          // Verificar si es expense nuevo o existente
-          if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
-            // Expense existente: agregar log
-            expenseId = transactionToAdd.value.expenseId;
-
-            console.log('📊 Agregando log a expense existente:', {
-              expenseId,
-              amount: logData.amount,
-              description: transactionToAdd.value.description
-            });
-
-            await addLogToExpense(expenseId, logData);
-            await updateExpenseMetadata(expenseId);
-
-            console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
-          } else {
-            // Expense nuevo: crear con primer log
-            const expenseData = {
-              description: transactionToAdd.value.description,
-              category: transactionToAdd.value.category,
-              subcategory: transactionToAdd.value.subcategory || null,
-              // Campos de clasificación contable
-              bucket: transactionToAdd.value.bucket || null,
-              paylabor: transactionToAdd.value.paylabor || null,
-              overheadUsage: transactionToAdd.value.overheadUsage || null,
-              splits: transactionToAdd.value.splits || null,
+              transactionId: transactionId,
+              // IMPORTANTE: quantity siempre es la cantidad solicitada por el usuario
+              // El ajuste de stock se hace en updateStock() de useInventory
+              quantity: item.quantity,
+              // Pasar también la cantidad máxima disponible para el ajuste
+              quantityForStock: item.quantityForStock,
+              // ✅ CAMPOS NECESARIOS PARA CREAR PRODUCTO NUEVO AUTOMÁTICAMENTE
+              oldOrNewProduct: item.oldOrNewProduct,
+              description: item.description,
+              unit: item.unit,
+              price: item.price,
+              trackStock: item.trackStock !== undefined ? item.trackStock : true, // ✅ true para MERCH
+              productType: 'MERCH' // Tipo por defecto para productos de venta
             };
 
-            console.log('✨ Creando nuevo expense con primer log:', expenseData);
+            console.log('📦 Procesando item para stockLog:', {
+              uuid: itemWithTransaction.uuid,
+              description: itemWithTransaction.description,
+              oldOrNewProduct: itemWithTransaction.oldOrNewProduct,
+              quantity: itemWithTransaction.quantity,
+              price: itemWithTransaction.price,
+              trackStock: itemWithTransaction.trackStock
+            });
+
+            // Log de advertencia si se vendió con stock insuficiente
+            if (item.proceedAnyway && item.requestedQuantity > item.actualQuantity) {
+              console.warn('⚠️ Venta con stock insuficiente:', {
+                producto: item.description,
+                cantidadSolicitada: item.requestedQuantity,
+                cantidadRealDescontada: item.actualQuantity,
+                stockDisponible: item.stock,
+                mensaje: 'StockLog registrará la cantidad solicitada, pero el stock solo se reducirá según disponibilidad'
+              });
+            }
+
+            const itemUuid = item.uuid;
+
+            // ⚡ Ejecutar stockLog y composición EN PARALELO
+            console.log('🔍 Procesando stockLog y composición en paralelo para:', itemUuid);
+            const [stockLogUuid, materialStockLogs] = await Promise.all([
+              createStockLog(itemWithTransaction),
+              processCompositionStockLogs(itemUuid, item.quantity, transactionId)
+            ]);
+
+            if (materialStockLogs.length > 0) {
+              console.log(`✅ Afectados ${materialStockLogs.length} materiales en composición`);
+            }
+
+            // Retornar el registro con stockLogs de producto y materiales
+            return {
+              itemUuid,
+              stockLogUuid,
+              materialStockLogs // Array de stockLogs de materiales (puede estar vacío)
+            };
+          });
+
+          // Ejecutar todos los items en paralelo
+          transactionToAdd.value.itemsAndStockLogs = await Promise.all(itemsPromises);
+          console.log(`✅ ${transactionToAdd.value.items.length} items procesados exitosamente`);
+        } else if (transactionToAdd.value.type === 'expense') {
+          // Importar funciones de useExpenses para gestionar expenses
+          const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
+
+          // Instanciar inventoryStore para gestionar productos y stockLogs
+          const inventoryStore = useInventoryStore();
+
+          // Declarar expenseId al inicio para que esté disponible en todo el bloque
+          let expenseId = null;
+
+          // Para materials, calcular el total desde materialItems
+          if (transactionToAdd.value.category === 'materials') {
+            // 🛒 GESTIÓN DE INVENTARIO: Procesar materials en la colección 'products'
+            console.log('🛒 Iniciando procesamiento de materials en inventario...');
+
+            // Llamar a inventoryStore para crear/actualizar productos y stockLogs
+            // Pasar el transactionId para vincular los stockLogs con la transacción
+            const materialStockLogMap = await inventoryStore.addMaterialItemsToInventoryForPurchase(
+              transactionToAdd.value.materialItems,
+              transactionId // Pasar el UUID de la transacción
+            );
+
+            // Actualizar materialItems con los stockLogIds y productIds generados
+            if (materialStockLogMap && materialStockLogMap.length > 0) {
+              transactionToAdd.value.materialItems = transactionToAdd.value.materialItems.map(material => {
+                const mapping = materialStockLogMap.find(m => m.materialUuid === material.uuid);
+                if (mapping) {
+                  return {
+                    ...material,
+                    productId: mapping.productId, // ✅ Agregar productId
+                    stockLogId: mapping.stockLogId
+                  };
+                }
+                return material;
+              });
+
+              // ✅ GUARDAR materialItemsAndStockLogs para reversión futura
+              transactionToAdd.value.materialItemsAndStockLogs = materialStockLogMap.map(m => ({
+                itemUuid: m.productId, // ID del producto en la colección products
+                stockLogUuid: m.stockLogId // ID del stockLog
+              }));
+
+              console.log('✅ Materials procesados en inventario con stockLogIds:', materialStockLogMap);
+              console.log('✅ materialItemsAndStockLogs guardado:', transactionToAdd.value.materialItemsAndStockLogs);
+            }
+
+
+            const materialTotal = (transactionToAdd.value.materialItems || []).reduce((sum, material) => {
+              return sum + (material.cost || 0) * (material.quantity || 0);
+            }, 0);
+            transactionToAdd.value.amount = materialTotal;
+
+            console.log('🛒 Expense de materials detectado:', {
+              totalMaterials: transactionToAdd.value.materialItems?.length || 0,
+              amount: materialTotal
+            });
+
+            // ✅ NUEVA ESTRUCTURA: Crear expense separado por cada compra
+            const expenseData = {
+              uuid: uuidv4(), // UUID único para cada compra
+              description: transactionToAdd.value.description || 'Compra de materiales',
+              category: 'materials',
+              bucket: transactionToAdd.value.bucket || null, // DIRECT_MATERIAL o COGS_RESALE
+            };
+
+            // Preparar log data con materialItems incluidos
+            const logData = {
+              amount: transactionToAdd.value.amount,
+              date: new Date(),
+              transactionRef: transactionId,
+              account: transactionToAdd.value.account,
+              notes: transactionToAdd.value.notes || null,
+              // Incluir materialItems con totalCost calculado
+              materialItems: transactionToAdd.value.materialItems.map(item => ({
+                ...item,
+                totalCost: (item.cost || 0) * (item.quantity || 0)
+              }))
+            };
+
+            console.log('✨ Creando expense individual para compra de materials');
 
             expenseId = await createExpenseWithLog(expenseData, logData);
 
             // Actualizar el expenseId en la transacción
             transactionToAdd.value.expenseId = expenseId;
+            transactionToAdd.value.oldOrNewExpense = 'new';
 
-            console.log('✅ Nuevo expense creado con ID:', expenseId);
+            console.log('✅ Expense de materials creado con ID:', expenseId);
+          } else {
+            // Para otros tipos de gastos (labor, overhead)
+            transactionToAdd.value.amount = transactionToAdd.value.amount || 0;
+
+            // Preparar log data (usar new Date() en lugar de serverTimestamp para arrays)
+            const logData = {
+              amount: transactionToAdd.value.amount,
+              date: new Date(),
+              transactionRef: transactionId,
+              account: transactionToAdd.value.account,
+              notes: transactionToAdd.value.notes || null
+            };
+
+            // Verificar si es expense nuevo o existente
+            if (transactionToAdd.value.oldOrNewExpense === 'old' && transactionToAdd.value.expenseId) {
+              // Expense existente: agregar log
+              expenseId = transactionToAdd.value.expenseId;
+
+              console.log('📊 Agregando log a expense existente:', {
+                expenseId,
+                amount: logData.amount,
+                description: transactionToAdd.value.description
+              });
+
+              await addLogToExpense(expenseId, logData);
+              await updateExpenseMetadata(expenseId);
+
+              console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
+            } else {
+              // Expense nuevo: crear con primer log
+              const expenseData = {
+                description: transactionToAdd.value.description,
+                category: transactionToAdd.value.category,
+                subcategory: transactionToAdd.value.subcategory || null,
+                // Campos de clasificación contable
+                bucket: transactionToAdd.value.bucket || null,
+                paylabor: transactionToAdd.value.paylabor || null,
+                overheadUsage: transactionToAdd.value.overheadUsage || null,
+                splits: transactionToAdd.value.splits || null,
+              };
+
+              console.log('✨ Creando nuevo expense con primer log:', expenseData);
+
+              expenseId = await createExpenseWithLog(expenseData, logData);
+
+              // Actualizar el expenseId en la transacción
+              transactionToAdd.value.expenseId = expenseId;
+
+              console.log('✅ Nuevo expense creado con ID:', expenseId);
+            }
           }
+
+          // === TRAZABILIDAD: Log de gasto relacionado ===
+          relatedEntities.push({
+            type: 'expense',
+            id: expenseId,
+            relationship: 'generates_expense_log',
+            impact: 'medium',
+            metadata: {
+              isNew: transactionToAdd.value.oldOrNewExpense === 'new',
+              category: transactionToAdd.value.category,
+              amount: transactionToAdd.value.amount,
+              isMaterialPurchase: transactionToAdd.value.category === 'materials',
+              materialItemsCount: transactionToAdd.value.materialItems?.length || 0
+            }
+          });
+
+          // Mantener compatibilidad con expensesStore (legacy)
+          expensesStore.resetExpenseToAdd();
         }
 
-        // === TRAZABILIDAD: Log de gasto relacionado ===
-        relatedEntities.push({
-          type: 'expense',
-          id: expenseId,
-          relationship: 'generates_expense_log',
-          impact: 'medium',
-          metadata: {
-            isNew: transactionToAdd.value.oldOrNewExpense === 'new',
-            category: transactionToAdd.value.category,
+        // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
+        if (transactionToAdd.value.type === 'income') {
+          // Obtener el total de la transacción
+          const totalAmount = getTransactionToAddTotal();
+
+          // Si payments está vacío, crear payment inicial con el monto total
+          if (!transactionToAdd.value.payments || transactionToAdd.value.payments.length === 0) {
+            // Pago completo: crear payment con el monto total
+            transactionToAdd.value.payments = [{
+              uuid: crypto.randomUUID(),
+              amount: totalAmount,
+              date: Timestamp.now(),
+              account: transactionToAdd.value.account || 'cash',
+              notes: 'Pago completo al registrar',
+              registeredBy: transactionToAdd.value.userId || 'unknown'
+            }];
+          }
+
+          // Calcular y agregar campos calculados de pago
+          // Asegurarse de pasar total explícitamente
+          const calculatedFields = calculatePaymentStatus({
+            ...transactionToAdd.value,
+            total: totalAmount,
+            amount: totalAmount
+          });
+
+          transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
+          transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
+          transactionToAdd.value.balance = calculatedFields.balance;
+
+          // Asegurar que clientId tenga un valor
+          if (!transactionToAdd.value.clientId) {
+            transactionToAdd.value.clientId = ANONYMOUS_CLIENT_ID;
+            transactionToAdd.value.clientName = 'Cliente Anónimo';
+          }
+
+          console.log('💰 Información de pago procesada:', {
+            totalAmount,
             amount: transactionToAdd.value.amount,
-            isMaterialPurchase: transactionToAdd.value.category === 'materials',
-            materialItemsCount: transactionToAdd.value.materialItems?.length || 0
+            payments: transactionToAdd.value.payments.length,
+            totalPaid: transactionToAdd.value.totalPaid,
+            balance: transactionToAdd.value.balance,
+            paymentStatus: transactionToAdd.value.paymentStatus,
+            clientId: transactionToAdd.value.clientId
+          });
+        }
+
+        // === TRAZABILIDAD: Log de creación de transacción (fire-and-forget) ===
+        logTransactionOperation(
+          'create',
+          transactionId,
+          transactionToAdd.value,
+          {
+            reason: 'user_transaction_creation',
+            severity: transactionToAdd.value.amount > 10000 ? 'high' : 'medium',
+            tags: [
+              'transaction_creation',
+              `transaction_${transactionToAdd.value.type}`,
+              `payment_${transactionToAdd.value.account}`,
+              transactionToAdd.value.amount > 10000 ? 'high_value' : 'standard_value'
+            ],
+            relatedEntities,
+            component: 'TransactionStore.addTransaction'
           }
+        ).then(id => { traceId = id; }).catch(err => console.warn('⚠️ Traceability log failed:', err));
+
+        // Limpiar objeto de transacción: eliminar campos undefined antes de guardar en Firestore
+        const cleanTransaction = JSON.parse(JSON.stringify(transactionToAdd.value, (key, value) => {
+          return value === undefined ? null : value;
+        }));
+
+        // ⚡ FASE 3: Asegurar que el UUID esté presente (crítico para optimistic UI)
+        cleanTransaction.uuid = transactionId;
+
+        // ☁️ FASE 2: Agregar estado de procesamiento para Cloud Function
+        cleanTransaction.processingStatus = 'pending';
+
+        // Crear la transacción en Firestore (OPERACIÓN CRÍTICA)
+        await createTransaction(cleanTransaction);
+        console.log('✅ Transaction added successfully to Firestore');
+        console.log('📊 Transaction data saved:', {
+          uuid: cleanTransaction.uuid,
+          type: cleanTransaction.type,
+          amount: cleanTransaction.amount,
+          balance: cleanTransaction.balance,
+          clientId: cleanTransaction.clientId,
+          clientName: cleanTransaction.clientName,
+          paymentStatus: cleanTransaction.paymentStatus
         });
 
-        // Mantener compatibilidad con expensesStore (legacy)
-        expensesStore.resetExpenseToAdd();
-      }
-
-      // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
-      if (transactionToAdd.value.type === 'income') {
-        // Obtener el total de la transacción
-        const totalAmount = getTransactionToAddTotal();
-
-        // Si payments está vacío, crear payment inicial con el monto total
-        if (!transactionToAdd.value.payments || transactionToAdd.value.payments.length === 0) {
-          // Pago completo: crear payment con el monto total
-          transactionToAdd.value.payments = [{
-            uuid: crypto.randomUUID(),
-            amount: totalAmount,
-            date: Timestamp.now(),
-            account: transactionToAdd.value.account || 'cash',
-            notes: 'Pago completo al registrar',
-            registeredBy: transactionToAdd.value.userId || 'unknown'
-          }];
+        // ⚡ Actualizar transacción optimista a confirmada
+        const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
+        if (index !== -1) {
+          transactionsInStore.value[index] = {
+            ...transactionsInStore.value[index],
+            ...cleanTransaction,
+            isOptimistic: false // ⚡ Ya no es optimista
+          };
+          console.log('⚡ [OPTIMISTIC] Transacción confirmada en UI:', transactionId);
         }
 
-        // Calcular y agregar campos calculados de pago
-        // Asegurarse de pasar total explícitamente
-        const calculatedFields = calculatePaymentStatus({
-          ...transactionToAdd.value,
-          total: totalAmount,
-          amount: totalAmount
-        });
+        // ⚡ UI LISTA - Marcar como éxito inmediatamente
+        status.value = 'success';
 
-        transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
-        transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
-        transactionToAdd.value.balance = calculatedFields.balance;
+        // ☁️ FASE 2: OPERACIONES SECUNDARIAS AHORA EN CLOUD FUNCTION
+        console.log('☁️ Operaciones secundarias delegadas a Cloud Function (processTransactionBackground)');
 
-        // Asegurar que clientId tenga un valor
-        if (!transactionToAdd.value.clientId) {
-          transactionToAdd.value.clientId = ANONYMOUS_CLIENT_ID;
-          transactionToAdd.value.clientName = 'Cliente Anónimo';
-        }
-
-        console.log('💰 Información de pago procesada:', {
-          totalAmount,
-          amount: transactionToAdd.value.amount,
-          payments: transactionToAdd.value.payments.length,
-          totalPaid: transactionToAdd.value.totalPaid,
-          balance: transactionToAdd.value.balance,
-          paymentStatus: transactionToAdd.value.paymentStatus,
-          clientId: transactionToAdd.value.clientId
-        });
-      }
-
-      // === TRAZABILIDAD: Log de creación de transacción ===
-      traceId = await logTransactionOperation(
-        'create',
-        transactionToAdd.value.uuid,
-        transactionToAdd.value,
-        {
-          reason: 'user_transaction_creation',
-          severity: transactionToAdd.value.amount > 10000 ? 'high' : 'medium',
-          tags: [
-            'transaction_creation',
-            `transaction_${transactionToAdd.value.type}`,
-            `payment_${transactionToAdd.value.account}`,
-            transactionToAdd.value.amount > 10000 ? 'high_value' : 'standard_value'
-          ],
-          relatedEntities,
-          component: 'TransactionStore.addTransaction'
-        }
-      );
-
-      // Limpiar objeto de transacción: eliminar campos undefined antes de guardar en Firestore
-      const cleanTransaction = JSON.parse(JSON.stringify(transactionToAdd.value, (key, value) => {
-        return value === undefined ? null : value;
-      }));
-
-      // Crear la transacción en Firestore
-      await createTransaction(cleanTransaction);
-      console.log('✅ Transaction added successfully with traceId:', traceId);
-      console.log('📊 Transaction data saved:', {
-        uuid: cleanTransaction.uuid,
-        type: cleanTransaction.type,
-        amount: cleanTransaction.amount,
-        balance: cleanTransaction.balance,
-        clientId: cleanTransaction.clientId,
-        clientName: cleanTransaction.clientName,
-        paymentStatus: cleanTransaction.paymentStatus
-      });
-
-      // === ANALYTICS: Trackear transacción creada (SOLO income/expense) ===
-      if (isValidTransactionForStreak(cleanTransaction.type)) {
-        try {
+        // === ANALYTICS: Trackear transacción creada EN FRONTEND (para feedback inmediato) ===
+        if (isValidTransactionForStreak(cleanTransaction.type)) {
           const businessId = ensureBusinessId();
           const today = new Date();
           const year = today.getFullYear();
@@ -577,94 +629,83 @@ export function useTransactionStore() {
           const day = String(today.getDate()).padStart(2, '0');
           const dayId = `${year}-${month}-${day}`;
 
-          // Verificar si es la primera transacción del día
-          let isFirstTransactionOfDay = false;
-          try {
-            const { getTodayDailySummary } = useDailySummary();
-            const todaySummary = await getTodayDailySummary();
-
-            // Si hasTxn es false, esta es la primera transacción
-            isFirstTransactionOfDay = !todaySummary || !todaySummary.hasTxn;
-          } catch (summaryError) {
-            console.warn('⚠️ No se pudo verificar si es primera transacción:', summaryError);
-          }
-
+          // Fire-and-forget: no bloquear UI
           trackTransactionCreated({
             businessId,
             dayId,
             transactionType: cleanTransaction.type,
             amount: cleanTransaction.amount || cleanTransaction.total || 0,
             account: cleanTransaction.account,
-            isFirstTransactionOfDay
+            isFirstTransactionOfDay: false // Se recalcula en Cloud Function
           });
-        } catch (analyticsError) {
-          console.warn('⚠️ Error al trackear transacción en analytics:', analyticsError);
-          // No lanzar error, la transacción se guardó correctamente
         }
-      }
 
-      // Actualizar metadata del cliente si la transacción tiene clientId
-      if (transactionToAdd.value.clientId && transactionToAdd.value.clientId !== ANONYMOUS_CLIENT_ID) {
-        try {
-          console.log(`🔄 Actualizando metadata del cliente: ${transactionToAdd.value.clientId}`);
-          const { useClientStore } = await import('@/stores/clientStore');
-          const clientStore = useClientStore();
-          await clientStore.updateClientMetadata(transactionToAdd.value.clientId);
-          console.log('✅ Cliente metadata actualizada después de crear transacción');
-        } catch (clientError) {
-          console.warn('⚠️ No se pudo actualizar metadata del cliente:', clientError);
-          // No lanzar error, la transacción ya se guardó correctamente
-        }
-      }
-
-      // ✅ SI LA TRANSACCIÓN VIENE DE UNA COTIZACIÓN, MARCARLA COMO CONVERTIDA
-      if (transactionToAdd.value.quoteId) {
-        try {
-          console.log(`🔄 Marcando cotización ${transactionToAdd.value.quoteNumber} como convertida`);
-          const { useQuotes } = await import('@/composables/useQuotes');
-          const { markQuoteAsConverted } = useQuotes();
-          await markQuoteAsConverted(transactionToAdd.value.quoteId, transactionToAdd.value.uuid);
-          console.log('✅ Cotización marcada como convertida exitosamente');
-        } catch (quoteError) {
-          console.warn('⚠️ No se pudo marcar cotización como convertida:', quoteError);
-          // No lanzar error, la transacción ya se guardó correctamente
-        }
-      }
-
-      // === TRAZABILIDAD: Finalizar operación compleja ===
-      await operationChain.finish({
-        reason: 'transaction_creation_completed',
-        metadata: {
-          transactionId: transactionToAdd.value.uuid,
-          transactionType: transactionToAdd.value.type,
-          totalValue: transactionToAdd.value.total,
-          itemsCount: transactionToAdd.value.items?.length || 0
-        }
-      });
-
-      status.value = 'success';
-
-    } catch (error) {
-      console.error('❌ Error adding transaction:', error);
-
-      // === TRAZABILIDAD: Log de error ===
-      if (traceId) {
-        await logTransactionOperation(
-          'error',
-          transactionToAdd.value.uuid || 'unknown',
-          { error: error.message },
-          {
-            reason: 'transaction_creation_failed',
-            severity: 'critical',
-            tags: ['transaction_error', 'creation_failure'],
-            component: 'TransactionStore.addTransaction'
+        // === TRAZABILIDAD: Finalizar operación compleja (fire-and-forget) ===
+        operationChain.finish({
+          reason: 'transaction_creation_completed',
+          metadata: {
+            transactionId: transactionId,
+            transactionType: transactionToAdd.value.type,
+            totalValue: transactionToAdd.value.total,
+            itemsCount: transactionToAdd.value.items?.length || 0
           }
-        );
-      }
+        }).catch(err => console.warn('⚠️ Traceability finish failed:', err));
 
+      } catch (error) {
+        console.error('❌ Error adding transaction:', error);
+
+        // === TRAZABILIDAD: Log de error ===
+        if (traceId) {
+          await logTransactionOperation(
+            'error',
+            transactionId || 'unknown',
+            { error: error.message },
+            {
+              reason: 'transaction_creation_failed',
+              severity: 'critical',
+              tags: ['transaction_error', 'creation_failure'],
+              component: 'TransactionStore.addTransaction'
+            }
+          );
+        }
+
+        status.value = 'error';
+        throw error;
+      }
+    };
+
+    // ⚡ FASE 3: Rollback - Remover transacción de la UI si falla
+    const rollback = () => {
+      console.log('⚡ [OPTIMISTIC] Revirtiendo transacción de UI:', transactionId);
+      const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
+      if (index !== -1) {
+        transactionsInStore.value.splice(index, 1);
+      }
       status.value = 'error';
-      throw error;
+    };
+
+    // ⚡ FASE 3: Ejecutar con Optimistic UI
+    const result = await executeOptimistically(
+      localUpdate,
+      remoteUpdate,
+      rollback,
+      {
+        type: 'add_transaction',
+        operationType: 'add_transaction',
+        entityId: transactionId,
+        entityType: 'transaction',
+        description: transactionToAdd.value.type === 'income'
+          ? 'Registrar venta'
+          : 'Registrar gasto'
+      }
+    );
+
+    if (!result.success) {
+      console.error('❌ [OPTIMISTIC] Transaction failed after all retries');
+      throw new Error('Failed to add transaction after retries');
     }
+
+    console.log('✅ [OPTIMISTIC] Transaction completed successfully');
   };
 
   const getTransactions = async () => {
@@ -1322,9 +1363,11 @@ export function useTransactionStore() {
 
     console.log('🗑️ [DELETE INCOME] Iniciando eliminación de venta:', transactionToDelete.uuid);
 
-    // 1. REVERTIR STOCK - Sumar lo que se vendió
+    // 1. REVERTIR STOCK - ⚡ OPTIMIZACIÓN: Procesar items en paralelo
     if (transactionToDelete.itemsAndStockLogs && transactionToDelete.itemsAndStockLogs.length > 0) {
-      for (const itemLog of transactionToDelete.itemsAndStockLogs) {
+      console.log(`⚡ Revirtiendo ${transactionToDelete.itemsAndStockLogs.length} items en paralelo...`);
+
+      const revertPromises = transactionToDelete.itemsAndStockLogs.map(async (itemLog) => {
         const { itemUuid, stockLogUuid } = itemLog;
 
         console.log(`  📦 Revirtiendo stock para producto ${itemUuid}, stockLog ${stockLogUuid}`);
@@ -1336,7 +1379,7 @@ export function useTransactionStore() {
 
           if (!productDoc.exists()) {
             console.warn(`  ⚠️ Producto ${itemUuid} no encontrado, saltando...`);
-            continue;
+            return { success: false, itemUuid, error: 'Producto no encontrado' };
           }
 
           const productData = productDoc.data();
@@ -1346,7 +1389,7 @@ export function useTransactionStore() {
 
           if (!stockLog) {
             console.warn(`  ⚠️ StockLog ${stockLogUuid} no encontrado, saltando...`);
-            continue;
+            return { success: false, itemUuid, error: 'StockLog no encontrado' };
           }
 
           // c) Sumar la cantidad vendida al stock actual
@@ -1362,20 +1405,20 @@ export function useTransactionStore() {
 
           console.log(`  ✅ Stock revertido: ${productData.stock} + ${stockLog.quantity} = ${newStock}`);
 
-          // e) Log de trazabilidad por item
-          await logInventoryOperation('revert', itemUuid, {
+          // e) Log de trazabilidad por item (fire-and-forget)
+          logInventoryOperation('revert', itemUuid, {
             reason: 'income_transaction_deleted',
             stockLogId: stockLogUuid,
             quantityReverted: stockLog.quantity,
             previousStock: productData.stock,
             newStock
-          });
+          }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
-          // 🧩 NUEVO: Revertir stock de materiales en composición
+          // 🧩 OPTIMIZACIÓN: Revertir materiales en composición EN PARALELO
           if (itemLog.materialStockLogs && itemLog.materialStockLogs.length > 0) {
-            console.log(`  🔄 Revirtiendo ${itemLog.materialStockLogs.length} materiales de composición...`);
+            console.log(`  🔄 Revirtiendo ${itemLog.materialStockLogs.length} materiales en paralelo...`);
 
-            for (const materialLog of itemLog.materialStockLogs) {
+            const materialPromises = itemLog.materialStockLogs.map(async (materialLog) => {
               const { materialId, stockLogUuid: materialStockLogUuid, description } = materialLog;
 
               try {
@@ -1387,7 +1430,7 @@ export function useTransactionStore() {
 
                 if (!materialDoc.exists()) {
                   console.warn(`    ⚠️ Material ${materialId} no encontrado, saltando...`);
-                  continue;
+                  return { success: false, materialId, error: 'Material no encontrado' };
                 }
 
                 const materialData = materialDoc.data();
@@ -1397,7 +1440,7 @@ export function useTransactionStore() {
 
                 if (!materialStockLog) {
                   console.warn(`    ⚠️ StockLog ${materialStockLogUuid} no encontrado en material, saltando...`);
-                  continue;
+                  return { success: false, materialId, error: 'StockLog no encontrado' };
                 }
 
                 // c) Sumar la cantidad usada al stock actual del material
@@ -1415,76 +1458,122 @@ export function useTransactionStore() {
 
                 console.log(`    ✅ Material revertido: ${materialData.stock} + ${materialStockLog.quantity} = ${newMaterialStock}`);
 
-                // e) Log de trazabilidad para el material
-                await logInventoryOperation('revert', materialId, {
+                // e) Log de trazabilidad para el material (fire-and-forget)
+                logInventoryOperation('revert', materialId, {
                   reason: 'income_transaction_deleted_composition_material',
                   stockLogId: materialStockLogUuid,
                   quantityReverted: materialStockLog.quantity,
                   previousStock: materialData.stock,
                   newStock: newMaterialStock,
                   relatedProductId: itemUuid
-                });
+                }).catch(err => console.warn('⚠️ Traceability log failed:', err));
+
+                return { success: true, materialId };
 
               } catch (materialError) {
                 console.error(`    ❌ Error revirtiendo material ${materialId}:`, materialError);
-                // Continuar con los demás materiales
+                return { success: false, materialId, error: materialError.message };
               }
-            }
+            });
 
-            console.log(`  ✅ Materiales de composición revertidos exitosamente`);
+            // Ejecutar reversión de materiales en paralelo
+            const materialResults = await Promise.allSettled(materialPromises);
+            const failedMaterials = materialResults.filter(r => r.status === 'rejected' || r.value?.success === false);
+
+            if (failedMaterials.length > 0) {
+              console.warn(`  ⚠️ ${failedMaterials.length} materiales fallaron al revertir`);
+            } else {
+              console.log(`  ✅ Materiales de composición revertidos exitosamente`);
+            }
           }
+
+          return { success: true, itemUuid };
 
         } catch (itemError) {
           console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
-          // Continuar con los demás items
+          return { success: false, itemUuid, error: itemError.message };
         }
+      });
+
+      // Ejecutar reversión de todos los items en paralelo
+      const results = await Promise.allSettled(revertPromises);
+      const failedItems = results.filter(r => r.status === 'rejected' || r.value?.success === false);
+
+      if (failedItems.length > 0) {
+        console.warn(`⚠️ ${failedItems.length} items fallaron al revertir stock`);
+      } else {
+        console.log(`✅ Stock revertido exitosamente para ${transactionToDelete.itemsAndStockLogs.length} items`);
       }
     }
 
-    // 2. ELIMINAR PAGOS ASOCIADOS TIPO 'payment'
+    // 2. ⚡ OPTIMIZACIÓN: Eliminar pagos asociados EN PARALELO
     const relatedPayments = transactionsInStore.value.filter(
       t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
     );
 
     if (relatedPayments.length > 0) {
-      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados`);
-      for (const payment of relatedPayments) {
-        await deleteTransactionByID(payment.uuid);
-        console.log(`    ✅ Payment ${payment.uuid} eliminado`);
-      }
+      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados en paralelo`);
+      const paymentPromises = relatedPayments.map(payment =>
+        deleteTransactionByID(payment.uuid)
+          .then(() => {
+            console.log(`    ✅ Payment ${payment.uuid} eliminado`);
+            return { success: true, paymentId: payment.uuid };
+          })
+          .catch(err => {
+            console.error(`    ❌ Error eliminando payment ${payment.uuid}:`, err);
+            return { success: false, paymentId: payment.uuid, error: err.message };
+          })
+      );
+
+      await Promise.allSettled(paymentPromises);
     }
 
-    // 3. ELIMINAR LA TRANSACCIÓN (ANTES de actualizar metadata)
+    // 3. ELIMINAR LA TRANSACCIÓN (OPERACIÓN CRÍTICA)
     await deleteTransactionByID(transactionToDelete.uuid);
     console.log(`  🗑️ Transacción eliminada de Firestore`);
 
-    // 4. ACTUALIZAR METADATA DEL CLIENTE (DESPUÉS de eliminar para que el recálculo sea correcto)
+    // 4. ⚡ OPERACIONES SECUNDARIAS EN BACKGROUND (fire-and-forget)
+    const secondaryOps = [];
+
+    // Actualizar metadata del cliente
     if (transactionToDelete.clientId && transactionToDelete.clientId !== ANONYMOUS_CLIENT_ID) {
-      console.log(`  👤 Actualizando metadata del cliente ${transactionToDelete.clientId}`);
-      await clientStore.updateClientMetadata(transactionToDelete.clientId);
+      secondaryOps.push(
+        (async () => {
+          console.log(`  👤 Actualizando metadata del cliente ${transactionToDelete.clientId}`);
+          await clientStore.updateClientMetadata(transactionToDelete.clientId);
+          console.log('  ✅ Cliente metadata actualizada');
+        })()
+      );
     }
 
-    // 5. LOG DE TRAZABILIDAD
-    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
-      reason: 'user_income_transaction_deletion',
-      severity: 'high',
-      tags: ['transaction_delete', 'income', 'stock_reverted', 'client_affected'],
-      relatedEntities: [
-        ...(transactionToDelete.itemsAndStockLogs || []).map(il => ({
-          type: 'stockLog',
-          id: il.stockLogUuid,
-          relationship: 'deleted',
-          impact: 'high'
-        })),
-        {
-          type: 'client',
-          id: transactionToDelete.clientId,
-          relationship: 'metadata_recalculated',
-          impact: 'medium'
-        }
-      ],
-      component: 'TransactionStore.deleteIncomeTransaction'
-    });
+    // Log de trazabilidad
+    secondaryOps.push(
+      logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+        reason: 'user_income_transaction_deletion',
+        severity: 'high',
+        tags: ['transaction_delete', 'income', 'stock_reverted', 'client_affected'],
+        relatedEntities: [
+          ...(transactionToDelete.itemsAndStockLogs || []).map(il => ({
+            type: 'stockLog',
+            id: il.stockLogUuid,
+            relationship: 'deleted',
+            impact: 'high'
+          })),
+          {
+            type: 'client',
+            id: transactionToDelete.clientId,
+            relationship: 'metadata_recalculated',
+            impact: 'medium'
+          }
+        ],
+        component: 'TransactionStore.deleteIncomeTransaction'
+      })
+    );
+
+    // Ejecutar operaciones secundarias sin bloquear
+    Promise.allSettled(secondaryOps)
+      .then(() => console.log('✅ [DELETE INCOME] Operaciones secundarias completadas'))
+      .catch(err => console.warn('⚠️ Error en operaciones secundarias:', err));
 
     console.log('✅ [DELETE INCOME] Venta eliminada exitosamente');
   };
