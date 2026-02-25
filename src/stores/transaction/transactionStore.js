@@ -6,7 +6,7 @@ import { useTransaccion } from '@/composables/useTransaction';
 import { useInventory } from '@/composables/useInventory';
 import { useTraceability } from '@/composables/useTraceability';
 import { useExpenses } from '@/composables/useExpenses';
-import { round2, multiplyMoney, addMoney, parseMoneyFloat } from '@/utils/mathUtils';
+import { round2, multiplyMoney, addMoney, parseMoneyFloat, roundStock } from '@/utils/mathUtils';
 import { serverTimestamp, Timestamp, getFirestore, doc, writeBatch } from 'firebase/firestore';
 import { calculatePaymentStatus, validateNewPayment } from '@/utils/paymentCalculator';
 import { ANONYMOUS_CLIENT_ID } from '@/types/client';
@@ -154,7 +154,8 @@ export function useTransactionStore() {
         try {
           const materialProductId = material.productId;
           const quantityPerUnit = parseFloat(material.quantity) || 0;
-          const totalQuantityNeeded = quantityPerUnit * quantitySold;
+          // ✅ Aplicar redondeo para evitar decimales excesivos
+          const totalQuantityNeeded = roundStock(quantityPerUnit * quantitySold);
 
           // Validar que el material existe
           const materialProduct = await getProductById(materialProductId);
@@ -179,7 +180,7 @@ export function useTransactionStore() {
           // Crear el item para createStockLog
           const materialItem = {
             uuid: materialProductId,
-            quantity: Math.round(totalQuantityNeeded * 100) / 100, // Redondear a 2 decimales
+            quantity: roundStock(totalQuantityNeeded), // ✅ Redondeo con mathUtils
             transactionId: transactionId,
             oldOrNewProduct: 'old', // Los materiales siempre deben existir
             description: materialProduct.description,
@@ -259,18 +260,32 @@ export function useTransactionStore() {
       let traceId = null;
 
       try {
+        // 🔒 CRÍTICO: Crear copia inmutable de transactionToAdd para evitar que
+        // se pierdan datos si el componente resetea el store durante el procesamiento async
+        const transactionSnapshot = JSON.parse(JSON.stringify(transactionToAdd.value));
+
+        console.log('🔒 [SNAPSHOT] Creada copia inmutable de transactionToAdd:', {
+          type: transactionSnapshot.type,
+          itemsCount: transactionSnapshot.items?.length || 0,
+          amount: transactionSnapshot.amount,
+          hasItems: !!transactionSnapshot.items && transactionSnapshot.items.length > 0
+        });
+
         // === TRAZABILIDAD: Iniciar operación compleja ===
         const operationChain = startOperationChain('add_transaction');
 
         // Preparar datos para trazabilidad
         const relatedEntities = [];
 
-        if (transactionToAdd.value.type === 'income') {
+        if (transactionSnapshot.type === 'income') {
           // Procesar transacción de ingreso:
-          transactionToAdd.value.amount = getTransactionToAddTotal();
+          // 🔒 Calcular amount desde el snapshot
+          transactionSnapshot.amount = transactionSnapshot.items.reduce((sum, item) => {
+            return addMoney(sum, multiplyMoney(item.price, item.quantity));
+          }, 0);
 
           // === TRAZABILIDAD: Log de items relacionados ===
-          for (const item of transactionToAdd.value.items) {
+          for (const item of transactionSnapshot.items) {
             relatedEntities.push({
               type: 'inventory',
               id: item.uuid || item.selectedProductUuid,
@@ -280,9 +295,9 @@ export function useTransactionStore() {
           }
 
           // ⚡ OPTIMIZACIÓN: Procesar items en paralelo
-          console.log(`🚀 Procesando ${transactionToAdd.value.items.length} items en paralelo...`);
+          console.log(`🚀 Procesando ${transactionSnapshot.items.length} items en paralelo...`);
 
-          const itemsPromises = transactionToAdd.value.items.map(async (item) => {
+          const itemsPromises = transactionSnapshot.items.map(async (item) => {
             // === TRAZABILIDAD: Log antes de crear stock log (fire-and-forget) ===
             operationChain.addStep('update', 'inventory', item.uuid || item.selectedProductUuid, {
               previousState: { stock: item.currentStock || 0 },
@@ -352,8 +367,8 @@ export function useTransactionStore() {
           });
 
           // Ejecutar todos los items en paralelo
-          transactionToAdd.value.itemsAndStockLogs = await Promise.all(itemsPromises);
-          console.log(`✅ ${transactionToAdd.value.items.length} items procesados exitosamente`);
+          transactionSnapshot.itemsAndStockLogs = await Promise.all(itemsPromises);
+          console.log(`✅ ${transactionSnapshot.items.length} items procesados exitosamente`);
         } else if (transactionToAdd.value.type === 'expense') {
           // Importar funciones de useExpenses para gestionar expenses
           const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
@@ -514,49 +529,51 @@ export function useTransactionStore() {
         }
 
         // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
-        if (transactionToAdd.value.type === 'income') {
-          // Obtener el total de la transacción
-          const totalAmount = getTransactionToAddTotal();
+        if (transactionSnapshot.type === 'income') {
+          // 🔒 Calcular el total desde el snapshot (no usar transactionToAdd.value)
+          const totalAmount = transactionSnapshot.items.reduce((sum, item) => {
+            return addMoney(sum, multiplyMoney(item.price, item.quantity));
+          }, 0);
 
           // Si payments está vacío, crear payment inicial con el monto total
-          if (!transactionToAdd.value.payments || transactionToAdd.value.payments.length === 0) {
+          if (!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) {
             // Pago completo: crear payment con el monto total
-            transactionToAdd.value.payments = [{
+            transactionSnapshot.payments = [{
               uuid: crypto.randomUUID(),
               amount: totalAmount,
               date: Timestamp.now(),
-              account: transactionToAdd.value.account || 'cash',
+              account: transactionSnapshot.account || 'cash',
               notes: 'Pago completo al registrar',
-              registeredBy: transactionToAdd.value.userId || 'unknown'
+              registeredBy: transactionSnapshot.userId || 'unknown'
             }];
           }
 
           // Calcular y agregar campos calculados de pago
           // Asegurarse de pasar total explícitamente
           const calculatedFields = calculatePaymentStatus({
-            ...transactionToAdd.value,
+            ...transactionSnapshot,
             total: totalAmount,
             amount: totalAmount
           });
 
-          transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
-          transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
-          transactionToAdd.value.balance = calculatedFields.balance;
+          transactionSnapshot.paymentStatus = calculatedFields.paymentStatus;
+          transactionSnapshot.totalPaid = calculatedFields.totalPaid;
+          transactionSnapshot.balance = calculatedFields.balance;
 
           // Asegurar que clientId tenga un valor
-          if (!transactionToAdd.value.clientId) {
-            transactionToAdd.value.clientId = ANONYMOUS_CLIENT_ID;
-            transactionToAdd.value.clientName = 'Cliente Anónimo';
+          if (!transactionSnapshot.clientId) {
+            transactionSnapshot.clientId = ANONYMOUS_CLIENT_ID;
+            transactionSnapshot.clientName = 'Cliente Anónimo';
           }
 
           console.log('💰 Información de pago procesada:', {
             totalAmount,
-            amount: transactionToAdd.value.amount,
-            payments: transactionToAdd.value.payments.length,
-            totalPaid: transactionToAdd.value.totalPaid,
-            balance: transactionToAdd.value.balance,
-            paymentStatus: transactionToAdd.value.paymentStatus,
-            clientId: transactionToAdd.value.clientId
+            amount: transactionSnapshot.amount,
+            payments: transactionSnapshot.payments.length,
+            totalPaid: transactionSnapshot.totalPaid,
+            balance: transactionSnapshot.balance,
+            paymentStatus: transactionSnapshot.paymentStatus,
+            clientId: transactionSnapshot.clientId
           });
         }
 
@@ -564,25 +581,124 @@ export function useTransactionStore() {
         logTransactionOperation(
           'create',
           transactionId,
-          transactionToAdd.value,
+          transactionSnapshot,  // 🔒 Usar snapshot en lugar de transactionToAdd.value
           {
             reason: 'user_transaction_creation',
-            severity: transactionToAdd.value.amount > 10000 ? 'high' : 'medium',
+            severity: transactionSnapshot.amount > 10000 ? 'high' : 'medium',
             tags: [
               'transaction_creation',
-              `transaction_${transactionToAdd.value.type}`,
-              `payment_${transactionToAdd.value.account}`,
-              transactionToAdd.value.amount > 10000 ? 'high_value' : 'standard_value'
+              `transaction_${transactionSnapshot.type}`,
+              `payment_${transactionSnapshot.account}`,
+              transactionSnapshot.amount > 10000 ? 'high_value' : 'standard_value'
             ],
             relatedEntities,
             component: 'TransactionStore.addTransaction'
           }
         ).then(id => { traceId = id; }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
-        // Limpiar objeto de transacción: eliminar campos undefined antes de guardar en Firestore
-        const cleanTransaction = JSON.parse(JSON.stringify(transactionToAdd.value, (key, value) => {
-          return value === undefined ? null : value;
-        }));
+        // 🔒 SINCRONIZACIÓN FINAL: Si hay campos que fueron modificados en transactionToAdd.value
+        //    durante el procesamiento de expenses, copiarlos al snapshot
+        if (transactionSnapshot.type === 'expense') {
+          // Los gastos pudieron haber modificado estos campos
+          if (transactionToAdd.value.expenseId) {
+            transactionSnapshot.expenseId = transactionToAdd.value.expenseId;
+          }
+          if (transactionToAdd.value.oldOrNewExpense) {
+            transactionSnapshot.oldOrNewExpense = transactionToAdd.value.oldOrNewExpense;
+          }
+          if (transactionToAdd.value.materialItemsAndStockLogs) {
+            transactionSnapshot.materialItemsAndStockLogs = transactionToAdd.value.materialItemsAndStockLogs;
+          }
+          if (transactionToAdd.value.amount !== undefined) {
+            transactionSnapshot.amount = transactionToAdd.value.amount;
+          }
+          if (transactionToAdd.value.materialItems) {
+            transactionSnapshot.materialItems = transactionToAdd.value.materialItems;
+          }
+
+          console.log('🔄 Sincronizados campos de expense al snapshot');
+        }
+
+        // ✅ DEBUG PASO 1: Verificar datos ANTES de limpiar (usando snapshot)
+        console.log('🔍 [DEBUG PASO 1] transactionSnapshot ANTES de limpiar:', {
+          uuid: transactionSnapshot.uuid,
+          type: transactionSnapshot.type,
+          account: transactionSnapshot.account,
+          amount: transactionSnapshot.amount,
+          description: transactionSnapshot.description,
+          category: transactionSnapshot.category,
+          items: transactionSnapshot.items?.length || 0,
+          payments: transactionSnapshot.payments?.length || 0,
+          itemsAndStockLogs: transactionSnapshot.itemsAndStockLogs?.length || 0,
+          materialItems: transactionSnapshot.materialItems?.length || 0,
+          materialItemsAndStockLogs: transactionSnapshot.materialItemsAndStockLogs?.length || 0,
+          clientId: transactionSnapshot.clientId,
+          clientName: transactionSnapshot.clientName,
+          paymentStatus: transactionSnapshot.paymentStatus,
+          balance: transactionSnapshot.balance,
+          totalPaid: transactionSnapshot.totalPaid,
+          fromAccount: transactionSnapshot.fromAccount,
+          toAccount: transactionSnapshot.toAccount,
+          bucket: transactionSnapshot.bucket,
+          paylabor: transactionSnapshot.paylabor,
+          overheadUsage: transactionSnapshot.overheadUsage,
+          TODOS_LOS_CAMPOS: Object.keys(transactionSnapshot)
+        });
+
+        // ✅ PASO 2: Método NUEVO SEGURO - Limpiar solo undefined, mantener estructura
+        // 🔒 USAR SNAPSHOT EN LUGAR DE transactionToAdd.value
+        const cleanTransaction = Object.fromEntries(
+          Object.entries(transactionSnapshot).map(([key, value]) => [
+            key,
+            value === undefined ? null : value
+          ])
+        );
+
+        // ⚡ Asegurar que arrays se conserven correctamente (preservar estructura)
+        if (transactionSnapshot.items) {
+          cleanTransaction.items = [...transactionSnapshot.items];
+        }
+        if (transactionSnapshot.payments) {
+          cleanTransaction.payments = [...transactionSnapshot.payments];
+        }
+        if (transactionSnapshot.itemsAndStockLogs) {
+          cleanTransaction.itemsAndStockLogs = [...transactionSnapshot.itemsAndStockLogs];
+        }
+        if (transactionSnapshot.materialItems) {
+          cleanTransaction.materialItems = [...transactionSnapshot.materialItems];
+        }
+        if (transactionSnapshot.materialItemsAndStockLogs) {
+          cleanTransaction.materialItemsAndStockLogs = [...transactionSnapshot.materialItemsAndStockLogs];
+        }
+        if (transactionSnapshot.splits) {
+          cleanTransaction.splits = [...transactionSnapshot.splits];
+        }
+
+        // ✅ DEBUG PASO 1: Verificar datos DESPUÉS de limpiar
+        console.log('🔍 [DEBUG PASO 1] cleanTransaction DESPUÉS de limpiar:', {
+          uuid: cleanTransaction.uuid,
+          type: cleanTransaction.type,
+          account: cleanTransaction.account,
+          amount: cleanTransaction.amount,
+          description: cleanTransaction.description,
+          category: cleanTransaction.category,
+          items: cleanTransaction.items?.length || 0,
+          payments: cleanTransaction.payments?.length || 0,
+          itemsAndStockLogs: cleanTransaction.itemsAndStockLogs?.length || 0,
+          materialItems: cleanTransaction.materialItems?.length || 0,
+          materialItemsAndStockLogs: cleanTransaction.materialItemsAndStockLogs?.length || 0,
+          clientId: cleanTransaction.clientId,
+          clientName: cleanTransaction.clientName,
+          paymentStatus: cleanTransaction.paymentStatus,
+          balance: cleanTransaction.balance,
+          totalPaid: cleanTransaction.totalPaid,
+          fromAccount: cleanTransaction.fromAccount,
+          toAccount: cleanTransaction.toAccount,
+          bucket: cleanTransaction.bucket,
+          paylabor: cleanTransaction.paylabor,
+          overheadUsage: cleanTransaction.overheadUsage,
+          TODOS_LOS_CAMPOS: Object.keys(cleanTransaction)
+        });
 
         // ⚡ FASE 3: Asegurar que el UUID esté presente (crítico para optimistic UI)
         cleanTransaction.uuid = transactionId;
@@ -1061,7 +1177,7 @@ export function useTransactionStore() {
     const total = transactionToAdd.value.items.reduce((sum, item) => {
       return addMoney(sum, multiplyMoney(item.price, item.quantity));
     }, 0);
-    return round2(total);
+
   }
 
   const modifyTransactionToAddAccount = (account) => {
@@ -1206,6 +1322,13 @@ export function useTransactionStore() {
     }
 
     transactionToAdd.value.items.push(item);
+
+    // 🔍 DEBUG: Confirmar que el item se agregó
+    console.log('✅ [addItemToTransaction] Item agregado:', {
+      item,
+      totalItems: transactionToAdd.value.items.length,
+      allItems: transactionToAdd.value.items
+    });
 
     // Resetear el item
     itemToAddInTransaction.value = {

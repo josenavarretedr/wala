@@ -278,6 +278,7 @@ import { useToast } from "@/composables/useToast";
 import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
 import { BrightCrown } from "@iconoir/vue";
+import { round2 } from "@/utils/mathUtils";
 
 const route = useRoute();
 
@@ -303,7 +304,19 @@ const methodLabels = {
 
 // Computed
 const totalAmount = computed(() => {
-  return transactionStore.getTransactionToAddTotal();
+  const items = transactionStore.transactionToAdd.value.items || [];
+
+  if (items.length === 0) {
+    return round2(transactionStore.transactionToAdd.value.amount || 0);
+  }
+
+  const total = items.reduce((sum, item) => {
+    const price = Number(item.price) || 0;
+    const quantity = Number(item.quantity) || 0;
+    return sum + price * quantity;
+  }, 0);
+
+  return round2(total);
 });
 
 const balance = computed(() => {
@@ -429,7 +442,7 @@ watch(
       transactionStore.setPaymentInfo(selectedMethod.value, isPartial, amount);
     }
   },
-  { deep: true }
+  { deep: true },
 );
 </script>
 

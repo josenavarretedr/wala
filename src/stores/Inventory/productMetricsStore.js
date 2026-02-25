@@ -245,11 +245,11 @@ export const useProductMetricsStore = defineStore('productMetrics', () => {
   const getProfitabilityStatus = (marginPercentage) => {
     if (marginPercentage === null || marginPercentage === undefined || isNaN(marginPercentage)) {
       return {
-        label: 'Sin datos',
+        label: 'Sin datos de costo',
         color: 'gray',
         bgClass: 'bg-gray-100 text-gray-700 border-gray-200',
         icon: '❔',
-        description: 'Registra el costo para ver la rentabilidad'
+        description: 'Registra el costo para calcular el markup'
       };
     }
 
@@ -257,51 +257,51 @@ export const useProductMetricsStore = defineStore('productMetrics', () => {
 
     if (margin >= 50) {
       return {
-        label: 'Excelente rentabilidad',
+        label: 'Markup excelente',
         color: 'emerald',
         bgClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
         icon: '💹',
-        description: 'Margen superior al 50%'
+        description: 'Más del 50% sobre el costo de compra'
       };
     } else if (margin >= 40) {
       return {
-        label: 'Buena rentabilidad',
+        label: 'Buen markup',
         color: 'green',
         bgClass: 'bg-green-100 text-green-800 border-green-200',
         icon: '📈',
-        description: 'Margen entre 40% y 50%'
+        description: 'Entre 40% y 50% sobre el costo de compra'
       };
     } else if (margin >= 25) {
       return {
-        label: 'Rentabilidad aceptable',
+        label: 'Markup aceptable',
         color: 'lime',
         bgClass: 'bg-lime-100 text-lime-800 border-lime-200',
         icon: '✅',
-        description: 'Margen entre 25% y 40%'
+        description: 'Entre 25% y 40% sobre el costo de compra'
       };
     } else if (margin >= 15) {
       return {
-        label: 'Margen ajustado',
+        label: 'Markup ajustado',
         color: 'yellow',
         bgClass: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         icon: '⚠️',
-        description: 'Margen entre 15% y 25%'
+        description: 'Revisar precio o costo de compra'
       };
     } else if (margin >= 0) {
       return {
-        label: 'Margen bajo',
+        label: 'Markup bajo (Revisar costos)',
         color: 'orange',
         bgClass: 'bg-orange-100 text-orange-800 border-orange-200',
         icon: '⚡',
-        description: 'Revisar precio o costo'
+        description: 'Menos del 15% sobre el costo — revisar precios'
       };
     } else {
       return {
-        label: 'Pérdida',
+        label: 'Vendiendo a pérdida',
         color: 'red',
         bgClass: 'bg-red-100 text-red-800 border-red-200',
         icon: '🚨',
-        description: 'Precio menor al costo'
+        description: 'El precio de venta está por debajo del costo'
       };
     }
   };
@@ -344,6 +344,76 @@ export const useProductMetricsStore = defineStore('productMetrics', () => {
     return date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
   };
 
+  /**
+   * 💵 Obtener indicador de rentabilidad de venta (margen sobre precio de venta)
+   * Fórmula: (precio - costo) / precio × 100
+   * @param {number|null} saleMarginPercentage - Porcentaje de margen sobre precio de venta
+   * @returns {Object} { label: string, color: string, bgClass: string, icon: string, description: string }
+   */
+  const getSaleMarginStatus = (saleMarginPercentage) => {
+    if (saleMarginPercentage === null || saleMarginPercentage === undefined || isNaN(saleMarginPercentage)) {
+      return {
+        label: 'Sin datos',
+        color: 'gray',
+        bgClass: 'bg-gray-100 text-gray-700 border-gray-200',
+        icon: '❔',
+        description: 'Registra el costo para ver la rentabilidad de venta'
+      };
+    }
+
+    const margin = parseFloat(saleMarginPercentage);
+
+    if (margin >= 40) {
+      return {
+        label: 'Margen de utilidad excelente',
+        color: 'teal',
+        bgClass: 'bg-teal-100 text-teal-800 border-teal-200',
+        icon: '💵',
+        description: 'Ganas más del 40% del precio final'
+      };
+    } else if (margin >= 30) {
+      return {
+        label: 'Buen margen de utilidad',
+        color: 'cyan',
+        bgClass: 'bg-cyan-100 text-cyan-800 border-cyan-200',
+        icon: '📊',
+        description: 'Ganas entre el 30% y 40% del precio final'
+      };
+    } else if (margin >= 20) {
+      return {
+        label: 'Margen de utilidad aceptable',
+        color: 'sky',
+        bgClass: 'bg-sky-100 text-sky-800 border-sky-200',
+        icon: '✅',
+        description: 'Ganas entre el 20% y 30% del precio final'
+      };
+    } else if (margin >= 10) {
+      return {
+        label: 'Margen ajustado (Revisar costos)',
+        color: 'yellow',
+        bgClass: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+        icon: '⚠️',
+        description: 'Ganas entre el 10% y 20% del precio final'
+      };
+    } else if (margin >= 0) {
+      return {
+        label: 'Margen bajo (Revisar costos)',
+        color: 'orange',
+        bgClass: 'bg-orange-100 text-orange-800 border-orange-200',
+        icon: '⚡',
+        description: 'Menos del 10% del precio final es ganancia'
+      };
+    } else {
+      return {
+        label: 'Margen negativo',
+        color: 'red',
+        bgClass: 'bg-red-100 text-red-800 border-red-200',
+        icon: '🚨',
+        description: 'El precio de venta no cubre el costo'
+      };
+    }
+  };
+
   // ==========================================
   // EXPORTS
   // ==========================================
@@ -354,6 +424,7 @@ export const useProductMetricsStore = defineStore('productMetrics', () => {
     getRotationDays,
     getUnitBalance,
     getStockValue,
-    getProfitabilityStatus
+    getProfitabilityStatus,
+    getSaleMarginStatus
   };
 });

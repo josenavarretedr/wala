@@ -22,7 +22,7 @@ import { httpsCallable } from "firebase/functions";
 
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from 'uuid';
-import { round2, addMoney } from '@/utils/mathUtils';
+import { round2, addMoney, roundStock, subtractStock, addStock } from '@/utils/mathUtils';
 
 const db = getFirestore(appFirebase);
 
@@ -468,12 +468,14 @@ export function useInventory() {
             stockFinal: 0
           });
         } else {
-          newStock = itemData.stock - quantityToDeduct;
+          // ✅ Aplicar redondeo para evitar decimales excesivos (12.600000000000009)
+          newStock = subtractStock(itemData.stock, quantityToDeduct);
         }
       }
 
       if (stockLog.type === 'buy' || stockLog.type === 'return') {
-        newStock = itemData.stock + stockLog.quantity;
+        // ✅ Aplicar redondeo para evitar decimales excesivos
+        newStock = addStock(itemData.stock, stockLog.quantity);
 
         // Si es una compra y viene un nuevo costo, actualizarlo
         if (stockLog.type === 'buy' && stockLog.cost !== undefined && stockLog.cost !== null) {
@@ -490,7 +492,8 @@ export function useInventory() {
           throw new Error('physicalStock no puede ser undefined o null en un conteo de inventario');
         }
 
-        newStock = Number(stockLog.physicalStock);
+        // ✅ Aplicar redondeo para evitar decimales excesivos
+        newStock = roundStock(Number(stockLog.physicalStock));
         console.log(`📊 Ajuste por conteo de inventario:`, {
           stockAnterior: itemData.stock,
           stockFisico: newStock,
@@ -508,8 +511,8 @@ export function useInventory() {
         throw new Error(`No se pudo calcular el nuevo stock para el tipo: ${stockLog.type}`);
       }
 
-      // Actualizar stock (siempre)
-      updateData.stock = Number(newStock);
+      // Actualizar stock (siempre) - Asegurar redondeo final
+      updateData.stock = roundStock(Number(newStock));
 
       await updateDoc(productRef, updateData);
       console.log('✅ Stock updated successfully:', newStock);
