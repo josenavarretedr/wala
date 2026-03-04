@@ -330,19 +330,18 @@ const handleEnterKey = () => {
 // Buscar el último cierre (solo para modo opening)
 const findLastClosure = async () => {
   try {
-    if (transactionStore.transactionsInStore.value.length === 0) {
-      await transactionStore.getTransactions();
+    // ⚡ OPTIMIZACIÓN: Reusar lastClosureData ya cargado por StepLastReference o StepCashBalance
+    if (flowStore.stepsData.lastClosureData) {
+      lastClosureData.value = flowStore.stepsData.lastClosureData;
+      console.log(
+        "⚡ StepBankBalance - lastClosureData desde flowStore (sin fetch)",
+      );
+      return;
     }
 
-    const closureTransactions = transactionStore.transactionsInStore.value
-      .filter((t) => t.type === "closure")
-      .sort((a, b) => {
-        const dateA = a.createdAt?.seconds || 0;
-        const dateB = b.createdAt?.seconds || 0;
-        return dateB - dateA;
-      });
-
-    if (closureTransactions.length > 0) {
+    // Si no está en el store, consultar directamente (sin cargar todas las transacciones)
+    const closureTransactions = await transactionStore.getLastClosures(5);
+    if (closureTransactions && closureTransactions.length > 0) {
       lastClosureData.value = closureTransactions[0];
     }
   } catch (error) {
@@ -352,6 +351,20 @@ const findLastClosure = async () => {
 
 // Buscar la apertura del día (solo para modo close)
 const findOpeningToday = () => {
+  // ⚡ OPTIMIZACIÓN: Reusar openingData ya cargado por StepLastReference
+  if (flowStore.stepsData.openingData) {
+    openingData.value = flowStore.stepsData.openingData;
+    console.log("⚡ StepBankBalance - openingData desde flowStore (sin fetch)");
+    return;
+  }
+
+  // Fallback: obtener desde dailySummary si tiene los campos necesarios
+  if (dailySummary.value?.openingData?.realBankBalance !== undefined) {
+    openingData.value = dailySummary.value.openingData;
+    return;
+  }
+
+  // Último recurso: buscar en el array del store (evitar si es posible)
   const opening = transactionStore.transactionsInStore.value.find(
     (t) => t.type === "opening",
   );
@@ -362,9 +375,15 @@ const findOpeningToday = () => {
 
 // Configurar el accountsBalanceStore
 const setupBalanceStore = async () => {
+  // ⚡ OPTIMIZACIÓN: Si el store ya tiene dailySummary cargado, no volver a cargar
+  if (accountsBalanceStore.hasDailySummary) {
+    console.log("⚡ StepBankBalance - dailySummary ya en store, skip fetch");
+    return;
+  }
+
   console.log("📊 StepBankBalance - Configurando balance store...");
 
-  // 🚀 NUEVO: Intentar cargar desde dailySummary primero
+  // 🚀 Intentar cargar desde dailySummary
   const loaded = await accountsBalanceStore.loadFromDailySummary();
 
   if (loaded) {

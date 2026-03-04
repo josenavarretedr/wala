@@ -203,7 +203,6 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
-import { useTransaccion } from "@/composables/useTransaction";
 import { useDailySummary } from "@/composables/useDailySummary";
 
 // ⚡ OPTIMIZACIÓN: Recibir datos precargados como prop
@@ -213,8 +212,6 @@ const props = defineProps({
     default: null,
   },
 });
-
-const { getTransactionByID } = useTransaccion();
 
 const { getTodayDailySummary } = useDailySummary();
 
@@ -327,20 +324,23 @@ const handleEnterKey = () => {
 // Buscar el último cierre (solo para modo opening)
 const findLastClosure = async () => {
   try {
-    if (transactionStore.transactionsInStore.value.length === 0) {
-      await transactionStore.getTransactions();
+    // ⚡ OPTIMIZACIÓN: Reusar lastClosureData ya cargado por StepLastReference
+    if (flowStore.stepsData.lastClosureData) {
+      lastClosureData.value = flowStore.stepsData.lastClosureData;
+      console.log(
+        "⚡ StepCashBalance - lastClosureData desde flowStore (sin fetch)",
+      );
+      return;
     }
 
-    const closureTransactions = transactionStore.transactionsInStore.value
-      .filter((t) => t.type === "closure")
-      .sort((a, b) => {
-        const dateA = a.createdAt?.seconds || 0;
-        const dateB = b.createdAt?.seconds || 0;
-        return dateB - dateA;
-      });
-
-    if (closureTransactions.length > 0) {
+    // Si no está en el store, consultar directamente (sin cargar todas las transacciones)
+    const closureTransactions = await transactionStore.getLastClosures(5);
+    if (closureTransactions && closureTransactions.length > 0) {
       lastClosureData.value = closureTransactions[0];
+      // Guardar para que StepBankBalance lo reutilice
+      flowStore.updateStepData("Cash Balance", {
+        lastClosureData: lastClosureData.value,
+      });
     }
   } catch (error) {
     console.error("Error buscando último cierre:", error);
@@ -349,6 +349,20 @@ const findLastClosure = async () => {
 
 // Buscar la apertura del día (solo para modo close)
 const findOpeningToday = () => {
+  // ⚡ OPTIMIZACIÓN: Reusar openingData ya cargado por StepLastReference
+  if (flowStore.stepsData.openingData) {
+    openingData.value = flowStore.stepsData.openingData;
+    console.log("⚡ StepCashBalance - openingData desde flowStore (sin fetch)");
+    return;
+  }
+
+  // Fallback: obtener desde dailySummary si tiene los campos necesarios
+  if (dailySummary.value?.openingData?.realCashBalance !== undefined) {
+    openingData.value = dailySummary.value.openingData;
+    return;
+  }
+
+  // Último recurso: buscar en el array del store (evitar si es posible)
   const opening = transactionStore.transactionsInStore.value.find(
     (t) => t.type === "opening",
   );
@@ -359,38 +373,20 @@ const findOpeningToday = () => {
 
 // Configurar el accountsBalanceStore
 const setupBalanceStore = async () => {
+  // ⚡ OPTIMIZACIÓN: Si el store ya tiene dailySummary cargado, no volver a cargar
+  if (accountsBalanceStore.hasDailySummary) {
+    console.log("⚡ StepCashBalance - dailySummary ya en store, skip fetch");
+    return;
+  }
+
   console.log("📊 StepCashBalance - Configurando balance store...");
 
-  // 🚀 NUEVO: Intentar cargar desde dailySummary primero
+  // 🚀 Intentar cargar desde dailySummary
   const loaded = await accountsBalanceStore.loadFromDailySummary();
 
   if (loaded) {
     console.log(
       "✅ StepCashBalance - Usando dailySummary (backend pre-calculado)",
-    );
-    console.log("📊 dailySummary cargado:", accountsBalanceStore.dailySummary);
-    console.log(
-      "📊 dailySummary.transfers:",
-      accountsBalanceStore.dailySummary?.transfers,
-    );
-    console.log(
-      "📊 dailySummary.transfers.cash:",
-      accountsBalanceStore.dailySummary?.transfers?.cash,
-    );
-    console.log("📊 hasDailySummary:", accountsBalanceStore.hasDailySummary);
-
-    // Forzar acceso directo al composable para debug
-    const dailySummaryComp = useDailySummary();
-    const valorDirecto = dailySummaryComp.getEfectoTransferenciasEnCash(
-      accountsBalanceStore.dailySummary,
-    );
-    console.log(
-      "📊 efectoTransferenciasEnCash (directo del composable):",
-      valorDirecto,
-    );
-    console.log(
-      "📊 efectoTransferenciasEnCash (desde store):",
-      accountsBalanceStore.efectoTransferenciasEnCash,
     );
     return;
   }

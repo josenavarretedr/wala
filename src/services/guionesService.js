@@ -17,21 +17,19 @@ const db = getFirestore();
 const COLLECTION_PATH = 'marketing/guiones/videos';
 
 /**
- * Guarda un video individual en Firestore
- * @param {Object} videoData - Datos del video según estructura ordenRegistro.json
+ * Guarda un video individual en Firestore.
+ * Espera la estructura del FORMATO JSON OUTPUT del promptGuion.md.
+ * @param {Object} videoData
  * @returns {Promise<string>} - ID del video guardado
  */
 export async function saveVideo(videoData) {
   try {
-    // Generar ID único basado en tema-subtema-numero
     const videoId = generateVideoId(videoData);
-
     const videoRef = doc(db, COLLECTION_PATH, videoId);
 
     const dataToSave = {
       ...videoData,
       estado: videoData.estado || 'GRABANDO',
-      tipo_contenido: videoData.tipo_contenido || 'STORYTELLING',
       comentarios: videoData.comentarios || '',
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
@@ -39,7 +37,6 @@ export async function saveVideo(videoData) {
 
     await setDoc(videoRef, dataToSave);
     console.log('✅ Video guardado:', videoId);
-
     return videoId;
   } catch (error) {
     console.error('❌ Error al guardar video:', error);
@@ -48,8 +45,9 @@ export async function saveVideo(videoData) {
 }
 
 /**
- * Guarda múltiples videos desde un JSON generado por IA
- * @param {Object} jsonData - Estructura completa con meta_analisis, generacion y videos[]
+ * Guarda múltiples videos desde un JSON generado por IA.
+ * Estructura: { meta_analisis, generacion, videos[] }
+ * @param {Object} jsonData
  * @returns {Promise<Array>} - Array de IDs guardados
  */
 export async function saveVideosFromJSON(jsonData) {
@@ -57,14 +55,14 @@ export async function saveVideosFromJSON(jsonData) {
     const savedIds = [];
 
     for (const video of jsonData.videos) {
-      // Agregar metadata del documento completo a cada video
       const videoWithMeta = {
         ...video,
-        tema: jsonData.meta_analisis.tema,
-        sectores: jsonData.meta_analisis.sectores || [jsonData.meta_analisis.sector],
-        fase_funnel: jsonData.generacion.fase_funnel,
-        estrategia_aplicada: jsonData.meta_analisis.estrategia_aplicada,
-        propuesta_valor_central: jsonData.meta_analisis.propuesta_valor_central
+        // Campos globales del batch extraídos del meta_analisis y generacion
+        tema: jsonData.meta_analisis?.tema || video.tema,
+        ruta_principal: jsonData.meta_analisis?.ruta_principal,
+        fase_funnel: jsonData.generacion?.fase_funnel || 'atraccion',
+        estrategia_aplicada: jsonData.meta_analisis?.estrategia_aplicada,
+        propuesta_valor_central: jsonData.meta_analisis?.propuesta_valor_central
       };
 
       const videoId = await saveVideo(videoWithMeta);
@@ -93,10 +91,7 @@ export async function getVideo(videoId) {
       throw new Error('Video no encontrado');
     }
 
-    return {
-      id: videoSnap.id,
-      ...videoSnap.data()
-    };
+    return { id: videoSnap.id, ...videoSnap.data() };
   } catch (error) {
     console.error('❌ Error al obtener video:', error);
     throw error;
@@ -104,8 +99,9 @@ export async function getVideo(videoId) {
 }
 
 /**
- * Obtiene todos los videos con filtros opcionales
- * @param {Object} filters - { tema, fase_funnel, sector, estado }
+ * Obtiene todos los videos con filtros opcionales.
+ * Filtros soportados: tema, ruta, tipo_contenido, narrativa, estado
+ * @param {Object} filters
  * @returns {Promise<Array>}
  */
 export async function getVideos(filters = {}) {
@@ -113,29 +109,27 @@ export async function getVideos(filters = {}) {
     const videosRef = collection(db, COLLECTION_PATH);
     let q = query(videosRef, orderBy('createdAt', 'desc'));
 
-    // Aplicar filtros
     if (filters.tema) {
       q = query(q, where('tema', '==', filters.tema));
     }
-    if (filters.fase_funnel) {
-      q = query(q, where('fase_funnel', '==', filters.fase_funnel));
+    if (filters.ruta) {
+      q = query(q, where('ruta', '==', filters.ruta));
+    }
+    if (filters.tipo_contenido) {
+      q = query(q, where('tipo_contenido', '==', filters.tipo_contenido));
+    }
+    if (filters.narrativa) {
+      q = query(q, where('narrativa', '==', filters.narrativa));
     }
     if (filters.estado) {
       q = query(q, where('estado', '==', filters.estado));
-    }
-    // Nota: filtro por sector requiere array-contains
-    if (filters.sector) {
-      q = query(q, where('sectores', 'array-contains', filters.sector));
     }
 
     const snapshot = await getDocs(q);
     const videos = [];
 
-    snapshot.forEach(doc => {
-      videos.push({
-        id: doc.id,
-        ...doc.data()
-      });
+    snapshot.forEach(docSnap => {
+      videos.push({ id: docSnap.id, ...docSnap.data() });
     });
 
     console.log(`✅ ${videos.length} videos obtenidos`);
@@ -149,18 +143,13 @@ export async function getVideos(filters = {}) {
 /**
  * Actualiza un video
  * @param {string} videoId
- * @param {Object} updates - Campos a actualizar
+ * @param {Object} updates
  * @returns {Promise<void>}
  */
 export async function updateVideo(videoId, updates) {
   try {
     const videoRef = doc(db, COLLECTION_PATH, videoId);
-
-    await updateDoc(videoRef, {
-      ...updates,
-      updatedAt: Timestamp.now()
-    });
-
+    await updateDoc(videoRef, { ...updates, updatedAt: Timestamp.now() });
     console.log('✅ Video actualizado:', videoId);
   } catch (error) {
     console.error('❌ Error al actualizar video:', error);
@@ -177,7 +166,6 @@ export async function deleteVideo(videoId) {
   try {
     const videoRef = doc(db, COLLECTION_PATH, videoId);
     await deleteDoc(videoRef);
-
     console.log('✅ Video eliminado:', videoId);
   } catch (error) {
     console.error('❌ Error al eliminar video:', error);
@@ -186,57 +174,55 @@ export async function deleteVideo(videoId) {
 }
 
 /**
- * Genera un ID único para el video
+ * Genera un ID único para el video usando tema + ruta + numero
  * @param {Object} videoData
  * @returns {string}
  */
 function generateVideoId(videoData) {
   const tema = sanitizeForId(videoData.tema || 'sin-tema');
-  const subtema = sanitizeForId(videoData.subtema || 'sin-subtema');
+  const ruta = sanitizeForId(videoData.ruta || 'sin-ruta');
   const numero = videoData.numero || Date.now();
-
-  return `${tema}_${subtema}_${numero}`;
+  return `${tema}_${ruta}_${numero}`;
 }
 
 /**
- * Sanitiza strings para usar en IDs
+ * Sanitiza strings para usar en IDs de Firestore
  * @param {string} str
  * @returns {string}
  */
 function sanitizeForId(str) {
-  return str
+  return String(str)
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
-    .replace(/[^a-z0-9]+/g, '-')      // Reemplazar caracteres especiales por guiones
-    .replace(/^-+|-+$/g, '');         // Quitar guiones al inicio/fin
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 /**
- * Obtiene valores únicos para filtros
- * @returns {Promise<Object>} - { temas: [], sectores: [], fases: [], estados: [] }
+ * Obtiene valores únicos para filtros dinámicos desde los videos existentes.
+ * Retorna: { temas, rutas, tipos, narrativas, estados }
+ * @returns {Promise<Object>}
  */
 export async function getFilterOptions() {
   try {
     const videos = await getVideos();
 
     const temas = [...new Set(videos.map(v => v.tema).filter(Boolean))];
-    const sectoresSet = new Set();
-    videos.forEach(v => {
-      if (v.sectores && Array.isArray(v.sectores)) {
-        v.sectores.forEach(s => sectoresSet.add(s));
-      }
-      if (v.sector_ejemplo) {
-        sectoresSet.add(v.sector_ejemplo);
-      }
-    });
-    const sectores = [...sectoresSet];
-    const fases = [...new Set(videos.map(v => v.fase_funnel).filter(Boolean))];
+    const rutas = [...new Set(videos.map(v => v.ruta).filter(Boolean))];
+    const tipos = [...new Set(videos.map(v => v.tipo_contenido).filter(Boolean))];
+    const narrativas = [...new Set(videos.map(v => v.narrativa).filter(Boolean))];
     const estados = ['GRABANDO', 'EDITANDO', 'PUBLICADO'];
 
-    return { temas, sectores, fases, estados };
+    return { temas, rutas, tipos, narrativas, estados };
   } catch (error) {
     console.error('❌ Error al obtener opciones de filtros:', error);
-    return { temas: [], sectores: [], fases: [], estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO'] };
+    return {
+      temas: [],
+      rutas: ['tecnica', 'viral', 'amplia'],
+      tipos: ['educativo', 'practico'],
+      narrativas: ['directa', 'estructurada'],
+      estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO']
+    };
   }
 }

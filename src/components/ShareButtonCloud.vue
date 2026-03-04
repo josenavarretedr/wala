@@ -13,7 +13,7 @@
 
     <!-- Texto -->
     <span :class="textClasses">{{
-      isProcessing ? progressMessage || "Procesando..." : buttonText
+      isProcessing ? displayMessage : buttonText
     }}</span>
   </button>
 
@@ -231,8 +231,16 @@ const { success, error: showError } = useToast();
 const showPreview = ref(false);
 const previewUrl = ref(null);
 const capturedBlob = ref(null);
+// Activa el spinner INMEDIATAMENTE al click (antes de cualquier await)
+const isStarting = ref(false);
 
-const isProcessing = computed(() => isCapturing.value);
+const isProcessing = computed(() => isStarting.value || isCapturing.value);
+
+// Mensaje visible: prioriza el mensaje interno del composable,
+// si aún no hay uno muestra el texto inmediato del click
+const displayMessage = computed(
+  () => progressMessage.value || "Dame unos segundos...",
+);
 
 // Computed classes
 const buttonClasses = computed(() => {
@@ -283,13 +291,15 @@ const textClasses = computed(() => {
 });
 
 const buttonTitle = computed(() => {
-  if (isProcessing.value) return progressMessage.value || "Procesando...";
+  if (isProcessing.value) return displayMessage.value;
   if (!props.targetRef) return "Selecciona un elemento";
   return props.buttonText || "Compartir";
 });
 
 // Handlers
 const handleShare = async () => {
+  // ⚡ Activar spinner ANTES de cualquier await para feedback inmediato
+  isStarting.value = true;
   emit("share-start");
 
   try {
@@ -335,6 +345,9 @@ const handleShare = async () => {
     });
 
     emit("share-error", { error: errorMessage });
+  } finally {
+    // Liberar siempre — isCapturing del composable toma el relevo durante la captura
+    isStarting.value = false;
   }
 };
 

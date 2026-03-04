@@ -209,6 +209,10 @@ const findLastClosure = async () => {
     if (closureTransactions && closureTransactions.length > 0) {
       // Tomar el primer elemento (el más reciente)
       lastClosureData.value = closureTransactions[0];
+      // ⚡ Persistir en flowStore para que StepCash/StepBank lo reutilicen
+      flowStore.updateStepData("Last Reference", {
+        lastClosureData: lastClosureData.value,
+      });
       console.log("Último cierre encontrado:", lastClosureData.value);
       console.log(
         `Total de cierres encontrados: ${closureTransactions.length}`,
@@ -229,6 +233,12 @@ const findOpeningToday = async () => {
     openingData.value = await getTransactionByID(
       dailySummary.value.openingData.id,
     );
+    // ⚡ Persistir en flowStore para que StepCash/StepBank lo reutilicen
+    if (openingData.value) {
+      flowStore.updateStepData("Last Reference", {
+        openingData: openingData.value,
+      });
+    }
     console.log("Apertura del día encontrada:", openingData.value);
   } else {
     console.log("No se encontró apertura del día.");
@@ -253,6 +263,12 @@ onMounted(async () => {
         openingData.value = await getTransactionByID(
           dailySummary.value.openingData.id,
         );
+        // ⚡ Persistir para que StepCash/StepBank lo reutilicen sin fetch
+        if (openingData.value) {
+          flowStore.updateStepData("Last Reference", {
+            openingData: openingData.value,
+          });
+        }
       }
 
       if (!dailySummary.value?.hasOpening) {

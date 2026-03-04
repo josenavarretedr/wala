@@ -258,11 +258,11 @@ const finalizarRegistro = async () => {
       console.log("💰 Balances:");
       console.log(
         "   - Expected Cash:",
-        openingTransaction.expectedCashBalance
+        openingTransaction.expectedCashBalance,
       );
       console.log(
         "   - Expected Bank:",
-        openingTransaction.expectedBankBalance
+        openingTransaction.expectedBankBalance,
       );
       console.log("   - Real Cash:", openingTransaction.realCashBalance);
       console.log("   - Real Bank:", openingTransaction.realBankBalance);
@@ -292,7 +292,7 @@ const finalizarRegistro = async () => {
       console.log("🔑 Referencias:");
       console.log(
         "   - Last Closure Ref:",
-        openingTransaction.lastClosureReference
+        openingTransaction.lastClosureReference,
       );
       console.log("   - Opening Ref:", openingTransaction.openingReference);
 
@@ -316,48 +316,46 @@ const finalizarRegistro = async () => {
       ];
 
       const missingFields = requiredFields.filter(
-        (field) => !(field in openingTransaction)
+        (field) => !(field in openingTransaction),
       );
 
       if (missingFields.length > 0) {
         console.error("❌ CAMPOS FALTANTES EN APERTURA:", missingFields);
         throw new Error(
-          `Opening transaction is missing fields: ${missingFields.join(", ")}`
+          `Opening transaction is missing fields: ${missingFields.join(", ")}`,
         );
       }
 
       console.log("✅ Validación de estructura completada");
       console.log(
         "📝 Total de campos:",
-        Object.keys(openingTransaction).length
+        Object.keys(openingTransaction).length,
       );
       console.log("📄 ESTRUCTURA COMPLETA (JSON):");
       console.log(JSON.stringify(openingTransaction, null, 2));
       console.log("===========================================");
 
       // Guardar transacción de apertura
-      transactionStore.transactionToAdd.value = openingTransaction;
-
       console.log("💾 Guardando en Firestore...");
-      await transactionStore.addTransaction();
+      await transactionStore.saveSystemTransaction(openingTransaction);
 
       console.log("✅ Transacción de apertura guardada en Firebase");
       console.log("🔍 VERIFICAR EN FIRESTORE CONSOLE:");
       console.log(
-        `   Path: businesses/${businessStore.getBusinessId}/transactions/${openingTransaction.uuid}`
+        `   Path: businesses/${businessStore.getBusinessId}/transactions/${openingTransaction.uuid}`,
       );
       console.log(
-        "Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, metadata"
+        "Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, metadata",
       );
 
       // Calcular diferencias
       const cashDiff = accountsBalanceStore.calculateDifference(
         realCashBalance,
-        stepsData.expectedCashBalance
+        stepsData.expectedCashBalance,
       );
       const bankDiff = accountsBalanceStore.calculateDifference(
         realBankBalance,
-        stepsData.expectedBankBalance
+        stepsData.expectedBankBalance,
       );
 
       // Construir ajustes si hay diferencias
@@ -371,10 +369,9 @@ const finalizarRegistro = async () => {
 
       // Guardar cada ajuste
       for (const adjustment of adjustments) {
-        transactionStore.transactionToAdd.value = adjustment;
-        await transactionStore.addTransaction();
+        await transactionStore.saveSystemTransaction(adjustment);
         console.log(
-          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`
+          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`,
         );
       }
 
@@ -384,7 +381,7 @@ const finalizarRegistro = async () => {
       console.log("🔒 Modo: CIERRE");
 
       openingData.value = await getTransactionByID(
-        dailySummary.value.openingData.id
+        dailySummary.value.openingData.id,
       );
       if (!openingData.value) {
         throw new Error("No se encontró la apertura del día");
@@ -421,11 +418,11 @@ const finalizarRegistro = async () => {
       console.log("   - Initial Bank:", closureTransaction.initialBankBalance);
       console.log(
         "   - Expected Cash:",
-        closureTransaction.expectedCashBalance
+        closureTransaction.expectedCashBalance,
       );
       console.log(
         "   - Expected Bank:",
-        closureTransaction.expectedBankBalance
+        closureTransaction.expectedBankBalance,
       );
       console.log("   - Real Cash:", closureTransaction.realCashBalance);
       console.log("   - Real Bank:", closureTransaction.realBankBalance);
@@ -453,11 +450,11 @@ const finalizarRegistro = async () => {
       console.log("   - Resultado:", closureTransaction.resultadoOperacional);
       console.log(
         "   - Resultado Cash:",
-        closureTransaction.resultadoOperacionalCash
+        closureTransaction.resultadoOperacionalCash,
       );
       console.log(
         "   - Resultado Bank:",
-        closureTransaction.resultadoOperacionalBank
+        closureTransaction.resultadoOperacionalBank,
       );
       console.log("   - Flujo Cash:", closureTransaction.flujoNetoCash);
       console.log("   - Flujo Bank:", closureTransaction.flujoNetoBank);
@@ -471,23 +468,21 @@ const finalizarRegistro = async () => {
       console.log("✅ Validación de estructura completada");
       console.log(
         "📝 Total de campos:",
-        Object.keys(closureTransaction).length
+        Object.keys(closureTransaction).length,
       );
       console.log("===========================================");
 
       // Guardar transacción de cierre
-      transactionStore.transactionToAdd.value = closureTransaction;
-
       console.log("💾 Guardando cierre en Firestore...");
-      await transactionStore.addTransaction();
+      await transactionStore.saveSystemTransaction(closureTransaction);
 
       console.log("✅ Transacción de cierre guardada en Firebase");
       console.log("🔍 VERIFICAR EN FIRESTORE CONSOLE:");
       console.log(
-        `   Path: businesses/${businessStore.getBusinessId}/transactions/${closureTransaction.uuid}`
+        `   Path: businesses/${businessStore.getBusinessId}/transactions/${closureTransaction.uuid}`,
       );
       console.log(
-        "   Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, ajustesCierre, metadata"
+        "   Campos a verificar: id, source, copilotMode, transferencias, ajustesApertura, ajustesCierre, metadata",
       );
 
       // Construir ajustes si hay diferencias
@@ -501,10 +496,9 @@ const finalizarRegistro = async () => {
 
       // Guardar cada ajuste
       for (const adjustment of adjustments) {
-        transactionStore.transactionToAdd.value = adjustment;
-        await transactionStore.addTransaction();
+        await transactionStore.saveSystemTransaction(adjustment);
         console.log(
-          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`
+          `✅ Ajuste guardado: ${adjustment.description} - S/${adjustment.amount}`,
         );
       }
 
@@ -538,7 +532,7 @@ const finalizarRegistro = async () => {
     alert(
       `Error al ${
         isOpeningMode.value ? "abrir" : "cerrar"
-      } la caja. Por favor, intenta nuevamente.`
+      } la caja. Por favor, intenta nuevamente.`,
     );
     flow.accountBalanceLoading = false;
     isFinalizando.value = false;

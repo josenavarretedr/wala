@@ -27,6 +27,132 @@ if (isLocalEmulator) {
   console.log('☁️ [renderToImage] Modo CLOUD - usando @sparticuz/chromium');
 }
 
+// =====================================================================
+// BROWSER SINGLETON - Reutilizar entre requests del mismo proceso
+// =====================================================================
+let _browserSingleton = null;
+
+const getLaunchOptions = async () => {
+  if (isLocalEmulator) {
+    return {
+      headless: 'new',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security', '--disable-dev-shm-usage']
+    };
+  }
+  return {
+    args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security', '--disable-dev-shm-usage'],
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath(),
+    headless: chromium.headless
+  };
+};
+
+const getOrCreateBrowser = async () => {
+  if (_browserSingleton) {
+    try {
+      await _browserSingleton.pages();
+      return _browserSingleton;
+    } catch (e) {
+      console.warn('⚠️ [Browser] Instancia muerta, recreando...');
+      _warmPage = null;
+      _warmPageBusy = false;
+      _browserSingleton = null;
+    }
+  }
+  console.log('🆕 [Browser] Lanzando nueva instancia Puppeteer...');
+  const launchOptions = await getLaunchOptions();
+  _browserSingleton = await puppeteer.launch(launchOptions);
+  return _browserSingleton;
+};
+
+// =====================================================================
+// WARM PAGE SINGLETON
+// ⚡ Tailwind CDN + Google Fonts se cargan UNA SOLA VEZ.
+//    Cada request solo inyecta el HTML en el body (~150ms vs ~2300ms).
+// =====================================================================
+let _warmPage = null;
+let _warmPageBusy = false;
+
+// Página base con todos los recursos externos pre-cargados (body vacío)
+const WARM_PAGE_TEMPLATE = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ffffff; }
+  </style>
+</head>
+<body></body>
+</html>`;
+
+/**
+ * Crea y calienta una nueva página con todos los assets externos ya cargados.
+ */
+const createWarmPage = async (browser) => {
+  const page = await browser.newPage();
+  await page.setViewport({ width: 400, height: 800, deviceScaleFactor: 2 });
+  await page.setContent(WARM_PAGE_TEMPLATE, { waitUntil: 'load', timeout: 30000 });
+  console.log('🔥 [WarmPage] Página pre-cargada con Tailwind + fonts');
+  return page;
+};
+
+/**
+ * Devuelve la warm page si está libre, o null si está ocupada (fallback a página nueva).
+ */
+const acquireWarmPage = async () => {
+  const browser = await getOrCreateBrowser();
+
+  if (!_warmPage) {
+    // Primera vez: crear y guardar
+    _warmPage = await createWarmPage(browser);
+  } else {
+    // Verificar que siga viva
+    try {
+      await _warmPage.evaluate(() => document.readyState);
+    } catch (e) {
+      console.warn('⚠️ [WarmPage] Página muerta, recreando...');
+      _warmPage = await createWarmPage(browser);
+    }
+  }
+
+  if (_warmPageBusy) {
+    // Request concurrente: crear página temporal (rara vez ocurre)
+    console.warn('⚡ [WarmPage] Ocupada — usando página temporal');
+    return { page: await browser.newPage(), isWarm: false };
+  }
+
+  _warmPageBusy = true;
+  return { page: _warmPage, isWarm: true };
+};
+
+/**
+ * Libera la warm page reseteando el body para el próximo request.
+ */
+const releaseWarmPage = async (isWarm, tempPage) => {
+  if (!isWarm && tempPage) {
+    await tempPage.close().catch(() => { });
+    return;
+  }
+  // Resetear body y viewport para dejarla limpia
+  try {
+    await _warmPage.evaluate(() => { document.body.innerHTML = ''; });
+    await _warmPage.setViewport({ width: 400, height: 800, deviceScaleFactor: 2 });
+  } catch (e) {
+    // Si falla el reset, marcar para recrear en el próximo request
+    console.warn('⚠️ [WarmPage] Error al resetear, se recreará en próximo request');
+    _warmPage = null;
+  }
+  _warmPageBusy = false;
+};
+// =====================================================================
+
 /**
  * Cloud Function para renderizar HTML como imagen PNG
  * 
@@ -131,117 +257,48 @@ async function renderToImageHandler(req, res) {
     });
   }
 
-  let browser = null;
+  let page = null;
+  let isWarm = false;
 
   try {
-    // Lanzar navegador según el entorno
-    console.log('🌐 [renderToImage] Launching Puppeteer...');
+    // ⚡ Obtener warm page (Tailwind + fonts ya cargados)
+    const t_page = Date.now();
+    const acquired = await acquireWarmPage();
+    page = acquired.page;
+    isWarm = acquired.isWarm;
+    console.log(`⏱️ [renderToImage] Página lista en ${Date.now() - t_page}ms (warm=${isWarm})`);
 
-    const launchOptions = isLocalEmulator
-      ? {
-        // Local: configuración simple
-        headless: 'new',
-        args: ['--no-sandbox', '--disable-web-security']
-      }
-      : {
-        // Producción: @sparticuz/chromium optimizado
-        args: [...chromium.args, '--no-sandbox', '--disable-web-security'],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless
-      };
-
-    browser = await puppeteer.launch(launchOptions);
-
-    const page = await browser.newPage();
-
-    // Configurar viewport
+    // Ajustar viewport al contenido del request
     await page.setViewport({
       width: Math.ceil(width),
       height: Math.ceil(height),
       deviceScaleFactor: deviceScaleFactor
     });
 
-    // Construir HTML completo - SIN Tailwind CDN (viene con estilos inline)
-    const fullHTML = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          
-          <!-- Tailwind CSS CDN -->
-          <script src="https://cdn.tailwindcss.com"></script>
-          
-          <!-- Google Fonts - Inter -->
-          <link rel="preconnect" href="https://fonts.googleapis.com">
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-          
-          <!-- CSS Reset y base -->
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            html {
-              -webkit-font-smoothing: antialiased;
-              -moz-osx-font-smoothing: grayscale;
-            }
-            
-            body {
-              font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-              background: #ffffff;
-            }
-          </style>
-        </head>
-        <body>
-          ${cleanHTML}
-        </body>
-        </html>
-      `;
+    // ⚡ FAST PATH: inyectar solo el HTML en el body de la página ya caliente
+    //    Tailwind CDN tiene MutationObserver activo — detecta los nuevos elementos
+    //    y aplica las clases automáticamente sin necesidad de recargar nada.
+    const t_inject = Date.now();
+    await page.evaluate((html) => {
+      document.body.innerHTML = html;
+    }, cleanHTML);
+    console.log(`⏱️ [renderToImage] HTML inyectado en ${Date.now() - t_inject}ms`);
 
-    // Cargar HTML
-    console.log('📄 [renderToImage] Loading HTML...');
-    await page.setContent(fullHTML, {
-      waitUntil: ['networkidle0', 'load'],
-      timeout: 30000
-    });
-
-    // Esperar a que Tailwind CSS se cargue
-    console.log('🎨 [renderToImage] Waiting for Tailwind CSS...');
-
-    try {
-      await page.waitForFunction(() => {
-        return typeof window.tailwind !== 'undefined' ||
-          document.querySelector('[class*="bg-"]')?.className.includes('bg-');
-      }, { timeout: 5000 });
-    } catch (e) {
-      console.warn('⚠️ Tailwind timeout - continuing anyway');
-    }
-
-    // Esperar a que las fuentes carguen
-    console.log('🔤 [renderToImage] Waiting for fonts...');
-    await page.evaluateHandle('document.fonts.ready').catch(() => {
-      console.warn('⚠️ Fonts timeout - continuing anyway');
-    });
-
-    // Esperar un momento adicional para renderizado final
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Dar tiempo al MutationObserver de Tailwind para procesar los nuevos nodos
+    // y al navegador para completar el layout (antes era 400ms, redujimos a 150ms)
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Tomar screenshot
     console.log('📸 [renderToImage] Taking screenshot...');
-
     const screenshot = await page.screenshot({
       type: 'png',
       fullPage: true,
       omitBackground: false
     });
 
-    await browser.close();
-    browser = null;
+    // ⚡ Liberar warm page (reset body) sin cerrarla — lista para el próximo request
+    await releaseWarmPage(isWarm, page);
+    page = null;
 
     // Convertir a Data URL
     const base64 = screenshot.toString('base64');
@@ -270,8 +327,9 @@ async function renderToImageHandler(req, res) {
       stack: error.stack
     });
 
-    if (browser) {
-      await browser.close().catch(() => { });
+    if (page) {
+      await releaseWarmPage(isWarm, page).catch(() => { });
+      page = null;
     }
 
     return res.status(500).json({

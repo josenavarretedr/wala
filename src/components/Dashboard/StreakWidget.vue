@@ -226,7 +226,7 @@ const isStreakActiveToday = computed(() => {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(now.getDate()).padStart(2, "0")}`;
 
   // lastActiveDay SIEMPRE es un string en formato yyyy-MM-dd
@@ -238,7 +238,7 @@ const isStreakActiveToday = computed(() => {
     "🔥 [STREAK] Comparing lastActiveDay:",
     lastActiveDay,
     "with today:",
-    today
+    today,
   );
   console.log("🔥 [STREAK] Current streak:", streakData.value.current);
 
@@ -324,7 +324,7 @@ const loadStreakData = () => {
       console.error("Error loading streak data:", err);
       error.value = err.message;
       loading.value = false;
-    }
+    },
   );
 
   // Escuchar cambios en tiempo real del dailySummary de hoy
@@ -337,7 +337,7 @@ const loadStreakData = () => {
       if (!loading.value) {
         showUpdatingIndicator();
       }
-    }
+    },
   );
 
   // Cleanup on unmount
@@ -436,7 +436,9 @@ const motivationalText = computed(() => {
 
 .modal-fade-enter-active > div,
 .modal-fade-leave-active > div {
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .modal-fade-enter-from,

@@ -32,6 +32,10 @@ export function useImageCaptureCloud() {
     lastCapturedBlob.value = null;
     progressMessage.value = '';
 
+    // 📊 Timing para diagnóstico
+    const _t = Date.now();
+    const _log = (label) => console.log(`⏱️ [Capture] ${label}: +${Date.now() - _t}ms`);
+
     let clone = null;
     let watermarkApp = null;
 
@@ -75,6 +79,11 @@ export function useImageCaptureCloud() {
         throw new Error('Usuario no autenticado');
       }
 
+      // ⚡ Iniciar obtención del token YA, en paralelo con la preparación del DOM
+      //    (getIdToken puede tardar ~200-500ms; lo iniciamos antes de necesitarlo)
+      const tokenPromise = currentUser.getIdToken();
+      _log('Token iniciado (paralelo)');
+
       // Progreso: Preparando
       progressMessage.value = 'Preparando imagen...';
       if (onProgress) onProgress('preparing');
@@ -103,8 +112,8 @@ export function useImageCaptureCloud() {
       clone.style.visibility = 'hidden';
       document.body.appendChild(clone);
 
-      // Pequeño delay para que el DOM se actualice
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // ⚡ Un solo frame para que el layout se recalcule (era setTimeout 100ms)
+      await new Promise(resolve => requestAnimationFrame(resolve));
 
       // 7. Calcular dimensiones con ancho fijo
       // Fijar ancho a 400px para consistencia
@@ -135,12 +144,14 @@ export function useImageCaptureCloud() {
       // 9. Convertir imágenes a URLs absolutas
       console.log('🖼️ Convirtiendo imágenes a URLs absolutas...');
       convertImagesToAbsoluteUrls(clone);
+      _log('Imágenes convertidas');
 
       // 10. Extraer HTML (Tailwind se incluirá en Puppeteer)
       const html = clone.outerHTML;
 
       // Debug: verificar tamaño del HTML
-      console.log('📏 HTML Size:', html.length, 'caracteres');
+      console.log('📏 HTML Size:', `${(html.length / 1024).toFixed(1)} KB`);
+      _log(`HTML extraído (${(html.length / 1024).toFixed(1)} KB)`);
 
       // 11. Limpiar DOM temporal
       document.body.removeChild(clone);
@@ -154,8 +165,9 @@ export function useImageCaptureCloud() {
       progressMessage.value = 'Enviando al servidor...';
       if (onProgress) onProgress('uploading');
 
-      // 10. Obtener token de autenticación
-      const idToken = await currentUser.getIdToken();
+      // 10. Resolver token (ya estaba iniciado en paralelo con la preparación del DOM)
+      const idToken = await tokenPromise;
+      _log('Token resuelto');
 
       console.log('🔐 Token obtenido:', {
         hasToken: !!idToken,
@@ -169,6 +181,7 @@ export function useImageCaptureCloud() {
       console.log('🌐 Llamando a Cloud Function:', functionUrl);
 
       progressMessage.value = 'Dame unos segundos...';
+      _log('⏳ Enviando a Cloud Function...');
 
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -205,6 +218,7 @@ export function useImageCaptureCloud() {
       progressMessage.value = 'Afinando detalles...';
 
       const data = await response.json();
+      _log('Respuesta Cloud recibida');
 
       if (!data.success) {
         throw new Error(data.error || 'Error desconocido al renderizar');
@@ -214,6 +228,7 @@ export function useImageCaptureCloud() {
         size: `${(data.fileSize / 1024).toFixed(2)} KB`,
         renderTime: `${data.renderTime}ms`
       });
+      _log(`Imagen generada (renderTime server: ${data.renderTime}ms)`);
 
       // 13. Convertir Data URL a Blob
       progressMessage.value = '¡Listo en breve!';
@@ -227,6 +242,7 @@ export function useImageCaptureCloud() {
       lastCapturedBlob.value = blob;
 
       progressMessage.value = '¡Listo!';
+      _log('✅ TOTAL COMPLETO');
       if (onProgress) onProgress('finalizing');
 
       return blob;

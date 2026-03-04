@@ -7,63 +7,77 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
-              Tema
+              #
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
-              Sector
+              Tema / Gancho
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
               Voz
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
-              Subtema
+              Ruta
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+            >
+              Tipo
+            </th>
+            <th
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+            >
+              Narrativa
+            </th>
+            <th
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
               Estado
             </th>
             <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
-              Duración
+              Dur.
             </th>
             <th
-              class="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider"
+              class="px-5 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
               Acciones
             </th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white divide-y divide-gray-100">
           <tr
             v-for="video in videos"
             :key="video.id"
-            class="hover:bg-gray-50 transition-colors cursor-pointer"
+            class="hover:bg-purple-50 transition-colors cursor-pointer"
             @click="$emit('edit', video.id)"
           >
-            <td class="px-6 py-4">
-              <div class="text-sm font-medium text-gray-900 max-w-xs truncate">
+            <!-- Número -->
+            <td class="px-5 py-3 text-sm text-gray-500">{{ video.numero }}</td>
+
+            <!-- Tema / Gancho -->
+            <td class="px-5 py-3 max-w-xs">
+              <div class="text-sm font-medium text-gray-900 truncate">
                 {{ video.tema }}
               </div>
-            </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-700">
-                {{ video.sector_ejemplo }}
+              <div class="text-xs text-gray-500 truncate">
+                "{{ video.gancho?.texto }}"
               </div>
             </td>
-            <td class="px-6 py-4">
+
+            <!-- Voz -->
+            <td class="px-5 py-3">
               <span
                 :class="[
-                  'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                  'px-2 py-1 inline-flex text-xs font-semibold rounded-full',
                   video.voz === 'A'
                     ? 'bg-purple-100 text-purple-800'
                     : 'bg-blue-100 text-blue-800',
@@ -72,30 +86,65 @@
                 {{ video.voz === "A" ? "José" : "WALA" }}
               </span>
             </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-900 max-w-xs truncate">
-                {{ video.subtema }}
-              </div>
-            </td>
-            <td class="px-6 py-4">
+
+            <!-- Ruta -->
+            <td class="px-5 py-3">
               <span
                 :class="[
-                  'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full',
+                  'px-2 py-0.5 rounded text-xs font-medium',
+                  rutaBadgeClass(video.ruta),
+                ]"
+              >
+                {{ rutaLabel(video.ruta) }}
+              </span>
+            </td>
+
+            <!-- Tipo -->
+            <td class="px-5 py-3">
+              <span
+                :class="[
+                  'px-2 py-0.5 rounded text-xs font-medium',
+                  tipoBadgeClass(video.tipo_contenido),
+                ]"
+              >
+                {{ tipoLabel(video.tipo_contenido) }}
+              </span>
+            </td>
+
+            <!-- Narrativa -->
+            <td class="px-5 py-3">
+              <span
+                :class="[
+                  'px-2 py-0.5 rounded text-xs font-medium',
+                  narrativaBadgeClass(video.narrativa),
+                ]"
+              >
+                {{ narrativaLabel(video.narrativa) }}
+              </span>
+            </td>
+
+            <!-- Estado -->
+            <td class="px-5 py-3">
+              <span
+                :class="[
+                  'px-2 py-1 inline-flex text-xs font-semibold rounded-full',
                   estadoBadgeClass(video.estado),
                 ]"
               >
                 {{ video.estado }}
               </span>
             </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-700">
-                {{ video.duracion_estimada }}
-              </div>
+
+            <!-- Duración -->
+            <td class="px-5 py-3 text-sm text-gray-600 whitespace-nowrap">
+              {{ video.duracion_estimada }}
             </td>
-            <td class="px-6 py-4 text-right">
+
+            <!-- Acciones -->
+            <td class="px-5 py-3 text-right">
               <button
                 @click.stop="$emit('delete', video.id)"
-                class="text-red-600 hover:text-red-900 text-sm font-medium"
+                class="text-red-500 hover:text-red-700 text-sm font-medium"
               >
                 Eliminar
               </button>
@@ -108,21 +157,39 @@
 </template>
 
 <script setup>
-defineProps({
-  videos: {
-    type: Array,
-    required: true,
-  },
-});
-
+defineProps({ videos: { type: Array, required: true } });
 defineEmits(["edit", "delete"]);
 
-const estadoBadgeClass = (estado) => {
-  const classes = {
+const rutaLabel = (v) =>
+  ({ tecnica: "Técnica", viral: "Viral", amplia: "Amplia" })[v] || v || "—";
+const tipoLabel = (v) =>
+  ({ educativo: "Educativo", practico: "Práctico" })[v] || v || "—";
+const narrativaLabel = (v) =>
+  ({ directa: "Directa", estructurada: "Estructurada" })[v] || v || "—";
+
+const rutaBadgeClass = (v) =>
+  ({
+    tecnica: "bg-indigo-100 text-indigo-700",
+    viral: "bg-pink-100 text-pink-700",
+    amplia: "bg-amber-100 text-amber-700",
+  })[v] || "bg-gray-100 text-gray-600";
+
+const tipoBadgeClass = (v) =>
+  ({
+    educativo: "bg-purple-100 text-purple-700",
+    practico: "bg-teal-100 text-teal-700",
+  })[v] || "bg-gray-100 text-gray-600";
+
+const narrativaBadgeClass = (v) =>
+  ({
+    directa: "bg-green-100 text-green-700",
+    estructurada: "bg-blue-100 text-blue-700",
+  })[v] || "bg-gray-100 text-gray-600";
+
+const estadoBadgeClass = (v) =>
+  ({
     GRABANDO: "bg-blue-100 text-blue-800",
     EDITANDO: "bg-yellow-100 text-yellow-800",
     PUBLICADO: "bg-green-100 text-green-800",
-  };
-  return classes[estado] || "bg-gray-100 text-gray-800";
-};
+  })[v] || "bg-gray-100 text-gray-800";
 </script>

@@ -59,6 +59,11 @@ exports.payments = onRequest(
   paymentApp
 );
 
+// 📧 ONBOARDING - Emails de onboarding via Resend
+const onboarding = require('./src/Onboarding/index');
+exports.onBusinessCreatedOnboarding = onboarding.onBusinessCreatedOnboarding;
+exports.onStreakUpdated = onboarding.onStreakUpdated;
+
 // FUNCIÓN DE PRUEBA (remover en producción)
 // exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');
 

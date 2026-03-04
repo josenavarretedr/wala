@@ -20,16 +20,18 @@ export const useGuionesStore = defineStore('guiones', () => {
   // Opciones de filtros (cargadas dinámicamente)
   const filterOptions = ref({
     temas: [],
-    sectores: [],
-    fases: [],
+    rutas: ['tecnica', 'viral', 'amplia'],
+    tipos: ['educativo', 'practico'],
+    narrativas: ['directa', 'estructurada'],
     estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO']
   });
 
   // Filtros activos
   const activeFilters = ref({
     tema: null,
-    sector: null,
-    fase_funnel: null,
+    ruta: null,
+    tipo_contenido: null,
+    narrativa: null,
     estado: null,
     searchText: ''
   });
@@ -38,42 +40,34 @@ export const useGuionesStore = defineStore('guiones', () => {
   const videosFiltered = computed(() => {
     let filtered = videos.value;
 
-    // Filtrar por tema
     if (activeFilters.value.tema) {
       filtered = filtered.filter(v => v.tema === activeFilters.value.tema);
     }
 
-    // Filtrar por sector
-    if (activeFilters.value.sector) {
-      filtered = filtered.filter(v => {
-        if (v.sectores && Array.isArray(v.sectores)) {
-          return v.sectores.includes(activeFilters.value.sector);
-        }
-        return v.sector_ejemplo === activeFilters.value.sector;
-      });
+    if (activeFilters.value.ruta) {
+      filtered = filtered.filter(v => v.ruta === activeFilters.value.ruta);
     }
 
-    // Filtrar por fase del funnel
-    if (activeFilters.value.fase_funnel) {
-      filtered = filtered.filter(v => v.fase_funnel === activeFilters.value.fase_funnel);
+    if (activeFilters.value.tipo_contenido) {
+      filtered = filtered.filter(v => v.tipo_contenido === activeFilters.value.tipo_contenido);
     }
 
-    // Filtrar por estado
+    if (activeFilters.value.narrativa) {
+      filtered = filtered.filter(v => v.narrativa === activeFilters.value.narrativa);
+    }
+
     if (activeFilters.value.estado) {
       filtered = filtered.filter(v => v.estado === activeFilters.value.estado);
     }
 
-    // Búsqueda de texto (en subtema, tema, caption)
     if (activeFilters.value.searchText) {
       const search = activeFilters.value.searchText.toLowerCase();
-      filtered = filtered.filter(v => {
-        return (
-          v.tema?.toLowerCase().includes(search) ||
-          v.subtema?.toLowerCase().includes(search) ||
-          v.caption?.toLowerCase().includes(search) ||
-          v.sector_ejemplo?.toLowerCase().includes(search)
-        );
-      });
+      filtered = filtered.filter(v =>
+        v.tema?.toLowerCase().includes(search) ||
+        v.sector_contexto?.toLowerCase().includes(search) ||
+        v.gancho?.texto?.toLowerCase().includes(search) ||
+        v.caption?.toLowerCase().includes(search)
+      );
     }
 
     return filtered;
@@ -269,8 +263,9 @@ export const useGuionesStore = defineStore('guiones', () => {
   function clearFilters() {
     activeFilters.value = {
       tema: null,
-      sector: null,
-      fase_funnel: null,
+      ruta: null,
+      tipo_contenido: null,
+      narrativa: null,
       estado: null,
       searchText: ''
     };

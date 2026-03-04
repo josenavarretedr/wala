@@ -235,6 +235,20 @@ export function useTransactionStore() {
     }
   };
 
+  /**
+   * Guarda directamente una transacción de sistema (opening, closure, adjustment)
+   * en Firestore sin generar un nuevo UUID ni pasar por la lógica de income/expense/optimistic UI.
+   * @param {Object} transaction - Transacción ya construida con uuid propio
+   */
+  const saveSystemTransaction = async (transaction) => {
+    if (!transaction || !transaction.uuid) {
+      throw new Error('saveSystemTransaction: la transacción debe tener un uuid');
+    }
+    console.log(`💾 [SYSTEM] Guardando transacción de sistema: ${transaction.type} (uuid: ${transaction.uuid})`);
+    await createTransaction(transaction);
+    console.log(`✅ [SYSTEM] Transacción guardada: ${transaction.type} (uuid: ${transaction.uuid})`);
+  };
+
   const addTransaction = async () => {
     // ⚡ FASE 3: OPTIMISTIC UI - Asignar UUID antes de optimistic update
     const transactionId = uuidv4();
@@ -2824,6 +2838,7 @@ export function useTransactionStore() {
     itemToAddInExpenseMaterial,
     status,
     addTransaction,
+    saveSystemTransaction,
     addQuote,
     getNextQuoteNumber,
     getTransactions,
