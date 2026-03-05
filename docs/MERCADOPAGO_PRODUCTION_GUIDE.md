@@ -323,3 +323,14 @@ Antes de lanzar:
 Una vez completado el checklist, tu sistema de pagos está listo para recibir pagos reales.
 
 **Soporte**: Si tienes problemas, revisa los logs en Firebase Console o contacta a soporte de Mercado Pago.
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

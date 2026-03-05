@@ -434,3 +434,14 @@ Estado A → [TRANSICIÓN 300ms] → Estado B
 **Versión:** 1.0  
 **Componente:** StepAddIncomeDetails.vue  
 **Estado:** ✅ Implementado y probado
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

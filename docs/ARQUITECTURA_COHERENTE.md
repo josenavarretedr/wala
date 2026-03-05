@@ -226,3 +226,14 @@ const userBusinessRelation = userStore.currentBusiness;
 ---
 
 **✅ Esta arquitectura garantiza coherencia técnica, escalabilidad y mantenibilidad a largo plazo.**
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

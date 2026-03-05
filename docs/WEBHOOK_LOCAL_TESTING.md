@@ -227,3 +227,14 @@ ngrok http 5001
 ## Siguiente Paso: Producción
 
 Una vez que todo funcione localmente, sigue la guía [MERCADOPAGO_PRODUCTION_GUIDE.md](./MERCADOPAGO_PRODUCTION_GUIDE.md) para desplegar en producción.
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

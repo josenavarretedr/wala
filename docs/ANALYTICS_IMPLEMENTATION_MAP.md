@@ -304,3 +304,14 @@ const eventId = `${businessId}:${dayId}:${eventName}:${source}`;
 7. ✅ Implementar tracking en `scheduledAutoClose.js` (cierre automático)
 8. ✅ Implementar tracking en `streakManager.js` (racha)
 9. ✅ Documentar en `/docs/analytics.md`
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

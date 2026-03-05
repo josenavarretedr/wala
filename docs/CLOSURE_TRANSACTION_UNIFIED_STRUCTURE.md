@@ -420,3 +420,14 @@ function validateClosureTransaction(closure) {
 **✅ Implementado por:** GitHub Copilot  
 **📅 Fecha:** 27 de octubre de 2025  
 **🔗 Relacionado con:** `ACCOUNTS_BALANCE_STORE_USAGE.md`, `sharedComputed.js`, `getDayAggregates()`
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

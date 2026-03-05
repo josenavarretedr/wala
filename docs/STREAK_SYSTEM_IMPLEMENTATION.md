@@ -387,3 +387,14 @@ El sistema de racha está completamente funcional y listo para usar. Todos los c
 > **"Valorar el esfuerzo del usuario, no la perfección en los rituales rutinarios"**
 
 El copilot es un asistente que ayuda a mantener la consistencia, no un juez que penaliza olvidos menores.
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+
