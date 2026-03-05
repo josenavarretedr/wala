@@ -178,3 +178,14 @@ Background: #10b981   Check: white   Label: #10b981
 
 **Versión**: 2.1.0 (Con Tiempo Mínimo)  
 **Octubre 2025** - Wala Team
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

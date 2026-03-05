@@ -252,3 +252,14 @@ accountsBalanceStore.setOpening(openingTransaction);
 5. Probar que todo funciona igual
 
 Esta aproximación convierte el store en el "cerebro financiero" de la aplicación, manteniendo toda la lógica de cálculos centralizada y reutilizable.
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

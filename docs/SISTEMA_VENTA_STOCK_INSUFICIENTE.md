@@ -347,3 +347,14 @@ newStock = itemData.stock - stockLog.quantity;
 - La validación de stock solo aplica a productos con `trackStock = true`
 - Los servicios y productos sin seguimiento no pasan por esta validación
 - El campo `quantityForStock` solo existe cuando hay stock insuficiente y se procede
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

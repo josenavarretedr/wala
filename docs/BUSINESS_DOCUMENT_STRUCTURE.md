@@ -487,3 +487,14 @@ async function migrateOnboardingToSubcollection() {
 **Última actualización**: 2024-01-XX  
 **Versión del schema**: 2.0  
 **Mantenedor**: Equipo de Desarrollo Wala
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

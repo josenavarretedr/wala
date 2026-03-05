@@ -284,3 +284,14 @@ El sistema utiliza el sistema de trazabilidad existente:
 
 **Fecha de implementación:** 14 de octubre de 2025
 **Desarrollado siguiendo:** Arquitectura de `AccountBalanceAppWrapper.vue` y patrones del proyecto
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

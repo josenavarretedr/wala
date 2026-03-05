@@ -494,3 +494,14 @@ const productType = category === "materials" ? "RAW_MATERIAL" : "MERCH";
 **Fecha de implementación:** 21 de noviembre de 2025
 **Versión:** 1.0
 **Estado:** ✅ Implementado y documentado
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

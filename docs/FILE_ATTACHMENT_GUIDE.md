@@ -672,3 +672,14 @@ Para preguntas o issues:
 
 **Última actualización:** 29 de enero de 2026  
 **Versión:** 1.0.0
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+
