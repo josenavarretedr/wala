@@ -16,8 +16,7 @@ import {
   orderBy,
   Timestamp
 } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { db, functions } from '@/firebaseInit'
+import { db } from '@/firebaseInit'
 import { useAuthStore } from './authStore'
 import { useUserStore } from './useUserStore'
 

@@ -38,9 +38,6 @@ exports.initializeTaxonomies = require('./src/Setup/initializeTaxonomies').initi
 // exports.onProductCreatedClassify = require('./src/Inventory/onProductCreatedClassify');
 // exports.classifyProduct = require('./src/Inventory/classifyProductCallable');
 
-// ✨ PROGRAMAS (MÓDULO JUNTOS)
-exports.joinProgramByCode = require('./src/Programs/joinProgramByCode').joinProgramByCode;
-
 // � STORAGE - Procesamiento de archivos subidos
 exports.processFileUpload = require('./src/Storage/processFileUpload').processFileUpload;
 
