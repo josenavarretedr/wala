@@ -293,3 +293,14 @@ Una vez que todos los tests pasen:
 - [Documentación oficial de Yape - Mercado Pago](https://www.mercadopago.com.pe/developers/es/docs/checkout-api-payments/integration-configuration/yape)
 - [Tarjetas de prueba Perú](https://www.mercadopago.com.pe/developers/es/docs/checkout-api-payments/additional-content/your-integrations/test/cards)
 - [Guía de producción](./MERCADOPAGO_PRODUCTION_GUIDE.md)
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

@@ -279,3 +279,14 @@ function hide() {
 
 **Versión**: 2.3.0 (Spinners Visibles)  
 **Fecha**: Octubre 2025
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

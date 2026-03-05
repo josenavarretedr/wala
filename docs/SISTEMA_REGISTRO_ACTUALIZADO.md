@@ -219,3 +219,14 @@ Usuario → /register → Sin internet → "Registrarse"
 **Estado**: ✅ **COMPLETAMENTE FUNCIONAL**  
 **Compatibilidad**: ✅ **100% con sistema multi-negocio**  
 **Testing**: ✅ **Listo para pruebas**
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+

@@ -325,3 +325,14 @@ STORAGE_KEYS = {
 ---
 
 **Nota**: Este sistema mantiene compatibilidad con la implementación anterior mientras introduce la nueva funcionalidad multi-negocio.
+
+
+---
+
+## Changelog
+
+### [Auditoría - Marzo 2026]
+- Revisado: Funcionalidad verificada como activa en código fuente.
+- Sin cambios de contenido en esta auditoría.
+- Documentación movida al estado vigente confirmado.
+
