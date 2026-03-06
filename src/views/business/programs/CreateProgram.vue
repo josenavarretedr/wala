@@ -435,7 +435,7 @@ watch(
       formData.value.codUser = "";
       formData.value.codTeam = "";
     }
-  }
+  },
 );
 
 // ═══════════════════════════════════════════════════════════
@@ -607,10 +607,7 @@ async function handleSubmit() {
     alert(`✅ Programa "${programData.name}" creado exitosamente!`);
 
     // Redirigir al hub de programas
-    router.push({
-      name: "ProgramsHub",
-      params: { businessId: userStore.currentBusiness?.businessId },
-    });
+    router.push({ name: "FacilitatorProgramsHub" });
   } catch (error) {
     console.error("❌ Error creando programa:", error);
     errors.value.general =
@@ -621,10 +618,17 @@ async function handleSubmit() {
 }
 
 function goBack() {
-  router.push({
-    name: "ProgramsHub",
-    params: { businessId: userStore.currentBusiness?.businessId },
-  });
+  // Si viene desde rutas de facilitador, volver al hub de facilitador
+  const fromBusiness =
+    router.currentRoute.value.meta?.requiresFacilitatorRole === undefined;
+  if (router.currentRoute.value.path.startsWith("/programs")) {
+    router.push({ name: "FacilitatorProgramsHub" });
+  } else {
+    router.push({
+      name: "ProgramsHub",
+      params: { businessId: userStore.currentBusiness?.businessId },
+    });
+  }
 }
 </script>
 

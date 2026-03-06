@@ -52,22 +52,23 @@
 
 ## Módulos / Funcionalidades
 
-| Archivo                                                                            | Descripción                                                  | Estado    |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------- |
-| [MODULO_JUNTOS_RESUMEN.md](MODULO_JUNTOS_RESUMEN.md)                               | Resumen completo del módulo Juntos (Programas + Actividades) | ✅ Activo |
-| [MODULO_JUNTOS_DEPLOYMENT.md](MODULO_JUNTOS_DEPLOYMENT.md)                         | Guía de despliegue del módulo Juntos                         | ✅ Activo |
-| [SETUP_PROGRAMS_GUIDE.md](SETUP_PROGRAMS_GUIDE.md)                                 | Guía de configuración de Programas                           | ✅ Activo |
-| [SISTEMA_CLIENTES.md](SISTEMA_CLIENTES.md)                                         | Sistema de gestión de clientes                               | ✅ Activo |
-| [SISTEMA_ONBOARDING.md](SISTEMA_ONBOARDING.md)                                     | Sistema de onboarding de nuevos negocios                     | ✅ Activo |
-| [SISTEMA_MULTI_NEGOCIO.md](SISTEMA_MULTI_NEGOCIO.md)                               | Arquitectura multi-negocio                                   | ✅ Activo |
-| [SISTEMA_SUSCRIPCIONES_PREMIUM.md](SISTEMA_SUSCRIPCIONES_PREMIUM.md)               | Sistema de planes Free/Premium/Trial                         | ✅ Activo |
-| [SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md](SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md) | Pagos parciales en transacciones                             | ✅ Activo |
-| [SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md](SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md)       | Sistema de trazabilidad de operaciones                       | ✅ Activo |
-| [SISTEMA_REGISTRO_ACTUALIZADO.md](SISTEMA_REGISTRO_ACTUALIZADO.md)                 | Sistema de registros contables básicos                       | ✅ Activo |
-| [SISTEMA_APERTURA_CIERRE_MODULAR.md](SISTEMA_APERTURA_CIERRE_MODULAR.md)           | Sistema modular de apertura y cierre de caja                 | ✅ Activo |
-| [LAZY_CLOSE_INTEGRATION.md](LAZY_CLOSE_INTEGRATION.md)                             | Cierre automático de caja pendiente (Cloud Function)         | ✅ Activo |
-| [REALTIME_DAILYSUMMARY_LISTENER.md](REALTIME_DAILYSUMMARY_LISTENER.md)             | Listener en tiempo real del resumen diario                   | ✅ Activo |
-| [GUIONES_SYSTEM_README.md](GUIONES_SYSTEM_README.md)                               | Sistema de guiones y videos de contenido                     | ✅ Activo |
+| Archivo                                                                                          | Descripción                                                  | Estado    |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | --------- |
+| [ACTIVIDAD_PARTICIPACION_REFACTOR_MARZO_2026.md](ACTIVIDAD_PARTICIPACION_REFACTOR_MARZO_2026.md) | Refactor Formulario→Actividad, matriz y asistencia masiva    | ✅ Activo |
+| [MODULO_JUNTOS_RESUMEN.md](MODULO_JUNTOS_RESUMEN.md)                                             | Resumen completo del módulo Juntos (Programas + Actividades) | ✅ Activo |
+| [MODULO_JUNTOS_DEPLOYMENT.md](MODULO_JUNTOS_DEPLOYMENT.md)                                       | Guía de despliegue del módulo Juntos                         | ✅ Activo |
+| [SETUP_PROGRAMS_GUIDE.md](SETUP_PROGRAMS_GUIDE.md)                                               | Guía de configuración de Programas                           | ✅ Activo |
+| [SISTEMA_CLIENTES.md](SISTEMA_CLIENTES.md)                                                       | Sistema de gestión de clientes                               | ✅ Activo |
+| [SISTEMA_ONBOARDING.md](SISTEMA_ONBOARDING.md)                                                   | Sistema de onboarding de nuevos negocios                     | ✅ Activo |
+| [SISTEMA_MULTI_NEGOCIO.md](SISTEMA_MULTI_NEGOCIO.md)                                             | Arquitectura multi-negocio                                   | ✅ Activo |
+| [SISTEMA_SUSCRIPCIONES_PREMIUM.md](SISTEMA_SUSCRIPCIONES_PREMIUM.md)                             | Sistema de planes Free/Premium/Trial                         | ✅ Activo |
+| [SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md](SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md)               | Pagos parciales en transacciones                             | ✅ Activo |
+| [SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md](SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md)                     | Sistema de trazabilidad de operaciones                       | ✅ Activo |
+| [SISTEMA_REGISTRO_ACTUALIZADO.md](SISTEMA_REGISTRO_ACTUALIZADO.md)                               | Sistema de registros contables básicos                       | ✅ Activo |
+| [SISTEMA_APERTURA_CIERRE_MODULAR.md](SISTEMA_APERTURA_CIERRE_MODULAR.md)                         | Sistema modular de apertura y cierre de caja                 | ✅ Activo |
+| [LAZY_CLOSE_INTEGRATION.md](LAZY_CLOSE_INTEGRATION.md)                                           | Cierre automático de caja pendiente (Cloud Function)         | ✅ Activo |
+| [REALTIME_DAILYSUMMARY_LISTENER.md](REALTIME_DAILYSUMMARY_LISTENER.md)                           | Listener en tiempo real del resumen diario                   | ✅ Activo |
+| [GUIONES_SYSTEM_README.md](GUIONES_SYSTEM_README.md)                                             | Sistema de guiones y videos de contenido                     | ✅ Activo |
 
 ---
 

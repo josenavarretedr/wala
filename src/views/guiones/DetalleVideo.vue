@@ -894,14 +894,10 @@ Describe: quién es la persona (aspecto físico, ropa específica de su rubro), 
 
   try {
     generandoPrompt[toma] = true;
-    const { OpenAI } = await import("openai");
-    const client = new OpenAI({
-      apiKey: import.meta.env.VITE_XAI_API_KEY,
-      baseURL: "https://api.x.ai/v1",
-      dangerouslyAllowBrowser: true,
-    });
-    const resp = await client.chat.completions.create({
-      model: import.meta.env.VITE_GROK_MODEL || "grok-3-mini",
+    const { httpsCallable } = await import("firebase/functions");
+    const { functions } = await import("@/firebaseInit");
+    const grokProxy = httpsCallable(functions, "grokProxy");
+    const resp = await grokProxy({
       messages: [
         {
           role: "system",
@@ -915,7 +911,7 @@ Describe: quién es la persona (aspecto físico, ropa específica de su rubro), 
       max_tokens: 400,
       temperature: 0.85,
     });
-    const base = resp.choices[0].message.content.trim();
+    const base = (resp.data.content || "").trim();
     promptBase[toma] = base;
     promptTexto[toma] = ensamblarPrompt(toma, base);
   } catch (err) {

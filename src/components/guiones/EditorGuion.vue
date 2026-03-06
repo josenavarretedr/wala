@@ -171,6 +171,184 @@
               </button>
             </div>
           </div>
+
+          <!-- ── 📸 Imágenes de soporte ── -->
+          <div class="mt-3">
+            <!-- Trigger acordeón -->
+            <button
+              @click="toggleImgAccordion(item.rawKey)"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-gray-50 text-gray-500 hover:bg-gray-100 border border-gray-200 hover:border-gray-300"
+            >
+              📸 Imágenes de soporte
+              <svg
+                :class="[
+                  'w-3 h-3 transition-transform duration-200',
+                  imgAccordionOpen[item.rawKey] && 'rotate-180',
+                ]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <!-- Contenido acordeón -->
+            <div v-if="imgAccordionOpen[item.rawKey]" class="mt-2">
+              <!-- Grid: 1 col mobile, 2 col sm -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div v-for="style in IMG_STYLES" :key="style.id">
+                  <!-- Tarjeta toggle -->
+                  <button
+                    @click="
+                      toggleImgCard(
+                        item.rawKey,
+                        style.id,
+                        item.text,
+                        item.label,
+                      )
+                    "
+                    :class="[
+                      'w-full flex items-center justify-between gap-2 px-3 py-2.5 bg-white rounded-xl hover:shadow-sm transition-all text-left border',
+                      style.borderColor,
+                      style.hoverBorder,
+                    ]"
+                  >
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="text-xl leading-none shrink-0">{{
+                        style.emoji
+                      }}</span>
+                      <div class="min-w-0">
+                        <p
+                          :class="[
+                            'text-[10px] font-semibold uppercase tracking-wide',
+                            style.labelColor,
+                          ]"
+                        >
+                          {{ style.nombre }}
+                        </p>
+                        <p
+                          class="text-xs font-medium text-gray-800 leading-tight"
+                        >
+                          {{ style.concepto }}
+                        </p>
+                        <p class="text-[10px] text-gray-400 hidden sm:block">
+                          {{ style.descripcion }}
+                        </p>
+                      </div>
+                    </div>
+                    <svg
+                      :class="[
+                        'w-3.5 h-3.5 transition-transform duration-200 shrink-0',
+                        style.chevronColor,
+                        imgCardOpen[item.rawKey] === style.id && 'rotate-180',
+                      ]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  <!-- Card expandida (solo 1 activa por sección) -->
+                  <div
+                    v-if="imgCardOpen[item.rawKey] === style.id"
+                    :class="[
+                      'mt-1.5 bg-white rounded-xl p-3 border',
+                      style.expandedBorder,
+                    ]"
+                  >
+                    <!-- Spinner -->
+                    <div
+                      v-if="imgGenerando[`${item.rawKey}__${style.id}`]"
+                      class="flex items-center gap-2 py-3"
+                    >
+                      <div
+                        :class="[
+                          'animate-spin rounded-full h-4 w-4 border-b-2',
+                          style.spinnerColor,
+                        ]"
+                      ></div>
+                      <span :class="['text-xs font-medium', style.labelColor]"
+                        >Generando con IA…</span
+                      >
+                    </div>
+
+                    <!-- Texto prompt generado -->
+                    <p
+                      v-else
+                      class="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap"
+                    >
+                      {{ imgPromptTexto[`${item.rawKey}__${style.id}`] }}
+                    </p>
+
+                    <!-- Botones acción -->
+                    <div
+                      v-if="!imgGenerando[`${item.rawKey}__${style.id}`]"
+                      class="mt-3 flex flex-wrap gap-1.5"
+                    >
+                      <button
+                        @click="
+                          regenerarImg(
+                            item.rawKey,
+                            style.id,
+                            item.text,
+                            item.label,
+                          )
+                        "
+                        :class="[
+                          'flex-none px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                          style.regenClass,
+                        ]"
+                        title="Nueva llamada a Grok con el mismo contexto"
+                      >
+                        ↺ Regenerar
+                      </button>
+
+                      <button
+                        @click="cambiarDetallesImg(item.rawKey, style.id)"
+                        :disabled="
+                          !imgPromptBase[`${item.rawKey}__${style.id}`]
+                        "
+                        class="flex-none px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-amber-50 text-amber-700 hover:bg-amber-100 disabled:opacity-40"
+                        title="Cambia plano/layout/superficie sin nueva llamada a la API"
+                      >
+                        ✦ Change Details
+                      </button>
+
+                      <button
+                        @click="copiarImgPrompt(item.rawKey, style.id)"
+                        :class="[
+                          'flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all',
+                          imgCopiado[`${item.rawKey}__${style.id}`]
+                            ? 'bg-green-100 text-green-700'
+                            : style.copyClass,
+                        ]"
+                      >
+                        {{
+                          imgCopiado[`${item.rawKey}__${style.id}`]
+                            ? "✓ Copiado al portapapeles"
+                            : "Copiar prompt"
+                        }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- fin 📸 -->
         </div>
 
         <!-- Contenido: Micro-hook intercalado -->
@@ -424,14 +602,10 @@ ${reglaSeccion}
 
   try {
     regenerating[key] = true;
-    const { OpenAI } = await import("openai");
-    const client = new OpenAI({
-      apiKey: import.meta.env.VITE_XAI_API_KEY,
-      baseURL: "https://api.x.ai/v1",
-      dangerouslyAllowBrowser: true,
-    });
-    const resp = await client.chat.completions.create({
-      model: import.meta.env.VITE_GROK_MODEL || "grok-3-mini",
+    const { httpsCallable } = await import("firebase/functions");
+    const { functions } = await import("@/firebaseInit");
+    const grokProxy = httpsCallable(functions, "grokProxy");
+    const resp = await grokProxy({
       messages: [
         {
           role: "system",
@@ -445,7 +619,7 @@ ${reglaSeccion}
       temperature: 0.72,
     });
 
-    const result = JSON.parse(resp.choices[0].message.content.trim());
+    const result = JSON.parse((resp.data.content || "{}").trim());
     const nuevoTexto = (result.texto || "").trim();
 
     // Guardar texto en textarea (sin prefijo) y en raw (con prefijo)
@@ -462,6 +636,374 @@ ${reglaSeccion}
     console.error(`Error regenerando sección ${key}:`, err);
   } finally {
     regenerating[key] = false;
+  }
+}
+
+// ════════════════════════════════════════════════════
+// IMÁGENES DE SOPORTE
+// ════════════════════════════════════════════════════
+
+// ─ Definición de estilos ─
+const IMG_STYLES = [
+  {
+    id: "cine",
+    emoji: "🎬",
+    nombre: "Cinematográfica",
+    concepto: "Escena documental",
+    descripcion: "Realista · 8K · 9:16",
+    borderColor: "border-violet-200",
+    hoverBorder: "hover:border-violet-400",
+    labelColor: "text-violet-700",
+    chevronColor: "text-violet-400",
+    expandedBorder: "border-violet-100",
+    spinnerColor: "border-violet-600",
+    regenClass: "bg-violet-50 text-violet-700 hover:bg-violet-100",
+    copyClass: "bg-violet-600 text-white hover:bg-violet-700",
+  },
+  {
+    id: "info",
+    emoji: "📊",
+    nombre: "Infografía",
+    concepto: "Visual estructurado",
+    descripcion: "Flat design · Naranja marca",
+    borderColor: "border-blue-200",
+    hoverBorder: "hover:border-blue-400",
+    labelColor: "text-blue-700",
+    chevronColor: "text-blue-400",
+    expandedBorder: "border-blue-100",
+    spinnerColor: "border-blue-600",
+    regenClass: "bg-blue-50 text-blue-700 hover:bg-blue-100",
+    copyClass: "bg-blue-600 text-white hover:bg-blue-700",
+  },
+  {
+    id: "hand",
+    emoji: "✍️",
+    nombre: "Handwritten",
+    concepto: "Nota a mano",
+    descripcion: "Papel · Pizarra · Cuaderno",
+    borderColor: "border-amber-200",
+    hoverBorder: "hover:border-amber-400",
+    labelColor: "text-amber-700",
+    chevronColor: "text-amber-400",
+    expandedBorder: "border-amber-100",
+    spinnerColor: "border-amber-600",
+    regenClass: "bg-amber-50 text-amber-700 hover:bg-amber-100",
+    copyClass: "bg-amber-600 text-white hover:bg-amber-700",
+  },
+  {
+    id: "basic",
+    emoji: "🖼️",
+    nombre: "Básica",
+    concepto: "Objeto / entorno simple",
+    descripcion: "Sin personas · Producto",
+    borderColor: "border-green-200",
+    hoverBorder: "hover:border-green-400",
+    labelColor: "text-green-700",
+    chevronColor: "text-green-400",
+    expandedBorder: "border-green-100",
+    spinnerColor: "border-green-600",
+    regenClass: "bg-green-50 text-green-700 hover:bg-green-100",
+    copyClass: "bg-green-600 text-white hover:bg-green-700",
+  },
+];
+
+// ─ Mood emocional por sección (Cinematográfica) ─
+const SECTION_MOOD = {
+  hook: "intriga y tensión inicial — mirada directa a cámara, expresión que engancha y genera curiosidad inmediata",
+  caso_validacion:
+    "reconocimiento del problema — expresión auténtica de preocupación, postura ligeramente tensa, mirada fija en el problema concreto",
+  desarrollo:
+    "concentración en acción — manos en movimiento, enfoque y determinación visibles, energía de quien está resolviendo activamente",
+  micro_accion:
+    "micro-momento de cambio — postura en transición, gesto pequeño pero deliberado, alivio naciente en el rostro",
+  cta: "resolución positiva — expresión abierta y confiada, postura relajada, gesto de invitación o satisfacción con el resultado",
+};
+
+// ─ Pools Cinematográfica ─
+const cinePlanos = [
+  "Plano medio, altura de cintura, lente 35mm",
+  "Plano americano, altura de rodillas, lente 50mm",
+  "Primer plano de rostro y manos en acción, lente 85mm",
+  "Plano medio corto, tres cuartos de perfil, lente 50mm",
+  "Plano detalle alternado: manos y rostro, lente 85mm",
+];
+const cineMomentos = [
+  "a primera hora de la mañana, antes de abrir el negocio",
+  "a media mañana, en plena jornada de trabajo",
+  "a última hora de la tarde, cerrando el día",
+  "al mediodía, revisando resultados del día",
+];
+const cineAngulos = [
+  "Cámara ligeramente por debajo del nivel de los ojos, ángulo contrapicado que da autoridad",
+  "Cámara a nivel de los ojos, ángulo neutro documental directo",
+  "Cámara levemente por encima, picado suave que muestra entorno y productos",
+];
+const cineLuces = [
+  "Sombras suaves que acentúan la expresión del personaje.",
+  "Luz lateral que crea contraste y refuerza la emotividad de la escena.",
+  "Iluminación ligeramente subexpuesta en el fondo, el personaje en primer foco.",
+  "Luz que destaca las manos en movimiento, fondo ligeramente desenfocado.",
+  "Iluminación equilibrada que transmite claridad y momentum positivo.",
+  "Destello suave de luz natural desde ventana, símbolo visual de apertura.",
+];
+const CINE_CIERRE =
+  "Colores vivos y realistas, sin corrección de color artificial. Profundidad de campo cinematográfica. Estilo documental fotográfico profesional, textura de piel detallada, calidad 8K, sin filtros artificiales. Atmósfera auténtica de negocio familiar latinoamericano. Formato vertical 9:16.";
+
+// ─ Pools Infografía ─
+const infoLayouts = [
+  "Layout de bloques apilados verticalmente con separadores naranjas (#F97316)",
+  "Columna única con tarjetas flotantes de acento naranja sólido (#F97316)",
+  "Dato central grande en el tercio superior y 2-3 puntos de apoyo debajo",
+  "Lista vertical con íconos naranjas (#F97316) a la izquierda y texto a la derecha",
+];
+const infoFondos = [
+  "Fondo blanco con header naranja #F97316 sólido en el tercio superior y contenido en gris oscuro",
+  "Fondo naranja #F97316 degradado a #EA6C00 con todo el contenido en blanco",
+  "Fondo gris muy claro #F5F5F5 con tarjetas de acento naranja #F97316 rellenos",
+  "Fondo blanco puro con elementos, bordes y separadores naranjas #F97316",
+];
+
+// ─ Pools Handwritten ─
+const handSuperficies = [
+  "papel kraft rugoso de 120g con textura visible y bordes naturalmente irregulares",
+  "libreta de campo abierta con espiral metálico visible al borde izquierdo",
+  "pizarra negra escolar con marco de madera y residuos de tiza en las esquinas",
+  "cuaderno cuadriculado, páginas ligeramente amarillentas por el uso",
+  "post-it amarillo sobre superficie de escritorio de madera con veta natural visible",
+];
+const handMarcadores = [
+  "bolígrafo azul de punta media, trazo fluido con presión variable que denota autenticidad",
+  "marcador negro grueso tipo Sharpie, trazos anchos y seguros",
+  "tiza blanca imperfecta sobre pizarra, grosor variable por la presión",
+  "lápiz 2B de grafito con pequeñas borraduras y reescrituras visibles",
+];
+const handExtras = [
+  "una flecha curva dibujada a mano señalando la frase principal",
+  "subrayado doble hecho a mano bajo la idea más importante",
+  "pequeños dibujos esquemáticos al margen: moneda, flecha ascendente, estrella",
+  "un círculo trazado a mano alrededor de la palabra clave central",
+  "sin elementos extra — solo el texto limpio sobre la superficie",
+];
+
+// ─ Pools Básica ─
+const basicEncuadres = [
+  "encuadre cenital directo, objeto centrado con sombra suave debajo",
+  "encuadre 3/4 frontal levemente elevado, fondo liso neutro",
+  "encuadre lateral a 90°, fondo degradado de blanco a gris claro",
+  "encuadre macro de detalle del objeto, fondo completamente desenfocado",
+];
+const basicLuz = [
+  "luz natural lateral difusa desde ventana, sin sombras duras",
+  "luz de estudio suave con softbox frontal, sombras controladas y suaves",
+  "luz natural cenital en exterior nublado, iluminación plana y uniforme",
+];
+const basicEstilo = [
+  "fotografía de producto clean estilo editorial de alta calidad, 8K",
+  "fotografía flat lay con elementos complementarios del negocio alrededor",
+  "fotografía de entorno comercial con el objeto en contexto real del negocio",
+];
+
+// ─ Estado reactivo ─
+const imgAccordionOpen = reactive({});
+const imgCardOpen = reactive({}); // rawKey → styleId activo | null
+const imgGenerando = reactive({}); // 'rawKey__styleId' → bool
+const imgPromptBase = reactive({}); // 'rawKey__styleId' → texto base Grok
+const imgPromptTexto = reactive({}); // 'rawKey__styleId' → texto ensamblado
+const imgCopiado = reactive({}); // 'rawKey__styleId' → bool
+
+// ─ Helper random ─
+const rndPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// ─ Funciones de ensamblado (base + pools) ─
+function ensamblarCine(base) {
+  const a = rndPick(cineAngulos),
+    p = rndPick(cinePlanos),
+    m = rndPick(cineMomentos),
+    l = rndPick(cineLuces);
+  return `${base}\n\n${a}. ${p}. La escena ocurre ${m}. ${l}\n\n${CINE_CIERRE}`;
+}
+function ensamblarInfo(base) {
+  return `${base}\n\n${rndPick(infoLayouts)}. ${rndPick(infoFondos)}. Tipografía sans-serif moderna, jerarquía clara. Sin fotografías de personas. Formato vertical 9:16, apto para reel o story de Instagram/TikTok.`;
+}
+function ensamblarHand(base) {
+  return `${base}\n\nEscenario: ${rndPick(handSuperficies)}, ${rndPick(handMarcadores)}, ${rndPick(handExtras)}. Fotografía cenital o ángulo 3/4 con luz natural cálida. Formato vertical 9:16, estilo documental auténtico.`;
+}
+function ensamblarBasic(base) {
+  return `${base}\n\n${rndPick(basicEncuadres)}, ${rndPick(basicLuz)}. ${rndPick(basicEstilo)}. Sin personas. Formato vertical 9:16.`;
+}
+
+// ─ Toggle acordeón principal ─
+function toggleImgAccordion(rawKey) {
+  imgAccordionOpen[rawKey] = !imgAccordionOpen[rawKey];
+  if (!imgAccordionOpen[rawKey]) imgCardOpen[rawKey] = null;
+}
+
+// ─ Toggle tarjeta (una sola activa por sección) ─
+async function toggleImgCard(rawKey, styleId, seccionTexto, seccionLabel) {
+  const alreadyOpen = imgCardOpen[rawKey] === styleId;
+  imgCardOpen[rawKey] = alreadyOpen ? null : styleId;
+  if (!alreadyOpen) {
+    const k = `${rawKey}__${styleId}`;
+    if (!imgPromptBase[k]) {
+      await llamarGrokImg(rawKey, styleId, seccionTexto, seccionLabel);
+    }
+  }
+}
+
+// ─ Regenerar imagen ─
+async function regenerarImg(rawKey, styleId, seccionTexto, seccionLabel) {
+  await llamarGrokImg(rawKey, styleId, seccionTexto, seccionLabel);
+}
+
+// ─ Change Details (sin API) ─
+function cambiarDetallesImg(rawKey, styleId) {
+  const k = `${rawKey}__${styleId}`;
+  const base = imgPromptBase[k];
+  if (!base) return;
+  if (styleId === "cine") imgPromptTexto[k] = ensamblarCine(base);
+  else if (styleId === "info") imgPromptTexto[k] = ensamblarInfo(base);
+  else if (styleId === "hand") imgPromptTexto[k] = ensamblarHand(base);
+  else imgPromptTexto[k] = ensamblarBasic(base);
+}
+
+// ─ Copiar prompt ─
+async function copiarImgPrompt(rawKey, styleId) {
+  const k = `${rawKey}__${styleId}`;
+  const texto = imgPromptTexto[k];
+  if (!texto) return;
+  try {
+    await navigator.clipboard.writeText(texto);
+  } catch {
+    const ta = document.createElement("textarea");
+    ta.value = texto;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+  imgCopiado[k] = true;
+  setTimeout(() => {
+    imgCopiado[k] = false;
+  }, 2500);
+}
+
+// ─ Llamada a Grok vía grokProxy para prompts de imagen ─
+async function llamarGrokImg(rawKey, styleId, seccionTexto, seccionLabel) {
+  if (!props.videoContext) return;
+  const k = `${rawKey}__${styleId}`;
+  const v = props.videoContext;
+  const gc = v.guion_completo || {};
+  const strip = (t) => (t || "").replace(/\[.*?\]\s*/g, "").trim();
+
+  const ctxGuion = `CONTEXTO DEL VIDEO:
+- Tema: ${v.tema || "—"}
+- Negocio/Sector: ${v.sector_contexto || "negocio familiar latinoamericano"}
+- Hook [0-5s]: ${strip(gc.hook) || "—"}
+- Caso/Validación [5-25s]: ${strip(gc.caso_validacion) || "—"}
+- Desarrollo [25-50s]: ${strip(gc.desarrollo) || "—"}
+- Micro Acción [50-58s]: ${strip(gc.micro_accion) || "—"}
+- CTA [58-60s]: ${strip(gc.cta) || "—"}
+
+SECCIÓN OBJETIVO: ${seccionLabel}
+TEXTO EXACTO DE LA SECCIÓN: "${seccionTexto}"`;
+
+  let systemMsg = "";
+  let userMsg = "";
+
+  if (styleId === "cine") {
+    const mood = SECTION_MOOD[rawKey] || SECTION_MOOD.desarrollo;
+    systemMsg =
+      'Eres director de arte de fotografía documental latinoamericana para redes sociales. Describes escenas fotográficas precisas y visuales para generadores de imágenes IA. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera una descripción de escena fotográfica hiperrealista para contenido de redes sociales vertical.
+
+${ctxGuion}
+
+REGLAS FIJAS:
+- El personaje SIEMPRE es el dueño o dueña del negocio: latinoamericano/a, 25-40 años, emprendedor/a familiar. NUNCA empleados ni clientes.
+- Está en su propio local con objetos y elementos específicos y concretos del rubro.
+- La escena debe reflejar EXACTAMENTE el texto de la sección objetivo.
+- NO menciones lentes, mm, ángulos de cámara, iluminación técnica ni encuadres. Solo la escena narrativa.
+- Máximo 4 oraciones densas y visuales. Sin listas.
+
+ESTADO EMOCIONAL Y ACCIÓN REQUERIDO: ${mood}
+
+Describe: aspecto físico y ropa específica del personaje según su rubro, cómo es exactamente su local con objetos concretos, qué está haciendo en ese momento preciso relacionado con el texto de la sección, y qué transmiten su postura y rostro.`;
+  } else if (styleId === "info") {
+    systemMsg =
+      'Eres diseñador de infografías para redes sociales verticales. Describes composiciones visuales para generadores de imágenes IA. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera la descripción de una infografía digital vertical para redes sociales (formato 9:16).
+
+${ctxGuion}
+
+REGLAS DE DISEÑO:
+- Extrae los 2-3 datos, pasos o conceptos clave del TEXTO EXACTO DE LA SECCIÓN.
+- Diseño flat moderno, minimalista, legible a 3 segundos.
+- Tipografía sans-serif (Inter o similar), jerarquía clara: titular grande, subpárrafos medianos, texto pequeño.
+- Sin fotografías de personas. Solo íconos vectoriales, formas geométricas, flechas y texto.
+- PALETA OBLIGATORIA: naranja #F97316 (oklch 70.5% 0.213 47.604) como color PRIMARIO dominante. Blanco para texto sobre naranja. Gris oscuro #1A1A1A para texto secundario. Violeta #7C3AED solo como acento mínimo de contraste.
+- Formato vertical 9:16 para Instagram/TikTok.
+
+Describe: la estructura visual exacta de arriba a abajo, los elementos gráficos presentes, los textos que aparecerán en cada zona, y el estilo visual general. Máximo 5 oraciones. Sin listas. Sin mencionar herramientas de diseño.`;
+  } else if (styleId === "hand") {
+    systemMsg =
+      'Eres director de arte especializado en contenido orgánico y autenticidad visual para pequeños negocios latinoamericanos. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera la descripción de una imagen estilo nota escrita a mano para redes sociales vertical.
+
+${ctxGuion}
+
+REGLAS:
+- Extrae LA frase o idea más importante del TEXTO EXACTO DE LA SECCIÓN (máximo 12-15 palabras).
+- Esa frase se escribe a mano sobre una superficie física real del entorno del negocio.
+- Superficies válidas: papel kraft, cuaderno de campo, libreta artesanal, pizarra del negocio, post-it.
+- El fondo debe verse auténtico: parte del negocio visible, no estudio fotográfico.
+- Pueden haber elementos dibujados a mano alrededor: flechas, subrayados, pequeños bocetos.
+- Sensación: nota real de un emprendedor latinoamericano, no diseñada artificialmente.
+- Fotografía cenital o ángulo 3/4. Formato vertical 9:16.
+
+Describe: la superficie exacta, la frase concreta escrita (extráela del texto de la sección), el instrumento de escritura, los elementos decorativos manuales, el entorno de fondo y la iluminación. Máximo 4 oraciones. Sin listas.`;
+  } else {
+    // basic
+    systemMsg =
+      'Eres fotógrafo de producto especializado en imágenes simples y limpias para negocios latinoamericanos en redes sociales. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera la descripción de una imagen fotográfica muy simple y limpia para acompañar este fragmento de guion en redes sociales verticales.
+
+${ctxGuion}
+
+REGLAS:
+- SIN personas en la imagen.
+- Fotografiar el objeto, producto, herramienta o elemento del negocio MAS directamente relacionado con el TEXTO EXACTO DE LA SECCIÓN.
+- Fondo limpio y neutro: blanco, gris claro o superficie natural del negocio.
+- Composición simple y centrada. Sin texto superpuesto. Una sola idea visual.
+- Calidad fotográfica alta. Formato vertical 9:16.
+
+Describe: qué objeto o elementos específicos aparecen y por qué se relacionan con el texto de la sección, el fondo y la superficie, la composición y orden visual, y la sensación que transmite. Máximo 3 oraciones directas. Sin listas. Sin personas.`;
+  }
+
+  try {
+    imgGenerando[k] = true;
+    const { httpsCallable } = await import("firebase/functions");
+    const { functions } = await import("@/firebaseInit");
+    const grokProxy = httpsCallable(functions, "grokProxy");
+    const resp = await grokProxy({
+      messages: [
+        { role: "system", content: systemMsg },
+        { role: "user", content: userMsg },
+      ],
+      response_format: { type: "json_object" },
+      max_tokens: 450,
+      temperature: 0.85,
+    });
+    const parsed = JSON.parse((resp.data.content || "{}").trim());
+    const base = (parsed.prompt || "").trim();
+    imgPromptBase[k] = base;
+    if (styleId === "cine") imgPromptTexto[k] = ensamblarCine(base);
+    else if (styleId === "info") imgPromptTexto[k] = ensamblarInfo(base);
+    else if (styleId === "hand") imgPromptTexto[k] = ensamblarHand(base);
+    else imgPromptTexto[k] = ensamblarBasic(base);
+  } catch (err) {
+    console.error(`Error grokProxy img ${k}:`, err);
+  } finally {
+    imgGenerando[k] = false;
   }
 }
 </script>

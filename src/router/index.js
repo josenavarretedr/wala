@@ -256,6 +256,15 @@ const routes = [
         }
       },
       {
+        path: 'programs/:programId/:activityId/activity',
+        name: 'activity-participation',
+        component: () => import('@/views/business/programs/ActivityParticipation.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Completar Actividad'
+        }
+      },
+      {
         path: 'programs/:programId/consulting-participation/:activityId',
         name: 'consulting-participation',
         component: () => import('@/views/business/programs/ConsultingParticipation.vue'),
@@ -281,6 +290,24 @@ const routes = [
         meta: {
           requiresAuth: true,
           title: 'Detalle de Evento'
+        }
+      },
+      {
+        path: 'programs/:programId/stages',
+        name: 'ParticipantStages',
+        component: () => import('@/views/participant/ParticipantStages.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Etapas del Programa'
+        }
+      },
+      {
+        path: 'programs/:programId/stages/:stageId',
+        name: 'ParticipantStageDetail',
+        component: () => import('@/views/participant/ParticipantStageDetail.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Detalle de Etapa'
         }
       },
 
@@ -485,6 +512,14 @@ const routes = [
         }
       },
       {
+        path: 'create',
+        name: 'FacilitatorCreateProgram',
+        component: () => import('@/views/business/programs/CreateProgram.vue'),
+        meta: {
+          title: 'Crear Programa'
+        }
+      },
+      {
         path: ':programId',
         name: 'FacilitatorProgramDetail',
         component: () => import('@/views/facilitator/ProgramDetail.vue'),
@@ -501,11 +536,35 @@ const routes = [
         }
       },
       {
+        path: ':programId/stages',
+        name: 'ProgramStages',
+        component: () => import('@/views/facilitator/ProgramStages.vue'),
+        meta: {
+          title: 'Etapas del Programa'
+        }
+      },
+      {
+        path: ':programId/stages/:stageId',
+        name: 'FacilitatorStageDetail',
+        component: () => import('@/views/facilitator/FacilitatorStageDetail.vue'),
+        meta: {
+          title: 'Detalle de Etapa'
+        }
+      },
+      {
         path: ':programId/activities',
         name: 'ProgramActivities',
         component: () => import('@/views/facilitator/ProgramActivities.vue'),
         meta: {
           title: 'Actividades del Programa'
+        }
+      },
+      {
+        path: ':programId/new-activity',
+        name: 'NewActivity',
+        component: () => import('@/views/facilitator/NewActivity.vue'),
+        meta: {
+          title: 'Nueva Actividad'
         }
       },
       {

@@ -1,3 +1,21 @@
+## Cambios — Marzo 2026
+
+Resumen corto de actualización técnica y UX:
+
+---
+
+## Cambios — Marzo 2026
+
+Resumen corto de actualización técnica y UX:
+
+- Renombrado visual: **Formulario → Actividad** en vistas de facilitador (la propiedad `type: 'form'` se mantiene en Firestore para compatibilidad).
+- Nueva lógica de completitud para actividades tipo `form`: una participación se considera `Completado` cuando todos los campos requeridos están respondidos y, si existe, el campo de `attendance` está marcado como `attended`.
+- Implementada una **matriz de participación** que combina inscritos activos del programa con las participaciones enviadas. Esto permite ver TODOS los inscritos (no sólo quienes respondieron).
+- Nuevo listado responsive con soporte de búsqueda y gestión masiva de asistencias (`ActivityParticipationList.vue`) y panel de métricas (`ActivityStats.vue`).
+- `ActionBtnProgram` ahora navega a la ruta `NewActivity` (creación de actividad) en vez de abrir un modal.
+
+Documentación técnica completa y guía de cambios: [`docs/ACTIVIDAD_PARTICIPACION_REFACTOR_MARZO_2026.md`](./ACTIVIDAD_PARTICIPACION_REFACTOR_MARZO_2026.md)
+
 # ✅ MÓDULO "JUNTOS" - RESUMEN DE IMPLEMENTACIÓN
 
 ## 🎯 OBJETIVO CUMPLIDO
@@ -312,13 +330,12 @@ Las funciones están en región `southamerica-east1` (actualizado en `firebaseIn
 **Versión**: MVP 1.0  
 **Estado**: ✅ Listo para deployment y testing
 
-
 ---
 
 ## Changelog
 
 ### [Auditoría - Marzo 2026]
+
 - Revisado: Funcionalidad verificada como activa en código fuente.
 - Sin cambios de contenido en esta auditoría.
 - Documentación movida al estado vigente confirmado.
-

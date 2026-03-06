@@ -1,11 +1,8 @@
-import { OpenAI } from 'openai';
+import { httpsCallable } from 'firebase/functions';
+import { functions } from '@/firebaseInit';
 
-// Configuración de Grok (usando OpenAI SDK con base URL personalizada)
-const GROK_CONFIG = {
-  apiKey: import.meta.env.VITE_XAI_API_KEY,
-  baseURL: 'https://api.x.ai/v1',
-  model: import.meta.env.VITE_GROK_MODEL || 'grok-3-mini'
-};
+// Proxy Cloud Function para llamadas a Grok (evita CORS)
+const grokProxy = httpsCallable(functions, 'grokProxy');
 
 /**
  * Lee el prompt maestro desde el archivo
@@ -81,13 +78,6 @@ ${initialData.sector_contexto ? `**Sector/Contexto:** ${initialData.sector_conte
 export async function generarPreguntasAclaracion(initialData) {
   try {
     const promptMaestro = await getPromptMaestro();
-
-    const client = new OpenAI({
-      apiKey: GROK_CONFIG.apiKey,
-      baseURL: GROK_CONFIG.baseURL,
-      dangerouslyAllowBrowser: true
-    });
-
     const datosSerializados = serializarDatosIniciales(initialData);
     const esTipoMinimo = !initialData.tipo_input || initialData.tipo_input === 'minimo';
 
@@ -123,14 +113,13 @@ ${esTipoMinimo
   }
 }`;
 
-    const response = await client.chat.completions.create({
-      model: GROK_CONFIG.model,
-      temperature: 0.3,
+    const response = await grokProxy({
       messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
       response_format: { type: 'json_object' }
     });
 
-    const content = response.choices?.[0]?.message?.content || '{}';
+    const content = response.data.content || '{}';
     const result = JSON.parse(content);
 
     console.log('✅ Preguntas de aclaración generadas:', result);
@@ -151,13 +140,6 @@ ${esTipoMinimo
 export async function generarGuionesCompletos(fullContext) {
   try {
     const promptMaestro = await getPromptMaestro();
-
-    const client = new OpenAI({
-      apiKey: GROK_CONFIG.apiKey,
-      baseURL: GROK_CONFIG.baseURL,
-      dangerouslyAllowBrowser: true
-    });
-
     const datosSerializados = serializarDatosIniciales(fullContext.datosIniciales);
 
     const prompt = `${promptMaestro}
@@ -338,7 +320,7 @@ Genera el JSON COMPLETO con esta estructura:
       },
       "storytelling": {
         "tipo": "directa_cotidiana|estructurada_causal",
-        "conectores_usados": "Si directa: [] (array vacío, NO usa conectores). Si estructurada: [\"PERO\", \"ENTONCES\", \"POR ESO\"]",
+        "conectores_usados": "Si directa: [] (array vacío, NO usa conectores). Si estructurada: [\\"PERO\\", \\"ENTONCES\\", \\"POR ESO\\"]",
         "validacion": "Oración explicando por qué este storytelling funciona para este video específico"
       },
       "caption": "Caption completo para redes. Mínimo 3 párrafos. Con gancho inicial, desarrollo del valor, y CTA escrito. Incluye emojis y hashtags relevantes.",
@@ -381,15 +363,14 @@ REGLAS FINALES:
 
 Genera el JSON completo AHORA con ${fullContext.datosIniciales.cantidad || 5} videos.`;
 
-    const response = await client.chat.completions.create({
-      model: GROK_CONFIG.model,
-      temperature: 0.6,
+    const response = await grokProxy({
       messages: [{ role: 'user', content: prompt }],
+      temperature: 0.6,
       response_format: { type: 'json_object' },
       max_tokens: 12000
     });
 
-    const content = response.choices?.[0]?.message?.content || '{}';
+    const content = response.data.content || '{}';
     const result = JSON.parse(content);
 
     console.log('✅ Guiones completos generados:', result);

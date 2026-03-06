@@ -20,6 +20,8 @@
               'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
             item.color === 'green' &&
               'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+            item.color === 'indigo' &&
+              'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
             isActive(item.id) && 'ring-2 ring-offset-2',
             isActive(item.id) && item.color === 'blue' && 'ring-blue-500',
             isActive(item.id) && item.color === 'purple' && 'ring-purple-500',
@@ -69,6 +71,8 @@
               'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
             item.color === 'green' &&
               'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+            item.color === 'indigo' &&
+              'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
             isActive(item.id) && 'ring-2 ring-offset-2',
             isActive(item.id) && item.color === 'blue' && 'ring-blue-500',
             isActive(item.id) && item.color === 'purple' && 'ring-purple-500',
@@ -119,6 +123,39 @@
           </button>
         </div>
       </div>
+
+      <!-- Filtro de Etapa -->
+      <div
+        v-if="stages.length > 0"
+        class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8"
+      >
+        <div class="max-w-md mx-auto relative">
+          <select
+            :value="activeStageFilter"
+            @change="handleStageFilter($event.target.value)"
+            class="w-full py-2 px-3 pr-10 bg-white rounded-lg shadow-sm border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
+          >
+            <option value="all">Todas las etapas</option>
+            <option v-for="stage in stages" :key="stage.id" :value="stage.id">
+              {{ stage.name }}
+            </option>
+            <option value="none">Sin etapa</option>
+          </select>
+          <svg
+            class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 9l-7 7-7-7"
+            />
+          </svg>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -126,7 +163,8 @@
 <script setup>
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
-import { List, Book, GraphUp, Calendar, Community } from "@iconoir/vue";
+import { List, Book, GraphUp, Calendar, Community, Map } from "@iconoir/vue";
+import { useUserStore } from "@/stores/useUserStore";
 
 const props = defineProps({
   programId: {
@@ -138,6 +176,10 @@ const props = defineProps({
     default: "all",
   },
   activities: {
+    type: Array,
+    default: () => [],
+  },
+  stages: {
     type: Array,
     default: () => [],
   },
@@ -155,11 +197,14 @@ const emit = defineEmits([
   "update:activeTab",
   "filter-changed",
   "status-filter-changed",
+  "stage-filter-changed",
 ]);
 
 const router = useRouter();
+const userStore = useUserStore();
 
 const activeStatusFilter = ref("all");
+const activeStageFilter = ref("all");
 
 const statusFilters = [
   { id: "all", name: "Todos" },
@@ -177,8 +222,8 @@ const items = computed(() => {
       type: "filter",
     },
     {
-      id: "session",
-      name: "Sesiones",
+      id: "form",
+      name: "Actividades",
       icon: Book,
       color: "blue",
       type: "filter",
@@ -199,14 +244,18 @@ const items = computed(() => {
       type: "filter",
       hidden: true, // Oculto, solo para compatibility
     },
-    {
-      id: "event",
-      name: "Eventos",
-      icon: Calendar,
-      color: "orange",
-      type: "filter",
-    },
   ];
+
+  // Agregar "Etapas" si hay stages configuradas
+  if (props.stages.length > 0) {
+    baseItems.push({
+      id: "stages",
+      name: "Etapas",
+      icon: Map,
+      color: "indigo",
+      type: "navigation",
+    });
+  }
 
   // Solo mostrar "Participantes" si NO es vista de usuario (no tiene showStatusFilter)
   if (!props.showStatusFilter) {
@@ -226,10 +275,9 @@ const items = computed(() => {
 const isActive = (itemId) => {
   if (
     itemId === "all" ||
-    itemId === "session" ||
+    itemId === "form" ||
     itemId === "consulting" ||
-    itemId === "monitoring" || // Backward compatibility
-    itemId === "event"
+    itemId === "monitoring" // Backward compatibility
   ) {
     return props.activeTab === itemId;
   }
@@ -243,6 +291,7 @@ const getIconColor = (color) => {
     purple: "text-purple-600",
     orange: "text-orange-600",
     green: "text-green-600",
+    indigo: "text-indigo-600",
   };
   return colors[color] || "text-gray-600";
 };
@@ -254,6 +303,7 @@ const getIconHoverColor = (color) => {
     purple: "group-hover:text-purple-700",
     orange: "group-hover:text-orange-700",
     green: "group-hover:text-green-700",
+    indigo: "group-hover:text-indigo-700",
   };
   return colors[color] || "group-hover:text-gray-700";
 };
@@ -263,6 +313,21 @@ const handleClick = (item) => {
     // Navegación a otra ruta
     if (item.id === "participants") {
       router.push(`/programs/${props.programId}/participants`);
+    } else if (item.id === "stages") {
+      const role = userStore.userProfile?.rol;
+      if (role === "facilitator") {
+        router.push(`/programs/${props.programId}/stages`);
+      } else {
+        // Participante: usar ruta de negocio
+        const businessId =
+          userStore.currentBusiness?.businessId ||
+          userStore.currentBusiness?.id;
+        if (businessId) {
+          router.push(
+            `/business/${businessId}/programs/${props.programId}/stages`,
+          );
+        }
+      }
     }
   } else if (item.type === "filter") {
     // Cambiar filtro y emitir evento
@@ -279,5 +344,10 @@ const handleClick = (item) => {
 const handleStatusFilter = (statusId) => {
   activeStatusFilter.value = statusId;
   emit("status-filter-changed", statusId);
+};
+
+const handleStageFilter = (stageId) => {
+  activeStageFilter.value = stageId;
+  emit("stage-filter-changed", stageId);
 };
 </script>

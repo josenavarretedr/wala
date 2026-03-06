@@ -46,9 +46,13 @@
 
 <script setup>
 import { computed } from "vue";
+import { useActivitiesStore } from "@/stores/activitiesStore";
+import ActivityCard from "./cards/ActivityCard.vue";
 import SessionCard from "./cards/SessionCard.vue";
 import ConsultingCard from "./cards/ConsultingCard.vue";
 import EventCard from "./cards/EventCard.vue";
+
+const activitiesStore = useActivitiesStore();
 
 const props = defineProps({
   activities: {
@@ -100,12 +104,14 @@ function getTimestamp(date) {
 
 function getCardComponent(type) {
   const components = {
+    activity: ActivityCard,
+    form: ActivityCard, // Backward compatibility
     session: SessionCard,
     consulting: ConsultingCard,
-    // monitoring: ConsultingCard, // Compatibilidad backward
+    monitoring: ConsultingCard, // Backward compatibility
     event: EventCard,
   };
-  return components[type] || SessionCard;
+  return components[type] || ActivityCard;
 }
 
 function getParticipantStatus(activity) {
@@ -115,12 +121,19 @@ function getParticipantStatus(activity) {
 
   // Buscar participación del usuario en esta actividad
   const participation = props.participations.find(
-    (p) => p.activityId === activity.id && p.userId === props.currentUserId
+    (p) => p.activityId === activity.id && p.userId === props.currentUserId,
   );
 
   if (!participation) return "pending";
 
-  // Para sesiones y eventos
+  // Para formularios (form)
+  if (activity.type === "activity" || activity.type === "form") {
+    return activitiesStore.isParticipationComplete(activity, participation)
+      ? "completed"
+      : "in_progress";
+  }
+
+  // Para sesiones y eventos (legacy)
   if (activity.type === "session" || activity.type === "event") {
     if (participation.attendance?.attended) return "completed";
     if (participation.attendance?.attended === false) return "absent";

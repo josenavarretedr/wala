@@ -31,7 +31,7 @@
             <p v-if="program" class="text-gray-600 mt-1">{{ program.name }}</p>
           </div>
           <button
-            @click="showCreateModal = true"
+            @click="goToNewActivity"
             class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             <svg
@@ -75,6 +75,29 @@
       </div>
     </div>
 
+    <!-- Filtro de Etapa (facilitador) -->
+    <div
+      v-if="programStages.length > 0"
+      class="bg-white border-b border-gray-100"
+    >
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+        <select
+          v-model="activeStageFilter"
+          class="py-2 px-3 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+        >
+          <option value="all">Todas las etapas</option>
+          <option
+            v-for="stage in programStages"
+            :key="stage.id"
+            :value="stage.id"
+          >
+            {{ stage.name }}
+          </option>
+          <option value="none">Sin etapa</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-12">
       <SpinnerIcon size="xl" class="text-green-600" />
@@ -112,7 +135,7 @@
           asesorías
         </p>
         <button
-          @click="showCreateModal = true"
+          @click="goToNewActivity"
           class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
           Crear Actividad
@@ -129,15 +152,6 @@
         @delete="handleDelete"
       />
     </div>
-
-    <!-- Modal de Crear Actividad -->
-    <CreateActivityModal
-      v-if="showCreateModal"
-      :program="program"
-      :activities="activities"
-      @close="showCreateModal = false"
-      @created="handleActivityCreated"
-    />
   </div>
 </template>
 
@@ -146,25 +160,29 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useActivities } from "@/composables/useActivities";
 import { useProgramStore } from "@/stores/programStore";
-import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 const route = useRoute();
 const router = useRouter();
 const programStore = useProgramStore();
-const { activities, loading, loadActivities } = useActivities();
+const {
+  activities,
+  loading,
+  loadActivities,
+  loadProgramStages,
+  programStages,
+} = useActivities();
 
 const programId = computed(() => route.params.programId);
 const program = ref(null);
 const activeTab = ref("all");
-const showCreateModal = ref(false);
+const activeStageFilter = ref("all");
 
 const tabs = [
   { label: "Todas", value: "all" },
-  { label: "Sesiones", value: "session" },
+  { label: "Actividades", value: "activity" },
   { label: "Asesorías", value: "consulting" },
-  { label: "Eventos", value: "event" },
 ];
 
 const filteredActivities = computed(() => {
@@ -172,7 +190,23 @@ const filteredActivities = computed(() => {
 
   // Filtrar por tipo (tab)
   if (activeTab.value !== "all") {
-    filtered = filtered.filter((a) => a.type === activeTab.value);
+    if (activeTab.value === "activity") {
+      // Backward compatibility: match both 'activity' and legacy 'form'
+      filtered = filtered.filter(
+        (a) => a.type === "activity" || a.type === "form",
+      );
+    } else {
+      filtered = filtered.filter((a) => a.type === activeTab.value);
+    }
+  }
+
+  // Filtrar por etapa
+  if (activeStageFilter.value !== "all") {
+    if (activeStageFilter.value === "none") {
+      filtered = filtered.filter((a) => !a.stageId);
+    } else {
+      filtered = filtered.filter((a) => a.stageId === activeStageFilter.value);
+    }
   }
 
   return filtered;
@@ -183,13 +217,25 @@ function goToActivity(activity) {
   router.push(`/programs/${programId.value}/activities/${activityId}`);
 }
 
+function goToNewActivity() {
+  router.push(`/programs/${programId.value}/new-activity`);
+}
+
 function goBack() {
   router.push(`/programs/${programId.value}`);
 }
 
+function handleEdit(activity) {
+  // Para type form → redirigir a edición por ruta (pendiente)
+  // Para type consulting → abre modal (pendiente de implementar inline)
+}
+
+function handleDelete(activity) {
+  // TODO: implementar modal de confirmación y eliminación
+}
+
 async function handleActivityCreated(activity) {
-  showCreateModal.value = false;
-  // Recargar actividades
+  // Recargar actividades tras creación
   await loadActivities(programId.value);
 }
 
@@ -199,8 +245,11 @@ onMounted(async () => {
     await programStore.loadProgram(programId.value);
     program.value = programStore.currentProgram;
 
-    // Cargar actividades
-    await loadActivities(programId.value);
+    // Cargar actividades y etapas
+    await Promise.all([
+      loadActivities(programId.value),
+      loadProgramStages(programId.value),
+    ]);
   } catch (error) {
     console.error("Error al cargar datos:", error);
   }

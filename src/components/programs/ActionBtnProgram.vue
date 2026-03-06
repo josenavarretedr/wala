@@ -3,7 +3,7 @@
     class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"
   >
     <button
-      @click="$emit('create-activity')"
+      @click="goToNewActivity"
       class="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 border-2 border-green-600 hover:border-green-700"
     >
       <Plus class="w-5 h-5" stroke-width="2.5" />
@@ -14,6 +14,19 @@
 
 <script setup>
 import { Plus } from "@iconoir/vue";
+import { useRouter, useRoute } from "vue-router";
 
-defineEmits(["create-activity"]);
+const props = defineProps({
+  programId: { type: String, default: "" },
+});
+
+const router = useRouter();
+const route = useRoute();
+
+function goToNewActivity() {
+  const pid = props.programId || route.params.programId;
+  if (pid) {
+    router.push({ name: "NewActivity", params: { programId: pid } });
+  }
+}
 </script>

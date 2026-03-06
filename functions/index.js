@@ -59,6 +59,9 @@ exports.payments = onRequest(
   paymentApp
 );
 
+// 🤖 AI PROXY - Proxy para llamadas a Grok/xAI (evita CORS)
+exports.grokProxy = require('./src/AI/grokProxy').grokProxy;
+
 // 📧 ONBOARDING - Emails de onboarding via Resend
 const onboarding = require('./src/Onboarding/index');
 exports.onBusinessCreatedOnboarding = onboarding.onBusinessCreatedOnboarding;

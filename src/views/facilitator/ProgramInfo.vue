@@ -191,7 +191,7 @@ const stats = computed(() => {
   const total = activities.value.length;
   const sessions = activities.value.filter((a) => a.type === "session").length;
   const consultings = activities.value.filter(
-    (a) => a.type === "consulting" || a.type === "monitoring"
+    (a) => a.type === "consulting" || a.type === "monitoring",
   ).length;
   const events = activities.value.filter((a) => a.type === "event").length;
 

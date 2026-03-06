@@ -46,10 +46,12 @@
         :program-id="programId"
         v-model:active-tab="activeTab"
         :activities="activities"
+        :stages="programStages"
         :show-status-filter="true"
         :user-participations="userParticipations"
         @filter-changed="handleFilterChanged"
         @status-filter-changed="handleStatusFilterChanged"
+        @stage-filter-changed="handleStageFilterChanged"
       />
 
       <!-- Loading de Actividades -->
@@ -131,6 +133,7 @@ const program = ref(null);
 const loading = ref(false);
 const activeTab = ref("all");
 const activeStatusFilter = ref("all");
+const activeStageFilter = ref("all");
 
 const programId = computed(() => route.params.programId);
 const businessId = computed(() => route.params.businessId);
@@ -139,6 +142,7 @@ const currentUserId = computed(() => authStore.user?.uid);
 const activities = computed(() => activitiesStore.activities);
 const loadingActivities = computed(() => activitiesStore.loading);
 const userParticipations = ref([]);
+const programStages = computed(() => activitiesStore.programStages);
 
 const filteredActivities = computed(() => {
   let filtered = activities.value;
@@ -151,28 +155,66 @@ const filteredActivities = computed(() => {
   // Filtrar por estado de participación
   if (activeStatusFilter.value !== "all") {
     filtered = filtered.filter((activity) => {
-      const hasParticipation = userParticipations.value.some(
-        (p) => p.activityId === activity.id
-      );
+      const status = getParticipantActivityStatus(activity);
 
       if (activeStatusFilter.value === "completed") {
-        return hasParticipation;
+        return status === "completed";
       } else if (activeStatusFilter.value === "pending") {
-        return !hasParticipation;
+        return status !== "completed";
       }
 
       return true;
     });
   }
-
+  // Filtrar por etapa
+  if (activeStageFilter.value !== "all") {
+    if (activeStageFilter.value === "none") {
+      filtered = filtered.filter((a) => !a.stageId);
+    } else {
+      filtered = filtered.filter((a) => a.stageId === activeStageFilter.value);
+    }
+  }
   return filtered;
 });
+
+function getParticipantActivityStatus(activity) {
+  const participation = userParticipations.value.find(
+    (p) => p.activityId === activity.id && p.userId === currentUserId.value,
+  );
+
+  if (!participation) return "pending";
+
+  if (activity.type === "activity" || activity.type === "form") {
+    return activitiesStore.isParticipationComplete(activity, participation)
+      ? "completed"
+      : "in_progress";
+  }
+
+  if (activity.type === "session" || activity.type === "event") {
+    if (participation.attendance?.attended) return "completed";
+    if (participation.attendance?.attended === false) return "absent";
+    return "pending";
+  }
+
+  if (activity.type === "consulting" || activity.type === "monitoring") {
+    if (
+      participation.consultingData?.overallScore !== undefined ||
+      participation.monitoringData?.overallScore !== undefined ||
+      participation.overallScore !== undefined
+    ) {
+      return "completed";
+    }
+  }
+
+  return "pending";
+}
 
 onMounted(async () => {
   await loadProgram();
   if (program.value) {
     await Promise.all([
       activitiesStore.loadActivities(programId.value),
+      activitiesStore.loadProgramStages(programId.value),
       loadUserParticipations(),
     ]);
   }
@@ -204,7 +246,7 @@ async function loadUserParticipations() {
 
     const participations = await activitiesStore.loadUserActivities(
       programId.value,
-      currentUserId.value
+      currentUserId.value,
     );
 
     userParticipations.value = participations;
@@ -219,13 +261,28 @@ function goToActivity(activity) {
 
   // Rutas específicas por tipo de actividad
   const routeMap = {
+    activity: "activity-participation",
+    form: "activity-participation", // Backward compatibility
     session: "session-participation",
     consulting: "consulting-participation",
     monitoring: "consulting-participation", // Backward compatibility
     event: "event-participation",
   };
 
-  const routeName = routeMap[activityType] || "session-participation";
+  const routeName = routeMap[activityType] || "activity-participation";
+
+  // Para form-participation los params van en orden distinto
+  if (activityType === "activity" || activityType === "form") {
+    router.push({
+      name: routeName,
+      params: {
+        businessId: businessId.value,
+        programId: programId.value,
+        activityId: activityId,
+      },
+    });
+    return;
+  }
 
   router.push({
     name: routeName,
@@ -263,6 +320,10 @@ function handleStatusFilterChanged(statusId) {
   if (message) {
     info(message);
   }
+}
+
+function handleStageFilterChanged(stageId) {
+  activeStageFilter.value = stageId;
 }
 
 function getEmptyMessage() {

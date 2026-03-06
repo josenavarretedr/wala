@@ -89,7 +89,7 @@
             asesorías
           </p>
           <button
-            @click="showCreateModal = true"
+            @click="router.push({ name: 'NewActivity', params: { programId } })"
             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             Crear Actividad
@@ -109,16 +109,7 @@
     </div>
 
     <!-- Action Button Fixed Bottom -->
-    <ActionBtnProgram @create-activity="showCreateModal = true" />
-
-    <!-- Modal de Crear Actividad -->
-    <CreateActivityModal
-      v-if="showCreateModal"
-      :program="program"
-      :activities="activities"
-      @close="showCreateModal = false"
-      @created="handleActivityCreated"
-    />
+    <ActionBtnProgram :program-id="programId" />
   </div>
 </template>
 
@@ -132,7 +123,6 @@ import { InfoCircle, Community } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
 import ActionBtnProgram from "@/components/programs/ActionBtnProgram.vue";
-import CreateActivityModal from "@/components/activities/CreateActivityModal.vue";
 import ItemsProgram from "@/components/programs/ItemsProgram.vue";
 import { useToast } from "@/composables/useToast";
 
@@ -148,7 +138,6 @@ const {
 const program = ref(null);
 const loading = ref(false);
 const activeTab = ref("all");
-const showCreateModal = ref(false);
 
 const programId = computed(() => route.params.programId);
 
@@ -206,7 +195,6 @@ function handleDelete(activity) {
 }
 
 async function handleActivityCreated(activity) {
-  showCreateModal.value = false;
   // Recargar actividades
   await loadActivities(programId.value);
 }
@@ -218,7 +206,7 @@ function handleFilterChanged(filter) {
     const count = filteredActivities.value.length;
     const plural = count !== 1 ? "s" : "";
     info(
-      `Mostrando ${count} ${filter.name.toLowerCase()}${plural} del programa`
+      `Mostrando ${count} ${filter.name.toLowerCase()}${plural} del programa`,
     );
   }
 }

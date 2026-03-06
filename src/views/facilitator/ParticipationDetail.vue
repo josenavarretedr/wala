@@ -13,7 +13,11 @@
             </button>
             <div>
               <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
-                Detalle de Asesoría
+                {{
+                  isDraft
+                    ? "Completar Participaci\u00f3n"
+                    : "Detalle de Asesor\u00eda"
+                }}
               </h1>
               <p class="text-sm text-gray-600 mt-0.5">
                 {{ participation?.userName || "Cargando..." }}
@@ -50,260 +54,397 @@
       v-else-if="participation"
       class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 mb-20"
     >
-      <!-- Info Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <!-- Score General -->
-        <div class="bg-white rounded-xl shadow-sm border border-purple-200 p-5">
-          <div class="text-center">
-            <p class="text-sm text-gray-600 font-medium mb-2">Score General</p>
-            <div class="text-4xl font-bold text-purple-600 mb-1">
-              {{
-                (
-                  participation.consultingData || participation.monitoringData
-                )?.overallScore?.toFixed(0) || "0"
-              }}
-            </div>
-            <p class="text-xs text-gray-500 mb-3">de 63 puntos</p>
-            <!-- Badge Cohorte -->
-            <div
-              :class="[
-                'inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold',
-                getCohortClass(
-                  (participation.consultingData || participation.monitoringData)
-                    ?.overallScore
-                ),
-              ]"
-            >
-              {{
-                getCohortLabel(
-                  (participation.consultingData || participation.monitoringData)
-                    ?.overallScore
-                )
-              }}
-            </div>
-          </div>
-        </div>
-
-        <!-- Negocio -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <div>
-            <p class="text-sm text-gray-600 font-medium mb-2">Negocio</p>
-            <p class="text-lg font-semibold text-gray-900 mb-1">
-              {{ participation.businessName }}
-            </p>
-            <p class="text-sm text-gray-600">{{ participation.userName }}</p>
-          </div>
-        </div>
-
-        <!-- Detalles -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-          <div class="space-y-2">
+      <!-- ══════════════════════════════════════════ -->
+      <!-- VISTA FORM (formulario dinámico)           -->
+      <!-- ══════════════════════════════════════════ -->
+      <template v-if="isFormType">
+        <!-- Header info -->
+        <div
+          class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6"
+        >
+          <div class="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p class="text-xs text-gray-500">Modalidad</p>
+              <p class="text-sm text-gray-500">Participante</p>
+              <p class="text-lg font-semibold text-gray-900">
+                {{ participation.userName }}
+              </p>
+              <p class="text-sm text-gray-500">
+                {{ participation.businessName }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-xs text-gray-400">
+                {{ isDraft ? "Creado" : "Enviado" }}
+              </p>
+              <p class="text-sm font-medium text-gray-700">
+                {{ formatDate(participation.submittedAt) }}
+              </p>
+              <span
+                :class="[
+                  'inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded-full',
+                  isDraft
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-green-100 text-green-700',
+                ]"
+              >
+                {{ isDraft ? "Borrador" : "Completado" }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner draft -->
+        <div
+          v-if="isDraft"
+          class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800 flex items-center gap-2"
+        >
+          <svg
+            class="w-5 h-5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          Esta participaci\u00f3n fue creada por el facilitador. Complete los
+          campos y guarde para finalizar.
+        </div>
+
+        <!-- Guardando cambios banner -->
+        <div
+          v-if="savingForm"
+          class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 flex items-center gap-2"
+        >
+          <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            ></path>
+          </svg>
+          Guardando cambios...
+        </div>
+
+        <!-- Fields del formulario -->
+        <div class="space-y-4">
+          <div
+            v-for="field in sortedActivityFields"
+            :key="field.id"
+            class="bg-white rounded-xl border border-gray-200 shadow-sm p-5"
+          >
+            <FieldRenderer
+              :field="field"
+              :model-value="editableResponses[field.id]"
+              :readonly="field.type !== 'attendance' ? false : false"
+              :is-facilitator="true"
+              :storage-path="`programs/${programId}/activities/${activityId}/${participation.userId}`"
+              @update:model-value="handleFieldUpdate(field, $event)"
+            />
+          </div>
+        </div>
+
+        <!-- Botón guardar cambios -->
+        <div class="mt-6 flex gap-3">
+          <button
+            type="button"
+            @click="saveFormChanges"
+            :disabled="savingForm || (!formHasChanges && !isDraft)"
+            class="flex-1 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {{
+              savingForm
+                ? "Guardando..."
+                : isDraft
+                  ? "Guardar y Completar"
+                  : "Guardar cambios"
+            }}
+          </button>
+        </div>
+      </template>
+
+      <!-- ══════════════════════════════════════════ -->
+      <!-- VISTA CONSULTING (asesoría)                -->
+      <!-- ══════════════════════════════════════════ -->
+      <template v-else>
+        <!-- Info Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <!-- Score General -->
+          <div
+            class="bg-white rounded-xl shadow-sm border border-purple-200 p-5"
+          >
+            <div class="text-center">
+              <p class="text-sm text-gray-600 font-medium mb-2">
+                Score General
+              </p>
+              <div class="text-4xl font-bold text-purple-600 mb-1">
+                {{
+                  (
+                    participation.consultingData || participation.monitoringData
+                  )?.overallScore?.toFixed(0) || "0"
+                }}
+              </div>
+              <p class="text-xs text-gray-500 mb-3">de 63 puntos</p>
+              <!-- Badge Cohorte -->
               <div
                 :class="[
-                  'inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium border mt-1',
-                  getModalityClass(
+                  'inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold',
+                  getCohortClass(
                     (
                       participation.consultingData ||
                       participation.monitoringData
-                    )?.modality
+                    )?.overallScore,
                   ),
                 ]"
               >
                 {{
-                  getModalityLabel(
+                  getCohortLabel(
                     (
                       participation.consultingData ||
                       participation.monitoringData
-                    )?.modality
+                    )?.overallScore,
                   )
                 }}
               </div>
             </div>
+          </div>
+
+          <!-- Negocio -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <div>
-              <p class="text-xs text-gray-500">Fecha de Asesoría</p>
-              <p class="text-sm font-medium text-gray-900">
-                {{
-                  formatDate(
-                    (
-                      participation.consultingData ||
-                      participation.monitoringData
-                    )?.consultingDate ||
+              <p class="text-sm text-gray-600 font-medium mb-2">Negocio</p>
+              <p class="text-lg font-semibold text-gray-900 mb-1">
+                {{ participation.businessName }}
+              </p>
+              <p class="text-sm text-gray-600">{{ participation.userName }}</p>
+            </div>
+          </div>
+
+          <!-- Detalles -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <div class="space-y-2">
+              <div>
+                <p class="text-xs text-gray-500">Modalidad</p>
+                <div
+                  :class="[
+                    'inline-flex items-center px-3 py-1 rounded-lg text-xs font-medium border mt-1',
+                    getModalityClass(
                       (
                         participation.consultingData ||
                         participation.monitoringData
-                      )?.monitoringDate
-                  )
-                }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500">Fecha de Envío</p>
-              <p class="text-sm font-medium text-gray-900">
-                {{ formatDate(participation.submittedAt) }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Category Scores Overview -->
-      <div
-        v-if="
-          (participation.consultingData || participation.monitoringData)
-            ?.categoryScores
-        "
-        class="mb-6"
-      >
-        <ConsultingDataRadar
-          :categoryScores="
-            (participation.consultingData || participation.monitoringData)
-              .categoryScores
-          "
-        />
-      </div>
-
-      <!-- Respuestas por Categoría -->
-      <div class="space-y-4">
-        <div
-          v-for="category in categoriesWithResponses"
-          :key="category.key"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-        >
-          <!-- Category Header -->
-          <div
-            :class="[
-              'px-5 sm:px-6 py-4 border-b border-gray-200',
-              category.bgClass,
-            ]"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <h3 class="text-lg font-semibold" :class="category.textClass">
-                  {{ category.label }}
-                </h3>
-                <p class="text-sm mt-0.5" :class="category.descClass">
-                  {{ category.description }}
-                </p>
-              </div>
-              <div
-                class="text-2xl font-bold px-4 py-2 rounded-lg bg-white bg-opacity-60"
-                :class="category.textClass"
-              >
-                {{ getCategoryScore(category.key) }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Preguntas y Respuestas -->
-          <div class="p-5 sm:p-6 space-y-5">
-            <div
-              v-for="(question, index) in category.questions"
-              :key="index"
-              class="pb-5 border-b border-gray-100 last:border-0 last:pb-0"
-            >
-              <div class="flex items-start justify-between gap-4 mb-3">
-                <p class="text-sm font-medium text-gray-900 flex-1">
-                  {{ index + 1 }}. {{ question }}
-                </p>
-                <!-- Rating Badge -->
-                <div
-                  :class="[
-                    'flex-shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-lg font-bold text-base',
-                    getRatingClass(getQuestionRating(category.key, index)),
+                      )?.modality,
+                    ),
                   ]"
                 >
                   {{
-                    getQuestionRating(category.key, index) !== null
-                      ? getQuestionRating(category.key, index)
-                      : "N/A"
+                    getModalityLabel(
+                      (
+                        participation.consultingData ||
+                        participation.monitoringData
+                      )?.modality,
+                    )
                   }}
                 </div>
               </div>
+              <div>
+                <p class="text-xs text-gray-500">Fecha de Asesoría</p>
+                <p class="text-sm font-medium text-gray-900">
+                  {{
+                    formatDate(
+                      (
+                        participation.consultingData ||
+                        participation.monitoringData
+                      )?.consultingDate ||
+                        (
+                          participation.consultingData ||
+                          participation.monitoringData
+                        )?.monitoringDate,
+                    )
+                  }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">Fecha de Envío</p>
+                <p class="text-sm font-medium text-gray-900">
+                  {{ formatDate(participation.submittedAt) }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              <!-- Rating Legend -->
-              <div class="flex items-center gap-2 text-xs text-gray-600">
-                <span class="font-medium">Evaluación:</span>
-                <span>{{
-                  getRatingLabel(getQuestionRating(category.key, index))
-                }}</span>
+        <!-- Category Scores Overview -->
+        <div
+          v-if="
+            (participation.consultingData || participation.monitoringData)
+              ?.categoryScores
+          "
+          class="mb-6"
+        >
+          <ConsultingDataRadar
+            :categoryScores="
+              (participation.consultingData || participation.monitoringData)
+                .categoryScores
+            "
+          />
+        </div>
+
+        <!-- Respuestas por Categoría -->
+        <div class="space-y-4">
+          <div
+            v-for="category in categoriesWithResponses"
+            :key="category.key"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+          >
+            <!-- Category Header -->
+            <div
+              :class="[
+                'px-5 sm:px-6 py-4 border-b border-gray-200',
+                category.bgClass,
+              ]"
+            >
+              <div class="flex items-center justify-between">
+                <div>
+                  <h3 class="text-lg font-semibold" :class="category.textClass">
+                    {{ category.label }}
+                  </h3>
+                  <p class="text-sm mt-0.5" :class="category.descClass">
+                    {{ category.description }}
+                  </p>
+                </div>
+                <div
+                  class="text-2xl font-bold px-4 py-2 rounded-lg bg-white bg-opacity-60"
+                  :class="category.textClass"
+                >
+                  {{ getCategoryScore(category.key) }}
+                </div>
               </div>
             </div>
 
-            <!-- Category Comments -->
-            <div
-              v-if="
-                (participation.consultingData || participation.monitoringData)
-                  ?.categoryComments?.[category.key]
-              "
-              class="mt-4 pt-4 border-t border-gray-200"
-            >
-              <p class="text-xs text-gray-500 font-medium mb-2">
-                Comentarios sobre {{ category.label }}:
-              </p>
-              <p
-                class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-3"
+            <!-- Preguntas y Respuestas -->
+            <div class="p-5 sm:p-6 space-y-5">
+              <div
+                v-for="(question, index) in category.questions"
+                :key="index"
+                class="pb-5 border-b border-gray-100 last:border-0 last:pb-0"
               >
-                {{
+                <div class="flex items-start justify-between gap-4 mb-3">
+                  <p class="text-sm font-medium text-gray-900 flex-1">
+                    {{ index + 1 }}. {{ question }}
+                  </p>
+                  <!-- Rating Badge -->
+                  <div
+                    :class="[
+                      'flex-shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-lg font-bold text-base',
+                      getRatingClass(getQuestionRating(category.key, index)),
+                    ]"
+                  >
+                    {{
+                      getQuestionRating(category.key, index) !== null
+                        ? getQuestionRating(category.key, index)
+                        : "N/A"
+                    }}
+                  </div>
+                </div>
+
+                <!-- Rating Legend -->
+                <div class="flex items-center gap-2 text-xs text-gray-600">
+                  <span class="font-medium">Evaluación:</span>
+                  <span>{{
+                    getRatingLabel(getQuestionRating(category.key, index))
+                  }}</span>
+                </div>
+              </div>
+
+              <!-- Category Comments -->
+              <div
+                v-if="
                   (participation.consultingData || participation.monitoringData)
-                    .categoryComments[category.key]
-                }}
-              </p>
+                    ?.categoryComments?.[category.key]
+                "
+                class="mt-4 pt-4 border-t border-gray-200"
+              >
+                <p class="text-xs text-gray-500 font-medium mb-2">
+                  Comentarios sobre {{ category.label }}:
+                </p>
+                <p
+                  class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-3"
+                >
+                  {{
+                    (
+                      participation.consultingData ||
+                      participation.monitoringData
+                    ).categoryComments[category.key]
+                  }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Comentarios Adicionales -->
-      <div
-        v-if="
-          (participation.consultingData || participation.monitoringData)
-            ?.additionalComments
-        "
-        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
-      >
-        <h2 class="text-lg font-bold text-gray-900 mb-3">
-          Comentarios Adicionales
-        </h2>
-        <p
-          class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4"
-        >
-          {{
+        <!-- Comentarios Adicionales -->
+        <div
+          v-if="
             (participation.consultingData || participation.monitoringData)
-              .additionalComments
-          }}
-        </p>
-      </div>
-
-      <!-- Evidencias -->
-      <div
-        v-if="
-          (participation.consultingData || participation.monitoringData)
-            ?.evidenceUrls?.length
-        "
-        class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
-      >
-        <h2 class="text-lg font-bold text-gray-900 mb-4">
-          Evidencias Fotográficas
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          <div
-            v-for="(url, index) in (
-              participation.consultingData || participation.monitoringData
-            ).evidenceUrls"
-            :key="index"
-            class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-            @click="openImageModal(url)"
+              ?.additionalComments
+          "
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
+        >
+          <h2 class="text-lg font-bold text-gray-900 mb-3">
+            Comentarios Adicionales
+          </h2>
+          <p
+            class="text-sm text-gray-700 leading-relaxed bg-gray-50 rounded-lg p-4"
           >
-            <img
-              :src="url"
-              :alt="`Evidencia ${index + 1}`"
-              class="w-full h-full object-cover"
-            />
+            {{
+              (participation.consultingData || participation.monitoringData)
+                .additionalComments
+            }}
+          </p>
+        </div>
+
+        <!-- Evidencias -->
+        <div
+          v-if="
+            (participation.consultingData || participation.monitoringData)
+              ?.evidenceUrls?.length
+          "
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 sm:p-6 mt-6"
+        >
+          <h2 class="text-lg font-bold text-gray-900 mb-4">
+            Evidencias Fotográficas
+          </h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div
+              v-for="(url, index) in (
+                participation.consultingData || participation.monitoringData
+              ).evidenceUrls"
+              :key="index"
+              class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+              @click="openImageModal(url)"
+            >
+              <img
+                :src="url"
+                :alt="`Evidencia ${index + 1}`"
+                class="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </template>
+      <!-- /template v-else consulting -->
     </div>
 
     <!-- Error State -->
@@ -365,24 +506,107 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, reactive, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { NavArrowLeft, Trash } from "@iconoir/vue";
 import ConsultingDataRadar from "@/components/activities/detail/ConsultingDataRadar.vue";
+import FieldRenderer from "@/components/activities/fields/FieldRenderer.vue";
+import { useActivities } from "@/composables/useActivities";
+import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
+const { success, error: toastError } = useToast();
+const { updateParticipationResponse, markAttendanceField } = useActivities();
 
 const programId = route.params.programId;
 const activityId = route.params.activityId;
 const participationId = route.params.participationId;
 
 const participation = ref(null);
+const activityData = ref(null); // activity definition (fields[])
 const loading = ref(true);
 const showDeleteConfirm = ref(false);
 const selectedImage = ref(null);
+const savingForm = ref(false);
+
+// Para type: 'form'
+const editableResponses = reactive({});
+const originalResponses = ref({});
+
+const isFormType = computed(
+  () =>
+    participation.value?.activityType === "activity" ||
+    participation.value?.activityType === "form",
+);
+const isDraft = computed(() => participation.value?.status === "draft");
+
+const sortedActivityFields = computed(() => {
+  if (!activityData.value?.fields) return [];
+  return [...activityData.value.fields].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+});
+
+const formHasChanges = computed(() => {
+  return (
+    JSON.stringify(editableResponses) !==
+    JSON.stringify(originalResponses.value)
+  );
+});
+
+function handleFieldUpdate(field, value) {
+  editableResponses[field.id] = value;
+}
+
+async function saveFormChanges() {
+  savingForm.value = true;
+  try {
+    const responsesClone = { ...editableResponses };
+    await updateParticipationResponse(
+      programId,
+      participationId,
+      responsesClone,
+    );
+
+    // Si es draft, cambiar status a completed
+    if (isDraft.value) {
+      const {
+        doc: fbDoc,
+        updateDoc,
+        serverTimestamp: srvTs,
+      } = await import("firebase/firestore");
+      const { db: fbDb } = await import("@/firebaseInit");
+      const participationRef = fbDoc(
+        fbDb,
+        "programs",
+        programId,
+        "participations",
+        participationId,
+      );
+      await updateDoc(participationRef, {
+        status: "completed",
+        submittedAt: srvTs(),
+        updatedAt: srvTs(),
+      });
+      participation.value.status = "completed";
+    }
+
+    originalResponses.value = { ...responsesClone };
+    success(
+      isDraft.value
+        ? "Participaci\u00f3n completada exitosamente"
+        : "Cambios guardados exitosamente",
+    );
+  } catch (err) {
+    console.error(err);
+    toastError("Error al guardar los cambios");
+  } finally {
+    savingForm.value = false;
+  }
+}
 
 // Categorías (mismo array que ConsultingForm.vue)
 const categories = [
@@ -489,13 +713,12 @@ const categoriesWithResponses = computed(() => {
 async function loadParticipation() {
   try {
     loading.value = true;
-    // Las participaciones se guardan en programs/{programId}/participations
     const participationRef = doc(
       db,
       "programs",
       programId,
       "participations",
-      participationId
+      participationId,
     );
 
     const participationSnap = await getDoc(participationRef);
@@ -506,9 +729,34 @@ async function loadParticipation() {
         ...participationSnap.data(),
       };
       console.log("✅ Participación cargada:", participation.value);
+
+      // Si es form, cargar la actividad para obtener fields[]
+      if (
+        participation.value.activityType === "activity" ||
+        participation.value.activityType === "form"
+      ) {
+        const activityRef = doc(
+          db,
+          "programs",
+          programId,
+          "activities",
+          activityId,
+        );
+        const activitySnap = await getDoc(activityRef);
+        if (activitySnap.exists()) {
+          activityData.value = { id: activitySnap.id, ...activitySnap.data() };
+        }
+
+        // Inicializar respuestas editables
+        const resps = participation.value.responses || {};
+        Object.entries(resps).forEach(([k, v]) => {
+          editableResponses[k] = v;
+        });
+        originalResponses.value = { ...resps };
+      }
     } else {
       console.error(
-        "Participación no encontrada en programs/{programId}/participations"
+        "Participación no encontrada en programs/{programId}/participations",
       );
     }
   } catch (error) {
@@ -648,7 +896,7 @@ async function handleDelete() {
       "programs",
       programId,
       "participations",
-      participationId
+      participationId,
     );
 
     await deleteDoc(participationRef);

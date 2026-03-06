@@ -22,6 +22,11 @@
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <!-- Stats según tipo de actividad -->
+      <ActivityStats
+        v-if="activity.type === 'activity' || activity.type === 'form'"
+        :matrix="participationMatrix"
+        :has-attendance="hasAttendanceFields"
+      />
       <SessionStats
         v-if="activity.type === 'session'"
         :total-participants="activity.metadata?.totalParticipants || 0"
@@ -39,6 +44,18 @@
       />
 
       <!-- Listas según tipo de actividad -->
+      <ActivityParticipationList
+        v-if="activity.type === 'activity' || activity.type === 'form'"
+        :program-id="programId"
+        :activity-id="activityId"
+        :activity="activity"
+        :matrix="participationMatrix"
+        :loading="loadingParticipants"
+        @view-details="handleViewFormDetails"
+        @attendance-saved="handleAttendanceSaved"
+        @complete-participant="handleCompleteParticipant"
+      />
+
       <AttendanceList
         v-if="activity.type === 'session' || activity.type === 'event'"
         :participants="participants"
@@ -64,9 +81,13 @@
       @submitted="handleConsultingSubmitted"
     />
 
-    <!-- Edit Activity Modal -->
+    <!-- Edit Activity Modal (solo para consulting, form se edita en ruta propia) -->
     <CreateActivityModal
-      v-if="showEditModal"
+      v-if="
+        showEditModal &&
+        activity?.type !== 'activity' &&
+        activity?.type !== 'form'
+      "
       :program="{ id: programId }"
       :activities="[]"
       :edit-mode="true"
@@ -103,6 +124,8 @@ import { useActivities } from "@/composables/useActivities";
 import { collection, getDocs, query } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import ActivityDetailHeader from "@/components/activities/detail/ActivityDetailHeader.vue";
+import ActivityStats from "@/components/activities/detail/ActivityStats.vue";
+import ActivityParticipationList from "@/components/activities/detail/ActivityParticipationList.vue";
 import SessionStats from "@/components/activities/detail/SessionStats.vue";
 import EventStats from "@/components/activities/detail/EventStats.vue";
 import ConsultingStats from "@/components/activities/detail/ConsultingStats.vue";
@@ -123,8 +146,11 @@ const {
   loadActivity,
   loadActivityParticipations,
   participations,
+  participationMatrix,
+  buildParticipationMatrix,
   markAttendance,
   deleteActivity,
+  createEmptyParticipation,
 } = useActivities();
 
 const programId = computed(() => route.params.programId);
@@ -140,6 +166,11 @@ const savingAttendance = ref(false);
 const showEditModal = ref(false);
 const showDeleteModal = ref(false);
 const deleting = ref(false);
+
+// Computed para actividades tipo form
+const hasAttendanceFields = computed(() => {
+  return (activity.value?.fields || []).some((f) => f.type === "attendance");
+});
 
 function calculateAverageScore() {
   if (!participations.value.length) return null;
@@ -190,7 +221,7 @@ async function saveAllAttendances(changes) {
         userId,
         participant,
         data.attended,
-        data.notes
+        data.notes,
       );
     });
 
@@ -218,7 +249,7 @@ async function loadProgramParticipants() {
       db,
       "programs",
       programId.value,
-      "participants"
+      "participants",
     );
     const q = query(participantsRef);
     const snapshot = await getDocs(q);
@@ -253,6 +284,50 @@ function handleViewMonitoringDetails(monitoring) {
       participationId: monitoring.id,
     },
   });
+}
+
+function handleViewFormDetails(participation) {
+  router.push({
+    name: "ParticipationDetail",
+    params: {
+      programId: programId.value,
+      activityId: activityId.value,
+      participationId: participation.id,
+    },
+  });
+}
+
+async function handleCompleteParticipant(row) {
+  try {
+    const participation = await createEmptyParticipation(
+      programId.value,
+      activityId.value,
+      {
+        userId: row.userId,
+        userName: row.userName,
+        businessId: row.businessId,
+        businessName: row.businessName,
+      },
+    );
+
+    router.push({
+      name: "ParticipationDetail",
+      params: {
+        programId: programId.value,
+        activityId: activityId.value,
+        participationId: participation.id,
+      },
+    });
+  } catch (err) {
+    console.error("Error creando participaci\u00f3n vac\u00eda:", err);
+  }
+}
+
+async function handleAttendanceSaved() {
+  // Reconstruir la matriz para reflejar los cambios
+  loadingParticipants.value = true;
+  await buildParticipationMatrix(programId.value, activityId.value);
+  loadingParticipants.value = false;
 }
 
 function handleDeleteMonitoring(monitoring) {
@@ -303,8 +378,22 @@ onMounted(async () => {
     // Cargar actividad
     await loadActivity(programId.value, activityId.value);
 
-    // Cargar participaciones
-    await loadActivityParticipations(programId.value, activityId.value);
+    // Si es form, construir la matriz completa de participantes
+    if (
+      activity.value?.type === "activity" ||
+      activity.value?.type === "form"
+    ) {
+      await buildParticipationMatrix(programId.value, activityId.value);
+      loadingParticipants.value = false;
+    }
+
+    // Cargar participaciones (necesario para consulting y legacy)
+    if (
+      activity.value?.type !== "activity" &&
+      activity.value?.type !== "form"
+    ) {
+      await loadActivityParticipations(programId.value, activityId.value);
+    }
 
     // Si es sesión o evento, cargar participantes del programa
     if (
@@ -325,8 +414,16 @@ onMounted(async () => {
 
       // Guardar estado original para detectar cambios
       originalAttendanceMap.value = JSON.parse(
-        JSON.stringify(attendanceMap.value)
+        JSON.stringify(attendanceMap.value),
       );
+    }
+
+    // Build ya se hizo antes para form, no necesitamos más acción
+    if (
+      activity.value?.type === "activity" ||
+      activity.value?.type === "form"
+    ) {
+      // ya gestionado arriba
     }
   } catch (error) {
     console.error("Error al cargar datos:", error);
