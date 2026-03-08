@@ -19,7 +19,7 @@ const { OpenAI } = require("openai");
  */
 exports.grokProxy = functions
   .region("southamerica-east1")
-  .runWith({ timeoutSeconds: 120, memory: "512MB" })
+  .runWith({ timeoutSeconds: 300, memory: "512MB" })
   .https.onCall(async (data, context) => {
     // Verificar autenticación
     if (!context.auth) {
@@ -53,8 +53,18 @@ exports.grokProxy = functions
         baseURL: "https://api.x.ai/v1",
       });
 
+      // Opción C: Modelo por entorno
+      // En emulador local usa grok-3-mini (rápido), en producción usa grok-3 (mejor calidad)
+      const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
+      const defaultModel = isEmulator
+        ? 'grok-3-mini'
+        : (process.env.GROK_MODEL || 'grok-3-mini');
+
+      const selectedModel = model || defaultModel;
+      console.log(`🤖 grokProxy: modelo=${selectedModel}, emulador=${isEmulator}, max_tokens=${max_tokens ?? 1000}`);
+
       const params = {
-        model: model || process.env.GROK_MODEL || "grok-3-mini",
+        model: selectedModel,
         messages,
         temperature: temperature ?? 0.7,
         max_tokens: max_tokens ?? 1000,

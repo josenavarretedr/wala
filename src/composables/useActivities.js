@@ -40,6 +40,7 @@ export function useActivities() {
     loadUserParticipation,
     updateParticipationResponse,
     markAttendanceField,
+    markAttendanceFieldForUser,
     isParticipationComplete,
     buildParticipationMatrix,
     createEmptyParticipation,
@@ -85,6 +86,7 @@ export function useActivities() {
     loadUserParticipation,
     updateParticipationResponse,
     markAttendanceField,
+    markAttendanceFieldForUser,
 
     // Utilities
     isParticipationComplete,

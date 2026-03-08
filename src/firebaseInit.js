@@ -57,10 +57,10 @@ const functions = getFunctions(appFirebase, 'southamerica-east1');
 
 // Verificar si estamos en un entorno local para conectar a los emuladores
 if (window.location.hostname === 'localhost') {
-  connectFirestoreEmulator(db, 'localhost', 8080); // Conectar Firestore Emulator en el puerto 8080
-  connectAuthEmulator(auth, 'http://localhost:9099'); // Conectar Authentication Emulator en el puerto 9099
-  connectStorageEmulator(storage, 'localhost', 9199); // Conectar Storage Emulator en el puerto 9199
-  connectFunctionsEmulator(functions, 'localhost', 5001); // Conectar Functions Emulator en el puerto 5001
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectAuthEmulator(auth, 'http://localhost:9099');
+  connectStorageEmulator(storage, 'localhost', 9199);
+  connectFunctionsEmulator(functions, 'localhost', 5001);
   console.log('🔌 Emuladores conectados: Firestore, Auth, Storage, Functions');
 }
 

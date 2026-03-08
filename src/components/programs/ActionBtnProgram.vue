@@ -7,7 +7,7 @@
       class="w-full py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all duration-200 shadow-sm flex items-center justify-center gap-2 border-2 border-green-600 hover:border-green-700"
     >
       <Plus class="w-5 h-5" stroke-width="2.5" />
-      <span>Nueva Actividad</span>
+      <span>Nuevo Registro</span>
     </button>
   </div>
 </template>

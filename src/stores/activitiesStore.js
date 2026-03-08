@@ -551,6 +551,119 @@ export const useActivitiesStore = defineStore('activities', () => {
   }
 
   /**
+   * Marcar campo de asistencia para un usuario sin importar si tiene participación.
+   * Upsert: crea una participación mínima (solo asistencia) si no existe.
+   * Ideal para que el facilitador marque asistencias en bulk sin generar drafts.
+   */
+  async function markAttendanceFieldForUser(programId, activityId, userId, participantData, fieldId, attended, notes = '') {
+    const authStore = useAuthStore()
+
+    if (!authStore.user?.uid) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const participationsRef = collection(db, 'programs', programId, 'participations')
+
+      // Buscar participación existente
+      const q = query(
+        participationsRef,
+        where('activityId', '==', activityId),
+        where('userId', '==', userId)
+      )
+      const snapshot = await getDocs(q)
+
+      const attendanceFieldData = {
+        attended,
+        markedBy: authStore.user.uid,
+        markedAt: serverTimestamp(),
+        notes: notes || ''
+      }
+
+      let participationId
+      let participationData
+
+      if (!snapshot.empty) {
+        // Actualizar existente
+        participationId = snapshot.docs[0].id
+        const participationRef = doc(db, 'programs', programId, 'participations', participationId)
+        await updateDoc(participationRef, {
+          [`responses.${fieldId}`]: attendanceFieldData,
+          updatedAt: serverTimestamp()
+        })
+        participationData = { id: participationId, ...snapshot.docs[0].data() }
+      } else {
+        // Crear participación mínima — solo asistencia, sin draft de campos
+        const newParticipation = {
+          activityId,
+          activityType: 'activity',
+          userId,
+          userName: participantData.userName || 'Usuario',
+          businessId: participantData.businessId || '',
+          businessName: participantData.businessName || '',
+          status: 'attendance_marked',
+          createdBy: authStore.user.uid,
+          submittedAt: serverTimestamp(),
+          responses: {
+            [fieldId]: { attended, markedBy: authStore.user.uid, notes: notes || '' }
+          }
+        }
+        const docRef = await addDoc(participationsRef, newParticipation)
+        participationId = docRef.id
+        participationData = { id: participationId, ...newParticipation }
+      }
+
+      // Actualizar matriz local
+      const matrixIndex = participationMatrix.value.findIndex(row => row.userId === userId)
+      if (matrixIndex !== -1) {
+        const matrixRow = participationMatrix.value[matrixIndex]
+        const existingResponses = matrixRow.participation?.responses || {}
+        const localParticipation = {
+          ...(matrixRow.participation || participationData),
+          id: participationId,
+          responses: {
+            ...existingResponses,
+            [fieldId]: { attended, markedBy: authStore.user.uid, notes: notes || '' }
+          }
+        }
+
+        const allAttendanceFieldIds = (currentActivity.value?.fields || [])
+          .filter(f => f.type === 'attendance')
+          .map(f => f.id)
+
+        const hasAttendance = allAttendanceFieldIds.length > 0
+          ? allAttendanceFieldIds.every(id => localParticipation.responses?.[id]?.attended === true)
+          : false
+
+        const updatedRow = {
+          ...matrixRow,
+          participation: localParticipation,
+          hasAttendance,
+          isComplete: currentActivity.value
+            ? isParticipationComplete(currentActivity.value, localParticipation)
+            : matrixRow.isComplete
+        }
+
+        participationMatrix.value = participationMatrix.value.map((row, idx) =>
+          idx === matrixIndex ? updatedRow : row
+        )
+      }
+
+      console.log('✅ Asistencia upsert marcada para usuario:', userId)
+      return participationId
+    } catch (err) {
+      console.error('❌ Error al marcar asistencia para usuario:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Marcar asistencia en una sesión (legacy — se mantiene por compatibilidad)
    */
   async function markAttendance(programId, activityId, userId, userData, attended = true, notes = '') {
@@ -1164,6 +1277,7 @@ export const useActivitiesStore = defineStore('activities', () => {
     loadUserParticipation,
     updateParticipationResponse,
     markAttendanceField,
+    markAttendanceFieldForUser,
     // Utilidades
     isParticipationComplete,
     buildParticipationMatrix,

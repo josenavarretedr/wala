@@ -86,13 +86,33 @@
           <span>Actividad</span>
         </div>
         <!-- Campos count -->
-        <div
+        <!-- <div
           v-if="activity.fields?.length"
           class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600"
         >
           {{ activity.fields.length }} campo{{
             activity.fields.length !== 1 ? "s" : ""
           }}
+        </div> -->
+        <!-- Badge Stage -->
+        <div
+          v-if="activity.stageName"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
+        >
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 9m0 8V9m0 0L9 7"
+            />
+          </svg>
+          <span>{{ activity.stageName }}</span>
         </div>
         <!-- Badge asistencia -->
         <div
@@ -104,7 +124,7 @@
       </div>
 
       <!-- Menú acciones (solo facilitador) -->
-      <div
+      <!-- <div
         v-if="userRole === 'facilitator'"
         class="flex items-center gap-1 shrink-0"
         @click.stop
@@ -145,7 +165,7 @@
             />
           </svg>
         </button>
-      </div>
+      </div> -->
     </div>
 
     <!-- Título -->

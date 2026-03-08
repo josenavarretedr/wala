@@ -8,8 +8,52 @@
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"
       ></div>
-      <p class="text-gray-600">Generando guiones con IA...</p>
-      <p class="text-sm text-gray-500 mt-2">Esto puede tomar 30-60 segundos</p>
+      <template v-if="progreso">
+        <p
+          v-if="progreso.fase === 'estructura'"
+          class="text-gray-600 font-medium"
+        >
+          Analizando estrategia y planificando videos...
+        </p>
+        <p
+          v-else-if="progreso.fase === 'video'"
+          class="text-gray-600 font-medium"
+        >
+          Generando guion {{ progreso.videoActual }} de
+          {{ progreso.totalVideos }}...
+        </p>
+        <p
+          v-else-if="progreso.fase === 'ensamblando'"
+          class="text-gray-600 font-medium"
+        >
+          Ensamblando resultado final...
+        </p>
+        <!-- Barra de progreso -->
+        <div v-if="progreso.totalVideos" class="w-64 mt-4">
+          <div class="bg-gray-200 rounded-full h-2.5">
+            <div
+              class="bg-purple-600 h-2.5 rounded-full transition-all duration-500"
+              :style="{
+                width: `${Math.round(((progreso.fase === 'estructura' ? 0 : progreso.videoActual) / (progreso.totalVideos + 1)) * 100)}%`,
+              }"
+            ></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-1 text-center">
+            {{
+              progreso.fase === "estructura"
+                ? "Paso 1"
+                : `Video ${progreso.videoActual}`
+            }}
+            / {{ progreso.totalVideos }} videos
+          </p>
+        </div>
+      </template>
+      <template v-else>
+        <p class="text-gray-600">Generando guiones con IA...</p>
+        <p class="text-sm text-gray-500 mt-2">
+          Esto puede tomar 30-60 segundos
+        </p>
+      </template>
     </div>
 
     <div v-else-if="guionData">
@@ -218,6 +262,10 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: false,
+  },
+  progreso: {
+    type: Object,
+    default: null,
   },
 });
 

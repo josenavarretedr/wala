@@ -1,0 +1,70 @@
+{
+  "character_identity": {
+    "id": "entrepreneur_ferretero_01",
+    "bio_stats": {
+      "ethnicity": "Latinoamericano Mestizo / Morena clara",
+      "apparent_age": 30,
+      "height_build": "Mesomorfo atlético, postura erguida",
+      "facial_features": {
+        "eye_type": "Almendrados, expresión de intriga/tensión",
+        "eyebrows": "Pobladas, ligeramente arqueadas (curiosidad)",
+        "hair_texture": "Rizado tipo 4C / Afro-texturizado corto",
+        "hair_color": "Negro azabache profundo (#0A0A0A)",
+        "facial_hair": "Sombra de barba de dos días, definida"
+      }
+    },
+    "outfit_specification": {
+      "top": {
+        "type": "Camisa de manga corta con botones",
+        "pattern": "Cuadros Madrás / Plaid",
+        "palette": ["Blanco hueso", "Azul cerúleo", "Gris humo"],
+        "distress": "Manchas de pintura blanca y azul en abdomen y pecho"
+      },
+      "bottom": {
+        "type": "Jeans denim",
+        "fit": "Slim-fit / Ajustados",
+        "color": "Azul índigo lavado",
+        "distress": "Salpicaduras de pintura blanca pulverizada en muslos"
+      },
+      "footwear": {
+        "type": "Botas de trabajo 'Moc Toe'",
+        "material": "Cuero marrón envejecido",
+        "detail": "Textura polvorienta, cordones gruesos"
+      }
+    }
+  },
+  "environment_specs": {
+    "location": "Ferretería familiar latinoamericana",
+    "elements": [
+      "Estantes metálicos industriales",
+      "Latas de pintura de colores vibrantes",
+      "Ventiladores de aspas metálicas",
+      "Rollos de aislante térmico plateado"
+    ],
+    "lighting_model": {
+      "source": "Luz natural de mediodía (cenital)",
+      "quality": "Difusa con sombras suaves de contacto",
+      "mood": "Realismo documental / Urgencia reflexiva"
+    },
+    "color_palette_hex": {
+      "primary": "#8B4513 (Cuero/Madera)",
+      "secondary": "#2B506E (Azul denim/Pintura)",
+      "accents": ["#FFD700 (Amarillo)", "#E5E5E5 (Aislante)"]
+    }
+  },
+  "technical_render_settings": {
+    "camera": {
+      "lens": "85mm Prime (Retrato)",
+      "aperture": "f/2.8 (Profundidad de campo cinematográfica)",
+      "angle": "Picado suave (Ligeramente por encima)",
+      "aspect_ratio": "9:16 (Vertical)"
+    },
+    "quality_tags": [
+      "8K UHD",
+      "Subsurface scattering (Skin texture)",
+      "Ray-traced reflections",
+      "No artificial filters",
+      "Photographic grain"
+    ]
+  }
+}

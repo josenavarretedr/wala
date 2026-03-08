@@ -66,7 +66,7 @@
       <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Empty State -->
         <div
-          v-if="!filteredActivities.length"
+          v-if="!visibleFilteredActivities.length && !stageGate"
           class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
         >
           <div
@@ -95,14 +95,51 @@
         </div>
 
         <!-- Timeline de Actividades -->
-        <ListActivities
-          v-else
-          :activities="filteredActivities"
-          user-role="participant"
-          :current-user-id="currentUserId"
-          :participations="userParticipations"
-          @click="goToActivity"
-        />
+        <template v-else>
+          <ListActivities
+            v-if="visibleFilteredActivities.length"
+            :activities="visibleFilteredActivities"
+            user-role="participant"
+            :current-user-id="currentUserId"
+            :participations="userParticipations"
+            @click="goToActivity"
+          />
+
+          <!-- Stage Gate: bloqueo de etapas siguientes -->
+          <div v-if="stageGate" class="flex items-center justify-center py-10">
+            <div
+              class="bg-white rounded-xl shadow-sm border border-amber-200 p-8 text-center max-w-sm w-full"
+            >
+              <div
+                class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <svg
+                  class="w-7 h-7 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-gray-900 mb-2">
+                Contenido bloqueado
+              </h3>
+              <p class="text-sm text-gray-600">
+                Completa la etapa de
+                <span class="font-semibold text-amber-700">
+                  {{ stageGate.name }}
+                </span>
+                antes de continuar con tu proceso.
+              </p>
+            </div>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -117,6 +154,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { useActivitiesStore } from "@/stores/activitiesStore";
 import { useAuthStore } from "@/stores/authStore";
+import { useStageProgress } from "@/composables/useStageProgress";
 import { InfoCircle, Community } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
@@ -143,6 +181,81 @@ const activities = computed(() => activitiesStore.activities);
 const loadingActivities = computed(() => activitiesStore.loading);
 const userParticipations = ref([]);
 const programStages = computed(() => activitiesStore.programStages);
+
+const { isStageLockedForUser, getPrerequisiteStageName } = useStageProgress();
+
+const sortedStages = computed(() =>
+  [...programStages.value].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+);
+
+// IDs de etapas bloqueadas para el usuario actual (basado en prerequisiteStageId)
+const lockedStageIds = computed(() => {
+  const locked = new Set();
+  for (const stage of sortedStages.value) {
+    if (
+      isStageLockedForUser(
+        stage,
+        sortedStages.value,
+        activities.value,
+        userParticipations.value,
+      )
+    ) {
+      locked.add(stage.id);
+    }
+  }
+  return locked;
+});
+
+// Stage gate:
+// - Si hay filtro de etapa específica y está bloqueada → muestra el bloqueo
+// - Si es "all" → encuentra la primera etapa bloqueada con actividades
+const stageGate = computed(() => {
+  if (!sortedStages.value.length) return null;
+
+  if (activeStageFilter.value !== "all" && activeStageFilter.value !== "none") {
+    const selectedStage = sortedStages.value.find(
+      (s) => s.id === activeStageFilter.value,
+    );
+    if (selectedStage && lockedStageIds.value.has(selectedStage.id)) {
+      const prereqName = getPrerequisiteStageName(
+        selectedStage,
+        sortedStages.value,
+      );
+      return { name: prereqName ?? selectedStage.name };
+    }
+    return null;
+  }
+
+  // Vista "all": primera etapa bloqueada que tiene actividades
+  for (const stage of sortedStages.value) {
+    if (!lockedStageIds.value.has(stage.id)) continue;
+    const hasActivities = activities.value.some((a) => a.stageId === stage.id);
+    if (!hasActivities) continue;
+    const prereqName = getPrerequisiteStageName(stage, sortedStages.value);
+    return { name: prereqName ?? stage.name };
+  }
+  return null;
+});
+
+// Actividades visibles: excluye las que pertenecen a etapas bloqueadas
+const visibleFilteredActivities = computed(() => {
+  // Si el filtro apunta a una etapa bloqueada, no hay actividades visibles
+  if (activeStageFilter.value !== "all" && activeStageFilter.value !== "none") {
+    const selectedStage = sortedStages.value.find(
+      (s) => s.id === activeStageFilter.value,
+    );
+    if (selectedStage && lockedStageIds.value.has(selectedStage.id)) {
+      return [];
+    }
+  }
+
+  if (!lockedStageIds.value.size) return filteredActivities.value;
+
+  // Excluir actividades de etapas bloqueadas; las sin stageId siempre se muestran
+  return filteredActivities.value.filter(
+    (a) => !a.stageId || !lockedStageIds.value.has(a.stageId),
+  );
+});
 
 const filteredActivities = computed(() => {
   let filtered = activities.value;

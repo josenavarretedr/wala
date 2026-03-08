@@ -88,6 +88,7 @@
           v-else-if="currentStep === 2"
           :guion-data="guionGenerado"
           :loading="loadingGuion"
+          :progreso="progresoGeneracion"
           @confirm="handleConfirmar"
           @back="currentStep--"
           @regenerar="handleRegenerar"
@@ -151,6 +152,7 @@ const respuestasUsuario = ref(null);
 const guionGenerado = ref(null);
 const loadingGuion = ref(false);
 const videosGuardados = ref([]);
+const progresoGeneracion = ref(null);
 
 // PASO 1 → PASO 2: Enviar datos iniciales y recibir preguntas
 const handleFormularioInicial = async (datos) => {
@@ -191,7 +193,16 @@ const handleRespuestas = async (respuestas) => {
       })),
     };
 
-    guionGenerado.value = await generarGuionesCompletos(fullContext);
+    // Callback de progreso para actualizar la UI
+    const onProgress = (prog) => {
+      progresoGeneracion.value = prog;
+    };
+
+    guionGenerado.value = await generarGuionesCompletos(
+      fullContext,
+      onProgress,
+    );
+    progresoGeneracion.value = null;
 
     toast.success(`${guionGenerado.value.videos.length} guiones generados`);
   } catch (error) {

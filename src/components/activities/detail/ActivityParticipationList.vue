@@ -180,13 +180,8 @@
                     type="checkbox"
                     :checked="getAttendanceState(row, fieldId)"
                     @change="toggleAttendance(row, fieldId, $event)"
-                    :disabled="!row.participation"
-                    :title="
-                      !row.participation
-                        ? 'El participante debe enviar su actividad primero'
-                        : getFieldTitle(fieldId)
-                    "
-                    class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    :title="getFieldTitle(fieldId)"
+                    class="w-5 h-5 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 cursor-pointer"
                   />
                 </template>
               </div>
@@ -294,8 +289,7 @@
                     type="checkbox"
                     :checked="getAttendanceState(row, fieldId)"
                     @change="toggleAttendance(row, fieldId, $event)"
-                    :disabled="!row.participation"
-                    class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                    class="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-2 focus:ring-green-500"
                   />
                   <span class="text-xs text-gray-500">{{
                     getFieldTitle(fieldId)
@@ -366,7 +360,7 @@ const emit = defineEmits([
   "complete-participant",
 ]);
 
-const { markAttendanceField } = useActivities();
+const { markAttendanceField, markAttendanceFieldForUser } = useActivities();
 const { success, error: toastError } = useToast();
 
 const searchQuery = ref("");
@@ -413,9 +407,17 @@ function getFieldTitle(fieldId) {
   );
 }
 
+// Genera la clave para pendingAttendance. Si el participante no tiene
+// participación, usa el userId como identificador (prefijo "u:").
+function getPendingKey(row, fieldId) {
+  return row.participation?.id
+    ? `${row.participation.id}_${fieldId}`
+    : `u:${row.userId}_${fieldId}`;
+}
+
 function getAttendanceState(row, fieldId) {
-  // Check pending first
-  const key = `${row.participation?.id}_${fieldId}`;
+  // Verificar cambios pendientes primero
+  const key = getPendingKey(row, fieldId);
   if (pendingAttendance.value[key] !== undefined) {
     return pendingAttendance.value[key].attended;
   }
@@ -423,39 +425,59 @@ function getAttendanceState(row, fieldId) {
 }
 
 function toggleAttendance(row, fieldId, event) {
-  if (!row.participation) return;
-  const key = `${row.participation.id}_${fieldId}`;
+  const key = getPendingKey(row, fieldId);
   const attended = event.target.checked;
 
-  // Compare with original value
+  // Comparar con el valor original para evitar cambios redundantes
   const originalAttended =
-    row.participation.responses?.[fieldId]?.attended === true;
+    row.participation?.responses?.[fieldId]?.attended === true;
   if (attended === originalAttended) {
-    // No change from original — remove from pending
     delete pendingAttendance.value[key];
   } else {
     pendingAttendance.value[key] = {
-      participationId: row.participation.id,
+      participationId: row.participation?.id || null,
+      userId: row.userId,
+      userName: row.userName,
+      businessId: row.businessId,
+      businessName: row.businessName,
       fieldId,
       attended,
     };
   }
-  // Force reactivity
+  // Forzar reactividad
   pendingAttendance.value = { ...pendingAttendance.value };
 }
 
 async function saveAllAttendances() {
   savingAttendance.value = true;
   try {
-    const promises = Object.values(pendingAttendance.value).map((change) =>
-      markAttendanceField(
-        props.programId,
-        change.participationId,
-        change.fieldId,
-        change.attended,
-        "",
-      ),
-    );
+    const promises = Object.values(pendingAttendance.value).map((change) => {
+      if (change.participationId) {
+        // Participación existente → update directo del campo
+        return markAttendanceField(
+          props.programId,
+          change.participationId,
+          change.fieldId,
+          change.attended,
+          "",
+        );
+      } else {
+        // Sin participación → upsert (crea registro mínimo de asistencia)
+        return markAttendanceFieldForUser(
+          props.programId,
+          props.activityId,
+          change.userId,
+          {
+            userName: change.userName,
+            businessId: change.businessId,
+            businessName: change.businessName,
+          },
+          change.fieldId,
+          change.attended,
+          "",
+        );
+      }
+    });
     await Promise.all(promises);
     pendingAttendance.value = {};
     success("Asistencias guardadas exitosamente");

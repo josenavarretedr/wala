@@ -46,7 +46,9 @@
         :program-id="programId"
         v-model:active-tab="activeTab"
         :activities="activities"
+        :stages="programStages"
         @filter-changed="handleFilterChanged"
+        @stage-filter-changed="handleStageFilterChanged"
       />
 
       <!-- Loading de Actividades -->
@@ -119,6 +121,7 @@ import { useRoute, useRouter } from "vue-router";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { useActivities } from "@/composables/useActivities";
+import { useActivitiesStore } from "@/stores/activitiesStore";
 import { InfoCircle, Community } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
@@ -129,6 +132,7 @@ import { useToast } from "@/composables/useToast";
 const route = useRoute();
 const router = useRouter();
 const { info } = useToast();
+const activitiesStore = useActivitiesStore();
 const {
   activities,
   loading: loadingActivities,
@@ -138,6 +142,9 @@ const {
 const program = ref(null);
 const loading = ref(false);
 const activeTab = ref("all");
+const activeStageFilter = ref("all");
+
+const programStages = computed(() => activitiesStore.programStages);
 
 const programId = computed(() => route.params.programId);
 
@@ -149,13 +156,25 @@ const filteredActivities = computed(() => {
     filtered = filtered.filter((a) => a.type === activeTab.value);
   }
 
+  // Filtrar por etapa
+  if (activeStageFilter.value !== "all") {
+    if (activeStageFilter.value === "none") {
+      filtered = filtered.filter((a) => !a.stageId);
+    } else {
+      filtered = filtered.filter((a) => a.stageId === activeStageFilter.value);
+    }
+  }
+
   return filtered;
 });
 
 onMounted(async () => {
   await loadProgram();
   if (program.value) {
-    await loadActivities(programId.value);
+    await Promise.all([
+      loadActivities(programId.value),
+      activitiesStore.loadProgramStages(programId.value),
+    ]);
   }
 });
 
@@ -200,6 +219,9 @@ async function handleActivityCreated(activity) {
 }
 
 function handleFilterChanged(filter) {
+  // Reset del filtro de etapa cuando cambia el tipo
+  activeStageFilter.value = "all";
+
   if (filter.type === "all") {
     info("Estas son TODAS las actividades del programa");
   } else {
@@ -209,6 +231,10 @@ function handleFilterChanged(filter) {
       `Mostrando ${count} ${filter.name.toLowerCase()}${plural} del programa`,
     );
   }
+}
+
+function handleStageFilterChanged(stageId) {
+  activeStageFilter.value = stageId;
 }
 
 function goToInfo() {
