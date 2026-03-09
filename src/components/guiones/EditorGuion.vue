@@ -705,6 +705,21 @@ const IMG_STYLES = [
     regenClass: "bg-green-50 text-green-700 hover:bg-green-100",
     copyClass: "bg-green-600 text-white hover:bg-green-700",
   },
+  {
+    id: "iso",
+    emoji: "🏗️",
+    nombre: "Isométrica",
+    concepto: "Diagrama vectorial",
+    descripcion: "Flat 2D · Isométrico · Gestión",
+    borderColor: "border-yellow-200",
+    hoverBorder: "hover:border-yellow-400",
+    labelColor: "text-yellow-700",
+    chevronColor: "text-yellow-400",
+    expandedBorder: "border-yellow-100",
+    spinnerColor: "border-yellow-600",
+    regenClass: "bg-yellow-50 text-yellow-700 hover:bg-yellow-100",
+    copyClass: "bg-yellow-600 text-white hover:bg-yellow-700",
+  },
 ];
 
 // ─ Mood emocional por sección (Cinematográfica) ─
@@ -803,6 +818,21 @@ const basicEstilo = [
   "fotografía de entorno comercial con el objeto en contexto real del negocio",
 ];
 
+// ─ Pools Isométrica ─
+const isoFondos = [
+  "fondo amarillo vibrante #FFD60A sólido",
+  "fondo azul cielo claro #E0F2FE sólido",
+  "fondo verde menta suave #ECFDF5 sólido",
+  "fondo crema cálido #FFFBEB sólido",
+];
+const isoElementos = [
+  "íconos flotantes de alerta y signo de exclamación en rojo vivo",
+  "globos de texto con cifras de porcentaje y flechas ascendentes",
+  "cajas y paquetes apilados con etiquetas de precio",
+  "lupas y documentos con check verde distribuidos alrededor",
+  "monedas y billetes pequeños flotando alrededor del personaje",
+];
+
 // ─ Estado reactivo ─
 const imgAccordionOpen = reactive({});
 const imgCardOpen = reactive({}); // rawKey → styleId activo | null
@@ -830,6 +860,9 @@ function ensamblarHand(base) {
 }
 function ensamblarBasic(base) {
   return `${base}\n\n${rndPick(basicEncuadres)}, ${rndPick(basicLuz)}. ${rndPick(basicEstilo)}. Sin personas. Formato vertical 9:16.`;
+}
+function ensamblarIso(base) {
+  return `${base}\n\n${rndPick(isoFondos)}. ${rndPick(isoElementos)}. Estilo Ligne Claire illustration isométrico, perspectiva diagonal 45°, bordes definidos, colores planos sin degradados complejos, sin fotografías reales. Formato vertical 9:16.`;
 }
 
 // ─ Toggle acordeón principal ─
@@ -863,6 +896,7 @@ function cambiarDetallesImg(rawKey, styleId) {
   if (styleId === "cine") imgPromptTexto[k] = ensamblarCine(base);
   else if (styleId === "info") imgPromptTexto[k] = ensamblarInfo(base);
   else if (styleId === "hand") imgPromptTexto[k] = ensamblarHand(base);
+  else if (styleId === "iso") imgPromptTexto[k] = ensamblarIso(base);
   else imgPromptTexto[k] = ensamblarBasic(base);
 }
 
@@ -930,20 +964,19 @@ ESTADO EMOCIONAL Y ACCIÓN REQUERIDO: ${mood}
 Describe: aspecto físico y ropa específica del personaje según su rubro, cómo es exactamente su local con objetos concretos, qué está haciendo en ese momento preciso relacionado con el texto de la sección, y qué transmiten su postura y rostro.`;
   } else if (styleId === "info") {
     systemMsg =
-      'Eres diseñador de infografías para redes sociales verticales. Describes composiciones visuales para generadores de imágenes IA. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
-    userMsg = `Genera la descripción de una infografía digital vertical para redes sociales (formato 9:16).
+      'Eres un experto en narrativa visual y diseño de información para redes sociales. Describes composiciones infográficas secuenciales para generadores de imágenes IA. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera la descripción de una infografía narrativa vertical (9:16) con flujo secuencial de arriba hacia abajo.
 
 ${ctxGuion}
 
-REGLAS DE DISEÑO:
-- Extrae los 2-3 datos, pasos o conceptos clave del TEXTO EXACTO DE LA SECCIÓN.
-- Diseño flat moderno, minimalista, legible a 3 segundos.
-- Tipografía sans-serif (Inter o similar), jerarquía clara: titular grande, subpárrafos medianos, texto pequeño.
-- Sin fotografías de personas. Solo íconos vectoriales, formas geométricas, flechas y texto.
-- PALETA OBLIGATORIA: naranja #F97316 (oklch 70.5% 0.213 47.604) como color PRIMARIO dominante. Blanco para texto sobre naranja. Gris oscuro #1A1A1A para texto secundario. Violeta #7C3AED solo como acento mínimo de contraste.
-- Formato vertical 9:16 para Instagram/TikTok.
+REGLAS DE NARRATIVA Y DISEÑO:
+- ESTRUCTURA: Divide la imagen en una secuencia vertical de 3 niveles claramente conectados por una línea punteada o flechas estilizadas que guíen el ojo hacia abajo. lEGIBLE A 3 SEGUNDOS.
+- ICONOGRAFÍA: Los iconos deben ser estilo "Line-Art" de trazo grueso y uniforme, con bordes redondeados, modernos y minimalistas (estilo Apple o interfaz premium).
+- CONTENIDO: Extrae exactamente 3 pasos o conceptos del TEXTO DE LA SECCIÓN y asígnales un icono y un título corto a cada uno.
+- TIPOGRAFÍA Y LEGIBILIDAD: Títulos en negrita Sans-Serif (tipo Inter) y texto de apoyo muy breve. Todo el texto debe ser grande y contrastado.
+- Sin personas reales. Estética 100% digital, limpia y profesional.
 
-Describe: la estructura visual exacta de arriba a abajo, los elementos gráficos presentes, los textos que aparecerán en cada zona, y el estilo visual general. Máximo 5 oraciones. Sin listas. Sin mencionar herramientas de diseño.`;
+Describe: El flujo narrativo de arriba a abajo, el diseño específico de los 3 iconos de trazo grueso, cómo se conectan visualmente los conceptos y la disposición del texto en la composición vertical. Máximo 5 oraciones densas.`;
   } else if (styleId === "hand") {
     systemMsg =
       'Eres director de arte especializado en contenido orgánico y autenticidad visual para pequeños negocios latinoamericanos. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
@@ -961,6 +994,31 @@ REGLAS:
 - Fotografía cenital o ángulo 3/4. Formato vertical 9:16.
 
 Describe: la superficie exacta, la frase concreta escrita (extráela del texto de la sección), el instrumento de escritura, los elementos decorativos manuales, el entorno de fondo y la iluminación. Máximo 4 oraciones. Sin listas.`;
+  } else if (styleId === "iso") {
+    systemMsg =
+      'Eres un ilustrador de narrativa visual y experto en estilo "Ligne Claire" (Línea Clara). Describes escenas isométricas 2D con un nivel de detalle orgánico y realista para generadores de imágenes. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera una descripción para una ilustración isométrica 2D con alto nivel de detalle narrativo.
+
+${ctxGuion}
+
+REGLAS DE ESTILO (CRÍTICAS):
+
+
+REGLAS DE ORO DE EXPRESIÓN Y ESTILO:
+- ROSTRO DETALLADO: El personaje NO debe tener ojos de punto. Describe ojos expresivos con cejas arqueadas, párpados y pupilas visibles que miren hacia el objeto de interés. La boca debe reflejar una emoción humana real (tensión, grito de frustración o una sonrisa amplia de éxito) con labios definidos. Todo el rostro debe de reflejar el TEXTO DE LA SECCIÓN (frustración, búsqueda, éxito).
+- PERSPECTIVA: Isométrica estricta (vista de pájaro en diagonal a 45 grados). Todos los objetos, estantes y el mostrador deben mantener ángulos paralelos sin puntos de fuga, creando un efecto de "maqueta" o "diorama".
+- ESTILO VISUAL: Línea clara (Ligne Claire) con contornos negros finos y definidos. Nada de realismo fotográfico ni 3D renderizado; debe parecer un dibujo técnico/cómic profesional de alta calidad. Nivel de detalle extraordinario en texturas: herramientas con óxido, cajas de cartón con pliegues, manchas de suciedad en la ropa y serrín en el suelo.
+- DETALLE ORGÁNICO:  Incluye texturas de suciedad, óxido en herramientas, manchas de grasa en el delantal y serrín en el suelo o según corresponda el contexto.
+- ESCENARIO: El local debe estar "abarrotado". Estanterías repletas, objetos desordenados y elementos específicos del rubro que llenen el espacio.
+- PERSONAJE: Emprendedor/a latinoamericano/a real con ropa de trabajo auténtica con desgaste visible (o no), expresión facial humana intensa. Representado en una pose que refleje el TEXTO DE LA SECCIÓN (frustración, búsqueda, éxito).
+- COLORES: Fondo sólido (preferencia AMARILLO vibrante o AZUL claro), Los objetos internos deben tener colores saturados y sombreado plano (cel-shading).
+- ELEMENTOS FLOTANTES: Solo si el texto lo requiere, incluye globos de diálogo estilo cómic o iconos de interfaz flotantes que se integren orgánicamente.
+- Formato vertical 9:16.
+
+Describe: El color de fondo sólido, la apariencia detallada del personaje y su ropa, la densidad y desorden del local (menciona al menos 6 objetos específicos), la acción física exacta y la atmósfera de "negocio real" que se respira. Máximo 5 oraciones densas.
+
+REGLAS DE ESTILO:
+- Perspectiva ISOMÉTRICA (vista desde arriba en diagonal).`;
   } else {
     // basic
     systemMsg =
@@ -999,6 +1057,7 @@ Describe: qué objeto o elementos específicos aparecen y por qué se relacionan
     if (styleId === "cine") imgPromptTexto[k] = ensamblarCine(base);
     else if (styleId === "info") imgPromptTexto[k] = ensamblarInfo(base);
     else if (styleId === "hand") imgPromptTexto[k] = ensamblarHand(base);
+    else if (styleId === "iso") imgPromptTexto[k] = ensamblarIso(base);
     else imgPromptTexto[k] = ensamblarBasic(base);
   } catch (err) {
     console.error(`Error grokProxy img ${k}:`, err);
