@@ -503,7 +503,9 @@ Para potenciar autenticidad, sugerir:
 "escena_sugerida": {
   "accion_fisica": "Caminando en parque con café",
   "momento": "Mañana temprano",
-  "energia": "Dinámica/casual/reflexiva"
+  "energia": "Dinámica/casual/reflexiva",
+  "props": ["café", "celular"],
+  "transiciones": ["corte a B-roll caminando"]
 }
 ```
 
@@ -516,6 +518,38 @@ Para potenciar autenticidad, sugerir:
 - Cocinando mientras explicas
 
 **Nota:** Es sugerencia para enriquecer producción, NO obligatorio en el guion.
+
+---
+
+## FORMATOS VISUALES (PRIORIDAD VIRALIDAD 2026)
+
+Lista priorizada de formatos visuales para producción. Se recomienda **1 formato por guion** (campo sugerido, no obligatorio).
+
+| #   | Formato                                    | Cuándo usar                                    | Ejemplo rápido                                   |
+| --- | ------------------------------------------ | ---------------------------------------------- | ------------------------------------------------ |
+| 1   | **Cara a cámara + B-roll**                 | Default para cualquier combo. Máxima conexión. | Hablar a cámara → corte a mostrar producto/local |
+| 2   | **Pantalla dividida (VS / antes-después)** | Comparaciones, virales, transformaciones       | Precio bodega vs supermercado lado a lado        |
+| 3   | **Pizarra / libreta**                      | Explicar conceptos, esquemas, fórmulas         | Dibujar margen = ventas - costos en libreta      |
+| 4   | **Green screen (dashboard/comentarios)**   | Mostrar datos, reaccionar a comentarios        | Fondo con dashboard WALA mientras explicas       |
+| 5   | **Tutorial over-shoulder**                 | Prácticos paso a paso, demos en app            | Grabar pantalla celular usando calculador WALA   |
+| 6   | **Metáfora física**                        | Hacer tangible un concepto abstracto           | Vasos con agua = flujo de caja (llena/vacía)     |
+| 7   | **Lista errores comunes**                  | Educativos tipo "top 3 errores"                | Texto en pantalla tachando errores uno a uno     |
+| 8   | **Dueto / reacción**                       | Responder comentarios, virales reactivos       | Reaccionar a video de otro emprendedor           |
+
+### TABLA DE RECOMENDACIÓN POR COMBO (Narrativa × Ruta)
+
+| Narrativa    | Ruta         | Formato recomendado    | Razón                                 |
+| ------------ | ------------ | ---------------------- | ------------------------------------- |
+| Directa      | Técnica      | Cara a cámara + B-roll | Conexión rápida + caso visible        |
+| Directa      | Viral        | Pantalla dividida      | Comparación visual instantánea        |
+| Directa      | Amplia       | Green screen           | Contexto tangencial visible           |
+| Estructurada | Técnica      | Pizarra / libreta      | Esquemas apoyan causalidad            |
+| Estructurada | Viral        | Dueto / reacción       | Curiosidad + contraste social         |
+| Estructurada | Amplia       | Metáfora física        | Conceptos abstractos → tangibles      |
+| Cualquiera   | Práctico     | Tutorial over-shoulder | Paso a paso visible en pantalla       |
+| Cualquiera   | Huevo de Oro | Cara a cámara + B-roll | Storytelling profundo necesita rostro |
+
+**Regla:** La tabla es sugerencia. Si el creador prefiere otro formato, es válido. Máximo 1 formato por guion.
 
 ---
 
@@ -834,10 +868,14 @@ Video 5: Huevo Oro Amplio-Estructurada (Voz A)
         "texto": "Ayer un bodeguero..."
       },
 
+      "formato_visual_recomendado": "Cara a cámara + B-roll / Pantalla dividida / Pizarra / Green screen / Tutorial over-shoulder / Metáfora física / Lista errores / Dueto-reacción",
+
       "escena_sugerida": {
         "accion_fisica": "string",
         "momento": "string",
-        "energia": "string"
+        "energia": "string",
+        "props": ["pizarra", "celular", "producto"],
+        "transiciones": ["zoom en dibujo", "corte a B-roll", "pantalla dividida"]
       },
 
       "micro_hooks": [
@@ -882,8 +920,15 @@ Video 5: Huevo Oro Amplio-Estructurada (Voz A)
       "notas_produccion": {
         "tono_narrativa": "Directo-cotidiano / Causal-estructurado",
         "velocidad": "Rápida / Moderada",
-        "props": "string"
+        "props": "string",
+        "notas_edicion": [
+          "Tip edición 1 (ej: Usa B-roll en el caso para dinamismo)",
+          "Tip edición 2 (ej: Zoom lento en pizarra al revelar fórmula)",
+          "Tip edición 3 (ej: Corte rápido entre puntos telegráficos)"
+        ]
       },
+
+      "formato_coherente": true,
 
       "metricas_esperadas": {
         "objetivo_ruta": "Posicionamiento / Alcance / Atracción",
@@ -915,6 +960,15 @@ Video 5: Huevo Oro Amplio-Estructurada (Voz A)
 ✓ Micro-hooks 3-6 completos
 ✓ Conectores causales presentes
 ✓ Progresión narrativa lógica
+
+### VALIDACIÓN FORMATO VISUAL
+
+✓ **formato_visual_recomendado** presente (1 formato, no más)
+✓ **formato_coherente: true** si el formato soporta storytelling visible (caso se puede ver/mostrar)
+✓ **formato_coherente: false** si el formato NO permite visualizar el caso (ej: dueto para técnico profundo)
+✓ **props** listados son realizables con producción mínima (celular, libreta, pizarra)
+✓ **transiciones** máximo 3, coherentes con formato elegido
+✓ **notas_edicion** incluye 2-3 tips prácticos de edición por guion
 
 ### VALIDACIÓN POR RUTA
 
@@ -983,4 +1037,245 @@ Video 5: Huevo Oro Amplio-Estructurada (Voz A)
 
 ---
 
+---
+
+## EJEMPLOS JSON CON FORMATO VISUAL INTEGRADO
+
+### EJEMPLO 1: Técnico + Directa + Voz A (Costos bodega)
+
+```json
+{
+  "numero": 1,
+  "ruta": "tecnica",
+  "tipo_contenido": "educativo",
+  "narrativa": "directa",
+  "voz": "A",
+  "duracion_estimada": "50s",
+  "sector_contexto": "Bodega de barrio, zona residencial, vende abarrotes y bebidas",
+
+  "formato_visual_recomendado": "Cara a cámara + B-roll",
+
+  "gancho": {
+    "texto": "Bodeguero: así sabés si tu negocio gana o pierde hoy",
+    "palabras_count": 10,
+    "componentes": {
+      "que_veras": "Saber si gana o pierde",
+      "para_quien": "Bodeguero",
+      "por_que_ahora": "Hoy"
+    }
+  },
+
+  "caso_inicial": {
+    "presente": true,
+    "texto": "La semana pasada una bodeguera me dijo: 'Vendo todo el día y llego a mi casa sin saber si gané'. Revisamos juntos. Mezclaba gastos del negocio con los de su casa. No era que no vendía. Era que no veía claro."
+  },
+
+  "escena_sugerida": {
+    "accion_fisica": "Caminando por pasillo de bodega señalando estantes",
+    "momento": "Media mañana, bodega abierta",
+    "energia": "Dinámica-cercana",
+    "props": ["celular", "productos en estante"],
+    "transiciones": [
+      "Corte a B-roll de estantes",
+      "Zoom a celular mostrando números"
+    ]
+  },
+
+  "micro_hooks": [
+    {
+      "numero": 1,
+      "tipo": "corto",
+      "texto": "Pero ojo.",
+      "timestamp": "[18s]"
+    },
+    {
+      "numero": 2,
+      "tipo": "corto",
+      "texto": "Y acá viene lo bueno.",
+      "timestamp": "[35s]"
+    }
+  ],
+
+  "guion_completo": {
+    "hook": "[0-5s] Bodeguero: así sabés si tu negocio gana o pierde hoy.",
+    "caso_validacion": "[5-20s] La semana pasada una bodeguera me dijo: 'Vendo todo el día y llego a mi casa sin saber si gané'. Revisamos juntos. Mezclaba gastos del negocio con los de su casa. Pero ojo. No era que no vendía. Era que no veía claro.",
+    "desarrollo": "[20-42s] Hacé esto. Agarrá un papel. Escribí todo lo que vendiste hoy. Ahora restá: mercadería, luz, alquiler, tu sueldo. TODO. Y acá viene lo bueno. Lo que queda es tu ganancia real. No lo que creés que ganás.",
+    "micro_accion": "[42-48s] Hoy, antes de cerrar, hacé esa resta. WALA te lo hace automático.",
+    "cta": "[48-50s] Link en mi perfil → Calculador gratis en WALA. Para que hoy sepas si ganás o perdés."
+  },
+
+  "cta": {
+    "formato": "Link → Qué hay → Para qué",
+    "texto_completo": "Link en mi perfil → Calculador gratis en WALA. Para que hoy sepas si ganás o perdés.",
+    "mencion_wala": "directa",
+    "beneficio_especifico": "Saber si gana o pierde hoy"
+  },
+
+  "storytelling": {
+    "tipo": "directo-telegráfico",
+    "conectores_usados": ["puntos", "pero ojo", "y acá viene lo bueno"],
+    "validacion": "✓ Cumple con narrativa directa"
+  },
+
+  "adaptacion_sector": {
+    "contexto_usado": "Bodega barrio, abarrotes y bebidas",
+    "productos_mencionados": ["mercadería", "abarrotes", "bebidas"],
+    "temporalidades": "Diario, al cierre",
+    "problematicas_unicas": "Mezcla gastos personales con negocio"
+  },
+
+  "caption": "¿Vendés todo el día y no sabés si ganaste? Esto le pasó a una bodeguera 👇 #bodega #emprendedor #costos #wala",
+
+  "notas_produccion": {
+    "tono_narrativa": "Directo-cotidiano",
+    "velocidad": "Rápida",
+    "props": "Celular con WALA abierto, estantes de bodega de fondo",
+    "notas_edicion": [
+      "Usar B-roll de estantes/productos cuando menciona 'mercadería, luz, alquiler'",
+      "Zoom lento al celular cuando dice 'WALA te lo hace automático'",
+      "Cortes rápidos entre frases telegráficas para mantener ritmo"
+    ]
+  },
+
+  "formato_coherente": true,
+
+  "metricas_esperadas": {
+    "objetivo_ruta": "Posicionamiento como experto",
+    "retencion_esperada": "70-80%",
+    "tipo_interaccion": "Guardados + Shares"
+  }
+}
+```
+
+### EJEMPLO 2: Viral + Directa + Voz A (Costos bodega vs ferretería)
+
+```json
+{
+  "numero": 2,
+  "ruta": "viral",
+  "tipo_contenido": "educativo",
+  "narrativa": "directa",
+  "voz": "A",
+  "duracion_estimada": "45s",
+  "sector_contexto": "Comparación bodega vs ferretería, costos operativos distintos",
+
+  "formato_visual_recomendado": "Pantalla dividida",
+
+  "gancho": {
+    "texto": "$1000 en bodega vs ferretería: mirá la diferencia",
+    "palabras_count": 9,
+    "componentes": {
+      "que_veras": "Comparación de costos",
+      "para_quien": "Implícito (emprendedores)",
+      "por_que_ahora": "Sorpresa/curiosidad"
+    }
+  },
+
+  "caso_inicial": {
+    "presente": false,
+    "texto": ""
+  },
+
+  "escena_sugerida": {
+    "accion_fisica": "De pie entre una bodega y una ferretería, señalando a cada lado",
+    "momento": "Mediodía, locales abiertos",
+    "energia": "Dinámica-curiosa",
+    "props": [
+      "productos de bodega en una mano",
+      "producto de ferretería en la otra"
+    ],
+    "transiciones": [
+      "Pantalla dividida: bodega izquierda / ferretería derecha",
+      "Zoom a productos al comparar"
+    ]
+  },
+
+  "micro_hooks": [
+    {
+      "numero": 1,
+      "tipo": "corto",
+      "texto": "Mirá esto.",
+      "timestamp": "[12s]"
+    },
+    {
+      "numero": 2,
+      "tipo": "corto",
+      "texto": "Y ojo acá.",
+      "timestamp": "[28s]"
+    }
+  ],
+
+  "guion_completo": {
+    "hook": "[0-5s] $1000 en bodega vs ferretería: mirá la diferencia.",
+    "caso_validacion": "",
+    "desarrollo": "[5-15s] Bodega: 50 productos. Arroz, aceite, snacks, limpieza. Mirá esto. Ferretería: 8 productos. Tornillos, cables, pintura. Mismo dinero. [15-35s] Y ojo acá. Bodega: margen chico, pero vendés 200 veces al día. Ferretería: margen grande, pero vendés 15 veces. Modelos distintos. Costos distintos. Ninguno es mejor.",
+    "micro_accion": "[35-40s] ¿Cuál es tu modelo? Calculá tu margen real.",
+    "cta": "[40-45s] Link en mi perfil → Comparador gratis en WALA. Para que sepas si cobrás bien vs tu competencia."
+  },
+
+  "cta": {
+    "formato": "Link → Qué hay → Para qué",
+    "texto_completo": "Link en mi perfil → Comparador gratis en WALA. Para que sepas si cobrás bien vs tu competencia.",
+    "mencion_wala": "directa",
+    "beneficio_especifico": "Saber si cobra bien vs competencia"
+  },
+
+  "storytelling": {
+    "tipo": "directo-telegráfico",
+    "conectores_usados": ["puntos", "y ojo acá", "mirá esto"],
+    "validacion": "✓ Cumple con narrativa directa"
+  },
+
+  "adaptacion_sector": {
+    "contexto_usado": "Bodega vs ferretería, costos operativos",
+    "productos_mencionados": [
+      "arroz",
+      "aceite",
+      "snacks",
+      "tornillos",
+      "cables",
+      "pintura"
+    ],
+    "temporalidades": "Diario, rotación de inventario",
+    "problematicas_unicas": "Confusión entre margen alto y rentabilidad total"
+  },
+
+  "caption": "$1000 en bodega vs $1000 en ferretería. ¿Cuál gana más? La respuesta te sorprende 🔥 #bodega #ferretería #costos #emprendedor #wala",
+
+  "notas_produccion": {
+    "tono_narrativa": "Directo-cotidiano",
+    "velocidad": "Rápida",
+    "props": "Productos de bodega + productos de ferretería para visual",
+    "notas_edicion": [
+      "Pantalla dividida todo el video: bodega izquierda, ferretería derecha",
+      "Texto animado con cantidades ($1000 → 50 productos vs 8 productos)",
+      "Transición final a pantalla completa para CTA"
+    ]
+  },
+
+  "formato_coherente": true,
+
+  "metricas_esperadas": {
+    "objetivo_ruta": "Alcance masivo",
+    "retencion_esperada": "75-85%",
+    "tipo_interaccion": "Comentarios + Shares"
+  }
+}
+```
+
+---
+
 ## ¿TODO CLARO? ESPERANDO INPUT DEL USUARIO.
+
+---
+
+## Cambios clave realizados (V6 → V6.1 Visual):
+
+- **Nuevo campo JSON `formato_visual_recomendado`**: 1 formato por guion (string), de lista priorizada de 8 formatos 2026.
+- **`escena_sugerida` ampliada**: Ahora incluye `props` (array) y `transiciones` (array, máx 3) además de acción, momento y energía.
+- **Sección FORMATOS VISUALES**: Tabla de 8 formatos priorizados por viralidad con ejemplos rápidos.
+- **Tabla de recomendación por combo**: Narrativa × Ruta → formato sugerido con razón (8 combinaciones).
+- **Nuevo campo `formato_coherente`** (bool): Valida si el formato visual soporta storytelling visible del caso.
+- **Nuevo campo `notas_edicion`** dentro de `notas_produccion`: Array de 2-3 tips prácticos de edición por guion.
+- **Validación formato visual** agregada a auto-validación: Verifica formato único, props realizables, transiciones coherentes.
+- **2 ejemplos JSON completos** con formato integrado (tema: costos bodega): Técnico+Directa con B-roll, Viral+Directa con pantalla dividida.

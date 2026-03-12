@@ -81,6 +81,13 @@
             >
               {{ video.estado }}
             </span>
+            <!-- Formato visual -->
+            <span
+              v-if="video.formato_visual_recomendado"
+              class="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700"
+            >
+              🎬 {{ video.formato_visual_recomendado }}
+            </span>
           </div>
 
           <h1 class="text-2xl font-bold text-gray-900 leading-tight">
@@ -452,33 +459,76 @@
               </div>
 
               <!-- Escena Sugerida -->
-              <div
-                v-if="video.escena_sugerida"
-                class="grid md:grid-cols-3 gap-3 text-sm"
-              >
-                <div>
-                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    Acción física
-                  </p>
-                  <p class="text-gray-800">
-                    {{ video.escena_sugerida.accion_fisica }}
-                  </p>
+              <div v-if="video.escena_sugerida" class="space-y-3">
+                <div class="grid md:grid-cols-3 gap-3 text-sm">
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-gray-500 uppercase mb-1"
+                    >
+                      Acción física
+                    </p>
+                    <p class="text-gray-800">
+                      {{ video.escena_sugerida.accion_fisica }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-gray-500 uppercase mb-1"
+                    >
+                      Momento
+                    </p>
+                    <p class="text-gray-800">
+                      {{ video.escena_sugerida.momento }}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-gray-500 uppercase mb-1"
+                    >
+                      Energía
+                    </p>
+                    <p class="text-gray-800">
+                      {{ video.escena_sugerida.energia }}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    Momento
-                  </p>
-                  <p class="text-gray-800">
-                    {{ video.escena_sugerida.momento }}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
-                    Energía
-                  </p>
-                  <p class="text-gray-800">
-                    {{ video.escena_sugerida.energia }}
-                  </p>
+                <div
+                  v-if="
+                    video.escena_sugerida.props?.length ||
+                    video.escena_sugerida.transiciones?.length
+                  "
+                  class="grid md:grid-cols-2 gap-3"
+                >
+                  <div v-if="video.escena_sugerida.props?.length">
+                    <p
+                      class="text-xs font-semibold text-gray-500 uppercase mb-2"
+                    >
+                      Props
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <span
+                        v-for="p in video.escena_sugerida.props"
+                        :key="p"
+                        class="px-2 py-1 bg-amber-50 text-amber-700 rounded text-xs"
+                        >{{ p }}</span
+                      >
+                    </div>
+                  </div>
+                  <div v-if="video.escena_sugerida.transiciones?.length">
+                    <p
+                      class="text-xs font-semibold text-gray-500 uppercase mb-2"
+                    >
+                      Transiciones sugeridas
+                    </p>
+                    <div class="flex flex-wrap gap-2">
+                      <span
+                        v-for="t in video.escena_sugerida.transiciones"
+                        :key="t"
+                        class="px-2 py-1 bg-blue-50 text-blue-700 rounded text-xs"
+                        >{{ t }}</span
+                      >
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -674,6 +724,45 @@
                     {{ video.notas_produccion?.props || "—" }}
                   </p>
                 </div>
+              </div>
+
+              <!-- Tips de edición + coherencia -->
+              <div
+                v-if="video.notas_produccion?.notas_edicion?.length"
+                class="pt-4 border-t border-gray-100"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <h4
+                    class="text-xs font-semibold text-gray-500 uppercase tracking-wide"
+                  >
+                    Tips de Edición
+                  </h4>
+                  <span
+                    v-if="video.formato_coherente !== undefined"
+                    :class="[
+                      'px-2 py-0.5 rounded-full text-xs font-semibold',
+                      video.formato_coherente
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-orange-100 text-orange-700',
+                    ]"
+                  >
+                    {{
+                      video.formato_coherente
+                        ? "✓ Formato coherente"
+                        : "⚠ Revisar formato"
+                    }}
+                  </span>
+                </div>
+                <ul class="space-y-2">
+                  <li
+                    v-for="(tip, i) in video.notas_produccion.notas_edicion"
+                    :key="i"
+                    class="flex items-start gap-2 text-sm text-gray-700"
+                  >
+                    <span class="text-purple-500 mt-0.5 shrink-0">→</span>
+                    {{ tip }}
+                  </li>
+                </ul>
               </div>
 
               <div class="pt-4 border-t border-gray-100">

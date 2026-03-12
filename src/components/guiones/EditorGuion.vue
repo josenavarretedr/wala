@@ -853,7 +853,7 @@ function ensamblarCine(base) {
   return `${base}\n\n${a}. ${p}. La escena ocurre ${m}. ${l}\n\n${CINE_CIERRE}`;
 }
 function ensamblarInfo(base) {
-  return `${base}\n\n${rndPick(infoLayouts)}. ${rndPick(infoFondos)}. Tipografía sans-serif moderna, jerarquía clara. Sin fotografías de personas. Formato vertical 9:16, apto para reel o story de Instagram/TikTok.`;
+  return `${base}\n\n --ar 9:16 --v 6.0 (style: hand-drawn sketchbook, visual thinking illustration, ink and watercolor, architectural lettering, high quality paper texture, macro photography of a notebook)`;
 }
 function ensamblarHand(base) {
   return `${base}\n\nEscenario: ${rndPick(handSuperficies)}, ${rndPick(handMarcadores)}, ${rndPick(handExtras)}. Fotografía cenital o ángulo 3/4 con luz natural cálida. Formato vertical 9:16, estilo documental auténtico.`;
@@ -862,7 +862,7 @@ function ensamblarBasic(base) {
   return `${base}\n\n${rndPick(basicEncuadres)}, ${rndPick(basicLuz)}. ${rndPick(basicEstilo)}. Sin personas. Formato vertical 9:16.`;
 }
 function ensamblarIso(base) {
-  return `${base}\n\n${rndPick(isoFondos)}. ${rndPick(isoElementos)}. Estilo Ligne Claire illustration isométrico, perspectiva diagonal 45°, bordes definidos, colores planos sin degradados complejos, sin fotografías reales. Formato vertical 9:16.`;
+  return `${base}\n\n${rndPick(isoFondos)}. ${rndPick(isoElementos)}.--ar 9:16 --v 6.0 (style: detailed character illustration, expressive facial features, focal point on face, sharp clear lines, isometric 2d, high resolution, flat background)`;
 }
 
 // ─ Toggle acordeón principal ─
@@ -964,19 +964,20 @@ ESTADO EMOCIONAL Y ACCIÓN REQUERIDO: ${mood}
 Describe: aspecto físico y ropa específica del personaje según su rubro, cómo es exactamente su local con objetos concretos, qué está haciendo en ese momento preciso relacionado con el texto de la sección, y qué transmiten su postura y rostro.`;
   } else if (styleId === "info") {
     systemMsg =
-      'Eres un experto en narrativa visual y diseño de información para redes sociales. Describes composiciones infográficas secuenciales para generadores de imágenes IA. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
-    userMsg = `Genera la descripción de una infografía narrativa vertical (9:16) con flujo secuencial de arriba hacia abajo.
+      'Eres un experto en Visual Thinking y facilitación gráfica. Describes infografías narrativas que parecen dibujadas a mano en un cuaderno profesional. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';
+    userMsg = `Genera la descripción de una infografía estilo "Sketchbook" vertical (9:16) con narrativa de arriba hacia abajo.
 
 ${ctxGuion}
 
-REGLAS DE NARRATIVA Y DISEÑO:
-- ESTRUCTURA: Divide la imagen en una secuencia vertical de 3 niveles claramente conectados por una línea punteada o flechas estilizadas que guíen el ojo hacia abajo. lEGIBLE A 3 SEGUNDOS.
-- ICONOGRAFÍA: Los iconos deben ser estilo "Line-Art" de trazo grueso y uniforme, con bordes redondeados, modernos y minimalistas (estilo Apple o interfaz premium).
-- CONTENIDO: Extrae exactamente 3 pasos o conceptos del TEXTO DE LA SECCIÓN y asígnales un icono y un título corto a cada uno.
-- TIPOGRAFÍA Y LEGIBILIDAD: Títulos en negrita Sans-Serif (tipo Inter) y texto de apoyo muy breve. Todo el texto debe ser grande y contrastado.
-- Sin personas reales. Estética 100% digital, limpia y profesional.
+REGLAS DE ESTILO "HAND-DRAWN":
+- SOPORTE: La imagen debe ser una hoja de cuaderno de bocetos (sketchbook) con textura de papel real, con la espiral metálica visible en el lateral izquierdo.
+- TRAZO Y ESCRITURA: Texto escrito a mano con caligrafía técnica impecable y clara (estilo arquitecto o lettering), usando bolígrafo de tinta azul y negra.
+- ICONOGRAFÍA: Los iconos deben ser dibujos rápidos a mano (sketches), coloreados con toques de acuarela o rotulador naranja (#F97316).
+- CONECTORES NARRATIVOS: Usa flechas curvas dibujadas a mano, pequeñas estrellas y círculos resaltados para conectar los 3 niveles de información de forma dinámica.
+- CONTENIDO: Estructura 3 niveles claros: un encabezado superior, un cuerpo central con un gráfico simple o tabla, y una conclusión inferior.
+- PALETA: Fondo de papel crema/blanco. Tinta negra/azul para texto. Naranja (#F97316) para resaltar conceptos clave y violeta (#7C3AED) solo para detalles mínimos de énfasis.
 
-Describe: El flujo narrativo de arriba a abajo, el diseño específico de los 3 iconos de trazo grueso, cómo se conectan visualmente los conceptos y la disposición del texto en la composición vertical. Máximo 5 oraciones densas.`;
+Describe: El aspecto del cuaderno, el estilo de los 3 iconos dibujados a mano, las flechas que guían la mirada hacia abajo y cómo se distribuye el texto caligráfico para que sea legible a 3 segundos. Máximo 5 oraciones.`;
   } else if (styleId === "hand") {
     systemMsg =
       'Eres director de arte especializado en contenido orgánico y autenticidad visual para pequeños negocios latinoamericanos. Responde Únicamente en JSON: {"prompt": "..."}. Idioma: español.';

@@ -77,46 +77,115 @@
 
       <!-- ── CAMPOS TIPO: COMPLETO ── -->
       <template v-if="formData.tipo_input === 'completo'">
-        <div class="grid md:grid-cols-3 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >Ruta *</label
+        <!-- RUTA -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2"
+            >Ruta *</label
+          >
+          <div class="grid grid-cols-3 gap-3">
+            <button
+              v-for="r in rutasOpciones"
+              :key="r.value"
+              type="button"
+              @click="formData.ruta = r.value"
+              :class="[
+                'p-3 rounded-xl border-2 text-left transition-all',
+                formData.ruta === r.value
+                  ? r.activeClass
+                  : 'border-gray-200 hover:border-gray-300 bg-white',
+              ]"
             >
-            <select
-              v-model="formData.ruta"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            >
-              <option value="">Seleccionar...</option>
-              <option value="tecnica">Técnica — posicionamiento experto</option>
-              <option value="viral">Viral — expansión de alcance</option>
-              <option value="amplia">Amplia — atracción tangencial</option>
-            </select>
+              <div class="text-lg mb-1">{{ r.icon }}</div>
+              <div class="text-xs font-bold text-gray-900 mb-0.5">
+                {{ r.label }}
+              </div>
+              <div class="text-xs text-gray-500 leading-tight mb-2">
+                {{ r.desc }}
+              </div>
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="f in r.formatos"
+                  :key="f"
+                  class="text-[10px] bg-white/70 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded"
+                  >{{ f }}</span
+                >
+              </div>
+            </button>
           </div>
+        </div>
+
+        <!-- TIPO + NARRATIVA -->
+        <div class="grid md:grid-cols-2 gap-5">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"
               >Tipo de Contenido *</label
             >
-            <select
-              v-model="formData.tipo_contenido"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            >
-              <option value="">Seleccionar...</option>
-              <option value="educativo">Educativo</option>
-              <option value="practico">Práctico</option>
-            </select>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                v-for="t in tiposContenidoOpciones"
+                :key="t.value"
+                type="button"
+                @click="formData.tipo_contenido = t.value"
+                :class="[
+                  'p-3 rounded-xl border-2 text-left transition-all',
+                  formData.tipo_contenido === t.value
+                    ? t.activeClass
+                    : 'border-gray-200 hover:border-gray-300 bg-white',
+                ]"
+              >
+                <div class="text-lg mb-1">{{ t.icon }}</div>
+                <div class="text-xs font-bold text-gray-900 mb-0.5">
+                  {{ t.label }}
+                </div>
+                <div class="text-xs text-gray-500 leading-tight mb-2">
+                  {{ t.desc }}
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="f in t.formatos"
+                    :key="f"
+                    class="text-[10px] bg-white/70 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded"
+                    >{{ f }}</span
+                  >
+                </div>
+              </button>
+            </div>
           </div>
+
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"
               >Narrativa *</label
             >
-            <select
-              v-model="formData.narrativa"
-              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-            >
-              <option value="">Seleccionar...</option>
-              <option value="directa">Directa cotidiana</option>
-              <option value="estructurada">Estructurada causal</option>
-            </select>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                v-for="n in narrativasOpciones"
+                :key="n.value"
+                type="button"
+                @click="formData.narrativa = n.value"
+                :class="[
+                  'p-3 rounded-xl border-2 text-left transition-all',
+                  formData.narrativa === n.value
+                    ? n.activeClass
+                    : 'border-gray-200 hover:border-gray-300 bg-white',
+                ]"
+              >
+                <div class="text-lg mb-1">{{ n.icon }}</div>
+                <div class="text-xs font-bold text-gray-900 mb-0.5">
+                  {{ n.label }}
+                </div>
+                <div class="text-xs text-gray-500 leading-tight mb-2">
+                  {{ n.desc }}
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  <span
+                    v-for="f in n.formatos"
+                    :key="f"
+                    class="text-[10px] bg-white/70 text-gray-500 border border-gray-200 px-1.5 py-0.5 rounded"
+                    >{{ f }}</span
+                  >
+                </div>
+              </button>
+            </div>
           </div>
         </div>
         <div>
@@ -421,6 +490,72 @@ const temasSugeridos = [
   "Finanzas básicas",
   "Ventas",
   "Productividad",
+];
+
+// ── OPCIONES CARD PARA TIPO COMPLETO ──
+const rutasOpciones = [
+  {
+    value: "tecnica",
+    icon: "🎯",
+    label: "Técnica",
+    desc: "Posicionamiento experto. Caso obligatorio al inicio. 70% info técnica.",
+    formatos: ["Pizarra", "Over-shoulder"],
+    activeClass: "border-indigo-500 bg-indigo-50",
+  },
+  {
+    value: "viral",
+    icon: "🔥",
+    label: "Viral",
+    desc: "Expansión de alcance. Curiosidad y comparaciones. Audiencia fría.",
+    formatos: ["Pantalla dividida", "Lista errores"],
+    activeClass: "border-pink-500 bg-pink-50",
+  },
+  {
+    value: "amplia",
+    icon: "🌐",
+    label: "Amplia",
+    desc: "Atracción tangencial. Temas relacionados que convierten a largo plazo.",
+    formatos: ["Green screen", "Metáfora física"],
+    activeClass: "border-amber-500 bg-amber-50",
+  },
+];
+
+const tiposContenidoOpciones = [
+  {
+    value: "educativo",
+    icon: "📚",
+    label: "Educativo",
+    desc: "Explica el qué y el por qué. Construye autoridad.",
+    formatos: ["Pizarra", "Metáfora física"],
+    activeClass: "border-purple-500 bg-purple-50",
+  },
+  {
+    value: "practico",
+    icon: "⚡",
+    label: "Práctico",
+    desc: "Muestra cómo hacerlo. Paso a paso con herramienta.",
+    formatos: ["Over-shoulder", "B-roll"],
+    activeClass: "border-teal-500 bg-teal-50",
+  },
+];
+
+const narrativasOpciones = [
+  {
+    value: "directa",
+    icon: "💬",
+    label: "Directa",
+    desc: "40-60s. Telegráfica. Sin conectores pesados. Ideal para ruta Viral.",
+    formatos: ["Cara a cámara", "Pantalla dividida"],
+    activeClass: "border-green-500 bg-green-50",
+  },
+  {
+    value: "estructurada",
+    icon: "🔗",
+    label: "Estructurada",
+    desc: "60-90s. Causalidad (PERO / POR LO TANTO). Construye autoridad.",
+    formatos: ["Pizarra", "Green screen"],
+    activeClass: "border-blue-500 bg-blue-50",
+  },
 ];
 
 // ── COMBOS PARA TIPO MIXTO ──
