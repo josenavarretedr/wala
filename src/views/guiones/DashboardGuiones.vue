@@ -51,7 +51,7 @@
       />
 
       <!-- Stats rápidas -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
         <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
           <div class="text-sm text-gray-600">Total</div>
           <div class="text-2xl font-bold text-gray-900">
@@ -76,6 +76,25 @@
             {{ videosPorEstado.publicado }}
           </div>
         </div>
+        <!-- Nuevos contadores por fase -->
+        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <div class="text-sm text-gray-600">ToFu</div>
+          <div class="text-2xl font-bold text-amber-600">
+            {{ videosPorFase.tofu }}
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <div class="text-sm text-gray-600">MoFu</div>
+          <div class="text-2xl font-bold text-indigo-600">
+            {{ videosPorFase.mofu }}
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <div class="text-sm text-gray-600">BoFu</div>
+          <div class="text-2xl font-bold text-red-600">
+            {{ videosPorFase.bofu }}
+          </div>
+        </div>
       </div>
 
       <!-- Loader -->
@@ -87,8 +106,8 @@
 
       <!-- Lista de videos -->
       <div v-else-if="!loading && videosFiltered.length > 0">
-        <!-- Tabla (Desktop) -->
-        <div class="hidden lg:block">
+        <!-- Tabla (Desktop amplio) -->
+        <div class="hidden xl:block">
           <TablaVideos
             :videos="videosFiltered"
             @edit="handleEdit"
@@ -96,8 +115,8 @@
           />
         </div>
 
-        <!-- Cards (Mobile/Tablet) -->
-        <div class="lg:hidden grid gap-4">
+        <!-- Cards (Mobile/Tablet y laptops compactos) -->
+        <div class="xl:hidden grid grid-cols-1 md:grid-cols-2 gap-4">
           <CardVideo
             v-for="video in videosFiltered"
             :key="video.id"
@@ -148,6 +167,7 @@ const loading = computed(() => guionesStore.loading);
 const videosFiltered = computed(() => guionesStore.videosFiltered);
 const videosPorVoz = computed(() => guionesStore.videosPorVoz);
 const videosPorEstado = computed(() => guionesStore.videosPorEstado);
+const videosPorFase = computed(() => guionesStore.videosPorFase);
 const filterOptions = computed(() => guionesStore.filterOptions);
 const activeFilters = computed(() => guionesStore.activeFilters);
 

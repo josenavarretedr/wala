@@ -68,37 +68,50 @@
 
       <!-- Contenido por pasos -->
       <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-        <!-- PASO 1: Formulario Inicial -->
+        <!-- PASO 0: Formulario Inicial (incluye analizarDistribucion internamente) -->
         <FormularioInicial
           v-if="currentStep === 0"
           @submit="handleFormularioInicial"
         />
 
-        <!-- PASO 2: Preguntas de la IA -->
-        <PreguntasIA
+        <!-- PASO 1: Preview Batch — Tabla editable de distribución -->
+        <PreviewGuion
           v-else-if="currentStep === 1"
-          :preguntas="preguntasIA"
-          :loading="loadingPreguntas"
-          @submit="handleRespuestas"
-          @back="currentStep--"
+          modo="batch"
+          :plan-videos="planVideos"
+          :meta-previo="metaPrevio"
+          @confirm-plan="handleConfirmarPlan"
+          @back="currentStep = 0"
         />
 
-        <!-- PASO 3: Preview y Confirmación -->
-        <PreviewGuion
+        <!-- PASO 2: Preguntas IA (con resumen del plan confirmado) -->
+        <PreguntasIA
           v-else-if="currentStep === 2"
+          :preguntas="preguntasIA"
+          :loading="loadingPreguntas"
+          :plan-resumen="planConOverrides"
+          :datos-iniciales="datosIniciales"
+          @submit="handleRespuestas"
+          @back="currentStep = 1"
+        />
+
+        <!-- PASO 3: Preview de guiones generados -->
+        <PreviewGuion
+          v-else-if="currentStep === 3"
+          modo="guiones"
           :guion-data="guionGenerado"
           :loading="loadingGuion"
           :progreso="progresoGeneracion"
           @confirm="handleConfirmar"
-          @back="currentStep--"
+          @back="currentStep = 2"
           @regenerar="handleRegenerar"
         />
 
         <!-- PASO 4: Éxito -->
-        <div v-else-if="currentStep === 3" class="text-center py-12">
-          <div class="text-6xl mb-4">🎉</div>
+        <div v-else-if="currentStep === 4" class="text-center py-12">
+          <div class="text-6xl mb-4">&#127881;</div>
           <h2 class="text-2xl font-bold text-gray-900 mb-4">
-            ¡Guiones guardados exitosamente!
+            Guiones guardados exitosamente
           </h2>
           <p class="text-gray-600 mb-8">
             Se guardaron {{ videosGuardados.length }} videos en la base de datos
@@ -142,10 +155,13 @@ const router = useRouter();
 const guionesStore = useGuionesStore();
 const toast = useToast();
 
-const steps = ["Datos Iniciales", "Preguntas IA", "Preview", "Confirmación"];
+const steps = ["Datos", "Plan de Videos", "Preguntas IA", "Guiones", "Listo"];
 const currentStep = ref(0);
 
 const datosIniciales = ref(null);
+const planVideos = ref([]);
+const metaPrevio = ref(null);
+const planConOverrides = ref(null);
 const preguntasIA = ref(null);
 const loadingPreguntas = ref(false);
 const respuestasUsuario = ref(null);
@@ -154,23 +170,39 @@ const loadingGuion = ref(false);
 const videosGuardados = ref([]);
 const progresoGeneracion = ref(null);
 
-// PASO 1 → PASO 2: Enviar datos iniciales y recibir preguntas
-const handleFormularioInicial = async (datos) => {
+// PASO 0 → PASO 1: Recibir datos + planVideos del formulario (analizarDistribucion ya corrió dentro)
+const handleFormularioInicial = (datos) => {
+  datosIniciales.value = {
+    tema: datos.tema,
+    sector_contexto: datos.sector_contexto,
+    cantidad: datos.cantidad,
+    fase_embudo: datos.fase_embudo,
+  };
+  planVideos.value = datos.planVideos;
+  metaPrevio.value = datos.metaPrevio;
+  currentStep.value = 1;
+};
+
+// PASO 1 → PASO 2: Confirmar plan (con posibles overrides) y generar preguntas
+const handleConfirmarPlan = async (planOverrides) => {
   try {
-    datosIniciales.value = datos;
+    planConOverrides.value = planOverrides;
     loadingPreguntas.value = true;
-    currentStep.value = 1;
+    currentStep.value = 2;
 
-    console.log("📝 Generando preguntas de aclaración...", datos);
+    console.log("📝 Generando preguntas de aclaración...");
 
-    const resultado = await generarPreguntasAclaracion(datos);
+    const resultado = await generarPreguntasAclaracion(
+      datosIniciales.value,
+      planOverrides,
+    );
     preguntasIA.value = resultado.preguntas;
 
     toast.success("Preguntas generadas por IA");
   } catch (error) {
     console.error("Error al generar preguntas:", error);
     toast.error("Error al generar preguntas: " + error.message);
-    currentStep.value = 0;
+    currentStep.value = 1;
   } finally {
     loadingPreguntas.value = false;
   }
@@ -181,19 +213,19 @@ const handleRespuestas = async (respuestas) => {
   try {
     respuestasUsuario.value = respuestas;
     loadingGuion.value = true;
-    currentStep.value = 2;
+    currentStep.value = 3;
 
     console.log("🤖 Generando guiones completos...");
 
     const fullContext = {
       datosIniciales: datosIniciales.value,
+      planVideos: planConOverrides.value,
       respuestas: respuestas.map((resp, idx) => ({
         pregunta: preguntasIA.value[idx],
         respuesta: resp,
       })),
     };
 
-    // Callback de progreso para actualizar la UI
     const onProgress = (prog) => {
       progresoGeneracion.value = prog;
     };
@@ -208,7 +240,7 @@ const handleRespuestas = async (respuestas) => {
   } catch (error) {
     console.error("Error al generar guiones:", error);
     toast.error("Error al generar guiones: " + error.message);
-    currentStep.value = 1;
+    currentStep.value = 2;
   } finally {
     loadingGuion.value = false;
   }
@@ -222,7 +254,7 @@ const handleConfirmar = async () => {
     const ids = await guionesStore.saveVideosFromIA(guionGenerado.value);
     videosGuardados.value = ids;
 
-    currentStep.value = 3;
+    currentStep.value = 4;
     toast.success("Guiones guardados exitosamente");
   } catch (error) {
     console.error("Error al guardar guiones:", error);
@@ -239,6 +271,9 @@ const handleRegenerar = async () => {
 const reiniciarProceso = () => {
   currentStep.value = 0;
   datosIniciales.value = null;
+  planVideos.value = [];
+  metaPrevio.value = null;
+  planConOverrides.value = null;
   preguntasIA.value = null;
   respuestasUsuario.value = null;
   guionGenerado.value = null;

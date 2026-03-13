@@ -83,10 +83,10 @@
             </span>
             <!-- Formato visual -->
             <span
-              v-if="video.formato_visual_recomendado"
+              v-if="getFormatoVisual(video)"
               class="px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700"
             >
-              🎬 {{ video.formato_visual_recomendado }}
+              🎬 {{ getFormatoVisual(video) }}
             </span>
           </div>
 
@@ -702,6 +702,42 @@
               <div class="grid md:grid-cols-3 gap-4 text-sm">
                 <div>
                   <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    Etapa funnel
+                  </p>
+                  <p class="text-gray-900 uppercase">
+                    {{ video.fase_funnel || video.etapa_funnel || "tofu" }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    Formato visual sugerido
+                  </p>
+                  <p class="text-gray-900">
+                    {{ getFormatoVisual(video) }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
+                    Coherencia formato
+                  </p>
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded-full text-xs font-semibold',
+                      getFormatoCoherente(video)
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-orange-100 text-orange-700',
+                    ]"
+                  >
+                    {{
+                      getFormatoCoherente(video) ? "✓ Coherente" : "⚠ Revisar"
+                    }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
                     Tono narrativa
                   </p>
                   <p class="text-gray-900">
@@ -886,6 +922,48 @@ const estadoBadgeClass = (v) =>
     EDITANDO: "bg-yellow-100 text-yellow-700",
     PUBLICADO: "bg-green-100 text-green-700",
   })[v] || "bg-gray-100 text-gray-700";
+
+const inferirFormatoVisual = (videoData) => {
+  const fase = (
+    videoData?.fase_funnel ||
+    videoData?.etapa_funnel ||
+    "tofu"
+  ).toLowerCase();
+  if (videoData?.es_huevo_oro || fase === "mofu" || fase === "bofu") {
+    return "Cara a cámara + B-roll";
+  }
+  if (videoData?.tipo_contenido === "practico") {
+    return "Tutorial over-shoulder";
+  }
+  if (videoData?.narrativa === "estructurada") {
+    const porRuta = {
+      tecnica: "Pizarra / libreta",
+      viral: "Dueto / reacción",
+      amplia: "Metáfora física",
+    };
+    return porRuta[videoData?.ruta] || "Cara a cámara + B-roll";
+  }
+
+  const porRutaDirecta = {
+    tecnica: "Cara a cámara + B-roll",
+    viral: "Pantalla dividida (VS / antes-después)",
+    amplia: "Green screen (dashboard/comentarios)",
+  };
+  return porRutaDirecta[videoData?.ruta] || "Cara a cámara + B-roll";
+};
+
+const getFormatoVisual = (videoData) => {
+  return (
+    videoData?.formato_visual_recomendado || inferirFormatoVisual(videoData)
+  );
+};
+
+const getFormatoCoherente = (videoData) => {
+  if (videoData?.formato_coherente !== undefined) {
+    return Boolean(videoData.formato_coherente);
+  }
+  return true;
+};
 
 // ── Generador de prompts de imagen (Grok API) ──
 

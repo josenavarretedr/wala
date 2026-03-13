@@ -11,6 +11,17 @@ import {
 } from '@/services/guionesService';
 
 export const useGuionesStore = defineStore('guiones', () => {
+  const normalizarFase = (video) => {
+    const fase = String(video?.fase_funnel || video?.etapa_funnel || '')
+      .trim()
+      .toLowerCase();
+
+    if (fase === 'atraccion') return 'tofu';
+    if (fase === 'consideracion') return 'mofu';
+    if (fase === 'conversion') return 'bofu';
+    return fase;
+  };
+
   // Estado
   const videos = ref([]);
   const currentVideo = ref(null);
@@ -23,7 +34,9 @@ export const useGuionesStore = defineStore('guiones', () => {
     rutas: ['tecnica', 'viral', 'amplia'],
     tipos: ['educativo', 'practico'],
     narrativas: ['directa', 'estructurada'],
-    estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO']
+    estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO'],
+    fases: ['tofu', 'mofu', 'bofu'],              // nuevas opciones para fase de funnel
+    voces: ['A', 'B']                              // opciones para voz narrativa
   });
 
   // Filtros activos
@@ -33,6 +46,9 @@ export const useGuionesStore = defineStore('guiones', () => {
     tipo_contenido: null,
     narrativa: null,
     estado: null,
+    fase_funnel: null,       // filtro adicional para la etapa del funnel
+    voz: null,               // filtro por voz A/B
+    es_huevo_oro: null,      // booleano para seleccionar huevos de oro
     searchText: ''
   });
 
@@ -58,6 +74,19 @@ export const useGuionesStore = defineStore('guiones', () => {
 
     if (activeFilters.value.estado) {
       filtered = filtered.filter(v => v.estado === activeFilters.value.estado);
+    }
+
+    if (activeFilters.value.fase_funnel) {
+      const faseFiltro = String(activeFilters.value.fase_funnel).toLowerCase();
+      filtered = filtered.filter(v => normalizarFase(v) === faseFiltro);
+    }
+
+    if (activeFilters.value.voz) {
+      filtered = filtered.filter(v => v.voz === activeFilters.value.voz);
+    }
+
+    if (activeFilters.value.es_huevo_oro != null) {
+      filtered = filtered.filter(v => !!v.es_huevo_oro === activeFilters.value.es_huevo_oro);
     }
 
     if (activeFilters.value.searchText) {
@@ -88,6 +117,14 @@ export const useGuionesStore = defineStore('guiones', () => {
     };
   });
 
+  const videosPorFase = computed(() => {
+    return {
+      tofu: videos.value.filter(v => normalizarFase(v) === 'tofu').length,
+      mofu: videos.value.filter(v => normalizarFase(v) === 'mofu').length,
+      bofu: videos.value.filter(v => normalizarFase(v) === 'bofu').length
+    };
+  });
+
   // Actions
 
   /**
@@ -98,7 +135,15 @@ export const useGuionesStore = defineStore('guiones', () => {
       loading.value = true;
       error.value = null;
 
-      videos.value = await getVideos(filters);
+      const rawVideos = await getVideos(filters);
+      videos.value = rawVideos.map((video) => {
+        const fase = normalizarFase(video);
+        return {
+          ...video,
+          fase_funnel: fase || video.fase_funnel,
+          etapa_funnel: fase || video.etapa_funnel,
+        };
+      });
 
       console.log(`✅ ${videos.value.length} videos cargados en store`);
     } catch (err) {
@@ -267,6 +312,9 @@ export const useGuionesStore = defineStore('guiones', () => {
       tipo_contenido: null,
       narrativa: null,
       estado: null,
+      fase_funnel: null,
+      voz: null,
+      es_huevo_oro: null,
       searchText: ''
     };
   }
@@ -295,6 +343,7 @@ export const useGuionesStore = defineStore('guiones', () => {
     videosFiltered,
     videosPorVoz,
     videosPorEstado,
+    videosPorFase,
 
     // Actions
     loadVideos,

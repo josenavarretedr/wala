@@ -22,86 +22,190 @@ async function getPromptMaestro() {
 }
 
 /**
- * Serializa los datos iniciales del usuario según el tipo de input elegido.
- * Tipos: 'completo' | 'proporcion' | 'mixto' | 'minimo'
- * @param {Object} initialData
+ * Serializa los datos iniciales del usuario (flujo híbrido simplificado).
+ * @param {Object} initialData - { tema, sector_contexto, cantidad, fase_embudo }
  * @returns {string}
  */
 function serializarDatosIniciales(initialData) {
-  const tipo = initialData.tipo_input || 'minimo';
-
-  switch (tipo) {
-    case 'completo':
-      return `
-**Tipo de Input:** Completo
+  return `
 **Tema:** ${initialData.tema}
-**Ruta:** ${initialData.ruta}
-**Tipo de Contenido:** ${initialData.tipo_contenido}
-**Narrativa:** ${initialData.narrativa}
 **Sector/Contexto:** ${initialData.sector_contexto || 'No especificado'}
-**Cantidad de videos:** ${initialData.cantidad}`;
-
-    case 'proporcion':
-      return `
-**Tipo de Input:** Con Proporción
-**Tema:** ${initialData.tema}
-**Ruta:** ${initialData.ruta}
-**Videos Educativos:** ${initialData.educativos}
-**Videos Prácticos:** ${initialData.practicos}
-**Narrativa:** ${initialData.narrativa}
-**Sector/Contexto:** ${initialData.sector_contexto || 'No especificado'}
-**Cantidad total:** ${initialData.cantidad}`;
-
-    case 'mixto':
-      return `
-**Tipo de Input:** Mixto (Rutas + Narrativas)
-**Tema:** ${initialData.tema}
-**Distribución de contenido:**
-${JSON.stringify(initialData.contenido, null, 2)}
-**Sector/Contexto:** ${initialData.sector_contexto || 'No especificado'}
-**Cantidad total:** ${initialData.cantidad}`;
-
-    case 'minimo':
-    default:
-      return `
-**Tipo de Input:** Mínimo (IA decide distribución)
-**Tema:** ${initialData.tema}
 **Cantidad de videos:** ${initialData.cantidad}
-${initialData.sector_contexto ? `**Sector/Contexto:** ${initialData.sector_contexto}` : ''}`;
+**Fase de Embudo:** ${initialData.fase_embudo || 'auto'}`;
+}
+
+function inferirFormatoVisual({ ruta, narrativa, tipo_contenido, fase_funnel, es_huevo_oro }) {
+  if (es_huevo_oro || fase_funnel === 'mofu' || fase_funnel === 'bofu') {
+    return 'Cara a cámara + B-roll';
+  }
+
+  if (tipo_contenido === 'practico') {
+    return 'Tutorial over-shoulder';
+  }
+
+  if (narrativa === 'estructurada') {
+    const porRuta = {
+      tecnica: 'Pizarra / libreta',
+      viral: 'Dueto / reacción',
+      amplia: 'Metáfora física',
+    };
+    return porRuta[ruta] || 'Cara a cámara + B-roll';
+  }
+
+  const porRutaDirecta = {
+    tecnica: 'Cara a cámara + B-roll',
+    viral: 'Pantalla dividida (VS / antes-después)',
+    amplia: 'Green screen (dashboard/comentarios)',
+  };
+  return porRutaDirecta[ruta] || 'Cara a cámara + B-roll';
+}
+
+/**
+ * Mini-IA: Enriquece un tema simple en un hook orientado a retención TikTok.
+ * Ej: "costos" → "Cómo saber si tu negocio gana o pierde cada día"
+ * @param {string} tema
+ * @param {string} [sectorContexto]
+ * @returns {Promise<string>} - Tema enriquecido
+ */
+export async function mejorarTema(tema, sectorContexto) {
+  try {
+    const prompt = `Eres un experto en contenido viral para TikTok/Reels dirigido a emprendedores latinoamericanos.
+
+Dado este tema simple: "${tema}"
+${sectorContexto ? `Sector/contexto: "${sectorContexto}"` : ''}
+
+Transforma el tema en UNA sola oración gancho que:
+- Genere curiosidad inmediata
+- Sea específica (no genérica)
+- Hable a UN emprendedor (no "los emprendedores")
+- Máximo 15 palabras
+- Español neutro latinoamericano (sin voseo argentino)
+
+Responde SOLO con la oración, sin comillas, sin explicación.`;
+
+    const response = await grokProxy({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 100
+    });
+
+    const resultado = (response.data.content || '').trim();
+    console.log('✅ Tema mejorado:', resultado);
+    return resultado;
+  } catch (error) {
+    console.error('❌ Error al mejorar tema:', error);
+    throw error;
   }
 }
 
 /**
- * PASO 1: Usuario envía tema y configuración inicial
- * PASO 2: IA responde con preguntas de aclaración
+ * Analiza tema/sector/fase y genera un plan de distribución de videos.
+ * Grok decide: ruta, tipo, narrativa, voz, fase y huevos de oro por cada video.
  *
- * @param {Object} initialData - Según tipo_input: 'completo' | 'proporcion' | 'mixto' | 'minimo'
- * @returns {Promise<Object>} - { preguntas: string[], contexto_detectado: Object }
+ * @param {Object} inputs - { tema, sector_contexto, cantidad, fase_embudo }
+ * @returns {Promise<Object>} - { meta_previo, plan_videos[] }
  */
-export async function generarPreguntasAclaracion(initialData) {
+export async function analizarDistribucion(inputs) {
   try {
     const promptMaestro = await getPromptMaestro();
-    const datosSerializados = serializarDatosIniciales(initialData);
-    const esTipoMinimo = !initialData.tipo_input || initialData.tipo_input === 'minimo';
+    const datosSerializados = serializarDatosIniciales(inputs);
+
+    const faseInstruccion = inputs.fase_embudo === 'auto'
+      ? 'Infiere la mejor fase de embudo según el tema y sector. Puedes mezclar fases en el batch.'
+      : `El usuario seleccionó fase "${inputs.fase_embudo}". Respeta esta fase como principal.`;
 
     const prompt = `${promptMaestro}
 
 ---
 
-# INSTRUCCIÓN ACTUAL: PASO 02 - PREGUNTAS DE ACLARACIÓN
+# INSTRUCCIÓN: ANALIZAR Y DISTRIBUIR BATCH DE VIDEOS
+
+${datosSerializados}
+
+## REGLAS DE DISTRIBUCIÓN:
+- ${faseInstruccion}
+- Mapeo de fases: ToFu → preferir Viral/Directa. MoFu → preferir Técnica/Estructurada. BoFu → incluir Huevo(s) de Oro (narrativa OBLIGATORIAMENTE estructurada, duración 1-1.5min).
+- Distribución de voces: ~70% Voz A (José) / ~30% Voz B (WALA).
+- Maximizar variedad: no repetir la misma combinación ruta+tipo+narrativa en videos consecutivos.
+- Caso obligatorio en Técnica y Amplia (Voz A).
+- Gancho Triple W <12 palabras en narrativa Directa.
+- BoFu puede incluir 1 o más Huevos de Oro según la cantidad total de videos. Grok decide cuántos.
+- PROHIBIDO: narrativa "directa" en Huevo de Oro.
+- Buscar máxima retención en cada selección.
+
+**RESPONDE SOLO EN FORMATO JSON:**
+{
+  "meta_previo": {
+    "tema_enriquecido": "versión enriquecida del tema para hooks",
+    "fase_inferida": "tofu|mofu|bofu|mixta",
+    "estrategia": "oración describiendo la estrategia general del batch",
+    "razon_distribucion": "por qué esta distribución maximiza retención y variedad"
+  },
+  "plan_videos": [
+    {
+      "numero": 1,
+      "ruta": "tecnica|viral|amplia",
+      "tipo": "educativo|practico",
+      "narrativa": "directa|estructurada",
+      "voz": "A|B",
+      "fase_funnel": "tofu|mofu|bofu",
+      "es_huevo_oro": false,
+      "enfoque_breve": "una oración describiendo el ángulo de este video"
+    }
+  ]
+}`;
+
+    const response = await grokProxy({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4,
+      response_format: { type: 'json_object' },
+      max_tokens: 2000
+    });
+
+    const result = JSON.parse(response.data.content || '{}');
+    console.log('✅ Distribución analizada:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error al analizar distribución:', error);
+    throw error;
+  }
+}
+
+/**
+ * Genera preguntas de aclaración usando el plan de distribución como contexto.
+ *
+ * @param {Object} initialData - { tema, sector_contexto, cantidad, fase_embudo }
+ * @param {Array} planVideos - Plan de distribución generado por analizarDistribucion
+ * @returns {Promise<Object>} - { preguntas: string[], contexto_detectado: Object }
+ */
+export async function generarPreguntasAclaracion(initialData, planVideos) {
+  try {
+    const promptMaestro = await getPromptMaestro();
+    const datosSerializados = serializarDatosIniciales(initialData);
+
+    const planTexto = planVideos
+      ? `## PLAN DE DISTRIBUCIÓN YA DEFINIDO:
+${planVideos.map(v => `- Video ${v.numero}: Ruta=${v.ruta}, Tipo=${v.tipo}, Narrativa=${v.narrativa}, Voz=${v.voz}, Fase=${v.fase_funnel}${v.es_huevo_oro ? ' (Huevo de Oro)' : ''} → ${v.enfoque_breve}`).join('\n')}`
+      : '';
+
+    const prompt = `${promptMaestro}
+
+---
+
+# INSTRUCCIÓN ACTUAL: PREGUNTAS DE ACLARACIÓN
 
 El usuario quiere generar guiones con la siguiente información:
 ${datosSerializados}
 
-${esTipoMinimo
-        ? `Como el input es mínimo, pregunta:
-  1. ¿Qué ruta prefiere? (técnica / viral / amplia) — o IA decide
-  2. ¿Tipo de contenido? (educativo / práctico / mixto) — o IA decide
-  3. ¿Narrativa? (directa / estructurada) — o IA decide
-  4. ¿Sector/contexto específico para los guiones?`
-        : `Con base en el input del usuario, genera entre 2 y 4 preguntas de aclaración para generar guiones de máxima calidad según el promptGuion.md.
-  Enfócate en: sector_contexto específico, casos reales a usar, audiencia objetivo, y cualquier restricción o preferencia adicional.`
-      }
+${planTexto}
+
+Ya se decidió la distribución de rutas/tipos/narrativas. Genera entre 2 y 4 preguntas de aclaración enfocadas en:
+- Casos reales del sector para usar en los guiones
+- Audiencia objetivo específica (perfil del emprendedor ideal)
+- Restricciones o preferencias de tono/estilo
+- Detalles del sector que enriquezcan los ejemplos
+
+NO preguntes sobre ruta, tipo de contenido, narrativa o distribución — eso ya está decidido.
 
 **RESPONDE SOLO EN FORMATO JSON:**
 {
@@ -110,16 +214,17 @@ ${esTipoMinimo
     "¿Pregunta 2?"
   ],
   "contexto_detectado": {
-    "ruta_sugerida": "tecnica/viral/amplia",
-    "narrativa_sugerida": "directa/estructurada",
-    "distribucion_voces": "60% A / 40% B"
+    "sector_analizado": "descripción del sector detectado",
+    "audiencia_inferida": "perfil de audiencia inferido",
+    "tono_sugerido": "descripción del tono"
   }
 }`;
 
-    const response = await grokProxyExtended({
+    const response = await grokProxy({
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.3,
-      response_format: { type: 'json_object' }
+      response_format: { type: 'json_object' },
+      max_tokens: 1000
     });
 
     const content = response.data.content || '{}';
@@ -134,13 +239,66 @@ ${esTipoMinimo
 }
 
 /**
- * PASO 3: Usuario responde preguntas
- * PASO 4: IA genera JSON completo con guiones según nueva estructura
- * 
- * Estrategia: genera meta_analisis + generacion en una llamada rápida,
- * luego genera cada video individualmente para evitar timeouts del emulador (~120s).
+ * Sugiere respuestas para TODAS las preguntas de aclaración en una sola llamada a Grok.
+ * El resultado se inyecta directamente en los textareas de PreguntasIA.
  *
- * @param {Object} fullContext - { datosIniciales, respuestas }
+ * @param {string[]} preguntas - Array de preguntas generadas
+ * @param {{ tema: string, sector_contexto: string }} datosIniciales
+ * @param {Array} [planVideos] - Plan de distribución confirmado (con posibles overrides)
+ * @returns {Promise<string[]>} - Array de respuestas en el mismo orden que las preguntas
+ */
+export async function sugerirRespuestas(preguntas, datosIniciales, planVideos) {
+  try {
+    const planTexto = planVideos?.length
+      ? `\n## PLAN DE VIDEOS CONFIRMADO:\n${planVideos.map(v => `- Video ${v.numero}: ${v.ruta}/${v.tipo}/${v.narrativa} (${v.fase_funnel}${v.es_huevo_oro ? ', Huevo de Oro' : ''})`).join('\n')}`
+      : '';
+
+    const preguntasTexto = preguntas
+      .map((p, i) => `${i + 1}. ${p}`)
+      .join('\n');
+
+    const prompt = `Eres un experto en marketing de contenido para TikTok/Reels para emprendedores latinoamericanos.
+
+CONTEXTO DEL PROYECTO:
+- Tema: ${datosIniciales.tema}
+- Sector: ${datosIniciales.sector_contexto}${planTexto}
+
+TENIENDO EN CUENTA TODAS LAS PREGUNTAS A LA VEZ (para que las respuestas sean coherentes entre sí), responde cada una de forma concisa, práctica y específica para el sector dado. Las respuestas serán usadas para generar guiones de video cortos.
+
+PREGUNTAS:
+${preguntasTexto}
+
+RESPONDE SOLO EN FORMATO JSON:
+{
+  "respuestas": [
+    "respuesta a pregunta 1",
+    "respuesta a pregunta 2"
+  ]
+}`;
+
+    const response = await grokProxy({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.5,
+      response_format: { type: 'json_object' },
+      max_tokens: 800
+    });
+
+    const content = response.data.content || '{}';
+    const result = JSON.parse(content);
+
+    console.log('✅ Respuestas sugeridas por IA:', result);
+    return result.respuestas || [];
+  } catch (error) {
+    console.error('❌ Error al sugerir respuestas:', error);
+    throw error;
+  }
+}
+
+/**
+ * Genera los guiones completos usando el plan de distribución (con posibles overrides)
+ * y las respuestas de PreguntasIA.
+ *
+ * @param {Object} fullContext - { datosIniciales, respuestas, planVideos }
  * @param {Function} [onProgress] - Callback de progreso: ({ fase, videoActual, totalVideos })
  * @returns {Promise<Object>} - JSON con meta_analisis + generacion + videos[]
  */
@@ -149,6 +307,7 @@ export async function generarGuionesCompletos(fullContext, onProgress) {
     const promptMaestro = await getPromptMaestro();
     const datosSerializados = serializarDatosIniciales(fullContext.datosIniciales);
     const totalVideos = fullContext.datosIniciales.cantidad || 5;
+    const planVideos = fullContext.planVideos || [];
 
     const respuestasTexto = fullContext.respuestas
       .map((r, i) => `${i + 1}. **${r.pregunta}**\n   Respuesta: ${r.respuesta}`)
@@ -159,6 +318,11 @@ export async function generarGuionesCompletos(fullContext, onProgress) {
     // ═══════════════════════════════════════════════════
     if (onProgress) onProgress({ fase: 'estructura', videoActual: 0, totalVideos });
     console.log('📐 Generando estructura base (meta_analisis + generacion)...');
+
+    const planTexto = planVideos.length > 0
+      ? `## PLAN DE DISTRIBUCIÓN CONFIRMADO POR EL USUARIO:
+${planVideos.map(v => `- Video ${v.numero}: Ruta=${v.ruta}, Tipo=${v.tipo}, Narrativa=${v.narrativa}, Voz=${v.voz}, Fase=${v.fase_funnel}${v.es_huevo_oro ? ' (Huevo de Oro)' : ''} → ${v.enfoque_breve}`).join('\n')}`
+      : '';
 
     const estructuraPrompt = `${promptMaestro}
 
@@ -172,9 +336,11 @@ ${datosSerializados}
 ## RESPUESTAS A PREGUNTAS DE ACLARACIÓN:
 ${respuestasTexto}
 
+${planTexto}
+
 ---
 
-Genera SOLO la estructura base con meta_analisis y generacion. NO generes los videos aún.
+Genera SOLO la estructura base con meta_analisis y generacion usando el plan ya definido. NO generes los videos aún.
 
 **RESPONDE SOLO EN FORMATO JSON:**
 {
@@ -187,7 +353,7 @@ Genera SOLO la estructura base con meta_analisis y generacion. NO generes los vi
   },
   "generacion": {
     "tema": "string",
-    "fase_funnel": "atraccion",
+    "fase_funnel": "tofu|mofu|bofu",
     "total_videos": ${totalVideos},
     "distribucion_rutas": { "tecnicos": 0, "virales": 0, "amplios": 0 },
     "distribucion_tipos": { "educativos": 0, "practicos": 0 },
@@ -220,12 +386,12 @@ Genera SOLO la estructura base con meta_analisis y generacion. NO generes los vi
     // FASE 2: Generar cada video individualmente (~15-25s c/u)
     // ═══════════════════════════════════════════════════
     const videos = [];
-    const planVideos = estructura.plan_videos || [];
+    const planParaVideos = planVideos.length > 0 ? planVideos : (estructura.plan_videos || []);
 
     for (let i = 0; i < totalVideos; i++) {
       const videoNum = i + 1;
-      const planVideo = planVideos[i] || {};
-      
+      const planVideo = planParaVideos[i] || {};
+
       if (onProgress) onProgress({ fase: 'video', videoActual: videoNum, totalVideos });
       console.log(`🎬 Generando video ${videoNum} de ${totalVideos}...`);
 
@@ -247,9 +413,11 @@ ${JSON.stringify(estructura.meta_analisis, null, 2)}
 ## PLAN PARA ESTE VIDEO:
 - Número: ${videoNum}
 - Ruta: ${planVideo.ruta || 'tecnica'}
-- Tipo: ${planVideo.tipo_contenido || 'educativo'}
+- Tipo: ${planVideo.tipo_contenido || planVideo.tipo || 'educativo'}
 - Narrativa: ${planVideo.narrativa || 'directa'}
 - Voz: ${planVideo.voz || 'A'}
+- Fase: ${planVideo.fase_funnel || 'tofu'}
+- Huevo de Oro: ${planVideo.es_huevo_oro ? 'SÍ (1-1.5min, narrativa estructurada obligatoria)' : 'No'}
 - Enfoque: ${planVideo.enfoque_breve || 'A definir por IA'}
 
 ## VIDEOS YA GENERADOS (para no repetir perfiles de emprendedor):
@@ -269,9 +437,14 @@ Genera UN SOLO video con esta estructura JSON exacta:
   "tipo_contenido": "${planVideo.tipo_contenido || 'educativo'}",
   "narrativa": "${planVideo.narrativa || 'directa'}",
   "voz": "${planVideo.voz || 'A'}",
+  "fase_funnel": "${planVideo.fase_funnel || 'tofu'}",
+  "etapa_funnel": "${planVideo.fase_funnel || 'tofu'}",
+  "es_huevo_oro": ${Boolean(planVideo.es_huevo_oro)},
   "duracion_estimada": "60s",
   "sector_contexto": "descripción del sector aplicado a este video",
   "tema": "string",
+  "formato_visual_recomendado": "Cara a cámara + B-roll | Pantalla dividida (VS / antes-después) | Pizarra / libreta | Green screen (dashboard/comentarios) | Tutorial over-shoulder | Metáfora física | Lista errores comunes | Dueto / reacción",
+  "formato_coherente": true,
   "gancho": {
     "texto": "ORACIÓN COMPLETA de máx 15 palabras que genera curiosidad inmediata",
     "palabras_count": 12,
@@ -339,6 +512,7 @@ REGLAS FINALES PARA ESTE VIDEO:
 - Cada campo de guion_completo lleva prefijo de tiempo: [0-5s], [5-25s], etc.
 - micro_hooks: mínimo 3, TODOS con texto completo (no telegráfico).
 - Coherencia interna: mismo emprendedor/situación en todo el video.
+- Incluye SIEMPRE formato_visual_recomendado y formato_coherente según la etapa de funnel.
 
 Genera el JSON del video ${videoNum} AHORA.`;
 
@@ -349,7 +523,37 @@ Genera el JSON del video ${videoNum} AHORA.`;
         max_tokens: 3000
       });
 
-      const videoData = JSON.parse(videoResp.data.content || '{}');
+      const rawVideoData = JSON.parse(videoResp.data.content || '{}');
+
+      // Grok a veces devuelve la estructura completa del batch en lugar de un solo video.
+      // Si detectamos eso, extraemos el video correcto del array interno.
+      let videoData = rawVideoData;
+      if (rawVideoData.videos && Array.isArray(rawVideoData.videos)) {
+        console.warn(`⚠️ Video ${videoNum}: Grok devolvió estructura de batch en lugar de un video individual. Extrayendo...`);
+        videoData = rawVideoData.videos.find(v => v.numero === videoNum)
+          || rawVideoData.videos[0]
+          || rawVideoData;
+      }
+
+      const faseNormalizada = (videoData.fase_funnel || videoData.etapa_funnel || planVideo.fase_funnel || 'tofu').toLowerCase();
+      videoData.fase_funnel = faseNormalizada;
+      videoData.etapa_funnel = faseNormalizada;
+      videoData.es_huevo_oro = Boolean(videoData.es_huevo_oro ?? planVideo.es_huevo_oro);
+
+      if (!videoData.formato_visual_recomendado) {
+        videoData.formato_visual_recomendado = inferirFormatoVisual({
+          ruta: videoData.ruta || planVideo.ruta,
+          narrativa: videoData.narrativa || planVideo.narrativa,
+          tipo_contenido: videoData.tipo_contenido || planVideo.tipo_contenido || planVideo.tipo,
+          fase_funnel: faseNormalizada,
+          es_huevo_oro: videoData.es_huevo_oro,
+        });
+      }
+
+      if (videoData.formato_coherente === undefined) {
+        videoData.formato_coherente = true;
+      }
+
       videos.push(videoData);
       console.log(`✅ Video ${videoNum} generado`);
     }

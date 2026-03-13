@@ -1,6 +1,9 @@
 <template>
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-6 p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <!-- responsive grid: mobile 1 col, sm 2 cols, md 3 cols, lg 4 cols (incluye checkbox) -->
+    <div
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"
+    >
       <!-- Búsqueda de texto -->
       <div class="lg:col-span-2">
         <input
@@ -65,11 +68,68 @@
           <option value="estructurada">Estructurada</option>
         </select>
       </div>
+
+      <!-- Nuevo: Filtro por Fase del Funnel -->
+      <div>
+        <select
+          :value="activeFilters.fase_funnel || ''"
+          @change="
+            update(
+              'fase_funnel',
+              ($event.target.value || null)?.toLowerCase?.() || null,
+            )
+          "
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+        >
+          <option value="">Todas las fases</option>
+          <option v-for="fase in filterOptions.fases" :key="fase" :value="fase">
+            {{
+              fase === "tofu"
+                ? "ToFu"
+                : fase === "mofu"
+                  ? "MoFu"
+                  : fase === "bofu"
+                    ? "BoFu"
+                    : fase
+            }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Nuevo: Filtro por Voz -->
+      <div>
+        <select
+          :value="activeFilters.voz || ''"
+          @change="update('voz', $event.target.value || null)"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+        >
+          <option value="">Voz</option>
+          <option v-for="voz in filterOptions.voces" :key="voz" :value="voz">
+            {{ voz === "A" ? "José (A)" : voz === "B" ? "WALA (B)" : voz }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Nuevo: Checkbox huevos de oro -->
+      <div class="flex items-center mt-2 lg:mt-0">
+        <input
+          id="filtro-huevo"
+          type="checkbox"
+          :checked="activeFilters.es_huevo_oro === true"
+          @change="update('es_huevo_oro', $event.target.checked ? true : null)"
+          class="h-4 w-4 text-purple-600 border-gray-300 rounded"
+        />
+        <label for="filtro-huevo" class="ml-2 text-sm text-gray-700">
+          Sólo huevos de oro
+        </label>
+      </div>
     </div>
 
     <!-- Segunda fila: Estado + Limpiar -->
-    <div class="mt-3 flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
+    <div
+      class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+    >
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Filtro por Estado como pills -->
         <button
           v-for="estado in filterOptions.estados"
@@ -89,7 +149,7 @@
       <button
         v-if="hasActiveFilters"
         @click="clearFilters"
-        class="text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
+        class="text-sm text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap self-start sm:self-auto"
       >
         Limpiar filtros
       </button>
@@ -114,6 +174,9 @@ const hasActiveFilters = computed(
     props.activeFilters.tipo_contenido ||
     props.activeFilters.narrativa ||
     props.activeFilters.estado ||
+    props.activeFilters.fase_funnel ||
+    props.activeFilters.voz ||
+    props.activeFilters.es_huevo_oro != null ||
     props.activeFilters.searchText,
 );
 
@@ -133,6 +196,9 @@ const clearFilters = () => {
     tipo_contenido: null,
     narrativa: null,
     estado: null,
+    fase_funnel: null,
+    voz: null,
+    es_huevo_oro: null,
     searchText: "",
   });
 };

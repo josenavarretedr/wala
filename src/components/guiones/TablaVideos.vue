@@ -24,7 +24,17 @@
             <th
               class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
             >
+              Fase
+            </th>
+            <th
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+            >
               Ruta
+            </th>
+            <th
+              class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
+            >
+              Huevo
             </th>
             <th
               class="px-5 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider"
@@ -55,13 +65,13 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-100">
           <tr
-            v-for="video in videos"
+            v-for="(video, idx) in videos"
             :key="video.id"
             class="hover:bg-purple-50 transition-colors cursor-pointer"
             @click="$emit('edit', video.id)"
           >
             <!-- Número -->
-            <td class="px-5 py-3 text-sm text-gray-500">{{ video.numero }}</td>
+            <td class="px-5 py-3 text-sm text-gray-500">{{ idx + 1 }}</td>
 
             <!-- Tema / Gancho -->
             <td class="px-5 py-3 max-w-xs">
@@ -87,6 +97,22 @@
               </span>
             </td>
 
+            <!-- Fase de funnel -->
+            <td class="px-5 py-3">
+              <span
+                :class="[
+                  'px-2 py-0.5 rounded text-xs font-medium',
+                  {
+                    tofu: 'bg-amber-100 text-amber-700',
+                    mofu: 'bg-indigo-100 text-indigo-700',
+                    bofu: 'bg-red-100 text-red-700',
+                  }[video.fase_funnel] || 'bg-gray-100 text-gray-600',
+                ]"
+              >
+                {{ video.fase_funnel?.toUpperCase() }}
+              </span>
+            </td>
+
             <!-- Ruta -->
             <td class="px-5 py-3">
               <span
@@ -96,6 +122,16 @@
                 ]"
               >
                 {{ rutaLabel(video.ruta) }}
+              </span>
+            </td>
+
+            <!-- Huevo de oro -->
+            <td class="px-5 py-3">
+              <span
+                v-if="video.es_huevo_oro"
+                class="text-xs text-yellow-700 font-semibold"
+              >
+                ⭐
               </span>
             </td>
 

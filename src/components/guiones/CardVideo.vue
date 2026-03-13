@@ -11,6 +11,20 @@
         >
           {{ video.voz === "A" ? "José" : "WALA" }}
         </span>
+        <!-- fase badge -->
+        <span
+          v-if="video.fase_funnel"
+          :class="[
+            'px-2 py-0.5 rounded text-xs font-medium',
+            {
+              tofu: 'bg-amber-100 text-amber-700',
+              mofu: 'bg-indigo-100 text-indigo-700',
+              bofu: 'bg-red-100 text-red-700',
+            }[video.fase_funnel] || 'bg-gray-100 text-gray-600',
+          ]"
+        >
+          {{ video.fase_funnel.toUpperCase() }}
+        </span>
         <span
           :class="['px-2 py-0.5 rounded text-xs font-medium', rutaBadgeClass]"
         >
@@ -21,6 +35,7 @@
         >
           {{ video.estado }}
         </span>
+        <span v-if="video.es_huevo_oro" class="text-yellow-500">⭐</span>
       </div>
 
       <button

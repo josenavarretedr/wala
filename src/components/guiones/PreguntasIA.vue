@@ -1,8 +1,59 @@
 <template>
   <div>
     <h2 class="text-2xl font-bold text-gray-900 mb-4">
-      Paso 2: Preguntas de Aclaración
+      Preguntas de Aclaración
     </h2>
+
+    <!-- Resumen del plan (collapsible) -->
+    <div
+      v-if="planResumen"
+      class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 mb-6 border border-purple-100"
+    >
+      <button
+        type="button"
+        class="flex items-center justify-between w-full text-left"
+        @click="planAbierto = !planAbierto"
+      >
+        <span class="text-sm font-bold text-gray-900"
+          >Plan de videos confirmado</span
+        >
+        <svg
+          :class="[
+            'w-4 h-4 text-gray-500 transition-transform',
+            planAbierto && 'rotate-180',
+          ]"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          ></path>
+        </svg>
+      </button>
+      <div v-if="planAbierto" class="mt-3 flex flex-wrap gap-2">
+        <span
+          v-for="(video, idx) in planResumen"
+          :key="idx"
+          :class="[
+            'px-2 py-1 rounded text-xs font-medium',
+            video.es_huevo_oro
+              ? 'bg-amber-100 text-amber-700'
+              : video.fase_funnel?.toLowerCase() === 'tofu'
+                ? 'bg-green-100 text-green-700'
+                : video.fase_funnel?.toLowerCase() === 'mofu'
+                  ? 'bg-yellow-100 text-yellow-700'
+                  : 'bg-red-100 text-red-700',
+          ]"
+        >
+          #{{ video.numero }} {{ video.ruta }}/{{ video.narrativa }}
+          <template v-if="video.es_huevo_oro"> (Huevo Oro)</template>
+        </span>
+      </div>
+    </div>
 
     <div v-if="loading" class="flex flex-col items-center justify-center py-12">
       <div
@@ -14,10 +65,59 @@
     </div>
 
     <div v-else>
-      <p class="text-gray-600 mb-6">
-        La IA ha generado estas preguntas para crear guiones más precisos. Por
-        favor responde cada una:
-      </p>
+      <div class="flex items-center justify-between mb-6">
+        <p class="text-gray-600">
+          Responde cada pregunta o pide sugerencias a la IA:
+        </p>
+        <button
+          type="button"
+          :disabled="loadingIA"
+          @click="handleSugerirTodas"
+          class="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-100 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <svg
+            v-if="loadingIA"
+            class="w-4 h-4 animate-spin"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+            ></path>
+          </svg>
+          <svg
+            v-else
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 3l3.057-3 11.943 12-11.943 12L5 21l9-9-9-9z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="1.5"
+              d="M19 3l1 2M21 7l-2 1M17 3l-1 2"
+            />
+          </svg>
+          {{ loadingIA ? "Generando..." : "Sugerir todas con IA" }}
+        </button>
+      </div>
 
       <form @submit.prevent="handleSubmit" class="space-y-6">
         <div
@@ -35,6 +135,47 @@
             placeholder="Escribe tu respuesta aquí..."
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
           ></textarea>
+          <!-- Botón sparkles individual -->
+          <div class="flex justify-end mt-2">
+            <button
+              type="button"
+              :disabled="loadingIA"
+              @click="handleSugerirTodas(idx)"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <svg
+                v-if="loadingIA && idxActivo === idx"
+                class="w-3.5 h-3.5 animate-spin"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                ></path>
+              </svg>
+              <svg
+                v-else
+                class="w-3.5 h-3.5"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path
+                  d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2zM5 15l.75 2.25L8 18l-2.25.75L5 21l-.75-2.25L2 18l2.25-.75L5 15zM19 14l.75 2.25L22 17l-2.25.75L19 20l-.75-2.25L16 17l2.25-.75L19 14z"
+                />
+              </svg>
+              Sugerir con IA
+            </button>
+          </div>
         </div>
 
         <!-- Botones -->
@@ -86,7 +227,8 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, watch } from "vue";
+import { sugerirRespuestas } from "@/services/iaGuionesService";
 
 const props = defineProps({
   preguntas: {
@@ -97,11 +239,43 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  planResumen: {
+    type: Array,
+    default: null,
+  },
+  datosIniciales: {
+    type: Object,
+    default: null,
+  },
 });
 
 const emit = defineEmits(["submit", "back"]);
 
 const respuestas = ref([]);
+const planAbierto = ref(false);
+const loadingIA = ref(false);
+const idxActivo = ref(null);
+
+const handleSugerirTodas = async (idx = null) => {
+  if (loadingIA.value) return;
+  try {
+    loadingIA.value = true;
+    idxActivo.value = idx;
+    const sugeridas = await sugerirRespuestas(
+      props.preguntas,
+      props.datosIniciales || {},
+      props.planResumen || [],
+    );
+    sugeridas.forEach((resp, i) => {
+      if (resp) respuestas.value[i] = resp;
+    });
+  } catch (e) {
+    console.error("Error al sugerir respuestas:", e);
+  } finally {
+    loadingIA.value = false;
+    idxActivo.value = null;
+  }
+};
 
 // Inicializar respuestas vacías cuando cambien las preguntas
 watch(
