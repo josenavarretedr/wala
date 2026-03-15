@@ -338,7 +338,12 @@ RESPONDE SOLO EN FORMATO JSON:
     "respuesta a pregunta 1",
     "respuesta a pregunta 2"
   ]
-}`;
+}
+
+Reglas estrictas de salida:
+- "respuestas" debe ser un array de strings.
+- NO usar claves como "pregunta_1", "pregunta_2".
+- NO devolver objetos dentro del array.`;
 
     const response = await grokProxy({
       messages: [{ role: 'user', content: prompt }],
@@ -350,8 +355,53 @@ RESPONDE SOLO EN FORMATO JSON:
     const content = response.data.content || '{}';
     const result = JSON.parse(content);
 
+    const normalizarRespuestas = (raw, totalEsperado) => {
+      const aTexto = (value) => (typeof value === 'string' ? value.trim() : String(value || '').trim());
+
+      if (Array.isArray(raw)) {
+        if (raw.every((item) => typeof item === 'string')) {
+          return raw.map(aTexto).filter(Boolean).slice(0, totalEsperado);
+        }
+
+        if (raw.length === 1 && raw[0] && typeof raw[0] === 'object' && !Array.isArray(raw[0])) {
+          const obj = raw[0];
+          const clavesOrdenadas = Object.keys(obj).sort((a, b) => {
+            const na = Number((a.match(/(\d+)/) || [])[1] || Number.MAX_SAFE_INTEGER);
+            const nb = Number((b.match(/(\d+)/) || [])[1] || Number.MAX_SAFE_INTEGER);
+            return na - nb;
+          });
+          return clavesOrdenadas
+            .map((k) => aTexto(obj[k]))
+            .filter(Boolean)
+            .slice(0, totalEsperado);
+        }
+
+        return raw
+          .map((item) => aTexto(item))
+          .filter(Boolean)
+          .slice(0, totalEsperado);
+      }
+
+      if (raw && typeof raw === 'object') {
+        const clavesOrdenadas = Object.keys(raw).sort((a, b) => {
+          const na = Number((a.match(/(\d+)/) || [])[1] || Number.MAX_SAFE_INTEGER);
+          const nb = Number((b.match(/(\d+)/) || [])[1] || Number.MAX_SAFE_INTEGER);
+          return na - nb;
+        });
+        return clavesOrdenadas
+          .map((k) => aTexto(raw[k]))
+          .filter(Boolean)
+          .slice(0, totalEsperado);
+      }
+
+      return [];
+    };
+
+    const respuestasNormalizadas = normalizarRespuestas(result?.respuestas, preguntas?.length || 0);
+
     console.log('✅ Respuestas sugeridas por IA:', result);
-    return result.respuestas || [];
+    console.log('✅ Respuestas normalizadas:', respuestasNormalizadas);
+    return respuestasNormalizadas;
   } catch (error) {
     console.error('❌ Error al sugerir respuestas:', error);
     throw error;
