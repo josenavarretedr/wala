@@ -563,7 +563,8 @@ watch(
 function faseBadgeClass(fase) {
   const map = {
     tofu: "bg-green-100 text-green-700",
-    mofu: "bg-yellow-100 text-yellow-700",
+    mofu_a: "bg-yellow-100 text-yellow-700",
+    mofu_b: "bg-blue-100 text-blue-700",
     bofu: "bg-red-100 text-red-700",
   };
   return map[fase?.toLowerCase()] || "bg-gray-100 text-gray-700";
@@ -575,7 +576,12 @@ function inferirFormatoVisual(video) {
     video.etapa_funnel ||
     "tofu"
   ).toLowerCase();
-  if (video.es_huevo_oro || fase === "mofu" || fase === "bofu") {
+  if (
+    video.es_huevo_oro ||
+    fase === "mofu_a" ||
+    fase === "mofu_b" ||
+    fase === "bofu"
+  ) {
     return "Cara a cámara + B-roll";
   }
   if (video.tipo_contenido === "practico") {

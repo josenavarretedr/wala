@@ -51,7 +51,7 @@
       />
 
       <!-- Stats rápidas -->
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
         <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
           <div class="text-sm text-gray-600">Total</div>
           <div class="text-2xl font-bold text-gray-900">
@@ -84,9 +84,15 @@
           </div>
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
-          <div class="text-sm text-gray-600">MoFu</div>
+          <div class="text-sm text-gray-600">MoFu-A</div>
           <div class="text-2xl font-bold text-indigo-600">
-            {{ videosPorFase.mofu }}
+            {{ videosPorFase.mofu_a }}
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+          <div class="text-sm text-gray-600">MoFu-B</div>
+          <div class="text-2xl font-bold text-blue-600">
+            {{ videosPorFase.mofu_b }}
           </div>
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">

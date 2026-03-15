@@ -13,12 +13,26 @@ const grokProxyExtended = httpsCallable(functions, 'grokProxy', { timeout: 30000
  */
 async function getPromptMaestro() {
   try {
-    const response = await fetch('/src/assets/guiones/promptGuion.md');
+    const response = await fetch('/src/assets/guiones/prompt_guion.md');
     return await response.text();
   } catch (error) {
     console.error('❌ Error al cargar prompt maestro:', error);
     throw new Error('No se pudo cargar el prompt maestro');
   }
+}
+
+function normalizarFaseFunnelV8(value) {
+  const fase = String(value || '').trim().toLowerCase();
+  if (!fase) return '';
+  if (fase === 'tofu') return 'tofu';
+  if (fase === 'mofu_a') return 'mofu_a';
+  if (fase === 'mofu_b') return 'mofu_b';
+  if (fase === 'mofu') return 'mofu_b';
+  if (fase === 'bofu') return 'bofu';
+  if (fase === 'atraccion') return 'tofu';
+  if (fase === 'consideracion') return 'mofu_b';
+  if (fase === 'conversion') return 'bofu';
+  return fase;
 }
 
 /**
@@ -35,7 +49,7 @@ function serializarDatosIniciales(initialData) {
 }
 
 function inferirFormatoVisual({ ruta, narrativa, tipo_contenido, fase_funnel, es_huevo_oro }) {
-  if (es_huevo_oro || fase_funnel === 'mofu' || fase_funnel === 'bofu') {
+  if (es_huevo_oro || fase_funnel === 'mofu_a' || fase_funnel === 'mofu_b' || fase_funnel === 'mofu' || fase_funnel === 'bofu') {
     return 'Cara a cámara + B-roll';
   }
 
@@ -99,6 +113,55 @@ Responde SOLO con la oración, sin comillas, sin explicación.`;
 }
 
 /**
+ * Sugiere sectores/contextos de negocio para autocompletar el formulario.
+ *
+ * @param {Object} params
+ * @param {string} [params.tema]
+ * @param {number} [params.cantidad=10]
+ * @returns {Promise<string[]>}
+ */
+export async function sugerirSectoresContexto({ tema, cantidad = 10 } = {}) {
+  try {
+    const prompt = `Eres un asistente de marketing para emprendedores latinoamericanos.
+
+Genera exactamente ${cantidad} opciones de "sector/contexto" de negocio, breves, concretas y útiles para crear guiones de video.
+${tema ? `Tema del usuario: "${tema}"` : 'No hay tema definido; sugiere opciones variadas.'}
+
+Reglas:
+- Cada opción debe ser una sola línea corta (máximo 10 palabras).
+- Español neutro latinoamericano.
+- Incluir variedad real de rubros y tamaños de negocio.
+- NO repetir opciones.
+- NO enumerar, NO emojis, NO explicaciones.
+
+Responde SOLO en JSON con esta forma exacta:
+{
+  "sectores": ["opcion 1", "opcion 2"]
+}`;
+
+    const response = await grokProxy({
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.8,
+      response_format: { type: 'json_object' },
+      max_tokens: 500,
+    });
+
+    const parsed = JSON.parse(response.data.content || '{}');
+    const sectores = Array.isArray(parsed.sectores)
+      ? parsed.sectores
+        .map((s) => String(s || '').trim())
+        .filter(Boolean)
+        .slice(0, cantidad)
+      : [];
+
+    return sectores;
+  } catch (error) {
+    console.error('❌ Error al sugerir sectores/contextos:', error);
+    throw error;
+  }
+}
+
+/**
  * Analiza tema/sector/fase y genera un plan de distribución de videos.
  * Grok decide: ruta, tipo, narrativa, voz, fase y huevos de oro por cada video.
  *
@@ -124,20 +187,21 @@ ${datosSerializados}
 
 ## REGLAS DE DISTRIBUCIÓN:
 - ${faseInstruccion}
-- Mapeo de fases: ToFu → preferir Viral/Directa. MoFu → preferir Técnica/Estructurada. BoFu → incluir Huevo(s) de Oro (narrativa OBLIGATORIAMENTE estructurada, duración 1-1.5min).
+- Mapeo de fases V8: TOFU → preferir Viral/Directa (40-60s). MOFU-A → activación Premium (1 min). MOFU-B → consideración con CTA dual (1-1.5 min, estructurada). BOFU → conversión con llamada diagnóstico gratis (1-2 min, estructurada, voz A).
 - Distribución de voces: ~70% Voz A (José) / ~30% Voz B (WALA).
 - Maximizar variedad: no repetir la misma combinación ruta+tipo+narrativa en videos consecutivos.
 - Caso obligatorio en Técnica y Amplia (Voz A).
 - Gancho Triple W <12 palabras en narrativa Directa.
-- BoFu puede incluir 1 o más Huevos de Oro según la cantidad total de videos. Grok decide cuántos.
+- MOFU-B y BOFU usan narrativa estructurada obligatoria. BOFU solo voz A.
 - PROHIBIDO: narrativa "directa" en Huevo de Oro.
+- Si la IA produce "mofu" sin sufijo, autocorregir a "mofu_b".
 - Buscar máxima retención en cada selección.
 
 **RESPONDE SOLO EN FORMATO JSON:**
 {
   "meta_previo": {
     "tema_enriquecido": "versión enriquecida del tema para hooks",
-    "fase_inferida": "tofu|mofu|bofu|mixta",
+    "fase_inferida": "tofu|mofu_a|mofu_b|bofu|mixta",
     "estrategia": "oración describiendo la estrategia general del batch",
     "razon_distribucion": "por qué esta distribución maximiza retención y variedad"
   },
@@ -148,7 +212,7 @@ ${datosSerializados}
       "tipo": "educativo|practico",
       "narrativa": "directa|estructurada",
       "voz": "A|B",
-      "fase_funnel": "tofu|mofu|bofu",
+      "fase_funnel": "tofu|mofu_a|mofu_b|bofu",
       "es_huevo_oro": false,
       "enfoque_breve": "una oración describiendo el ángulo de este video"
     }
@@ -353,7 +417,7 @@ Genera SOLO la estructura base con meta_analisis y generacion usando el plan ya 
   },
   "generacion": {
     "tema": "string",
-    "fase_funnel": "tofu|mofu|bofu",
+    "fase_funnel": "tofu|mofu_a|mofu_b|bofu",
     "total_videos": ${totalVideos},
     "distribucion_rutas": { "tecnicos": 0, "virales": 0, "amplios": 0 },
     "distribucion_tipos": { "educativos": 0, "practicos": 0 },
@@ -391,6 +455,7 @@ Genera SOLO la estructura base con meta_analisis y generacion usando el plan ya 
     for (let i = 0; i < totalVideos; i++) {
       const videoNum = i + 1;
       const planVideo = planParaVideos[i] || {};
+      const fasePlan = normalizarFaseFunnelV8(planVideo.fase_funnel || fullContext.datosIniciales?.fase_embudo || 'tofu') || 'tofu';
 
       if (onProgress) onProgress({ fase: 'video', videoActual: videoNum, totalVideos });
       console.log(`🎬 Generando video ${videoNum} de ${totalVideos}...`);
@@ -416,7 +481,7 @@ ${JSON.stringify(estructura.meta_analisis, null, 2)}
 - Tipo: ${planVideo.tipo_contenido || planVideo.tipo || 'educativo'}
 - Narrativa: ${planVideo.narrativa || 'directa'}
 - Voz: ${planVideo.voz || 'A'}
-- Fase: ${planVideo.fase_funnel || 'tofu'}
+- Fase: ${fasePlan}
 - Huevo de Oro: ${planVideo.es_huevo_oro ? 'SÍ (1-1.5min, narrativa estructurada obligatoria)' : 'No'}
 - Enfoque: ${planVideo.enfoque_breve || 'A definir por IA'}
 
@@ -437,8 +502,8 @@ Genera UN SOLO video con esta estructura JSON exacta:
   "tipo_contenido": "${planVideo.tipo_contenido || 'educativo'}",
   "narrativa": "${planVideo.narrativa || 'directa'}",
   "voz": "${planVideo.voz || 'A'}",
-  "fase_funnel": "${planVideo.fase_funnel || 'tofu'}",
-  "etapa_funnel": "${planVideo.fase_funnel || 'tofu'}",
+  "fase_funnel": "${fasePlan}",
+  "etapa_funnel": "${fasePlan}",
   "es_huevo_oro": ${Boolean(planVideo.es_huevo_oro)},
   "duracion_estimada": "60s",
   "sector_contexto": "descripción del sector aplicado a este video",
@@ -479,6 +544,7 @@ Genera UN SOLO video con esta estructura JSON exacta:
     "formato": "link_perfil|registro_gratis|seguir_perfil",
     "texto_completo": "Oración completa del CTA",
     "mencion_wala": "directa",
+    "mencion_asesoria": false,
     "beneficio_especifico": "Qué obtiene el espectador"
   },
   "storytelling": {
@@ -513,6 +579,12 @@ REGLAS FINALES PARA ESTE VIDEO:
 - micro_hooks: mínimo 3, TODOS con texto completo (no telegráfico).
 - Coherencia interna: mismo emprendedor/situación en todo el video.
 - Incluye SIEMPRE formato_visual_recomendado y formato_coherente según la etapa de funnel.
+- etapa_funnel SOLO puede ser: tofu, mofu_a, mofu_b o bofu. Si detectas "mofu", corrígelo a "mofu_b".
+- Reglas CTA por etapa (obligatorias):
+  - tofu: cta.texto_completo NO puede contener "Premium", "programa", "asesoría", "llamada", "diagnóstico". cta.mencion_asesoria=false.
+  - mofu_a: cta.texto_completo debe incluir "Premium" y "7 días gratis". NO puede contener "programa" ni "llamada". cta.mencion_asesoria=false.
+  - mofu_b: CTA dual obligatorio dentro de guion_completo.cta (momento Premium + momento programa/llamada). cta.mencion_asesoria=true. Nunca incluir precio numérico.
+  - bofu: voz obligatoria "A". cta.texto_completo debe incluir "diagnóstico gratis" y "WALA Premium incluido". cta.mencion_asesoria=true. Nunca incluir precio numérico.
 
 Genera el JSON del video ${videoNum} AHORA.`;
 
@@ -535,7 +607,11 @@ Genera el JSON del video ${videoNum} AHORA.`;
           || rawVideoData;
       }
 
-      const faseNormalizada = (videoData.fase_funnel || videoData.etapa_funnel || planVideo.fase_funnel || 'tofu').toLowerCase();
+      const faseOriginal = videoData.fase_funnel || videoData.etapa_funnel || fasePlan || 'tofu';
+      const faseNormalizada = normalizarFaseFunnelV8(faseOriginal) || 'tofu';
+      if (String(faseOriginal).trim().toLowerCase() === 'mofu') {
+        console.warn(`⚠️ Video ${videoNum}: fase "mofu" autocorregida a "mofu_b" (V8).`);
+      }
       videoData.fase_funnel = faseNormalizada;
       videoData.etapa_funnel = faseNormalizada;
       videoData.es_huevo_oro = Boolean(videoData.es_huevo_oro ?? planVideo.es_huevo_oro);

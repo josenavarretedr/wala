@@ -19,15 +19,20 @@ const COLLECTION_PATH = 'marketing/guiones/videos';
 function normalizarFaseFunnel(value) {
   const fase = String(value || '').trim().toLowerCase();
   if (!fase) return '';
+  if (fase === 'tofu') return 'tofu';
+  if (fase === 'mofu_a') return 'mofu_a';
+  if (fase === 'mofu_b') return 'mofu_b';
+  if (fase === 'mofu') return 'mofu_b';
+  if (fase === 'bofu') return 'bofu';
   if (fase === 'atraccion') return 'tofu';
-  if (fase === 'consideracion') return 'mofu';
+  if (fase === 'consideracion') return 'mofu_b';
   if (fase === 'conversion') return 'bofu';
   return fase;
 }
 
 /**
  * Guarda un video individual en Firestore.
- * Espera la estructura del FORMATO JSON OUTPUT del promptGuion.md.
+ * Espera la estructura del FORMATO JSON OUTPUT del prompt_guion.md.
  * @param {Object} videoData
  * @returns {Promise<string>} - ID del video guardado
  */
@@ -35,9 +40,14 @@ export async function saveVideo(videoData) {
   try {
     const videoId = generateVideoId(videoData);
     const videoRef = doc(db, COLLECTION_PATH, videoId);
+    const faseNormalizada = normalizarFaseFunnel(
+      videoData.fase_funnel || videoData.etapa_funnel || 'tofu'
+    ) || 'tofu';
 
     const dataToSave = {
       ...videoData,
+      fase_funnel: faseNormalizada,
+      etapa_funnel: faseNormalizada,
       estado: videoData.estado || 'GRABANDO',
       comentarios: videoData.comentarios || '',
       createdAt: Timestamp.now(),
@@ -163,7 +173,21 @@ export async function getVideos(filters = {}) {
 export async function updateVideo(videoId, updates) {
   try {
     const videoRef = doc(db, COLLECTION_PATH, videoId);
-    await updateDoc(videoRef, { ...updates, updatedAt: Timestamp.now() });
+    const faseNormalizada = normalizarFaseFunnel(
+      updates?.fase_funnel || updates?.etapa_funnel
+    );
+
+    const normalizedUpdates = {
+      ...updates,
+      updatedAt: Timestamp.now()
+    };
+
+    if (faseNormalizada) {
+      normalizedUpdates.fase_funnel = faseNormalizada;
+      normalizedUpdates.etapa_funnel = faseNormalizada;
+    }
+
+    await updateDoc(videoRef, normalizedUpdates);
     console.log('✅ Video actualizado:', videoId);
   } catch (error) {
     console.error('❌ Error al actualizar video:', error);
@@ -245,7 +269,7 @@ export async function getFilterOptions() {
       tipos: ['educativo', 'practico'],
       narrativas: ['directa', 'estructurada'],
       estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO'],
-      fases: ['tofu', 'mofu', 'bofu'],
+      fases: ['tofu', 'mofu_a', 'mofu_b', 'bofu'],
       voces: ['A', 'B']
     };
   }

@@ -104,7 +104,8 @@
                   'px-2 py-0.5 rounded text-xs font-medium',
                   {
                     tofu: 'bg-amber-100 text-amber-700',
-                    mofu: 'bg-indigo-100 text-indigo-700',
+                    mofu_a: 'bg-indigo-100 text-indigo-700',
+                    mofu_b: 'bg-blue-100 text-blue-700',
                     bofu: 'bg-red-100 text-red-700',
                   }[video.fase_funnel] || 'bg-gray-100 text-gray-600',
                 ]"

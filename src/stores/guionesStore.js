@@ -16,8 +16,14 @@ export const useGuionesStore = defineStore('guiones', () => {
       .trim()
       .toLowerCase();
 
+    if (!fase) return '';
+    if (fase === 'tofu') return 'tofu';
+    if (fase === 'mofu_a') return 'mofu_a';
+    if (fase === 'mofu_b') return 'mofu_b';
+    if (fase === 'mofu') return 'mofu_b';
+    if (fase === 'bofu') return 'bofu';
     if (fase === 'atraccion') return 'tofu';
-    if (fase === 'consideracion') return 'mofu';
+    if (fase === 'consideracion') return 'mofu_b';
     if (fase === 'conversion') return 'bofu';
     return fase;
   };
@@ -35,7 +41,7 @@ export const useGuionesStore = defineStore('guiones', () => {
     tipos: ['educativo', 'practico'],
     narrativas: ['directa', 'estructurada'],
     estados: ['GRABANDO', 'EDITANDO', 'PUBLICADO'],
-    fases: ['tofu', 'mofu', 'bofu'],              // nuevas opciones para fase de funnel
+    fases: ['tofu', 'mofu_a', 'mofu_b', 'bofu'],              // nuevas opciones para fase de funnel
     voces: ['A', 'B']                              // opciones para voz narrativa
   });
 
@@ -118,10 +124,16 @@ export const useGuionesStore = defineStore('guiones', () => {
   });
 
   const videosPorFase = computed(() => {
+    const tofu = videos.value.filter(v => normalizarFase(v) === 'tofu').length;
+    const mofu_a = videos.value.filter(v => normalizarFase(v) === 'mofu_a').length;
+    const mofu_b = videos.value.filter(v => normalizarFase(v) === 'mofu_b').length;
+    const bofu = videos.value.filter(v => normalizarFase(v) === 'bofu').length;
+
     return {
-      tofu: videos.value.filter(v => normalizarFase(v) === 'tofu').length,
-      mofu: videos.value.filter(v => normalizarFase(v) === 'mofu').length,
-      bofu: videos.value.filter(v => normalizarFase(v) === 'bofu').length
+      tofu,
+      mofu_a,
+      mofu_b,
+      bofu
     };
   });
 
@@ -146,6 +158,7 @@ export const useGuionesStore = defineStore('guiones', () => {
       });
 
       console.log(`✅ ${videos.value.length} videos cargados en store`);
+      console.log({ videos: videos.value });
     } catch (err) {
       error.value = err.message;
       console.error('❌ Error al cargar videos en store:', err);

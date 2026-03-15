@@ -86,11 +86,13 @@
             {{
               fase === "tofu"
                 ? "ToFu"
-                : fase === "mofu"
-                  ? "MoFu"
-                  : fase === "bofu"
-                    ? "BoFu"
-                    : fase
+                : fase === "mofu_a"
+                  ? "MoFu-A"
+                  : fase === "mofu_b"
+                    ? "MoFu-B"
+                    : fase === "bofu"
+                      ? "BoFu"
+                      : fase
             }}
           </option>
         </select>

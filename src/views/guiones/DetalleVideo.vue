@@ -929,7 +929,12 @@ const inferirFormatoVisual = (videoData) => {
     videoData?.etapa_funnel ||
     "tofu"
   ).toLowerCase();
-  if (videoData?.es_huevo_oro || fase === "mofu" || fase === "bofu") {
+  if (
+    videoData?.es_huevo_oro ||
+    fase === "mofu_a" ||
+    fase === "mofu_b" ||
+    fase === "bofu"
+  ) {
     return "Cara a cámara + B-roll";
   }
   if (videoData?.tipo_contenido === "practico") {
