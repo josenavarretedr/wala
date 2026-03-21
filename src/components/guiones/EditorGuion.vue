@@ -1,3 +1,4 @@
+<!-- EditorGuion.vue  -->
 <template>
   <div v-if="timelineItems.length > 0" class="relative">
     <!-- TIMELINE LINE -->
@@ -17,6 +18,7 @@
             :class="[
               'w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm',
               item.dotColor,
+              item.canRegenerate && 'ring-2 ring-offset-1 ring-violet-300',
             ]"
           >
             {{ item.icon }}
@@ -50,6 +52,36 @@
             >
               {{ item.badge }}
             </span>
+            <span
+              v-if="
+                props.videoContext?.hormozi_elementos &&
+                item.rawKey === 'desarrollo' &&
+                props.videoContext?.over_delivery?.presente === true
+              "
+              class="bg-amber-100 text-amber-600 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+            >
+              ✦ Over-delivery
+            </span>
+            <span
+              v-if="
+                props.videoContext?.hormozi_elementos &&
+                item.rawKey === 'cta' &&
+                props.videoContext?.hormozi_elementos?.garantia_en_cta === true
+              "
+              class="bg-emerald-100 text-emerald-700 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+            >
+              ✓ Garantía
+            </span>
+            <span
+              v-if="
+                props.videoContext?.hormozi_elementos &&
+                item.rawKey === 'cta' &&
+                props.videoContext?.hormozi_elementos?.urgencia_en_cta === true
+              "
+              class="bg-amber-100 text-amber-700 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+            >
+              ⚡ Urgencia
+            </span>
             <!-- Indicador de edición pendiente -->
             <span
               v-if="item.hasLocalEdit"
@@ -80,95 +112,104 @@
                 "
                 rows="4"
                 class="w-full text-sm text-gray-800 bg-white border border-violet-300 rounded-lg px-3 py-2 resize-y focus:outline-none focus:ring-2 focus:ring-violet-400 leading-relaxed"
-                placeholder="Texto generado aparecerá aquí..."
+                placeholder="La nueva versión generada aparecerá aquí. Podés editarla antes de guardar."
               />
+              <p class="text-[10px] text-gray-400 text-right mt-0.5">
+                {{
+                  (editTexts[item.rawKey] || "").split(" ").filter(Boolean)
+                    .length
+                }}
+                palabras
+              </p>
             </div>
 
             <!-- Botones de acción -->
-            <div class="flex items-center gap-2 flex-wrap">
-              <!-- Botón Sparks: regenerar -->
-              <button
-                @click="regenerarSeccion(item.rawKey, item.timestamp)"
-                :disabled="regenerating[item.rawKey]"
-                :class="[
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                  regenerating[item.rawKey]
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 hover:border-violet-300',
-                ]"
-              >
-                <!-- Sparks icon (Iconoir) -->
-                <svg
-                  v-if="!regenerating[item.rawKey]"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.75"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+            <div class="border-t border-gray-100 pt-2 mt-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Botón Sparks: regenerar -->
+                <button
+                  @click="regenerarSeccion(item.rawKey, item.timestamp)"
+                  :disabled="regenerating[item.rawKey]"
+                  :class="[
+                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                    regenerating[item.rawKey]
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-violet-50 text-violet-700 hover:bg-violet-100 border border-violet-200 hover:border-violet-300',
+                  ]"
                 >
-                  <path
-                    d="M8 15C12.8747 15 15 12.8747 15 8C15 12.8747 17.1253 15 22 15C17.1253 15 15 17.1253 15 22C15 17.1253 12.8747 15 8 15Z"
-                  />
-                  <path
-                    d="M2 6.5C5.13376 6.5 6.5 5.13376 6.5 2C6.5 5.13376 7.86624 6.5 11 6.5C7.86624 6.5 6.5 7.86624 6.5 11C6.5 7.86624 5.13376 6.5 2 6.5Z"
-                  />
-                </svg>
-                <!-- Spinner -->
-                <svg
-                  v-else
-                  class="animate-spin"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
+                  <!-- Sparks icon (Iconoir) -->
+                  <svg
+                    v-if="!regenerating[item.rawKey]"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
                     stroke="currentColor"
-                    stroke-width="4"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v8H4z"
-                  />
-                </svg>
-                {{
-                  regenerating[item.rawKey]
-                    ? "Generando..."
-                    : "Regenerar con IA"
-                }}
-              </button>
+                    stroke-width="1.75"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M8 15C12.8747 15 15 12.8747 15 8C15 12.8747 17.1253 15 22 15C17.1253 15 15 17.1253 15 22C15 17.1253 12.8747 15 8 15Z"
+                    />
+                    <path
+                      d="M2 6.5C5.13376 6.5 6.5 5.13376 6.5 2C6.5 5.13376 7.86624 6.5 11 6.5C7.86624 6.5 6.5 7.86624 6.5 11C6.5 7.86624 5.13376 6.5 2 6.5Z"
+                    />
+                  </svg>
+                  <!-- Spinner -->
+                  <svg
+                    v-else
+                    class="animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    />
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    />
+                  </svg>
+                  {{
+                    regenerating[item.rawKey]
+                      ? "Generando..."
+                      : "Regenerar con IA"
+                  }}
+                </button>
 
-              <!-- Botón descartar (solo si hay edición local) -->
-              <button
-                v-if="item.hasLocalEdit"
-                @click="descartarEdicion(item.rawKey)"
-                class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+                <!-- Botón descartar (solo si hay edición local) -->
+                <button
+                  v-if="item.hasLocalEdit"
+                  @click="descartarEdicion(item.rawKey)"
+                  class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-all"
                 >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
-                Descartar
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Descartar
+                </button>
+              </div>
             </div>
           </div>
 
@@ -376,8 +417,14 @@
       </div>
     </div>
   </div>
-  <div v-else class="text-sm text-gray-400 text-center py-6">
-    No hay guion disponible
+  <div v-else class="py-6">
+    <p class="text-sm text-gray-400 text-center">
+      No hay guion disponible para este video.
+    </p>
+    <p class="text-xs text-gray-300 text-center mt-1">
+      Esto puede ocurrir en videos generados con versiones anteriores del
+      sistema o si el guion no fue guardado correctamente.
+    </p>
   </div>
 </template>
 
@@ -480,6 +527,36 @@ const SECTION_DEFS = [
     timestampClass: "bg-green-100 text-green-700",
     badge: null,
     badgeClass: "",
+  },
+  {
+    key: "costo_inaccion",
+    label: "Costo de inacción",
+    icon: "⚡",
+    dotColor: "bg-orange-500",
+    cardClass: "bg-orange-50 border-orange-200",
+    timestampClass: "bg-orange-100 text-orange-700",
+    badge: "Hormozi Módulo 6",
+    badgeClass: "bg-orange-200 text-orange-700",
+  },
+  {
+    key: "garantia",
+    label: "Garantía",
+    icon: "🛡️",
+    dotColor: "bg-emerald-600",
+    cardClass: "bg-emerald-50 border-emerald-200",
+    timestampClass: "bg-emerald-100 text-emerald-700",
+    badge: "Inversión de riesgo",
+    badgeClass: "bg-emerald-100 text-emerald-700",
+  },
+  {
+    key: "urgencia",
+    label: "Urgencia",
+    icon: "⏳",
+    dotColor: "bg-amber-500",
+    cardClass: "bg-amber-50 border-amber-200",
+    timestampClass: "bg-amber-100 text-amber-700",
+    badge: "Hormozi Módulo 5",
+    badgeClass: "bg-amber-200 text-amber-700",
   },
 ];
 

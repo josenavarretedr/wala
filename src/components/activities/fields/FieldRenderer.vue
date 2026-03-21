@@ -30,6 +30,7 @@ const componentMap = {
   text: FieldText,
   file: FieldFile,
   select: FieldSelect,
+  options: FieldSelect,
   attendance: FieldAttendance,
 };
 

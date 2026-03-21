@@ -1,3 +1,5 @@
+// iaGuionesService.js
+
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '@/firebaseInit';
 
@@ -13,8 +15,15 @@ const grokProxyExtended = httpsCallable(functions, 'grokProxy', { timeout: 30000
  */
 async function getPromptMaestro() {
   try {
+
     const response = await fetch('/src/assets/guiones/prompt_guion.md');
-    return await response.text();
+    const text = await response.text();
+    // DIAGNÓSTICO: si esto imprime menos de 5000, el fetch falló
+    console.log(`📄 Prompt maestro cargado: ${text.length} caracteres`);
+    if (text.length < 5000) {
+      console.error('❌ ALERTA: Prompt maestro demasiado corto — probable fallo de fetch en producción');
+    }
+    return text;
   } catch (error) {
     console.error('❌ Error al cargar prompt maestro:', error);
     throw new Error('No se pudo cargar el prompt maestro');
@@ -27,7 +36,7 @@ function normalizarFaseFunnelV8(value) {
   if (fase === 'tofu') return 'tofu';
   if (fase === 'mofu_a') return 'mofu_a';
   if (fase === 'mofu_b') return 'mofu_b';
-  if (fase === 'mofu') return 'mofu_b';
+  if (fase === 'mofu') return 'mofu_a';
   if (fase === 'bofu') return 'bofu';
   if (fase === 'atraccion') return 'tofu';
   if (fase === 'consideracion') return 'mofu_b';
@@ -185,17 +194,21 @@ export async function analizarDistribucion(inputs) {
 
 ${datosSerializados}
 
-## REGLAS DE DISTRIBUCIÓN:
+## REGLAS DE DISTRIBUCIÓN V9:
 - ${faseInstruccion}
-- Mapeo de fases V8: TOFU → preferir Viral/Directa (40-60s). MOFU-A → activación Premium (1 min). MOFU-B → consideración con CTA dual (1-1.5 min, estructurada). BOFU → conversión con llamada diagnóstico gratis (1-2 min, estructurada, voz A).
-- Distribución de voces: ~70% Voz A (José) / ~30% Voz B (WALA).
+- Mapeo de fases V9:
+  TOFU → preferir Viral o Técnica con narrativa Directa (40-60s). Gancho anclado a resultado identitario (miedo/caos/tranquilidad). Over-delivery obligatorio en el desarrollo.
+  MOFU-A → Huevo de Oro profundo 1-1.5 min, narrativa Estructurada obligatoria. CTA dual. Costo de inacción obligatorio. Urgencia en CTA Momento 2. Voz A obligatoria.
+  MOFU-B → Huevo de Oro suave ~1 min, narrativa Directa o Estructurada. Solo mención de WALA Premium, sin programa. Voz B obligatoria.
+  BOFU → video personal 1-2 min, narrativa Estructurada obligatoria, solo Voz A. CTA con diagnóstico gratis + garantía de resultado + urgencia.
+- Distribución de voces: ~70% Voz A (José) / ~30% Voz B (WALA). BOFU siempre Voz A. Voz B nunca en BOFU.
 - Maximizar variedad: no repetir la misma combinación ruta+tipo+narrativa en videos consecutivos.
-- Caso obligatorio en Técnica y Amplia (Voz A).
-- Gancho Triple W <12 palabras en narrativa Directa.
-- MOFU-B y BOFU usan narrativa estructurada obligatoria. BOFU solo voz A.
-- PROHIBIDO: narrativa "directa" en Huevo de Oro.
-- Si la IA produce "mofu" sin sufijo, autocorregir a "mofu_b".
-- Buscar máxima retención en cada selección.
+- Caso obligatorio en rutas Técnica y Amplia (Voz A). Caso NO obligatorio en ruta Viral.
+- Gancho Triple W ≤12 palabras en narrativa Directa. Siempre incluir capa identitaria emocional.
+- MOFU-A y BOFU usan narrativa Estructurada obligatoria. BOFU solo Voz A.
+- PROHIBIDO: narrativa "directa" en Huevo de Oro MOFU-A o BOFU.
+- Si la IA produce "mofu" sin sufijo, autocorregir a "mofu_a".
+- Secuencia recomendada: publicar al menos 3 TOFU antes de MOFU-A, al menos 2 MOFU-A antes de MOFU-B, al menos 2 MOFU-B antes de BOFU.
 
 **RESPONDE SOLO EN FORMATO JSON:**
 {
@@ -227,6 +240,45 @@ ${datosSerializados}
     });
 
     const result = JSON.parse(response.data.content || '{}');
+
+    // Normalización semántica V9 (override local):
+    // - mofu_a = costo de inacción + CTA dual + urgencia + voz A
+    // - mofu_b = activación WALA Premium + voz B (sin programa/llamada)
+    if (Array.isArray(result.plan_videos)) {
+      result.plan_videos = result.plan_videos.map((video = {}) => {
+        const fase = normalizarFaseFunnelV8(video.fase_funnel || 'tofu') || 'tofu';
+        const enfoque = String(video.enfoque_breve || '').toLowerCase();
+        const mencionaPremium = /premium|7\s*d[ií]as/.test(enfoque);
+        const mencionaCostoInaccion = /costo de inacci[oó]n|cta dual|agendemos una llamada|programa|urgencia/.test(enfoque);
+
+        let faseCorregida = fase;
+        if (fase === 'mofu_a' && mencionaPremium && !mencionaCostoInaccion) {
+          faseCorregida = 'mofu_b';
+        } else if (fase === 'mofu_b' && mencionaCostoInaccion) {
+          faseCorregida = 'mofu_a';
+        }
+
+        const vozCorregida = faseCorregida === 'mofu_a'
+          ? 'A'
+          : faseCorregida === 'mofu_b'
+            ? 'B'
+            : (video.voz || 'A');
+
+        return {
+          ...video,
+          fase_funnel: faseCorregida,
+          voz: vozCorregida,
+          enfoque_breve: video.enfoque_breve || (
+            faseCorregida === 'mofu_a'
+              ? 'Caso estructurado con costo de inacción obligatorio, CTA dual y urgencia (voz A).'
+              : faseCorregida === 'mofu_b'
+                ? 'Activación de WALA Premium con 7 días gratis, sin programa ni llamada (voz B).'
+                : video.enfoque_breve
+          )
+        };
+      });
+    }
+
     console.log('✅ Distribución analizada:', result);
     return result;
   } catch (error) {
@@ -506,6 +558,33 @@ Genera SOLO la estructura base con meta_analisis y generacion usando el plan ya 
       const videoNum = i + 1;
       const planVideo = planParaVideos[i] || {};
       const fasePlan = normalizarFaseFunnelV8(planVideo.fase_funnel || fullContext.datosIniciales?.fase_embudo || 'tofu') || 'tofu';
+      const vozPlan = fasePlan === 'mofu_a'
+        ? 'A'
+        : fasePlan === 'mofu_b'
+          ? 'B'
+          : (planVideo.voz || 'A');
+      const schemaGuionCompleto = fasePlan === 'mofu_a'
+        ? `{
+    "hook": "[0-5s] HOOK CONSULTOR — resultado identitario. Transformación emocional, no proceso.",
+    "caso_validacion": "[10-35s] Storytelling causal. Emprendedor tenía WALA pero no sabía qué hacer con la info. PERO / POR ESO obligatorio.",
+    "costo_inaccion": "[40-58s] OBLIGATORIO — 2-3 frases. Qué seguía pasando sin la metodología. Fórmula: Cada [período] que [situación], [consecuencia].",
+    "proceso_resultado": "[60-75s] Qué hicieron juntos. WALA como herramienta, metodología de José como solución.",
+    "cta": "[80-90s] CTA DUAL OBLIGATORIO. Momento 1 [80-85s]: WALA Premium 7 días gratis. Momento 2 [85-90s]: programa + llamada + urgencia."
+  }`
+        : fasePlan === 'bofu'
+          ? `{
+    "hook": "[0-5s] HOOK POST-TRANSFORMACIÓN — quién es el emprendedor DESPUÉS. No el problema.",
+    "caso_arco": "[10-45s] 4 momentos obligatorios: ANTES (miedo/caos) → PROBLEMA específico → PROCESO (José + WALA) → AHORA (tranquilidad).",
+    "costo_inaccion": "[50-70s] OBLIGATORIO — 2-3 frases. Qué pasaba ANTES de arrancar. Conectar con el miedo al negocio propio.",
+    "cta": "[75-100s] CTA BOFU COMPLETO en orden: (1) diagnóstico gratis, (2) WALA Premium incluido, (3) garantía: Y si en 2 meses no tenés más claridad no te cobro, (4) urgencia: Los cupos son limitados."
+  }`
+          : `{
+    "hook": "[0-5s] ORACIÓN COMPLETA del gancho hablado (8-15 palabras).",
+    "caso_validacion": "[5-25s] Según narrativa directa o estructurada.",
+    "desarrollo": "[25-50s] 4-6 oraciones. Lenguaje cotidiano. OBLIGATORIO mencionar WALA por nombre.",
+    "micro_accion": "[50-58s] 2 ORACIONES. Acción ejecutable HOY. Mencionar WALA.",
+    "cta": "[58-60s] 2 ORACIONES de cierre dirigidas a usar WALA."
+  }`;
 
       if (onProgress) onProgress({ fase: 'video', videoActual: videoNum, totalVideos });
       console.log(`🎬 Generando video ${videoNum} de ${totalVideos}...`);
@@ -531,6 +610,7 @@ ${JSON.stringify(estructura.meta_analisis, null, 2)}
 - Tipo: ${planVideo.tipo_contenido || planVideo.tipo || 'educativo'}
 - Narrativa: ${planVideo.narrativa || 'directa'}
 - Voz: ${planVideo.voz || 'A'}
+- Voz: ${vozPlan}
 - Fase: ${fasePlan}
 - Huevo de Oro: ${planVideo.es_huevo_oro ? 'SÍ (1-1.5min, narrativa estructurada obligatoria)' : 'No'}
 - Enfoque: ${planVideo.enfoque_breve || 'A definir por IA'}
@@ -551,7 +631,7 @@ Genera UN SOLO video con esta estructura JSON exacta:
   "ruta": "${planVideo.ruta || 'tecnica'}",
   "tipo_contenido": "${planVideo.tipo_contenido || 'educativo'}",
   "narrativa": "${planVideo.narrativa || 'directa'}",
-  "voz": "${planVideo.voz || 'A'}",
+  "voz": "${vozPlan}",
   "fase_funnel": "${fasePlan}",
   "etapa_funnel": "${fasePlan}",
   "es_huevo_oro": ${Boolean(planVideo.es_huevo_oro)},
@@ -578,13 +658,7 @@ Genera UN SOLO video con esta estructura JSON exacta:
     "momento": "Dónde y cuándo filmar",
     "energia": "Tono emocional"
   },
-  "guion_completo": {
-    "hook": "[0-5s] ORACIÓN COMPLETA del gancho hablado (8-15 palabras).",
-    "caso_validacion": "[5-25s] Según narrativa directa o estructurada.",
-    "desarrollo": "[25-50s] 4-6 oraciones. Lenguaje cotidiano. OBLIGATORIO mencionar WALA por nombre.",
-    "micro_accion": "[50-58s] 2 ORACIONES. Acción ejecutable HOY. Mencionar WALA.",
-    "cta": "[58-60s] 2 ORACIONES de cierre dirigidas a usar WALA."
-  },
+  "guion_completo": ${schemaGuionCompleto},
   "micro_hooks": [
     { "numero": 1, "tipo": "pregunta_retencion|afirmacion_curiosidad|dato_sorpresa", "texto": "Pregunta/afirmación COMPLETA 8-12 palabras", "timestamp": "10s" },
     { "numero": 2, "tipo": "string", "texto": "string", "timestamp": "25s" },
@@ -618,6 +692,29 @@ Genera UN SOLO video con esta estructura JSON exacta:
     "objetivo_ruta": "Resultado esperado",
     "retencion_esperada": "Porcentaje de retención",
     "tipo_interaccion": "Tipo de interacción esperada"
+  },
+  "resultado_identitario": {
+    "capa": "miedo | caos | tranquilidad — elegir la que ancla el gancho de este video",
+    "frase_ancla": "La frase exacta del guion (del hook o caso) que conecta con esa capa emocional"
+  },
+  "over_delivery": {
+    "presente": false,
+    "tipo": "numero_concreto | comparacion_sorpresa | regla_simple | paso_extra",
+    "texto": "El dato sorpresa o regla simple exacta — específica al sector, sin inventar estadísticas",
+    "timestamp": "[Xs] — timestamp donde aparece en el desarrollo"
+  },
+  "costo_inaccion": {
+    "presente": false,
+    "obligatorio_en_etapa": false,
+    "texto": "Si presente: las 2-3 frases exactas del bloque de costo de inacción",
+    "timestamp": "[Xs–Xs]"
+  },
+  "hormozi_elementos": {
+    "garantia_en_cta": false,
+    "urgencia_en_cta": false,
+    "over_delivery_presente": true,
+    "costo_inaccion_presente": false,
+    "resultado_identitario_presente": true
   }
 }
 
@@ -631,16 +728,50 @@ REGLAS FINALES PARA ESTE VIDEO:
 - Incluye SIEMPRE formato_visual_recomendado y formato_coherente según la etapa de funnel.
 - etapa_funnel SOLO puede ser: tofu, mofu_a, mofu_b o bofu. Si detectas "mofu", corrígelo a "mofu_b".
 - Reglas CTA por etapa (obligatorias):
-  - tofu: cta.texto_completo NO puede contener "Premium", "programa", "asesoría", "llamada", "diagnóstico". cta.mencion_asesoria=false.
-  - mofu_a: cta.texto_completo debe incluir "Premium" y "7 días gratis". NO puede contener "programa" ni "llamada". cta.mencion_asesoria=false.
-  - mofu_b: CTA dual obligatorio dentro de guion_completo.cta (momento Premium + momento programa/llamada). cta.mencion_asesoria=true. Nunca incluir precio numérico.
-  - bofu: voz obligatoria "A". cta.texto_completo debe incluir "diagnóstico gratis" y "WALA Premium incluido". cta.mencion_asesoria=true. Nunca incluir precio numérico.
+  - tofu:
+    * cta.texto_completo NO puede contener "Premium", "programa", "asesoría", "llamada", "diagnóstico".
+    * cta.mencion_asesoria = false.
+    * hormozi_elementos.garantia_en_cta = false. hormozi_elementos.urgencia_en_cta = false.
+    * over_delivery.presente = true (OBLIGATORIO en TOFU — un dato sorpresa o regla simple en el desarrollo).
+    * costo_inaccion.presente puede ser false o true (opcional, máximo 1 frase si se incluye).
+    * resultado_identitario.capa debe ser "miedo", "caos" o "tranquilidad" — nunca vacío.
+
+  - mofu_a:
+    * voz obligatoria "A".
+    * CTA dual OBLIGATORIO dentro de guion_completo.cta: Momento 1 menciona WALA Premium + 7 días gratis; Momento 2 menciona el programa + "agendemos una llamada".
+    * cta.mencion_asesoria = true. Nunca incluir precio numérico.
+    * hormozi_elementos.urgencia_en_cta = true OBLIGATORIO — la frase de urgencia va al final del Momento 2: "Los cupos son limitados. Si sentís que es tu momento, escribime hoy." o variante equivalente.
+    * hormozi_elementos.garantia_en_cta = false (la garantía es solo de BOFU).
+    * costo_inaccion.presente = true OBLIGATORIO — bloque de 2-3 frases en timestamp [40-58s]. costo_inaccion.obligatorio_en_etapa = true.
+    * hormozi_elementos.costo_inaccion_presente = true.
+
+  - mofu_b:
+    * voz obligatoria "B".
+    * cta.texto_completo debe incluir "Premium" y "7 días gratis". NO puede contener "programa" ni "llamada".
+    * cta.mencion_asesoria = false.
+    * hormozi_elementos.garantia_en_cta = false. hormozi_elementos.urgencia_en_cta = false.
+    * over_delivery.presente recomendado = true (mostrar funcionalidad Premium inesperada).
+    * costo_inaccion.presente = false (no agresivo en MOFU-B).
+
+  - bofu:
+    * voz obligatoria "A". Nunca Voz B.
+    * cta.texto_completo debe incluir en este orden: (1) "diagnóstico gratis", (2) "WALA Premium incluido", (3) frase de garantía: "Y si en 2 meses no tenés más claridad sobre tu negocio que hoy, no te cobro. Así de simple.", (4) frase de urgencia: "Los cupos son limitados. Si sentís que es tu momento, el link está en mi perfil."
+    * cta.mencion_asesoria = true. Nunca incluir precio numérico.
+    * hormozi_elementos.garantia_en_cta = true OBLIGATORIO.
+    * hormozi_elementos.urgencia_en_cta = true OBLIGATORIO.
+    * costo_inaccion.presente = true OBLIGATORIO — bloque de 2-3 frases en timestamp [50-70s]. costo_inaccion.obligatorio_en_etapa = true.
+    * hormozi_elementos.costo_inaccion_presente = true.
+    * gancho empieza por el resultado identitario POST-transformación — quién es el emprendedor DESPUÉS, no el problema.
+
+- RESULTADO IDENTITARIO OBLIGATORIO: el gancho de todo video (cualquier etapa) debe anclar a una de estas tres capas emocionales: miedo al negocio / caos del negocio / búsqueda de tranquilidad. Nunca un gancho puramente funcional ("saber cuánto ganaste", "registrar ventas"). El campo resultado_identitario.capa debe declararse y la frase_ancla debe ser una frase real del guion.
+
+- OVER-DELIVERY OBLIGATORIO EN TOFU: el bloque desarrollo [25-50s] de todo video TOFU debe incluir un elemento de valor inesperado — un número concreto basado en experiencia de José, una regla simple, una comparación sorpresa o un paso extra. El campo over_delivery.texto debe ser esa frase exacta. PROHIBIDO inventar estadísticas — si es una estimación, formularla como "en lo que yo he visto..." o "lo que nos pasa en las asesorías es...". El over_delivery.presente debe ser true y el tipo debe declararse.
 
 Genera el JSON del video ${videoNum} AHORA.`;
 
       const videoResp = await grokProxy({
         messages: [{ role: 'user', content: videoPrompt }],
-        temperature: 0.6,
+        temperature: 0.35,
         response_format: { type: 'json_object' },
         max_tokens: 3000
       });
@@ -784,6 +915,46 @@ export function validarEstructuraGuion(json) {
             errors.push(`Video ${n}: micro_hook ${mhIdx + 1} es telegráfico ("${mh.texto}") — debe ser pregunta o afirmación completa`);
           }
         });
+      }
+
+      // Validación V9 — campos Hormozi
+      const fasev = String(video.fase_funnel || video.etapa_funnel || '').toLowerCase();
+
+      if (!video.resultado_identitario || !video.resultado_identitario.capa) {
+        errors.push(`Video ${n}: falta "resultado_identitario.capa" — campo obligatorio en V9`);
+      }
+      if (!video.resultado_identitario?.frase_ancla) {
+        errors.push(`Video ${n}: falta "resultado_identitario.frase_ancla" — campo obligatorio en V9`);
+      }
+
+      if (fasev === 'tofu' && (!video.over_delivery || video.over_delivery.presente !== true)) {
+        errors.push(`Video ${n}: TOFU requiere "over_delivery.presente = true" — obligatorio en V9`);
+      }
+      if (fasev === 'tofu' && !video.over_delivery?.texto) {
+        errors.push(`Video ${n}: TOFU requiere "over_delivery.texto" con el dato sorpresa`);
+      }
+
+      if ((fasev === 'mofu_a' || fasev === 'bofu') && (!video.costo_inaccion || video.costo_inaccion.presente !== true)) {
+        errors.push(`Video ${n}: ${fasev.toUpperCase()} requiere "costo_inaccion.presente = true" — obligatorio en V9`);
+      }
+      if ((fasev === 'mofu_a' || fasev === 'bofu') && !video.costo_inaccion?.texto) {
+        errors.push(`Video ${n}: ${fasev.toUpperCase()} requiere "costo_inaccion.texto" con las 2-3 frases del bloque`);
+      }
+
+      if (fasev === 'bofu' && !video.hormozi_elementos?.garantia_en_cta) {
+        errors.push(`Video ${n}: BOFU requiere "hormozi_elementos.garantia_en_cta = true" — obligatorio en V9`);
+      }
+      if ((fasev === 'mofu_a' || fasev === 'bofu') && !video.hormozi_elementos?.urgencia_en_cta) {
+        errors.push(`Video ${n}: ${fasev.toUpperCase()} requiere "hormozi_elementos.urgencia_en_cta = true" — obligatorio en V9`);
+      }
+      if (fasev === 'mofu_a' && String(video.voz || '').toUpperCase() !== 'A') {
+        errors.push(`Video ${n}: MOFU_A requiere voz "A" — obligatorio en esta configuración`);
+      }
+      if (fasev === 'mofu_b' && String(video.voz || '').toUpperCase() !== 'B') {
+        errors.push(`Video ${n}: MOFU_B requiere voz "B" — obligatorio en esta configuración`);
+      }
+      if (fasev === 'bofu' && String(video.voz || '').toUpperCase() !== 'A') {
+        errors.push(`Video ${n}: BOFU requiere voz "A" — Voz B nunca en BOFU (V9)`);
       }
     });
   }

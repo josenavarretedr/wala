@@ -45,7 +45,7 @@
               class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-orange-600 text-white px-10 py-5 rounded-xl font-bold text-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-orange-600 hover:to-orange-700"
               @click="$router.push({ name: 'Login' })"
             >
-              Empieza gratis por 15 días
+              Empieza gratis
             </button>
 
             <!-- CTA Secundario -->
@@ -335,12 +335,15 @@ button:active {
 /* Hover effects para las cards del visual */
 @media (min-width: 768px) {
   .hidden.md\:block > div > div {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .hidden.md\:block > div > div:hover {
     transform: translateY(-2px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.1),
       0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 }

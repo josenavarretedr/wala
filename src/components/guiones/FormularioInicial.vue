@@ -512,14 +512,14 @@ const fasesEmbudo = [
     value: "mofu_a",
     icon: "⚡",
     label: "MOFU-A",
-    desc: "Activación. WALA Premium.",
+    desc: "Consideración. Llamada.",
     activeClass: "border-indigo-500 bg-indigo-50",
   },
   {
     value: "mofu_b",
     icon: "🎯",
     label: "MOFU-B",
-    desc: "Consideración. Llamada.",
+    desc: "Activación. WALA Premium.",
     activeClass: "border-blue-500 bg-blue-50",
   },
   {

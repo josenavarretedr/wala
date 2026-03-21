@@ -1,3 +1,4 @@
+<!-- DetalleVideo.vue -->
 <template>
   <div class="min-h-screen bg-gray-50 py-8 px-4">
     <div class="max-w-4xl mx-auto">
@@ -80,6 +81,55 @@
               ]"
             >
               {{ video.estado }}
+            </span>
+            <!-- Etapa funnel V9 -->
+            <span
+              :class="[
+                'px-3 py-1 rounded-full text-xs font-semibold',
+                {
+                  tofu: 'bg-pink-100 text-pink-700',
+                  mofu_a: 'bg-indigo-100 text-indigo-700',
+                  mofu_b: 'bg-blue-100 text-blue-700',
+                  bofu: 'bg-amber-100 text-amber-700',
+                }[
+                  (
+                    video.etapa_funnel ||
+                    video.fase_funnel ||
+                    'tofu'
+                  ).toLowerCase()
+                ] || 'bg-gray-100 text-gray-700',
+              ]"
+            >
+              {{
+                {
+                  tofu: "TOFU — Atracción",
+                  mofu_a: "MOFU-A — Activación",
+                  mofu_b: "MOFU-B — Consideración",
+                  bofu: "BOFU — Conversión",
+                }[
+                  (
+                    video.etapa_funnel ||
+                    video.fase_funnel ||
+                    "tofu"
+                  ).toLowerCase()
+                ] || "TOFU — Atracción"
+              }}
+            </span>
+            <!-- Hormozi resumen -->
+            <span
+              v-if="video.hormozi_elementos"
+              class="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700"
+            >
+              ✦
+              {{
+                (video.hormozi_elementos.resultado_identitario_presente
+                  ? 1
+                  : 0) +
+                (video.hormozi_elementos.over_delivery_presente ? 1 : 0) +
+                (video.hormozi_elementos.costo_inaccion_presente ? 1 : 0) +
+                (video.hormozi_elementos.garantia_en_cta ? 1 : 0) +
+                (video.hormozi_elementos.urgencia_en_cta ? 1 : 0)
+              }}/5 Hormozi
             </span>
             <!-- Formato visual -->
             <span
@@ -321,44 +371,62 @@
             :open="openSections.configuracion"
             @toggle="toggleSection('configuracion')"
           >
-            <div class="grid md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label
-                  class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
-                  >Estado</label
-                >
-                <select
-                  v-model="editableData.estado"
-                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                >
-                  <option>GRABANDO</option>
-                  <option>EDITANDO</option>
-                  <option>PUBLICADO</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
-                  >Duración estimada</label
-                >
-                <input
-                  v-model="editableData.duracion_estimada"
-                  type="text"
-                  placeholder="Ej: 45s o 1.5min"
-                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
-                />
-              </div>
-              <div class="md:col-span-2">
-                <label
-                  class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
-                  >Comentarios</label
-                >
-                <textarea
-                  v-model="editableData.comentarios"
-                  rows="3"
-                  placeholder="Agrega notas o pendientes..."
-                  class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none text-sm"
-                ></textarea>
+            <div class="border border-gray-100 rounded-xl p-4 bg-white mb-4">
+              <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
+                    >Estado</label
+                  >
+                  <select
+                    v-model="editableData.estado"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  >
+                    <option>GRABANDO</option>
+                    <option>EDITANDO</option>
+                    <option>PUBLICADO</option>
+                  </select>
+                  <p class="text-xs text-gray-400 mt-1.5">
+                    {{
+                      editableData.estado === "GRABANDO"
+                        ? "El guion está aprobado y listo para grabar. Aún no se ha filmado."
+                        : editableData.estado === "EDITANDO"
+                          ? "El video ya fue grabado y está en proceso de edición o revisión."
+                          : "El video fue publicado. Se puede usar como referencia de performance."
+                    }}
+                  </p>
+                </div>
+                <div>
+                  <label
+                    class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
+                    >Duración estimada</label
+                  >
+                  <input
+                    v-model="editableData.duracion_estimada"
+                    type="text"
+                    placeholder="Ej: 45s o 1.5min"
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-sm"
+                  />
+                  <p class="text-xs text-gray-400 mt-1.5">
+                    El sistema V9 define: TOFU 40–60s · MOFU-A 1min · MOFU-B
+                    1–1.5min · BOFU 1–2min
+                  </p>
+                </div>
+                <div class="md:col-span-2">
+                  <label
+                    class="block text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide"
+                    >Comentarios</label
+                  >
+                  <textarea
+                    v-model="editableData.comentarios"
+                    rows="3"
+                    placeholder="Notas de producción, pendientes de grabación, observaciones del sector..."
+                    class="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 resize-none text-sm"
+                  ></textarea>
+                  <p class="text-xs text-gray-400 mt-1.5">
+                    Visible solo internamente. No afecta el guion generado.
+                  </p>
+                </div>
               </div>
             </div>
             <div class="flex gap-3">
@@ -421,6 +489,30 @@
                     {{ video.gancho.componentes.por_que_ahora }}
                   </p>
                 </div>
+              </div>
+              <div class="bg-purple-50 rounded-lg p-3 text-sm">
+                <p class="text-xs font-semibold text-purple-700 uppercase mb-1">
+                  Capa identitaria
+                </p>
+                <p
+                  v-if="video.resultado_identitario?.capa"
+                  class="text-purple-900"
+                >
+                  {{
+                    {
+                      miedo:
+                        "Miedo: conecta con el temor a abrir o entender los números.",
+                      caos: "Caos: conecta con el desorden y la sensación de no tener control.",
+                      tranquilidad:
+                        "Tranquilidad: conecta con la aspiración de decidir con calma y claridad.",
+                    }[video.resultado_identitario.capa] ||
+                    video.resultado_identitario.capa
+                  }}
+                </p>
+                <p v-else class="text-xs text-gray-400">
+                  ⚠ Este guion fue generado con V8 o anterior. No incluye
+                  análisis de resultado identitario.
+                </p>
               </div>
             </div>
           </CollapsibleSection>
@@ -584,7 +676,192 @@
             </div>
           </CollapsibleSection>
 
-          <!-- 6. STORYTELLING -->
+          <!-- 6. ELEMENTOS HORMOZI V9 -->
+          <CollapsibleSection
+            v-if="
+              video.resultado_identitario ||
+              video.over_delivery ||
+              video.costo_inaccion ||
+              video.hormozi_elementos
+            "
+            title="Elementos Hormozi V9"
+            :open="openSections.hormozi"
+            @toggle="toggleSection('hormozi')"
+          >
+            <div class="space-y-3">
+              <div
+                v-if="video.resultado_identitario"
+                class="bg-purple-50 border border-purple-200 rounded-xl p-4"
+              >
+                <span
+                  :class="[
+                    'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold mb-2 capitalize',
+                    {
+                      miedo: 'bg-red-100 text-red-700',
+                      caos: 'bg-amber-100 text-amber-700',
+                      tranquilidad: 'bg-teal-100 text-teal-700',
+                    }[video.resultado_identitario.capa] ||
+                      'bg-purple-100 text-purple-700',
+                  ]"
+                >
+                  {{ video.resultado_identitario.capa || "sin capa" }}
+                </span>
+                <p class="text-sm italic text-purple-900">
+                  {{ video.resultado_identitario.frase_ancla }}
+                </p>
+                <p class="text-xs text-purple-400 mt-2">
+                  Esta es la frase del guion que ancla el resultado identitario.
+                  Hormozi Módulo 1.
+                </p>
+              </div>
+
+              <div
+                v-if="video.over_delivery?.presente"
+                class="bg-amber-50 border border-amber-200 rounded-xl p-4"
+              >
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                  <span
+                    class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"
+                  >
+                    {{ video.over_delivery.tipo || "over-delivery" }}
+                  </span>
+                  <span
+                    v-if="video.over_delivery.timestamp"
+                    class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-white border border-amber-200 text-amber-700"
+                  >
+                    {{ video.over_delivery.timestamp }}
+                  </span>
+                </div>
+                <p class="text-sm text-amber-900">
+                  {{ video.over_delivery.texto }}
+                </p>
+                <p class="text-xs text-amber-400 mt-2">
+                  Dato sorpresa que supera las expectativas del espectador.
+                  Hormozi Módulo 3.
+                </p>
+              </div>
+
+              <div
+                v-if="video.costo_inaccion?.presente"
+                class="bg-orange-50 border border-orange-200 rounded-xl p-4"
+              >
+                <div class="flex items-center gap-2 mb-2">
+                  <span
+                    v-if="video.costo_inaccion.obligatorio_en_etapa === true"
+                    class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-200 text-orange-700"
+                  >
+                    Obligatorio en esta etapa
+                  </span>
+                </div>
+                <p class="text-sm text-orange-900">
+                  {{ video.costo_inaccion.texto }}
+                </p>
+                <p class="text-xs text-orange-400 mt-2">
+                  Nombra lo que pierde el emprendedor por no actuar. Hormozi
+                  Módulo 6.
+                </p>
+              </div>
+
+              <div
+                v-if="video.hormozi_elementos"
+                class="bg-white border border-gray-200 rounded-xl p-4"
+              >
+                <p class="text-xs font-semibold text-gray-500 uppercase mb-3">
+                  Checklist Hormozi
+                </p>
+                <div class="grid md:grid-cols-2 gap-3 text-sm">
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="font-medium text-gray-800">
+                      <span
+                        :class="
+                          video.hormozi_elementos.resultado_identitario_presente
+                            ? 'text-green-600 font-bold'
+                            : 'text-red-400 font-bold'
+                        "
+                        >{{
+                          video.hormozi_elementos.resultado_identitario_presente
+                            ? "✓"
+                            : "✗"
+                        }}</span
+                      >
+                      Resultado identitario
+                    </p>
+                    <p class="text-xs text-gray-400">Hormozi Módulo 1</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="font-medium text-gray-800">
+                      <span
+                        :class="
+                          video.hormozi_elementos.over_delivery_presente
+                            ? 'text-green-600 font-bold'
+                            : 'text-red-400 font-bold'
+                        "
+                        >{{
+                          video.hormozi_elementos.over_delivery_presente
+                            ? "✓"
+                            : "✗"
+                        }}</span
+                      >
+                      Over-delivery
+                    </p>
+                    <p class="text-xs text-gray-400">Hormozi Módulo 3</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="font-medium text-gray-800">
+                      <span
+                        :class="
+                          video.hormozi_elementos.costo_inaccion_presente
+                            ? 'text-green-600 font-bold'
+                            : 'text-red-400 font-bold'
+                        "
+                        >{{
+                          video.hormozi_elementos.costo_inaccion_presente
+                            ? "✓"
+                            : "✗"
+                        }}</span
+                      >
+                      Costo de inacción
+                    </p>
+                    <p class="text-xs text-gray-400">Hormozi Módulo 6</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3">
+                    <p class="font-medium text-gray-800">
+                      <span
+                        :class="
+                          video.hormozi_elementos.garantia_en_cta
+                            ? 'text-green-600 font-bold'
+                            : 'text-red-400 font-bold'
+                        "
+                        >{{
+                          video.hormozi_elementos.garantia_en_cta ? "✓" : "✗"
+                        }}</span
+                      >
+                      Garantía en CTA
+                    </p>
+                    <p class="text-xs text-gray-400">Hormozi Módulo 4</p>
+                  </div>
+                  <div class="bg-gray-50 rounded-lg p-3 md:col-span-2">
+                    <p class="font-medium text-gray-800">
+                      <span
+                        :class="
+                          video.hormozi_elementos.urgencia_en_cta
+                            ? 'text-green-600 font-bold'
+                            : 'text-red-400 font-bold'
+                        "
+                        >{{
+                          video.hormozi_elementos.urgencia_en_cta ? "✓" : "✗"
+                        }}</span
+                      >
+                      Urgencia en CTA
+                    </p>
+                    <p class="text-xs text-gray-400">Hormozi Módulo 5</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <!-- 7. STORYTELLING -->
           <CollapsibleSection
             title="Storytelling"
             :open="openSections.storytelling"
@@ -630,7 +907,7 @@
             </div>
           </CollapsibleSection>
 
-          <!-- 7. CAPTION -->
+          <!-- 8. CAPTION -->
           <CollapsibleSection
             title="Caption"
             :open="openSections.caption"
@@ -643,7 +920,7 @@
             </div>
           </CollapsibleSection>
 
-          <!-- 8. ADAPTACIÓN AL SECTOR -->
+          <!-- 9. ADAPTACIÓN AL SECTOR -->
           <CollapsibleSection
             title="Adaptación al Sector"
             :open="openSections.adaptacion"
@@ -692,7 +969,7 @@
             </div>
           </CollapsibleSection>
 
-          <!-- 9. NOTAS DE PRODUCCIÓN + MÉTRICAS -->
+          <!-- 10. NOTAS DE PRODUCCIÓN + MÉTRICAS -->
           <CollapsibleSection
             title="Notas de Producción"
             :open="openSections.produccion"
@@ -704,9 +981,38 @@
                   <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
                     Etapa funnel
                   </p>
-                  <p class="text-gray-900 uppercase">
-                    {{ video.fase_funnel || video.etapa_funnel || "tofu" }}
-                  </p>
+                  <span
+                    :class="[
+                      'inline-flex px-2 py-0.5 rounded-full text-xs font-semibold',
+                      {
+                        tofu: 'bg-pink-100 text-pink-700',
+                        mofu_a: 'bg-indigo-100 text-indigo-700',
+                        mofu_b: 'bg-blue-100 text-blue-700',
+                        bofu: 'bg-amber-100 text-amber-700',
+                      }[
+                        (
+                          video.etapa_funnel ||
+                          video.fase_funnel ||
+                          'tofu'
+                        ).toLowerCase()
+                      ] || 'bg-gray-100 text-gray-700',
+                    ]"
+                  >
+                    {{
+                      {
+                        tofu: "TOFU — Atracción",
+                        mofu_a: "MOFU-A — Activación",
+                        mofu_b: "MOFU-B — Consideración",
+                        bofu: "BOFU — Conversión",
+                      }[
+                        (
+                          video.etapa_funnel ||
+                          video.fase_funnel ||
+                          "tofu"
+                        ).toLowerCase()
+                      ] || "TOFU — Atracción"
+                    }}
+                  </span>
                 </div>
                 <div>
                   <p class="text-xs font-semibold text-gray-500 uppercase mb-1">
@@ -873,6 +1179,7 @@ const openSections = reactive({
   caso: false,
   guion: false,
   cta: false,
+  hormozi: false,
   storytelling: false,
   caption: false,
   adaptacion: false,

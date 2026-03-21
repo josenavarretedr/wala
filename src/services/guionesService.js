@@ -50,6 +50,17 @@ export async function saveVideo(videoData) {
       etapa_funnel: faseNormalizada,
       estado: videoData.estado || 'GRABANDO',
       comentarios: videoData.comentarios || '',
+      // Normalización V9 — campos Hormozi con defaults si no vienen del prompt
+      resultado_identitario: videoData.resultado_identitario || null,
+      over_delivery: videoData.over_delivery || null,
+      costo_inaccion: videoData.costo_inaccion || null,
+      hormozi_elementos: videoData.hormozi_elementos || {
+        garantia_en_cta: false,
+        urgencia_en_cta: false,
+        over_delivery_presente: false,
+        costo_inaccion_presente: false,
+        resultado_identitario_presente: false
+      },
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     };
