@@ -1,14 +1,17 @@
 <template>
   <div class="premium-badge-wrapper inline-flex">
-    <!-- Badge Premium -->
+    <!-- Badge Pago -->
     <div
       v-if="isPremium"
-      class="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-shadow cursor-pointer"
+      :class="[
+        'inline-flex items-center gap-2 px-3 py-1.5 text-white text-sm font-semibold rounded-full shadow-md hover:shadow-lg transition-shadow cursor-pointer',
+        isMax ? 'bg-gradient-to-r from-amber-500 to-orange-500' : 'bg-gradient-to-r from-indigo-500 to-blue-600'
+      ]"
       @click="handleClick"
       :title="tooltipText"
     >
-      <span class="text-base">👑</span>
-      <span>Premium</span>
+      <span class="text-base">{{ planInfo.badge }}</span>
+      <span>{{ planInfo.name }}</span>
       <span v-if="showDays && daysRemaining" class="text-xs opacity-90">
         ({{ daysRemaining }}d)
       </span>
@@ -36,7 +39,7 @@
       :title="tooltipText"
     >
       <span class="text-base">🆓</span>
-      <span>Plan Gratis</span>
+      <span>Free</span>
       <span v-if="clickable" class="text-xs opacity-75 ml-1">→</span>
     </div>
   </div>
@@ -93,22 +96,22 @@ const props = defineProps({
 
 const emit = defineEmits(["click"]);
 
-const { isPremium, isFree, isTrialActive, daysRemaining, planInfo, goToPlans } =
+const { isPremium, isPro, isMax, isFree, isTrialActive, daysRemaining, planInfo, goToPlans } =
   useSubscription();
 
 const tooltipText = computed(() => {
   if (isPremium.value) {
     const days = daysRemaining.value;
     return days
-      ? `Plan Premium activo - ${days} días restantes`
-      : "Plan Premium activo";
+      ? `Plan ${planInfo.value.name} activo - ${days} días restantes`
+      : `Plan ${planInfo.value.name} activo`;
   }
 
   if (isTrialActive.value) {
     return `Período de prueba - ${daysRemaining.value} días restantes`;
   }
 
-  return "Plan gratuito - Actualiza para desbloquear más funciones";
+  return "Plan Free - Actualiza para desbloquear más funciones";
 });
 
 const handleClick = () => {

@@ -58,19 +58,47 @@
           </svg>
         </div>
         <div>
-          <p class="text-xs sm:text-sm text-gray-500 mb-1">Stock Actual</p>
+          <p class="text-xs sm:text-sm text-gray-500 mb-0.5">Stock Actual</p>
           <p class="text-sm font-medium" :class="statusTextClass">
             {{ stockStatusText }}
+          </p>
+          <!-- Stock mínimo configurado -->
+          <p v-if="minStock !== null" class="text-xs text-gray-400 mt-0.5">
+            Mín. configurado: {{ minStock }} {{ unit || "uni" }}
           </p>
         </div>
       </div>
 
-      <!-- Lado derecho: Cantidad -->
-      <div class="text-right">
-        <p class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
-          {{ stock || 0 }}
-        </p>
-        <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ unit || "uni" }}</p>
+      <!-- Lado derecho: Cantidad + botón editar -->
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <p class="text-2xl sm:text-3xl font-bold text-gray-900 tabular-nums">
+            {{ stock || 0 }}
+          </p>
+          <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ unit || "uni" }}</p>
+        </div>
+
+        <!-- Botón de edición → InventoryCount -->
+        <router-link
+          v-if="productId"
+          :to="inventoryCountRoute"
+          class="p-2.5 bg-white hover:bg-teal-50 rounded-xl shadow-sm border border-gray-200 transition-all duration-200 hover:shadow-md hover:scale-105 group shrink-0"
+          title="Conteo de inventario / Editar stock"
+        >
+          <svg
+            class="w-5 h-5 text-gray-500 group-hover:text-teal-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+            ></path>
+          </svg>
+        </router-link>
       </div>
     </div>
   </div>
@@ -78,6 +106,7 @@
 
 <script setup>
 import { computed } from "vue";
+import { useRoute } from "vue-router";
 
 // Props
 const props = defineProps({
@@ -89,12 +118,49 @@ const props = defineProps({
     type: String,
     default: "uni",
   },
+  productId: {
+    type: String,
+    default: null,
+  },
+  minStock: {
+    type: Number,
+    default: null,
+  },
+  // Datos extra para pasar a InventoryCount via state
+  description: {
+    type: String,
+    default: "",
+  },
+  productType: {
+    type: String,
+    default: "MERCH",
+  },
 });
 
-// Computed: Stock Status
+const route = useRoute();
+
+// Ruta hacia InventoryCount con state del producto
+const inventoryCountRoute = computed(() => ({
+  name: "InventoryCount",
+  params: {
+    businessId: route.params.businessId,
+    productId: props.productId,
+  },
+  state: {
+    description: props.description,
+    stock: props.stock,
+    unit: props.unit,
+    minStock: props.minStock ?? null,
+    type: props.productType,
+  },
+}));
+
+// Computed: Stock Status (usa minStock si está configurado)
 const stockStatus = computed(() => {
   const stock = props.stock || 0;
   if (stock === 0) return "empty";
+  const min = props.minStock;
+  if (min !== null && stock <= min) return "low";
   if (stock <= 5) return "low";
   if (stock <= 20) return "medium";
   return "high";
@@ -193,26 +259,12 @@ const statusTextClass = computed(() => {
 </script>
 
 <style scoped>
-/* Números tabulares para mejor alineación */
 .tabular-nums {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 
-/* Estabilidad de layout */
 .shrink-0 {
   flex-shrink: 0;
-}
-
-/* Transición suave para hover */
-.w-full {
-  transition: all 0.2s ease;
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  .w-full {
-    padding: 1rem;
-  }
 }
 </style>

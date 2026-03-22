@@ -25,9 +25,19 @@ export function useSubscription() {
   // ==========================================
 
   /**
-   * Indica si el negocio tiene plan Premium activo
+   * Indica si el negocio tiene plan Premium activo (pagado)
    */
   const isPremium = computed(() => businessStore.isPremium)
+
+  /**
+   * Indica si el negocio tiene plan Pro activo
+   */
+  const isPro = computed(() => businessStore.isPro)
+
+  /**
+   * Indica si el negocio tiene plan Max activo
+   */
+  const isMax = computed(() => businessStore.isMax)
 
   /**
    * Indica si el negocio tiene plan Free
@@ -119,18 +129,18 @@ export function useSubscription() {
    */
   const showUpgradeModal = (featureName, customMessage = null) => {
     const messages = {
-      advancedReports: 'Desbloquea reportes avanzados y exportación de datos con el plan Premium.',
-      multiLocation: 'Gestiona múltiples ubicaciones con el plan Premium.',
-      apiAccess: 'Accede a nuestra API para integraciones personalizadas.',
-      prioritySupport: 'Obtén soporte prioritario y atención personalizada.',
-      customBranding: 'Personaliza la marca de tus reportes y documentos.',
+      advancedReports: 'Desbloquea reportes avanzados y exportación de datos con el plan Pro o Max.',
+      multiLocation: 'Gestiona múltiples ubicaciones con el plan Max.',
+      apiAccess: 'Accede a nuestra API para integraciones personalizadas con el plan Max.',
+      prioritySupport: 'Obtén soporte prioritario y atención personalizada con el plan Max.',
+      customBranding: 'Personaliza la marca de tus reportes y documentos con el plan Pro o Max.',
       aiClassification: 'Usa inteligencia artificial para clasificar productos automáticamente.',
-      exportData: 'Exporta tus datos a Excel, PDF y más formatos.',
-      maxEmployees: 'Has alcanzado el límite de empleados. Actualiza a Premium para agregar ilimitados.',
-      maxProducts: 'Has alcanzado el límite de productos. Actualiza a Premium para agregar ilimitados.'
+      exportData: 'Exporta tus datos a Excel, PDF y más formatos con el plan Pro o Max.',
+      maxEmployees: 'Has alcanzado el límite de empleados. Actualiza a Pro o Max para agregar ilimitados.',
+      maxProducts: 'Has alcanzado el límite de productos. Actualiza a Pro o Max para agregar ilimitados.'
     }
 
-    const message = customMessage || messages[featureName] || 'Esta función requiere el plan Premium.'
+    const message = customMessage || messages[featureName] || 'Esta función requiere el plan Pro o Max.'
 
     console.log('🚀 [useSubscription] Mostrar modal de upgrade')
     console.log('   Feature:', featureName)
@@ -139,7 +149,7 @@ export function useSubscription() {
     // TODO: Implementar modal real con UI bonita
     // Por ahora usamos alert como placeholder
     const userChoice = confirm(
-      `🔒 FUNCIÓN PREMIUM\n\n${message}\n\n¿Deseas ver los planes disponibles?`
+      `🔒 FUNCIÓN PRO/MAX\n\n${message}\n\n¿Deseas ver los planes disponibles?`
     )
 
     if (userChoice) {
@@ -225,11 +235,25 @@ export function useSubscription() {
   const planInfo = computed(() => {
     const sub = subscription.value
 
+    let name = 'Free'
+    let badge = '🆓'
+    let color = 'gray'
+
+    if (isMax.value || sub?.plan === 'premium') {
+      name = 'Max'
+      badge = '👑'
+      color = 'amber'
+    } else if (isPro.value) {
+      name = 'Pro'
+      badge = '⚡'
+      color = 'indigo'
+    }
+
     return {
-      name: isPremium.value ? 'Premium' : 'Gratis',
+      name,
       status: sub?.status || 'active',
-      badge: isPremium.value ? '👑' : '🆓',
-      color: isPremium.value ? 'amber' : 'gray',
+      badge,
+      color,
       startDate: sub?.startDate,
       endDate: sub?.endDate,
       daysLeft: daysRemaining.value
@@ -253,6 +277,8 @@ export function useSubscription() {
   return {
     // Estado
     isPremium,
+    isPro,
+    isMax,
     isFree,
     isTrialActive,
     subscription,

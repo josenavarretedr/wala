@@ -49,7 +49,7 @@
           class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg cursor-pointer hover:bg-orange-50 transition-colors"
         >
           <BrightCrown class="w-4 h-4" />
-          Premium
+          {{ planInfo.name }}
         </span>
         <span
           v-else
@@ -83,7 +83,7 @@ import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowS
 
 import { useSubscription } from "@/composables/useSubscription";
 
-const { isPremium } = useSubscription();
+const { isPremium, planInfo } = useSubscription();
 
 // ✅ Definir props opcionales
 const props = defineProps({

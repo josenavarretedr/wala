@@ -64,6 +64,9 @@
         :unit="product.unit"
         :stock-log="product.stockLog"
         :classification="product.classification"
+        :price="product.price ?? 0"
+        :cost="product.cost ?? null"
+        :min-stock="product.minStock ?? null"
         class="mb-6"
       />
 
@@ -88,6 +91,10 @@
         v-if="product.trackStock"
         :stock="product.stock"
         :unit="product.unit"
+        :product-id="product.uuid"
+        :min-stock="product.minStock ?? null"
+        :description="product.description"
+        :product-type="product.type"
       />
       <!-- <ProductoNoStock v-else /> -->
       <!-- Statistics Summary -->

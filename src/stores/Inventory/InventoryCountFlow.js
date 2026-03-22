@@ -20,6 +20,7 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
       hasDiscrepancy: false, // Si hay diferencia entre físico y digital
       difference: 0, // Diferencia calculada (físico - digital)
       hasUserInput: false, // Si el usuario ha ingresado algo
+      minStock: null, // Stock mínimo para alertas
     }
   }),
   getters: {
@@ -68,6 +69,7 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
         hasDiscrepancy: false,
         difference: 0,
         hasUserInput: false,
+        minStock: null,
       };
     },
     // Actualizar datos del flujo
@@ -75,7 +77,12 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
       this.countData.productId = productId;
       this.countData.productData = productData;
       this.countData.digitalStock = productData?.stock || 0;
+      this.countData.minStock = productData?.minStock ?? null;
       console.log('📦 Producto establecido para conteo:', { productId, productData });
+    },
+    setMinStock(minStock) {
+      this.countData.minStock = minStock;
+      console.log('🔔 Stock mínimo establecido:', minStock);
     },
     setPhysicalStock(physicalStock) {
       this.countData.physicalStock = physicalStock;

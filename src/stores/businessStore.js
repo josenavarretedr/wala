@@ -45,11 +45,27 @@ export const useBusinessStore = defineStore('business', {
     subscription: (state) => state.business?.subscription || {},
 
     /**
-     * Verifica si el negocio tiene plan Premium activo
+     * Verifica si el negocio tiene plan Premium activo (cualquier plan de pago: premium, pro, max)
      */
     isPremium: (state) => {
       const sub = state.business?.subscription
-      return sub?.plan === 'premium' && sub?.status === 'active'
+      return ['premium', 'pro', 'max'].includes(sub?.plan) && sub?.status === 'active'
+    },
+
+    /**
+     * Verifica si el negocio tiene plan Pro activo
+     */
+    isPro: (state) => {
+      const sub = state.business?.subscription
+      return sub?.plan === 'pro' && sub?.status === 'active'
+    },
+
+    /**
+     * Verifica si el negocio tiene plan Max activo
+     */
+    isMax: (state) => {
+      const sub = state.business?.subscription
+      return sub?.plan === 'max' && sub?.status === 'active'
     },
 
     /**
@@ -579,31 +595,54 @@ export const useBusinessStore = defineStore('business', {
      * Obtiene las features disponibles según el plan
      */
     getFeaturesForPlan(plan) {
-      if (plan === 'premium') {
+      if (plan === 'max' || plan === 'premium') {
         return {
           maxEmployees: 999999, // "unlimited"
-          maxProducts: 999999,
-          advancedReports: true,
+          maxProducts: 999999, // inventario ilimitado
+          advancedReports: true, // Comparación de periodos
           multiLocation: true,
           apiAccess: true,
-          prioritySupport: true,
+          prioritySupport: true, // Asistencia personalizada y prioritaria
           customBranding: true,
           aiClassification: true,
-          exportData: true
+          exportData: true,
+          shareLimit: 999999, // compartir ilimitado
+          groupSessions: true, // sesiones personalizadas grupales
+          localFairs: true // Acceso a ferias locales
+        }
+      }
+
+      if (plan === 'pro') {
+        return {
+          maxEmployees: 999999, 
+          maxProducts: 999999, // inventario ilimitado
+          advancedReports: true, // Comparación de periodos
+          multiLocation: false,
+          apiAccess: false,
+          prioritySupport: false,
+          customBranding: true, // compartir personalizado (añadir logos)
+          aiClassification: false,
+          exportData: true,
+          shareLimit: 999999, // compartir ilimitado
+          groupSessions: false,
+          localFairs: false
         }
       }
 
       // Plan free (por defecto)
       return {
         maxEmployees: 3,
-        maxProducts: 100,
+        maxProducts: 999999, // inventario ilimitado (Free)
         advancedReports: false,
         multiLocation: false,
         apiAccess: false,
         prioritySupport: false,
         customBranding: false,
         aiClassification: false,
-        exportData: false
+        exportData: false,
+        shareLimit: 20, // compartir: lim de 20 al día
+        groupSessions: false,
+        localFairs: false
       }
     },
 

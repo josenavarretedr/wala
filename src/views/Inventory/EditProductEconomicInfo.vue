@@ -34,7 +34,7 @@
 
     <!-- Contenido -->
     <div class="max-w-4xl mx-auto">
-      <!-- Loading -->
+      <!-- Loading (solo en fallback a BD) -->
       <div
         v-if="loading"
         class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center"
@@ -72,7 +72,7 @@ const router = useRouter();
 const inventoryStore = useInventoryStore();
 const { success, error: showError } = useToast();
 
-const loading = ref(true);
+const loading = ref(false);
 const saving = ref(false);
 
 const productData = ref({
@@ -82,30 +82,38 @@ const productData = ref({
   cost: null,
 });
 
-// Cargar datos del producto
+// Cargar datos — desde state de ruta o fallback a BD
 const loadProductData = async () => {
+  const state = history.state;
+
+  // Si venimos de ProductDetails vía router-link con state, usarlo directamente
+  if (state?.description !== undefined) {
+    productData.value = {
+      description: state.description || "",
+      type: state.type || "MERCH",
+      price: state.price ?? 0,
+      cost: state.cost ?? null,
+    };
+    console.log("⚡ Datos económicos cargados desde route state:", productData.value);
+    return;
+  }
+
+  // Fallback: navegación directa por URL → fetch de BD
+  console.log("🔄 Sin state, cargando desde BD...");
   try {
     loading.value = true;
-
     const productId = route.params.productId;
     const product = await inventoryStore.getProductDetails(productId);
 
-    if (!product) {
-      throw new Error("Producto no encontrado");
-    }
+    if (!product) throw new Error("Producto no encontrado");
 
-    // Cargar datos económicos (incluimos description y type para contexto)
     productData.value = {
       description: product.description || "",
       type: product.type || "MERCH",
       price: product.price || 0,
       cost: product.cost || null,
     };
-
-    console.log(
-      "✅ Información económica del producto cargada:",
-      productData.value,
-    );
+    console.log("✅ Información económica cargada desde BD:", productData.value);
   } catch (err) {
     console.error("❌ Error cargando producto:", err);
     showError("Error al cargar el producto");
@@ -119,23 +127,14 @@ const loadProductData = async () => {
 const handleSave = async (payload) => {
   try {
     saving.value = true;
-
     const productId = route.params.productId;
-
-    // Solo guardamos los campos que cambiaron
     await inventoryStore.updateProduct(productId, payload.changes);
-
     console.log("✅ Información económica actualizada:", payload.changes);
     success("Información económica actualizada correctamente");
-
-    // Redirigir de vuelta a los detalles del producto
     setTimeout(() => {
       router.push({
         name: "InventoryProductDetails",
-        params: {
-          businessId: route.params.businessId,
-          productId: productId,
-        },
+        params: { businessId: route.params.businessId, productId },
       });
     }, 1000);
   } catch (err) {

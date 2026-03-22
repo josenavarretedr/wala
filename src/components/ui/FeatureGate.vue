@@ -31,10 +31,10 @@
           <!-- Badge Premium -->
           <div class="mb-6 flex justify-center">
             <span
-              class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-semibold rounded-full shadow-lg"
+              class="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-sm font-semibold rounded-full shadow-lg"
             >
-              <span>👑</span>
-              <span>Función Premium</span>
+              <span>⚡</span>
+              <span>Función Pro o Max</span>
             </span>
           </div>
 
@@ -44,7 +44,7 @@
             @click="handleUpgrade"
             class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:shadow-xl hover:scale-105 transition-all duration-200"
           >
-            ✨ Actualizar a Premium
+            ✨ Ver planes disponibles
           </button>
 
           <!-- Slot para botón personalizado -->
@@ -191,14 +191,14 @@ const hasAccessToFeature = computed(() => {
 });
 
 const computedTitle = computed(() => {
-  return props.title || defaultTitles[props.feature] || "Función Premium";
+  return props.title || defaultTitles[props.feature] || "Función Pro o Max";
 });
 
 const computedDescription = computed(() => {
   return (
     props.description ||
     defaultDescriptions[props.feature] ||
-    "Esta función solo está disponible en el plan Premium."
+    "Esta función solo está disponible en el plan Pro o Max."
   );
 });
 

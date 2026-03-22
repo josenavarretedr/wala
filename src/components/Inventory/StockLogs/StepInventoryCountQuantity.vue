@@ -73,7 +73,7 @@
                   >Stock digital actual:</span
                 >
                 <span class="ml-2 font-bold text-blue-600">
-                  {{ digitalStock }}
+                  {{ digitalStockValue }}
                   {{ flow.countData.productData?.unit || "uni" }}
                 </span>
               </div>
@@ -217,7 +217,7 @@
                         Stock Digital
                       </div>
                       <div class="text-xl font-bold text-gray-800">
-                        {{ formatNumber(digitalStock) }}
+                        {{ formatNumber(digitalStockValue) }}
                         <span class="text-sm font-normal text-gray-500">
                           {{ flow.countData.productData?.unit || "uni" }}
                         </span>
@@ -332,52 +332,59 @@ import { useRoute } from "vue-router";
 import { useInventoryCountFlowStore } from "@/stores/Inventory/InventoryCountFlow";
 import { useInventoryStore } from "@/stores/inventoryStore";
 
+// Props — permiten que el padre pase datos directamente sin llamar a BD
+const props = defineProps({
+  productData: {
+    type: Object,
+    default: null,
+  },
+  digitalStock: {
+    type: Number,
+    default: null,
+  },
+});
+
 const route = useRoute();
 const flow = useInventoryCountFlowStore();
 const inventoryStore = useInventoryStore();
 
 // Estados reactivos
-const isLoading = ref(true);
+const isLoading = ref(false);
 const physicalStock = ref(null);
 const physicalStockInput = ref(null);
 
 // Computed
-const digitalStock = computed(() => flow.countData.digitalStock || 0);
+const digitalStockValue = computed(() => {
+  // Si el padre pasó digitalStock como prop, usarlo
+  if (props.digitalStock !== null) return props.digitalStock;
+  return flow.countData.digitalStock || 0;
+});
 
 const hasUserInput = computed(() => {
   return (
-    physicalStock.value !== null && physicalStock.value !== digitalStock.value
+    physicalStock.value !== null && physicalStock.value !== digitalStockValue.value
   );
 });
 
 const difference = computed(() => flow.countData.difference || 0);
-
 const hasDiscrepancy = computed(() => flow.countData.hasDiscrepancy || false);
 
-const isDisabled = computed(() => {
-  // Aquí puedes agregar lógica para deshabilitar si ya existe un conteo registrado
-  // Por ahora lo dejamos siempre habilitado
-  return false;
-});
+const isDisabled = computed(() => false);
 
 // Clases dinámicas para el input
 const inputClasses = computed(() => {
   if (isDisabled.value) {
     return "border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed";
   }
-
   if (!hasUserInput.value) {
     return "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200";
   }
-
   if (!hasDiscrepancy.value) {
     return "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200";
   }
-
   if (difference.value > 0) {
     return "border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200";
   }
-
   return "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200";
 });
 
@@ -387,7 +394,6 @@ const handleInputChange = () => {
 };
 
 const handleFocus = (e) => {
-  // Seleccionar todo el texto al hacer foco para facilitar la edición
   e.target.select();
 };
 
@@ -399,7 +405,6 @@ const formatNumber = (value) => {
 // Observar cambios en el stock físico
 watch(physicalStock, (newValue) => {
   if (newValue !== null && newValue !== undefined) {
-    console.log("🔍 Watch detectó cambio en physicalStock:", newValue);
     flow.setPhysicalStock(newValue);
   }
 });
@@ -407,45 +412,44 @@ watch(physicalStock, (newValue) => {
 // Inicialización
 onMounted(async () => {
   try {
+    // Si el padre pasó productData como prop, usarlos sin fetch
+    if (props.productData) {
+      flow.setProductData(route.params.productId, props.productData);
+      physicalStock.value = props.productData.stock || 0;
+      console.log("⚡ StepInventoryCountQuantity inicializado desde props:", props.productData);
+      return;
+    }
+
+    // Fallback: cargar desde BD
     isLoading.value = true;
-
     const productId = route.params.productId;
-
     if (!productId) {
       console.error("No se encontró el ID del producto");
       return;
     }
 
-    // Obtener datos del producto
     const productData = await inventoryStore.getProductDetails(productId);
-
     if (!productData) {
       console.error("No se pudo cargar el producto");
       return;
     }
 
-    // Establecer datos en el store
     flow.setProductData(productId, productData);
-
-    // Inicializar el input con el stock digital actual
-    // IMPORTANTE: No llamar a setPhysicalStock aquí para evitar que hasUserInput sea true
     physicalStock.value = productData.stock || 0;
 
-    console.log("🎬 Componente inicializado:", {
+    console.log("✅ StepInventoryCountQuantity inicializado desde BD:", {
       productId,
       digitalStock: productData.stock,
-      physicalStockInitial: physicalStock.value,
     });
   } catch (error) {
-    console.error(
-      "Error en inicialización de StepInventoryCountQuantity:",
-      error
-    );
+    console.error("Error en StepInventoryCountQuantity:", error);
   } finally {
     isLoading.value = false;
   }
 });
 </script>
+
+
 
 <style scoped>
 /* Números tabulares para mejor alineación */

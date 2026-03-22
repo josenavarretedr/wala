@@ -484,7 +484,7 @@ const allMicroApps = ref([
   },
   {
     id: 9,
-    name: "Premium",
+    name: "Pro",
     route: "/premium",
     available: true,
     icon: BrightCrown,
