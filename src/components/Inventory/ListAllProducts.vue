@@ -175,6 +175,10 @@ function buildIndex(items) {
         trackStock: p.trackStock ? p.trackStock : false,
         isPerishable: Boolean(p.isPerishable),
         expirationDate: p.expirationDate || null,
+        hasVariants: Boolean(p.hasVariants),
+        variantSchema: p.variantSchema || { combineAttributes: false },
+        variantCombos: Array.isArray(p.variantCombos) ? p.variantCombos : [],
+        stockSummary: p.stockSummary || null,
       }
     ),
   );

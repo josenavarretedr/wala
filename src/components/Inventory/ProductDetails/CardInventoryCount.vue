@@ -17,6 +17,14 @@
           <span class="hidden sm:inline">Conteo de Inventario</span>
           <span class="sm:hidden">Conteo</span>
         </div>
+
+        <div
+          v-if="hasVariantLog"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0 bg-violet-50 text-violet-700 border border-violet-200"
+        >
+          <span>Variante</span>
+          <span>{{ variantBadgeLabel }}</span>
+        </div>
       </div>
 
       <!-- Lado derecho: Ajuste -->
@@ -192,6 +200,17 @@ const toggleOpen = () => {
   isOpen.value = !isOpen.value;
 };
 
+const hasVariantLog = computed(() => {
+  return Boolean(props.log?.variantLabel || props.log?.variantId);
+});
+
+const variantBadgeLabel = computed(() => {
+  if (props.log?.variantLabel) return String(props.log.variantLabel).trim();
+  if (props.log?.variantId)
+    return String(props.log.variantId).slice(-6).toUpperCase();
+  return "Variante";
+});
+
 // Computed: Tipo de ajuste
 const adjustmentType = computed(() => props.log.adjustmentType || "equal");
 
@@ -357,7 +376,8 @@ function formatedDate(date) {
 /* Hover effects para touch devices */
 @media (hover: hover) {
   .hover\:shadow-md:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
       0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 }

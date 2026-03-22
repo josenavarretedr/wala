@@ -67,6 +67,17 @@
         :price="product.price ?? 0"
         :cost="product.cost ?? null"
         :min-stock="product.minStock ?? null"
+        :has-variants="Boolean(product.hasVariants)"
+        :total-variants="
+          Number(
+            product?.stockSummary?.totalVariants ||
+              product?.variantCombos?.length ||
+              0,
+          )
+        "
+        :combine-variant-attributes="
+          Boolean(product?.variantSchema?.combineAttributes)
+        "
         class="mb-6"
       />
 
@@ -110,6 +121,7 @@
         :stock-log="product.stockLog"
         :product-unit="product.unit || 'uni'"
         :track-stock="product?.trackStock ?? false"
+        :has-variants="Boolean(product?.hasVariants)"
       />
     </div>
     <div

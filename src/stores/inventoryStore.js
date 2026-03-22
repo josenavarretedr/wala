@@ -366,7 +366,15 @@ export function useInventoryStore() {
     const operationChain = startOperationChain('inventory_count_adjustment');
 
     try {
-      const { productId, productData, physicalStock, digitalStock, difference } = countData;
+      const {
+        productId,
+        productData,
+        physicalStock,
+        digitalStock,
+        difference,
+        hasVariants,
+        variantCounts,
+      } = countData;
 
       // Validaciones estrictas
       if (!productId) {
@@ -384,6 +392,10 @@ export function useInventoryStore() {
       // Validar difference (puede ser 0, positivo o negativo)
       if (difference === null || difference === undefined) {
         throw new Error('difference no puede ser null o undefined');
+      }
+
+      if (hasVariants && !Array.isArray(variantCounts)) {
+        throw new Error('variantCounts debe ser un array cuando hasVariants es true');
       }
 
       console.log('💾 Datos de conteo validados:', {
@@ -409,22 +421,60 @@ export function useInventoryStore() {
         }
       });
 
-      // Crear el stock log de tipo 'count'
-      const stockLogData = {
-        uuid: productId,
-        quantity: Math.abs(difference), // Valor absoluto de la diferencia
-        cost: productData?.cost || null,
-        price: productData?.price || null,
-        physicalStock: Number(physicalStock),
-        digitalStock: Number(digitalStock),
-        difference: Number(difference),
-        adjustmentType: difference > 0 ? 'surplus' : difference < 0 ? 'shortage' : 'verified'
-      };
+      if (hasVariants) {
+        const variantLogs = variantCounts.map((variant) => ({
+          ...variant,
+          physicalStock: Number(variant.physicalStock || 0),
+          digitalStock: Number(variant.digitalStock || 0),
+          difference: Number(variant.physicalStock || 0) - Number(variant.digitalStock || 0),
+        }));
 
-      console.log('📦 StockLog a crear:', stockLogData);
+        for (const variant of variantLogs) {
+          const stockLogData = {
+            uuid: productId,
+            variantId: variant.variantId,
+            variantLabel: variant.label || null,
+            quantity: Math.abs(variant.difference),
+            cost: variant.cost ?? productData?.cost ?? null,
+            price: variant.price ?? productData?.price ?? null,
+            physicalStock: Number(variant.physicalStock),
+            digitalStock: Number(variant.digitalStock),
+            difference: Number(variant.difference),
+            adjustmentType: variant.difference > 0 ? 'surplus' : variant.difference < 0 ? 'shortage' : 'verified',
+          };
 
-      // Guardar el stock log
-      await createStockLog(stockLogData, 'count');
+          await createStockLog(stockLogData, 'count');
+        }
+
+        // Log resumen general para trazabilidad del conteo completo
+        await createStockLog({
+          uuid: productId,
+          quantity: Math.abs(difference),
+          cost: productData?.cost || null,
+          price: productData?.price || null,
+          physicalStock: Number(physicalStock),
+          digitalStock: Number(digitalStock),
+          difference: Number(difference),
+          adjustmentType: difference > 0 ? 'surplus' : difference < 0 ? 'shortage' : 'verified',
+        }, 'count');
+      } else {
+        // Crear el stock log de tipo 'count'
+        const stockLogData = {
+          uuid: productId,
+          quantity: Math.abs(difference), // Valor absoluto de la diferencia
+          cost: productData?.cost || null,
+          price: productData?.price || null,
+          physicalStock: Number(physicalStock),
+          digitalStock: Number(digitalStock),
+          difference: Number(difference),
+          adjustmentType: difference > 0 ? 'surplus' : difference < 0 ? 'shortage' : 'verified'
+        };
+
+        console.log('📦 StockLog a crear:', stockLogData);
+
+        // Guardar el stock log
+        await createStockLog(stockLogData, 'count');
+      }
 
       // === TRAZABILIDAD: Finalizar operación ===
       await operationChain.finish({

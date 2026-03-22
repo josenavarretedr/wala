@@ -229,6 +229,13 @@
                 <div class="font-semibold text-gray-900 truncate mb-1">
                   {{ item.description.trim().toUpperCase() }}
                 </div>
+                <div v-if="item.variantLabel" class="mb-1">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                  >
+                    {{ item.variantLabel }}
+                  </span>
+                </div>
                 <div class="text-sm text-gray-600">
                   {{ item.quantity }} {{ item.unit || "uni" }} × S/
                   {{ item.price.toFixed(2) }}

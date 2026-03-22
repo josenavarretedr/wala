@@ -100,6 +100,10 @@ const props = defineProps({
     type: String,
     default: "uni",
   },
+  hasVariants: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Methods: Determinar qué componente usar según el tipo de log
@@ -113,17 +117,27 @@ const getCardComponent = (log) => {
 // Computed: Sorted Stock Logs
 const sortedStockLogs = computed(() => {
   if (!props.stockLog) return [];
-  return [...props.stockLog].sort((a, b) => {
+
+  let logs = [...props.stockLog];
+
+  if (props.hasVariants) {
+    logs = logs.filter((log) => {
+      if (log.type !== "count") return true;
+      return Boolean(log.variantId);
+    });
+  }
+
+  return logs.sort((a, b) => {
     const dateA = a.createdAt?.seconds
       ? new Date(a.createdAt.seconds * 1000)
       : a.createdAt instanceof Date
-      ? a.createdAt
-      : new Date(a.createdAt);
+        ? a.createdAt
+        : new Date(a.createdAt);
     const dateB = b.createdAt?.seconds
       ? new Date(b.createdAt.seconds * 1000)
       : b.createdAt instanceof Date
-      ? b.createdAt
-      : new Date(b.createdAt);
+        ? b.createdAt
+        : new Date(b.createdAt);
     return dateB - dateA; // Más reciente primero
   });
 });

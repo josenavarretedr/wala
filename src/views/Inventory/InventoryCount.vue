@@ -57,20 +57,38 @@
         <!-- Campo: Stock mínimo -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
-              <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            <div
+              class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0"
+            >
+              <svg
+                class="w-5 h-5 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
               </svg>
             </div>
             <div>
-              <h2 class="text-base font-semibold text-gray-800">Alerta de Stock Mínimo</h2>
-              <p class="text-xs text-gray-500">Define el umbral mínimo para recibir alertas</p>
+              <h2 class="text-base font-semibold text-gray-800">
+                Alerta de Stock Mínimo
+              </h2>
+              <p class="text-xs text-gray-500">
+                Define el umbral mínimo para recibir alertas
+              </p>
             </div>
           </div>
 
           <div class="space-y-3">
-            <label for="min-stock-input" class="block text-sm font-semibold text-gray-700">
+            <label
+              for="min-stock-input"
+              class="block text-sm font-semibold text-gray-700"
+            >
               Stock Mínimo
             </label>
             <div class="relative">
@@ -85,32 +103,67 @@
                 :class="minStockInputClass"
                 @input="onMinStockChange"
               />
-              <div class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400">
+              <div
+                class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400"
+              >
                 {{ flow.countData.productData?.unit || "uni" }}
               </div>
             </div>
             <p class="text-xs text-gray-500">
-              Se mostrará una alerta cuando el stock sea igual o menor a este valor.
+              Se mostrará una alerta cuando el stock sea igual o menor a este
+              valor.
             </p>
           </div>
         </div>
 
         <!-- Botón Guardar (se activa si hay cambios en stock físico o minStock) -->
-        <div v-if="hasChanges" class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div
+          v-if="hasChanges"
+          class="bg-white rounded-xl shadow-sm border border-gray-100 p-4"
+        >
           <button
             @click="handleSave"
             :disabled="saving"
             class="w-full py-3 px-6 rounded-xl font-semibold text-white transition-all duration-200 flex items-center justify-center gap-2"
-            :class="saving
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-sm hover:shadow-md'"
+            :class="
+              saving
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98] shadow-sm hover:shadow-md'
+            "
           >
-            <svg v-if="saving" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            <svg
+              v-if="saving"
+              class="animate-spin h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+              ></path>
             </svg>
-            <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            <svg
+              v-else
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
             {{ saving ? "Guardando..." : "Guardar cambios" }}
           </button>
@@ -140,7 +193,9 @@ const localMinStock = ref(null);
 const originalMinStock = ref(null);
 
 // Descripción del producto para el header
-const productDescription = computed(() => flow.countData.productData?.description || "");
+const productDescription = computed(
+  () => flow.countData.productData?.description || "",
+);
 
 // Stock digital para pasar al paso de conteo
 const digitalStock = computed(() => flow.countData.digitalStock || 0);
@@ -149,10 +204,24 @@ const digitalStock = computed(() => flow.countData.digitalStock || 0);
 const productDataForStep = computed(() => flow.countData.productData);
 
 // Detectar si hay cambios para activar el botón Guardar
+const variantStockChanged = computed(() => {
+  if (!flow.countData.hasVariants) return false;
+
+  return (flow.countData.variantCounts || []).some((variant) => {
+    return (
+      Math.abs(
+        Number(variant.physicalStock || 0) - Number(variant.digitalStock || 0),
+      ) > 0.0001
+    );
+  });
+});
+
 const hasChanges = computed(() => {
-  const stockChanged = flow.countData.hasUserInput &&
+  const stockChanged =
+    flow.countData.hasUserInput &&
     flow.countData.physicalStock !== null &&
-    flow.countData.physicalStock !== digitalStock.value;
+    (Math.abs(Number(flow.countData.difference || 0)) > 0.0001 ||
+      variantStockChanged.value);
 
   const minStockChanged = localMinStock.value !== originalMinStock.value;
 
@@ -176,7 +245,10 @@ const onMinStockChange = () => {
 const loadProductData = async () => {
   const state = history.state;
 
-  if (state?.stock !== undefined || state?.description !== undefined) {
+  if (
+    (state?.stock !== undefined || state?.description !== undefined) &&
+    state?.hasVariants !== undefined
+  ) {
     // Datos disponibles desde route state
     const productData = {
       description: state.description || "",
@@ -184,6 +256,11 @@ const loadProductData = async () => {
       unit: state.unit || "uni",
       minStock: state.minStock ?? null,
       type: state.type || "MERCH",
+      hasVariants: Boolean(state.hasVariants),
+      variantSchema: state.variantSchema || { attributes: [] },
+      variantCombos: Array.isArray(state.variantCombos)
+        ? state.variantCombos
+        : [],
     };
     flow.setProductData(route.params.productId, productData);
     localMinStock.value = productData.minStock;
@@ -228,9 +305,18 @@ const handleSave = async () => {
     if (
       flow.countData.hasUserInput &&
       flow.countData.physicalStock !== null &&
-      flow.countData.physicalStock !== digitalStock.value
+      (Math.abs(Number(flow.countData.difference || 0)) > 0.0001 ||
+        variantStockChanged.value)
     ) {
-      updates.stock = flow.countData.physicalStock;
+      await inventoryStore.saveInventoryCount({
+        productId,
+        productData: flow.countData.productData,
+        physicalStock: Number(flow.countData.physicalStock || 0),
+        digitalStock: Number(flow.countData.digitalStock || 0),
+        difference: Number(flow.countData.difference || 0),
+        hasVariants: Boolean(flow.countData.hasVariants),
+        variantCounts: flow.countData.variantCounts || [],
+      });
     }
 
     // Si hay cambio en minStock
@@ -238,9 +324,9 @@ const handleSave = async () => {
       updates.minStock = localMinStock.value;
     }
 
-    if (Object.keys(updates).length === 0) return;
-
-    await inventoryStore.updateProduct(productId, updates);
+    if (Object.keys(updates).length > 0) {
+      await inventoryStore.updateProduct(productId, updates);
+    }
     console.log("✅ Guardado:", updates);
     success("Cambios guardados correctamente");
 

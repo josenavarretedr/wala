@@ -104,6 +104,28 @@
           <span>{{ product.stock || 0 }} {{ unitLabelShort }}</span>
         </div>
 
+        <!-- Badge: Variantes -->
+        <div
+          v-if="hasVariantsConfigured"
+          :key="`variants-${totalVariants}`"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+        >
+          <svg
+            class="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 7h16M4 12h16M4 17h16"
+            ></path>
+          </svg>
+          <span>{{ variantsBadgeLabel }}</span>
+        </div>
+
         <!-- Badge: Control de Stock (solo si trackStock existe y NO es servicio) -->
         <!-- <div
           v-if="props.product.trackStock"
@@ -127,7 +149,7 @@
         </div> -->
 
         <!-- Badge: Unidad de Medida (solo si NO es servicio) -->
-        <div
+        <!-- <div
           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
         >
           <svg
@@ -144,7 +166,7 @@
             ></path>
           </svg>
           <span>{{ unitLabelShort }}</span>
-        </div>
+        </div> -->
 
         <!-- Badge: Vencimiento -->
         <div
@@ -264,6 +286,32 @@ const unitLabelShort = computed(() => {
     paquete: "Paq",
   };
   return units[unit] || unit;
+});
+
+const totalVariants = computed(() => {
+  const combosLength = Array.isArray(props.product.variantCombos)
+    ? props.product.variantCombos.length
+    : 0;
+  const summaryTotal = Number(props.product?.stockSummary?.totalVariants || 0);
+
+  return combosLength || summaryTotal;
+});
+
+const hasVariantsConfigured = computed(() => {
+  const combosLength = Array.isArray(props.product.variantCombos)
+    ? props.product.variantCombos.length
+    : 0;
+  const summaryTotal = Number(props.product?.stockSummary?.totalVariants || 0);
+
+  return (
+    Boolean(props.product.hasVariants) || combosLength > 0 || summaryTotal > 0
+  );
+});
+
+const variantsBadgeLabel = computed(() => {
+  const total = totalVariants.value;
+  const isCombined = Boolean(props.product?.variantSchema?.combineAttributes);
+  return `${total} variante${total === 1 ? "" : "s"}`;
 });
 
 // Computed: Vencimiento

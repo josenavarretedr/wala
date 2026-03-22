@@ -26,6 +26,152 @@ import { round2, addMoney, roundStock, subtractStock, addStock } from '@/utils/m
 
 const db = getFirestore(appFirebase);
 
+const createLocalId = (prefix = 'id') => {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const hashString = (value = '') => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash.toString(36);
+};
+
+const buildDeterministicVariantId = (optionIds = []) => {
+  const normalizedOptionIds = [...optionIds]
+    .map((optionId) => String(optionId || '').trim())
+    .filter(Boolean)
+    .sort();
+
+  if (!normalizedOptionIds.length) {
+    return null;
+  }
+
+  return `var_${hashString(normalizedOptionIds.join('|'))}`;
+};
+
+const normalizeVariantSchema = (schema) => {
+  if (!schema || !Array.isArray(schema.attributes)) {
+    return {
+      combineAttributes: false,
+      attributes: [],
+    };
+  }
+
+  const attributes = schema.attributes
+    .map((attribute) => {
+      const options = Array.isArray(attribute?.options)
+        ? attribute.options
+          .map((option) => {
+            const value = (option?.value || '').trim();
+            if (!value) return null;
+            return {
+              id: option?.id || createLocalId('opt'),
+              value,
+            };
+          })
+          .filter(Boolean)
+        : [];
+
+      return {
+        id: attribute?.id || createLocalId('attr'),
+        name: (attribute?.name || '').trim(),
+        options,
+      };
+    })
+    .filter((attribute) => attribute.name && attribute.options.length > 0);
+
+  return {
+    combineAttributes: Boolean(schema?.combineAttributes),
+    attributes,
+  };
+};
+
+const normalizeVariantCombos = (combos) => {
+  if (!Array.isArray(combos)) return [];
+
+  return combos.map((combo) => ({
+    id: buildDeterministicVariantId(combo?.optionIds) || combo?.id || createLocalId('var'),
+    label: combo?.label || 'Variante',
+    sku: (combo?.sku || '').trim() || null,
+    optionIds: Array.isArray(combo?.optionIds) ? combo.optionIds : [],
+    stock: roundStock(Number(combo?.stock || 0)),
+    minStock: combo?.minStock === null || combo?.minStock === undefined || combo?.minStock === ''
+      ? null
+      : Number(combo.minStock),
+    isActive: combo?.isActive !== false,
+    createdAt: combo?.createdAt || null,
+    updatedAt: combo?.updatedAt || null,
+  }));
+};
+
+const computeTotalStockFromVariants = (variantCombos = []) => {
+  return roundStock(
+    variantCombos.reduce((total, variant) => total + Number(variant?.stock || 0), 0)
+  );
+};
+
+const buildVariantStockSummary = (variantCombos = []) => {
+  return {
+    totalVariants: variantCombos.length,
+    totalStock: computeTotalStockFromVariants(variantCombos),
+    lastAggregatedAt: new Date().toISOString(),
+  };
+};
+
+const validateUniqueVariantSku = (variantCombos = []) => {
+  const skus = new Set();
+
+  for (const combo of variantCombos) {
+    const sku = (combo?.sku || '').trim().toUpperCase();
+    if (!sku) continue;
+
+    if (skus.has(sku)) {
+      throw new Error(`SKU duplicado en variantes: ${sku}`);
+    }
+
+    skus.add(sku);
+  }
+};
+
+const validateUniqueVariantCombination = (variantCombos = []) => {
+  const combinations = new Set();
+
+  for (const combo of variantCombos) {
+    const key = Array.isArray(combo?.optionIds)
+      ? [...combo.optionIds].sort().join('|')
+      : '';
+
+    if (!key) continue;
+
+    if (combinations.has(key)) {
+      throw new Error('Hay combinaciones de variantes duplicadas');
+    }
+
+    combinations.add(key);
+  }
+};
+
+const validateUniqueVariantLabel = (variantCombos = []) => {
+  const labels = new Set();
+
+  for (const combo of variantCombos) {
+    const normalizedLabel = String(combo?.label || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLowerCase();
+
+    if (!normalizedLabel) continue;
+
+    if (labels.has(normalizedLabel)) {
+      throw new Error(`Hay etiquetas de variantes duplicadas: ${combo.label}`);
+    }
+
+    labels.add(normalizedLabel);
+  }
+};
+
 export function useInventory() {
   const createItem = async (item, type = 'MERCH') => {
     try {
@@ -102,6 +248,18 @@ export function useInventory() {
       // Generar UUID para el nuevo producto
       const productId = uuidv4();
 
+      const hasVariants = Boolean(productData.hasVariants);
+      const normalizedVariantSchema = normalizeVariantSchema(productData.variantSchema);
+      const normalizedVariantCombos = normalizeVariantCombos(productData.variantCombos);
+
+      if (hasVariants) {
+        validateUniqueVariantSku(normalizedVariantCombos);
+        validateUniqueVariantCombination(normalizedVariantCombos);
+        validateUniqueVariantLabel(normalizedVariantCombos);
+      }
+
+      const stockFromVariants = computeTotalStockFromVariants(normalizedVariantCombos);
+
       // Determinar trackStock según el tipo
       let trackStock = productData.trackStock ?? false;
       if (productData.type === 'MERCH' || productData.type === 'RAW_MATERIAL') {
@@ -116,10 +274,16 @@ export function useInventory() {
         description: productData.description.trim().toUpperCase(),
         price: productData.price !== undefined && productData.price !== null ? Number(productData.price) : 0,
         cost: productData.cost !== undefined && productData.cost !== null ? Number(productData.cost) : 0,
-        stock: 0, // Stock inicial siempre es 0 (se añade después con addStock)
+        stock: hasVariants ? stockFromVariants : 0,
         unit: productData.unit || 'uni',
         type: productData.type || 'MERCH',
         trackStock,
+        hasVariants,
+        variantSchema: hasVariants
+          ? normalizedVariantSchema
+          : { combineAttributes: false, attributes: [] },
+        variantCombos: hasVariants ? normalizedVariantCombos : [],
+        stockSummary: hasVariants ? buildVariantStockSummary(normalizedVariantCombos) : null,
         stockLog: [], // Historial de stock vacío al crear
         createdAt: serverTimestamp(),
       };
@@ -179,7 +343,16 @@ export function useInventory() {
         uuid: uuidv4(),
         quantity: item.quantity,
         type: typeStockLog,
+        variantId: item.variantId || null,
       };
+
+      if (item.variantLabel) {
+        stockLog.variantLabel = String(item.variantLabel).trim();
+      }
+
+      if (item.variantSku) {
+        stockLog.variantSku = String(item.variantSku).trim();
+      }
 
       // Siempre registrar cost y price para todos los movimientos
       // Esto permite tener histórico completo y análisis de rentabilidad
@@ -280,6 +453,63 @@ export function useInventory() {
         ...stockLog,
         createdAt: serverTimestamp(),
       });
+
+      if (item.variantId) {
+        const productData = productDoc.data();
+        const currentVariants = Array.isArray(productData.variantCombos)
+          ? [...productData.variantCombos]
+          : [];
+
+        const variantIndex = currentVariants.findIndex((variant) => variant.id === item.variantId);
+
+        if (variantIndex === -1) {
+          throw new Error(`Variante no encontrada: ${item.variantId}`);
+        }
+
+        const currentVariant = currentVariants[variantIndex];
+        let newVariantStock = Number(currentVariant.stock || 0);
+
+        if (stockLog.type === 'sell' || stockLog.type === 'waste') {
+          const quantityToDeduct = item.quantityForStock !== undefined
+            ? Number(item.quantityForStock)
+            : Number(stockLog.quantity || 0);
+          newVariantStock = quantityToDeduct > newVariantStock
+            ? 0
+            : subtractStock(newVariantStock, quantityToDeduct);
+        }
+
+        if (stockLog.type === 'buy' || stockLog.type === 'return') {
+          newVariantStock = addStock(newVariantStock, Number(stockLog.quantity || 0));
+        }
+
+        if (stockLog.type === 'count') {
+          if (item.physicalStock === undefined || item.physicalStock === null) {
+            throw new Error('physicalStock no puede ser undefined o null para conteo de variante');
+          }
+          newVariantStock = roundStock(Number(item.physicalStock));
+        }
+
+        currentVariants[variantIndex] = {
+          ...currentVariant,
+          stock: roundStock(Number(newVariantStock)),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await updateDoc(productRef, {
+          variantCombos: currentVariants,
+          stock: computeTotalStockFromVariants(currentVariants),
+          stockSummary: buildVariantStockSummary(currentVariants),
+          updatedAt: serverTimestamp(),
+        });
+
+        console.log('✅ Stock de variante actualizado:', {
+          variantId: item.variantId,
+          newVariantStock,
+          totalStock: computeTotalStockFromVariants(currentVariants),
+        });
+
+        return stockLog.uuid;
+      }
 
       // Pasar quantityForStock si existe para ajustar el stock correctamente
       await updateStock(productRef, stockLog, item.quantityForStock);
@@ -570,6 +800,15 @@ export function useInventory() {
         ...productDoc.data(),
       };
 
+      productData.hasVariants = Boolean(productData.hasVariants);
+      productData.variantSchema = normalizeVariantSchema(productData.variantSchema);
+      productData.variantCombos = normalizeVariantCombos(productData.variantCombos);
+
+      if (productData.hasVariants) {
+        productData.stock = computeTotalStockFromVariants(productData.variantCombos);
+        productData.stockSummary = buildVariantStockSummary(productData.variantCombos);
+      }
+
       // 📦 OBTENER STOCKLOGS DE LA SUBCOLLECTION
       try {
         const stockLogCollectionRef = collection(db, 'businesses', businessId, 'products', productId, 'stockLog');
@@ -662,6 +901,39 @@ export function useInventory() {
       // Actualizar tipo si existe
       if (updatedData.type !== undefined) {
         updatePayload.type = updatedData.type;
+      }
+
+      // Actualizar si tiene variantes
+      if (updatedData.hasVariants !== undefined) {
+        updatePayload.hasVariants = Boolean(updatedData.hasVariants);
+      }
+
+      // Actualizar esquema de variantes
+      if (updatedData.variantSchema !== undefined) {
+        updatePayload.variantSchema = normalizeVariantSchema(updatedData.variantSchema);
+      }
+
+      // Actualizar combinaciones de variantes
+      if (updatedData.variantCombos !== undefined) {
+        const normalizedVariantCombos = normalizeVariantCombos(updatedData.variantCombos);
+
+        validateUniqueVariantSku(normalizedVariantCombos);
+        validateUniqueVariantCombination(normalizedVariantCombos);
+        validateUniqueVariantLabel(normalizedVariantCombos);
+
+        updatePayload.variantCombos = normalizedVariantCombos;
+
+        const hasVariantsInPayload = updatedData.hasVariants !== undefined
+          ? Boolean(updatedData.hasVariants)
+          : undefined;
+
+        if (hasVariantsInPayload === true || (hasVariantsInPayload === undefined && normalizedVariantCombos.length > 0)) {
+          updatePayload.stock = computeTotalStockFromVariants(normalizedVariantCombos);
+          updatePayload.stockSummary = buildVariantStockSummary(normalizedVariantCombos);
+          if (updatePayload.hasVariants === undefined) {
+            updatePayload.hasVariants = true;
+          }
+        }
       }
 
       // Actualizar trackStock si existe

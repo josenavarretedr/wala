@@ -17,6 +17,8 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
       productData: null, // Datos completos del producto
       physicalStock: null, // Stock físico contado
       digitalStock: 0, // Stock digital (en sistema)
+      hasVariants: false,
+      variantCounts: [],
       hasDiscrepancy: false, // Si hay diferencia entre físico y digital
       difference: 0, // Diferencia calculada (físico - digital)
       hasUserInput: false, // Si el usuario ha ingresado algo
@@ -66,6 +68,8 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
         productData: null,
         physicalStock: null,
         digitalStock: 0,
+        hasVariants: false,
+        variantCounts: [],
         hasDiscrepancy: false,
         difference: 0,
         hasUserInput: false,
@@ -77,6 +81,20 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
       this.countData.productId = productId;
       this.countData.productData = productData;
       this.countData.digitalStock = productData?.stock || 0;
+      this.countData.hasVariants = Boolean(productData?.hasVariants);
+      this.countData.variantCounts = this.countData.hasVariants
+        ? (Array.isArray(productData?.variantCombos)
+          ? productData.variantCombos.map((variant) => ({
+            variantId: variant.id,
+            label: variant.label,
+            sku: variant.sku || null,
+            digitalStock: Number(variant.stock || 0),
+            physicalStock: Number(variant.stock || 0),
+            cost: null,
+            price: null,
+          }))
+          : [])
+        : [];
       this.countData.minStock = productData?.minStock ?? null;
       console.log('📦 Producto establecido para conteo:', { productId, productData });
     },
@@ -100,6 +118,40 @@ export const useInventoryCountFlowStore = defineStore('inventoryCountFlow', {
         difference: this.countData.difference,
         hasDiscrepancy: this.countData.hasDiscrepancy
       });
+    },
+    setVariantPhysicalStock(variantId, physicalStock) {
+      const index = this.countData.variantCounts.findIndex((variant) => variant.variantId === variantId);
+      if (index === -1) return;
+
+      this.countData.variantCounts[index].physicalStock = Number(physicalStock || 0);
+      this.recalculateFromVariants();
+    },
+    setVariantCounts(variantCounts) {
+      this.countData.variantCounts = Array.isArray(variantCounts)
+        ? variantCounts.map((variant) => ({
+          ...variant,
+          digitalStock: Number(variant.digitalStock || 0),
+          physicalStock: Number(variant.physicalStock || 0),
+        }))
+        : [];
+
+      this.recalculateFromVariants();
+    },
+    recalculateFromVariants() {
+      const digital = this.countData.variantCounts.reduce(
+        (total, variant) => total + Number(variant.digitalStock || 0),
+        0,
+      );
+      const physical = this.countData.variantCounts.reduce(
+        (total, variant) => total + Number(variant.physicalStock || 0),
+        0,
+      );
+
+      this.countData.digitalStock = digital;
+      this.countData.physicalStock = physical;
+      this.countData.difference = physical - digital;
+      this.countData.hasDiscrepancy = Math.abs(this.countData.difference) > 0.01;
+      this.countData.hasUserInput = true;
     },
     clearUserInput() {
       this.countData.hasUserInput = false;

@@ -76,12 +76,17 @@ const loading = ref(false);
 const saving = ref(false);
 
 const productData = ref({
+  uuid: "",
   description: "",
   type: "MERCH",
   unit: "uni",
   trackStock: true,
   isPerishable: false,
   expirationDate: null,
+  stock: 0,
+  hasVariants: false,
+  variantSchema: { attributes: [] },
+  variantCombos: [],
 });
 
 // Cargar datos — desde state de ruta o fallback a BD
@@ -89,16 +94,26 @@ const loadProductData = async () => {
   const state = history.state;
 
   // Si venimos de ProductDetails vía router-link con state, usarlo directamente
-  if (state?.description !== undefined) {
+  if (state?.description !== undefined && state?.hasVariants !== undefined) {
     productData.value = {
+      uuid: route.params.productId,
       description: state.description || "",
       type: state.type || "MERCH",
       unit: state.unit || "uni",
       trackStock: state.trackStock !== undefined ? state.trackStock : true,
       isPerishable: Boolean(state.isPerishable),
       expirationDate: state.expirationDate || null,
+      stock: Number(state.stock || 0),
+      hasVariants: Boolean(state.hasVariants),
+      variantSchema: state.variantSchema || { attributes: [] },
+      variantCombos: Array.isArray(state.variantCombos)
+        ? state.variantCombos
+        : [],
     };
-    console.log("⚡ Datos de info general cargados desde route state:", productData.value);
+    console.log(
+      "⚡ Datos de info general cargados desde route state:",
+      productData.value,
+    );
     return;
   }
 
@@ -112,12 +127,19 @@ const loadProductData = async () => {
     if (!product) throw new Error("Producto no encontrado");
 
     productData.value = {
+      uuid: product.uuid || route.params.productId,
       description: product.description || "",
       type: product.type || "MERCH",
       unit: product.unit || "uni",
       trackStock: product.trackStock !== undefined ? product.trackStock : true,
       isPerishable: Boolean(product.isPerishable),
       expirationDate: product.expirationDate || null,
+      stock: Number(product.stock || 0),
+      hasVariants: Boolean(product.hasVariants),
+      variantSchema: product.variantSchema || { attributes: [] },
+      variantCombos: Array.isArray(product.variantCombos)
+        ? product.variantCombos
+        : [],
     };
     console.log("✅ Información general cargada desde BD:", productData.value);
   } catch (err) {
@@ -134,8 +156,47 @@ const handleSave = async (payload) => {
   try {
     saving.value = true;
     const productId = route.params.productId;
-    await inventoryStore.updateProduct(productId, payload.changes);
-    console.log("✅ Información general actualizada:", payload.changes);
+
+    const changes = { ...payload.changes };
+
+    const wasWithoutVariants = !productData.value.hasVariants;
+    const isEnablingVariants =
+      changes.hasVariants === true && wasWithoutVariants;
+
+    if (isEnablingVariants) {
+      const hasIncomingCombos =
+        Array.isArray(changes.variantCombos) &&
+        changes.variantCombos.length > 0;
+      const currentStock = Number(productData.value.stock || 0);
+
+      if (!hasIncomingCombos && currentStock > 0) {
+        changes.variantSchema = {
+          combineAttributes: false,
+          attributes: [
+            {
+              id: "attr_general",
+              name: "Presentación",
+              options: [{ id: "opt_general", value: "General" }],
+            },
+          ],
+        };
+
+        changes.variantCombos = [
+          {
+            id: "var_general",
+            label: "General",
+            sku: `${productId}-GENERAL`,
+            optionIds: ["opt_general"],
+            stock: currentStock,
+            minStock: null,
+            isActive: true,
+          },
+        ];
+      }
+    }
+
+    await inventoryStore.updateProduct(productId, changes);
+    console.log("✅ Información general actualizada:", changes);
     success("Información general actualizada correctamente");
     setTimeout(() => {
       router.push({

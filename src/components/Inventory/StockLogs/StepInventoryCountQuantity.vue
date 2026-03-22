@@ -83,7 +83,77 @@
       </div>
 
       <!-- Input principal -->
-      <div class="space-y-3">
+      <div class="space-y-3" v-if="hasVariants">
+        <label class="block text-sm font-semibold text-gray-700">
+          Stock Físico por Variante
+        </label>
+
+        <div class="space-y-2">
+          <div
+            v-for="variant in variantRows"
+            :key="variant.variantId"
+            class="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center p-3 border border-gray-200 rounded-lg"
+          >
+            <div class="sm:col-span-5">
+              <p class="text-sm font-medium text-gray-800">
+                {{ variant.label }}
+              </p>
+              <p class="text-xs text-gray-500">
+                SKU: {{ variant.sku || "Sin SKU" }}
+              </p>
+            </div>
+            <div class="sm:col-span-3 text-xs text-gray-600">
+              Digital: {{ formatNumber(variant.digitalStock) }}
+            </div>
+            <div class="sm:col-span-4">
+              <input
+                v-model.number="variantInputs[variant.variantId]"
+                type="number"
+                min="0"
+                step="0.01"
+                class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                @input="handleVariantInput(variant.variantId)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-xl p-4 border-2 bg-indigo-50 border-indigo-200">
+          <div
+            class="flex items-center justify-between text-sm text-indigo-800"
+          >
+            <span>Total digital</span>
+            <span class="font-semibold"
+              >{{ formatNumber(digitalStockValue) }}
+              {{ flow.countData.productData?.unit || "uni" }}</span
+            >
+          </div>
+          <div
+            class="flex items-center justify-between text-sm text-indigo-800 mt-1"
+          >
+            <span>Total físico</span>
+            <span class="font-semibold"
+              >{{ formatNumber(flow.countData.physicalStock) }}
+              {{ flow.countData.productData?.unit || "uni" }}</span
+            >
+          </div>
+          <div
+            class="flex items-center justify-between mt-2 pt-2 border-t border-indigo-200"
+          >
+            <span class="text-sm font-semibold text-indigo-900"
+              >Diferencia</span
+            >
+            <span
+              class="text-lg font-bold"
+              :class="difference >= 0 ? 'text-green-600' : 'text-red-600'"
+            >
+              {{ difference >= 0 ? "+" : "" }}{{ formatNumber(difference) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-3" v-else>
         <label
           for="physical-stock-input"
           class="block text-sm font-semibold text-gray-700"
@@ -352,6 +422,25 @@ const inventoryStore = useInventoryStore();
 const isLoading = ref(false);
 const physicalStock = ref(null);
 const physicalStockInput = ref(null);
+const variantInputs = ref({});
+
+const hasVariants = computed(() => {
+  return (
+    Boolean(flow.countData.productData?.hasVariants) &&
+    Array.isArray(flow.countData.productData?.variantCombos) &&
+    flow.countData.productData.variantCombos.length > 0
+  );
+});
+
+const variantRows = computed(() => {
+  return (flow.countData.variantCounts || []).map((variant) => ({
+    variantId: variant.variantId,
+    label: variant.label,
+    sku: variant.sku,
+    digitalStock: Number(variant.digitalStock || 0),
+    physicalStock: Number(variant.physicalStock || 0),
+  }));
+});
 
 // Computed
 const digitalStockValue = computed(() => {
@@ -361,8 +450,19 @@ const digitalStockValue = computed(() => {
 });
 
 const hasUserInput = computed(() => {
+  if (hasVariants.value) {
+    return variantRows.value.some(
+      (variant) =>
+        Number(variant.digitalStock || 0) !==
+        Number(
+          variantInputs.value[variant.variantId] ?? variant.digitalStock ?? 0,
+        ),
+    );
+  }
+
   return (
-    physicalStock.value !== null && physicalStock.value !== digitalStockValue.value
+    physicalStock.value !== null &&
+    physicalStock.value !== digitalStockValue.value
   );
 });
 
@@ -397,6 +497,13 @@ const handleFocus = (e) => {
   e.target.select();
 };
 
+const handleVariantInput = (variantId) => {
+  flow.setVariantPhysicalStock(
+    variantId,
+    Number(variantInputs.value[variantId] || 0),
+  );
+};
+
 const formatNumber = (value) => {
   if (value === null || value === undefined) return "0.00";
   return Number(value).toFixed(2);
@@ -416,7 +523,19 @@ onMounted(async () => {
     if (props.productData) {
       flow.setProductData(route.params.productId, props.productData);
       physicalStock.value = props.productData.stock || 0;
-      console.log("⚡ StepInventoryCountQuantity inicializado desde props:", props.productData);
+
+      if (hasVariants.value) {
+        const initialInputs = {};
+        (flow.countData.variantCounts || []).forEach((variant) => {
+          initialInputs[variant.variantId] = Number(variant.digitalStock || 0);
+        });
+        variantInputs.value = initialInputs;
+      }
+
+      console.log(
+        "⚡ StepInventoryCountQuantity inicializado desde props:",
+        props.productData,
+      );
       return;
     }
 
@@ -437,6 +556,14 @@ onMounted(async () => {
     flow.setProductData(productId, productData);
     physicalStock.value = productData.stock || 0;
 
+    if (hasVariants.value) {
+      const initialInputs = {};
+      (flow.countData.variantCounts || []).forEach((variant) => {
+        initialInputs[variant.variantId] = Number(variant.digitalStock || 0);
+      });
+      variantInputs.value = initialInputs;
+    }
+
     console.log("✅ StepInventoryCountQuantity inicializado desde BD:", {
       productId,
       digitalStock: productData.stock,
@@ -447,9 +574,24 @@ onMounted(async () => {
     isLoading.value = false;
   }
 });
+
+watch(
+  () => flow.countData.variantCounts,
+  (variantCounts) => {
+    if (!hasVariants.value || !Array.isArray(variantCounts)) return;
+
+    const next = { ...variantInputs.value };
+    variantCounts.forEach((variant) => {
+      if (next[variant.variantId] === undefined) {
+        next[variant.variantId] = Number(variant.digitalStock || 0);
+      }
+    });
+
+    variantInputs.value = next;
+  },
+  { deep: true },
+);
 </script>
-
-
 
 <style scoped>
 /* Números tabulares para mejor alineación */
@@ -468,7 +610,9 @@ onMounted(async () => {
 /* Animación fade para indicadores de estado */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
 }
 
 .fade-enter-from,

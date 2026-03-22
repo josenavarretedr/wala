@@ -79,6 +79,17 @@
           class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 transition-all duration-200"
         />
 
+        <div
+          v-if="transactionStore.itemToAddInTransaction.value.variantLabel"
+          class="mt-2"
+        >
+          <span
+            class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+          >
+            {{ transactionStore.itemToAddInTransaction.value.variantLabel }}
+          </span>
+        </div>
+
         <Transition name="fade-scale">
           <button
             v-if="transactionStore.itemToAddInTransaction.value.description"
@@ -148,12 +159,12 @@
                 transactionStore.itemToAddInTransaction.value
                   .oldOrNewProduct !== 'new' &&
                 transactionStore.itemToAddInTransaction.value.trackStock &&
-                transactionStore.itemToAddInTransaction.value.stock > 0
+                selectedAvailableStock > 0
               "
               class="text-xs text-blue-600 font-medium"
             >
               📦 Stock disponible:
-              {{ transactionStore.itemToAddInTransaction.value.stock }}
+              {{ selectedAvailableStock }}
               {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }}
             </p>
             <p
@@ -161,7 +172,7 @@
                 transactionStore.itemToAddInTransaction.value
                   .oldOrNewProduct !== 'new' &&
                 transactionStore.itemToAddInTransaction.value.trackStock &&
-                transactionStore.itemToAddInTransaction.value.stock <= 0
+                selectedAvailableStock <= 0
               "
               class="text-xs text-amber-600 font-medium"
             >
@@ -172,7 +183,7 @@
               class="text-xs text-red-600 font-medium"
             >
               ⛔ La cantidad excede el stock disponible ({{
-                transactionStore.itemToAddInTransaction.value.stock
+                selectedAvailableStock
               }}
               {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }})
             </p>
@@ -233,7 +244,7 @@
                 class="text-xs text-amber-700 mt-1"
               >
                 ⚠️ <strong>Stock del producto:</strong> Te quedan solo
-                {{ transactionStore.itemToAddInTransaction.value.stock }}
+                {{ selectedAvailableStock }}
                 {{
                   transactionStore.itemToAddInTransaction.value.unit || "uni"
                 }}
@@ -332,6 +343,13 @@
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-gray-900 truncate mb-1">
                 {{ item.description }}
+              </div>
+              <div v-if="item.variantLabel" class="mb-1">
+                <span
+                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                >
+                  {{ item.variantLabel }}
+                </span>
               </div>
               <div class="text-sm text-gray-600">
                 {{ item.quantity }} {{ item.unit || "uni" }} × S/
@@ -494,7 +512,7 @@ const hasProductStockWarning = computed(() => {
 
   // Si la cantidad excede el stock disponible
   const quantity = parseFloat(item.quantity) || 0;
-  const stock = parseFloat(item.stock) || 0;
+  const stock = selectedAvailableStock.value;
 
   return quantity > stock;
 });
@@ -536,6 +554,23 @@ const insufficientMaterialsDetails = computed(() => {
   );
 });
 
+const selectedAvailableStock = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (item.variantId) {
+    return Number(item.variantStock || 0);
+  }
+  return Number(item.stock || 0);
+});
+
+const requiresVariantSelection = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  return (
+    item.oldOrNewProduct === "old" &&
+    Boolean(item.hasVariants) &&
+    !item.variantId
+  );
+});
+
 /**
  * Computed: Información de que el producto no tiene composición definida
  */
@@ -557,6 +592,10 @@ const canAddProduct = computed(() => {
 
   // Validaciones básicas
   if (!item.description || !item.quantity || !item.price || !item.unit) {
+    return false;
+  }
+
+  if (requiresVariantSelection.value) {
     return false;
   }
 

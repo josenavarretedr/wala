@@ -95,6 +95,11 @@ const itemToAddInTransaction = ref({
   composition: null, // Composición de materiales del producto (si aplica)
   compositionStockValidation: null, // Resultado de validación de stock de materiales
   type: null, // Tipo de producto: MERCH, PRODUCT, SERVICE, RAW_MATERIAL
+  hasVariants: false,
+  variantId: null,
+  variantLabel: null,
+  variantSku: null,
+  variantStock: null,
 });
 
 const itemToAddInExpenseMaterial = ref({
@@ -1228,6 +1233,14 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.composition = product.composition ?? null;
     itemToAddInTransaction.value.compositionStockValidation = null; // Se validará reactivamente
     itemToAddInTransaction.value.type = product.type ?? null;
+    itemToAddInTransaction.value.hasVariants = Boolean(product.hasVariants);
+    itemToAddInTransaction.value.variantId = product.variantId ?? null;
+    itemToAddInTransaction.value.variantLabel = product.variantLabel ?? null;
+    itemToAddInTransaction.value.variantSku = product.variantSku ?? null;
+    itemToAddInTransaction.value.variantStock =
+      product.variantStock !== undefined && product.variantStock !== null
+        ? Number(product.variantStock)
+        : null;
   }
 
   const modifyItemToAddInExpenseMaterial = (material) => {
@@ -1260,6 +1273,11 @@ export function useTransactionStore() {
       composition: null,
       compositionStockValidation: null,
       type: null,
+      hasVariants: false,
+      variantId: null,
+      variantLabel: null,
+      variantSku: null,
+      variantStock: null,
     };
   }
 
@@ -1314,7 +1332,9 @@ export function useTransactionStore() {
     // Si el producto tiene seguimiento de stock y se marcó "proceder de todos modos"
     if (item.trackStock && item.proceedAnyway) {
       const requestedQuantity = parseFloat(item.quantity) || 0;
-      const availableStock = parseFloat(item.stock) || 0;
+      const availableStock = item.variantId
+        ? parseFloat(item.variantStock) || 0
+        : parseFloat(item.stock) || 0;
 
       // Calcular la cantidad real que se puede vender
       const actualQuantity = Math.min(requestedQuantity, availableStock);
@@ -1355,6 +1375,14 @@ export function useTransactionStore() {
       stock: null,
       trackStock: true, // ✅ true por defecto para productos MERCH
       proceedAnyway: false,
+      composition: null,
+      compositionStockValidation: null,
+      type: null,
+      hasVariants: false,
+      variantId: null,
+      variantLabel: null,
+      variantSku: null,
+      variantStock: null,
     };
   }
 

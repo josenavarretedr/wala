@@ -394,6 +394,200 @@
       </p>
     </div>
 
+    <!-- Variantes -->
+    <div class="border border-gray-200 rounded-lg p-4 space-y-4">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Variantes
+          </label>
+          <p class="text-xs text-gray-500">
+            Gestiona variaciones por color, talla u otros atributos.
+          </p>
+        </div>
+        <button
+          type="button"
+          @click="toggleVariants"
+          :disabled="!canUseVariants"
+          :class="[
+            'relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2',
+            localFormData.hasVariants ? 'bg-violet-600' : 'bg-gray-200',
+            !canUseVariants ? 'opacity-50 cursor-not-allowed' : '',
+          ]"
+        >
+          <span
+            :class="[
+              'inline-block h-6 w-6 transform rounded-full bg-white transition-transform',
+              localFormData.hasVariants ? 'translate-x-7' : 'translate-x-1',
+            ]"
+          ></span>
+        </button>
+      </div>
+
+      <div v-if="!canUseVariants" class="p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-600">
+          Las variantes solo están disponibles para Mercadería y Producto
+          Elaborado.
+        </p>
+      </div>
+
+      <div v-else-if="localFormData.hasVariants" class="space-y-4">
+        <div class="space-y-2">
+          <p class="text-xs font-medium text-gray-600">Plantillas rápidas</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              @click="applyVariantPreset('color')"
+            >
+              Color: Rojo, Blanco, Negro
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs rounded-full border border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+              @click="applyVariantPreset('size')"
+            >
+              Tallas: S, M, L, XL
+            </button>
+          </div>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-3">
+          <div class="flex items-center justify-between gap-4">
+            <div>
+              <p class="text-sm font-medium text-gray-700">
+                Combinaciones entre variables
+              </p>
+              <p class="text-xs text-gray-500">
+                Si está activo, combina atributos entre sí (ej: Rojo / M).
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="toggleCombineAttributes"
+              class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              :class="
+                localFormData.variantSchema.combineAttributes
+                  ? 'bg-indigo-600'
+                  : 'bg-gray-200'
+              "
+            >
+              <span
+                :class="[
+                  'inline-block h-6 w-6 transform rounded-full bg-white transition-transform',
+                  localFormData.variantSchema.combineAttributes
+                    ? 'translate-x-7'
+                    : 'translate-x-1',
+                ]"
+              ></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div
+            v-for="(attribute, attributeIndex) in localFormData.variantSchema
+              .attributes"
+            :key="attribute.id"
+            class="border border-gray-200 rounded-lg p-3 space-y-3"
+          >
+            <div class="flex gap-2">
+              <input
+                v-model="attribute.name"
+                type="text"
+                placeholder="Nombre del atributo (ej: Color)"
+                class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                @input="regenerateVariantCombos"
+              />
+              <button
+                type="button"
+                class="px-3 py-2 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                @click="removeAttribute(attributeIndex)"
+              >
+                Quitar
+              </button>
+            </div>
+
+            <div class="space-y-2">
+              <div
+                v-for="(option, optionIndex) in attribute.options"
+                :key="option.id"
+                class="flex gap-2"
+              >
+                <input
+                  v-model="option.value"
+                  type="text"
+                  placeholder="Opción (ej: Rojo, M)"
+                  class="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                  @input="regenerateVariantCombos"
+                />
+                <button
+                  type="button"
+                  class="px-3 py-2 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                  @click="removeOption(attributeIndex, optionIndex)"
+                >
+                  Eliminar
+                </button>
+              </div>
+              <button
+                type="button"
+                class="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                @click="addOption(attributeIndex)"
+              >
+                + Agregar opción
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="px-3 py-2 text-sm rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50"
+            @click="addAttribute"
+          >
+            + Agregar atributo
+          </button>
+        </div>
+
+        <div class="border border-gray-200 rounded-lg p-3 space-y-2">
+          <h4 class="text-sm font-semibold text-gray-800">Combinaciones</h4>
+          <p class="text-xs text-gray-500">
+            {{
+              localFormData.variantSchema.combineAttributes
+                ? "Se generarán combinaciones entre atributos para el conteo."
+                : "Se generarán variantes por opción individual para el conteo."
+            }}
+          </p>
+          <div
+            v-if="localFormData.variantCombos.length === 0"
+            class="text-xs text-gray-500"
+          >
+            Agrega atributos y opciones válidas para generar combinaciones.
+          </div>
+          <div v-else class="space-y-2">
+            <div
+              v-for="combo in localFormData.variantCombos"
+              :key="combo.id"
+              class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-gray-50 rounded-lg"
+            >
+              <div class="sm:col-span-2">
+                <p class="text-sm font-medium text-gray-800">
+                  {{ combo.label }}
+                </p>
+              </div>
+              <div
+                class="px-3 py-2 border border-gray-200 rounded-lg text-xs bg-white text-gray-600 font-mono"
+              >
+                {{ combo.sku }}
+              </div>
+              <div class="text-xs text-gray-500 text-right">
+                Stock: {{ Number(combo.stock || 0).toFixed(2) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Fecha de Vencimiento -->
     <div class="border border-gray-200 rounded-lg p-4">
       <div class="flex items-center justify-between gap-4">
@@ -556,6 +750,108 @@ import { ref, computed, watch } from "vue";
 import NavigationBtnEditProduct from "./NavigationBtnEditProduct.vue";
 import { useToast } from "@/composables/useToast";
 
+const createLocalId = (prefix = "id") => {
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+};
+
+const getDefaultVariantSchema = () => ({
+  combineAttributes: false,
+  attributes: [
+    {
+      id: createLocalId("attr"),
+      name: "Presentación",
+      options: [{ id: createLocalId("opt"), value: "General" }],
+    },
+  ],
+});
+
+const hydrateFormData = (data) => ({
+  ...data,
+  hasVariants: Boolean(data?.hasVariants),
+  variantSchema:
+    data?.variantSchema && Array.isArray(data.variantSchema.attributes)
+      ? {
+          combineAttributes: Boolean(data.variantSchema.combineAttributes),
+          attributes: data.variantSchema.attributes,
+        }
+      : { combineAttributes: false, attributes: [] },
+  variantCombos: Array.isArray(data?.variantCombos) ? data.variantCombos : [],
+});
+
+const VARIANT_PRESETS = {
+  color: {
+    name: "Color",
+    options: ["Rojo", "Blanco", "Negro"],
+  },
+  size: {
+    name: "Talla",
+    options: ["S", "M", "L", "XL"],
+  },
+};
+
+const getProductSkuBase = () => {
+  const rawProductId =
+    localFormData.value?.uuid ||
+    localFormData.value?.productId ||
+    props.initialData?.uuid ||
+    props.initialData?.productId ||
+    "PRODUCT";
+
+  const normalized = String(rawProductId)
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .toUpperCase();
+  const base = normalized.slice(-6) || "PRODUCT";
+  return base;
+};
+
+const buildAutoSku = (index) => {
+  const base = getProductSkuBase();
+  const numeric = String(index + 1).padStart(3, "0");
+  return `${base}-${numeric}`;
+};
+
+const hashString = (value) => {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  }
+  return hash.toString(36);
+};
+
+const buildDeterministicVariantId = (optionIds = []) => {
+  const normalizedOptionIds = [...optionIds]
+    .map((optionId) => String(optionId || "").trim())
+    .filter(Boolean)
+    .sort();
+
+  if (!normalizedOptionIds.length) {
+    return createLocalId("var");
+  }
+
+  return `var_${hashString(normalizedOptionIds.join("|"))}`;
+};
+
+const normalizeVariantLabel = (label) => {
+  return String(label || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+};
+
+const getDuplicateVariantLabels = (variantCombos = []) => {
+  const countByLabel = new Map();
+
+  variantCombos.forEach((combo) => {
+    const normalized = normalizeVariantLabel(combo?.label);
+    if (!normalized) return;
+    countByLabel.set(normalized, (countByLabel.get(normalized) || 0) + 1);
+  });
+
+  return Array.from(countByLabel.entries())
+    .filter(([, count]) => count > 1)
+    .map(([label]) => label);
+};
+
 // Props
 const props = defineProps({
   initialData: {
@@ -573,18 +869,276 @@ const emit = defineEmits(["save"]);
 const { error: showError } = useToast();
 
 // Estado local
-const localFormData = ref({ ...props.initialData });
-const originalData = ref({ ...props.initialData });
+const localFormData = ref(hydrateFormData(props.initialData));
+const originalData = ref(hydrateFormData(props.initialData));
+const duplicateVariantLabels = ref([]);
 
 // Watch para sincronizar con props.initialData cuando cambie externamente
 watch(
   () => props.initialData,
   (newData) => {
-    localFormData.value = { ...newData };
-    originalData.value = { ...newData };
+    localFormData.value = hydrateFormData(newData);
+    originalData.value = hydrateFormData(newData);
   },
   { deep: true },
 );
+
+const canUseVariants = computed(() => {
+  return (
+    localFormData.value.type === "MERCH" ||
+    localFormData.value.type === "PRODUCT"
+  );
+});
+
+const getOptionMatrix = () => {
+  const attributes = localFormData.value.variantSchema.attributes || [];
+
+  const normalized = attributes
+    .map((attribute) => {
+      const name = (attribute.name || "").trim();
+      const options = (attribute.options || [])
+        .map((option) => ({
+          id: option.id || createLocalId("opt"),
+          value: (option.value || "").trim(),
+        }))
+        .filter((option) => option.value);
+
+      return {
+        ...attribute,
+        id: attribute.id || createLocalId("attr"),
+        name,
+        options,
+      };
+    })
+    .filter((attribute) => attribute.name && attribute.options.length > 0);
+
+  return normalized;
+};
+
+const buildSingleVariants = (attributes) => {
+  const variants = [];
+
+  attributes.forEach((attribute) => {
+    attribute.options.forEach((option) => {
+      variants.push([
+        {
+          attributeId: attribute.id,
+          attributeName: attribute.name,
+          optionId: option.id,
+          optionValue: option.value,
+        },
+      ]);
+    });
+  });
+
+  return variants;
+};
+
+const buildCombinations = (attributes, index = 0, prefix = []) => {
+  if (index >= attributes.length) {
+    return [prefix];
+  }
+
+  const combinations = [];
+  const currentAttribute = attributes[index];
+
+  currentAttribute.options.forEach((option) => {
+    combinations.push(
+      ...buildCombinations(attributes, index + 1, [
+        ...prefix,
+        {
+          attributeId: currentAttribute.id,
+          attributeName: currentAttribute.name,
+          optionId: option.id,
+          optionValue: option.value,
+        },
+      ]),
+    );
+  });
+
+  return combinations;
+};
+
+const regenerateVariantCombos = () => {
+  const normalizedAttributes = getOptionMatrix();
+  localFormData.value.variantSchema = {
+    combineAttributes: Boolean(
+      localFormData.value.variantSchema.combineAttributes,
+    ),
+    attributes: normalizedAttributes,
+  };
+
+  if (!normalizedAttributes.length) {
+    localFormData.value.variantCombos = [];
+    return;
+  }
+
+  const existingMap = new Map(
+    (localFormData.value.variantCombos || []).map((combo) => [
+      [...(combo.optionIds || [])].sort().join("|"),
+      combo,
+    ]),
+  );
+
+  const skuBase = getProductSkuBase();
+  const skuNumbersInUse = new Set(
+    (localFormData.value.variantCombos || [])
+      .map((combo) =>
+        String(combo?.sku || "")
+          .trim()
+          .toUpperCase(),
+      )
+      .filter((sku) => sku.startsWith(`${skuBase}-`))
+      .map((sku) => Number(sku.split("-").pop()))
+      .filter((number) => Number.isInteger(number) && number > 0),
+  );
+
+  let nextSkuNumber =
+    skuNumbersInUse.size > 0 ? Math.max(...skuNumbersInUse) + 1 : 1;
+
+  const combinations = localFormData.value.variantSchema.combineAttributes
+    ? buildCombinations(normalizedAttributes)
+    : buildSingleVariants(normalizedAttributes);
+
+  localFormData.value.variantCombos = combinations.map((combo) => {
+    const optionIds = combo.map((item) => item.optionId);
+    const key = [...optionIds].sort().join("|");
+    const existing = existingMap.get(key);
+    const label = localFormData.value.variantSchema.combineAttributes
+      ? combo.map((item) => item.optionValue).join(" / ")
+      : `${combo[0]?.attributeName || "Variante"}: ${combo[0]?.optionValue || ""}`;
+
+    let sku = existing?.sku || null;
+    if (!sku) {
+      sku = buildAutoSku(nextSkuNumber - 1);
+      nextSkuNumber += 1;
+    }
+
+    return {
+      id: buildDeterministicVariantId(optionIds),
+      label,
+      sku,
+      optionIds,
+      stock: Number(existing?.stock || 0),
+      minStock:
+        existing?.minStock === null || existing?.minStock === undefined
+          ? null
+          : Number(existing.minStock),
+      isActive: existing?.isActive !== false,
+    };
+  });
+
+  duplicateVariantLabels.value = getDuplicateVariantLabels(
+    localFormData.value.variantCombos,
+  );
+};
+
+const toggleVariants = () => {
+  if (!canUseVariants.value) return;
+
+  localFormData.value.hasVariants = !localFormData.value.hasVariants;
+
+  if (localFormData.value.hasVariants) {
+    if (
+      !localFormData.value.variantSchema?.attributes ||
+      localFormData.value.variantSchema.attributes.length === 0
+    ) {
+      localFormData.value.variantSchema = getDefaultVariantSchema();
+    } else if (
+      localFormData.value.variantSchema.combineAttributes === undefined
+    ) {
+      localFormData.value.variantSchema.combineAttributes = false;
+    }
+    regenerateVariantCombos();
+  }
+};
+
+const toggleCombineAttributes = () => {
+  localFormData.value.variantSchema.combineAttributes =
+    !localFormData.value.variantSchema.combineAttributes;
+  regenerateVariantCombos();
+};
+
+const applyVariantPreset = (presetKey) => {
+  const preset = VARIANT_PRESETS[presetKey];
+  if (!preset) return;
+
+  if (!localFormData.value.hasVariants) {
+    localFormData.value.hasVariants = true;
+  }
+
+  if (!localFormData.value.variantSchema) {
+    localFormData.value.variantSchema = {
+      combineAttributes: false,
+      attributes: [],
+    };
+  }
+
+  if (!Array.isArray(localFormData.value.variantSchema.attributes)) {
+    localFormData.value.variantSchema.attributes = [];
+  }
+
+  const existingAttribute = localFormData.value.variantSchema.attributes.find(
+    (attribute) =>
+      (attribute.name || "").trim().toLowerCase() === preset.name.toLowerCase(),
+  );
+
+  if (existingAttribute) {
+    const existingOptionValues = new Set(
+      (existingAttribute.options || []).map((option) =>
+        (option.value || "").trim().toLowerCase(),
+      ),
+    );
+
+    preset.options.forEach((optionValue) => {
+      if (!existingOptionValues.has(optionValue.toLowerCase())) {
+        existingAttribute.options.push({
+          id: createLocalId("opt"),
+          value: optionValue,
+        });
+      }
+    });
+  } else {
+    localFormData.value.variantSchema.attributes.push({
+      id: createLocalId("attr"),
+      name: preset.name,
+      options: preset.options.map((optionValue) => ({
+        id: createLocalId("opt"),
+        value: optionValue,
+      })),
+    });
+  }
+
+  regenerateVariantCombos();
+};
+
+const addAttribute = () => {
+  localFormData.value.variantSchema.attributes.push({
+    id: createLocalId("attr"),
+    name: "",
+    options: [{ id: createLocalId("opt"), value: "" }],
+  });
+};
+
+const removeAttribute = (attributeIndex) => {
+  localFormData.value.variantSchema.attributes.splice(attributeIndex, 1);
+  regenerateVariantCombos();
+};
+
+const addOption = (attributeIndex) => {
+  localFormData.value.variantSchema.attributes[attributeIndex].options.push({
+    id: createLocalId("opt"),
+    value: "",
+  });
+};
+
+const removeOption = (attributeIndex, optionIndex) => {
+  localFormData.value.variantSchema.attributes[attributeIndex].options.splice(
+    optionIndex,
+    1,
+  );
+  regenerateVariantCombos();
+};
 
 // Computed: Opciones de unidad disponibles según el tipo de producto
 const availableUnitOptions = computed(() => {
@@ -619,6 +1173,10 @@ watch(
       }
       // No cambia trackStock para PRODUCT (el usuario decide)
     }
+
+    if (!canUseVariants.value) {
+      localFormData.value.hasVariants = false;
+    }
   },
 );
 
@@ -636,6 +1194,18 @@ const handleSave = (payload) => {
   if (localFormData.value.isPerishable && !localFormData.value.expirationDate) {
     showError(
       "Si el producto es perecible, debes indicar la fecha de vencimiento",
+    );
+    return;
+  }
+
+  const duplicates = getDuplicateVariantLabels(
+    localFormData.value.variantCombos || [],
+  );
+  duplicateVariantLabels.value = duplicates;
+
+  if (localFormData.value.hasVariants && duplicates.length > 0) {
+    showError(
+      "Hay variantes con etiquetas duplicadas. Corrige antes de guardar.",
     );
     return;
   }

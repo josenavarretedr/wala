@@ -39,7 +39,16 @@ function normalize(s = "") {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildSearchTokens(query = "") {
+  return normalize(query)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter(Boolean);
 }
 
 function buildIndex(items) {
@@ -61,16 +70,65 @@ function buildIndex(items) {
     );
   }
 
-  index.value = filteredItems.map((p) => ({
-    productId: p.uuid,
-    productDescription: p.description,
-    productDescription_lc: normalize(p.description || ""),
-    productPrice: p.price,
-    productCost: p.cost,
-    productUnit: p.unit || "uni",
-    productStock: p.stock ?? 0,
-    trackStock: p.trackStock ?? false,
-  }));
+  const flatIndex = [];
+
+  filteredItems.forEach((p) => {
+    const productDescription_lc = normalize(p.description || "");
+    const baseItem = {
+      productId: p.uuid,
+      productDescription: p.description,
+      productDescription_lc,
+      productPrice: p.price,
+      productCost: p.cost,
+      productUnit: p.unit || "uni",
+      productStock: p.stock ?? 0,
+      trackStock: p.trackStock ?? false,
+      type: p.type || "MERCH",
+      hasVariants: Boolean(p.hasVariants),
+      composition: p.composition ?? null,
+    };
+
+    const variants = Array.isArray(p.variantCombos)
+      ? p.variantCombos.filter((variant) => variant?.isActive !== false)
+      : [];
+
+    if (
+      props.mode === "transaction" &&
+      baseItem.hasVariants &&
+      variants.length
+    ) {
+      variants.forEach((variant) => {
+        const variantLabel = String(variant?.label || "").trim();
+        const variantLabel_lc = normalize(variantLabel);
+
+        flatIndex.push({
+          ...baseItem,
+          searchText_lc: normalize(
+            `${baseItem.productDescription} ${variantLabel}`,
+          ),
+          variantId: variant?.id || null,
+          variantLabel,
+          variantLabel_lc,
+          variantSku: variant?.sku || null,
+          variantStock: Number(variant?.stock || 0),
+        });
+      });
+
+      return;
+    }
+
+    flatIndex.push({
+      ...baseItem,
+      searchText_lc: productDescription_lc,
+      variantId: null,
+      variantLabel: null,
+      variantLabel_lc: "",
+      variantSku: null,
+      variantStock: null,
+    });
+  });
+
+  index.value = flatIndex;
 }
 
 // Cargar inventario y construir índice inicial
@@ -105,12 +163,50 @@ function getDataForAlgolia() {
 let _debounceTimer;
 function getItemsDebounced(query) {
   const q = normalize(query || "");
+  const tokens = buildSearchTokens(query || "");
 
   return new Promise((resolve) => {
     clearTimeout(_debounceTimer);
     _debounceTimer = setTimeout(() => {
       const dataFiltered = q
-        ? index.value.filter((i) => i.productDescription_lc.includes(q))
+        ? index.value
+            .filter((entry) => {
+              if (!tokens.length) return true;
+              return tokens.every((token) =>
+                (entry.searchText_lc || "").includes(token),
+              );
+            })
+            .sort((a, b) => {
+              const aDescriptionMatch = tokens.every((token) =>
+                (a.productDescription_lc || "").includes(token),
+              )
+                ? 1
+                : 0;
+              const bDescriptionMatch = tokens.every((token) =>
+                (b.productDescription_lc || "").includes(token),
+              )
+                ? 1
+                : 0;
+
+              if (aDescriptionMatch !== bDescriptionMatch) {
+                return bDescriptionMatch - aDescriptionMatch;
+              }
+
+              const aStarts = (a.productDescription_lc || "").startsWith(q)
+                ? 1
+                : 0;
+              const bStarts = (b.productDescription_lc || "").startsWith(q)
+                ? 1
+                : 0;
+
+              if (aStarts !== bStarts) {
+                return bStarts - aStarts;
+              }
+
+              return (a.productDescription || "").localeCompare(
+                b.productDescription || "",
+              );
+            })
         : index.value;
 
       // En modo materials, no mostrar opción de "nuevo producto"
@@ -169,6 +265,11 @@ onMounted(() => {
                 oldOrNewProduct: "new",
                 selectedProductUuid: null,
                 unit: "uni",
+                hasVariants: false,
+                variantId: null,
+                variantLabel: null,
+                variantSku: null,
+                variantStock: null,
               });
 
               clearAutocompleteInput();
@@ -198,6 +299,15 @@ onMounted(() => {
                   trackStock: selected.trackStock ?? false,
                   composition: selected.composition ?? null, // ✅ Incluir composición del producto
                   type: selected.type || "MERCH", // ✅ Incluir tipo de producto
+                  hasVariants: Boolean(selected.hasVariants),
+                  variantId: item.variantId || null,
+                  variantLabel: item.variantLabel || null,
+                  variantSku: item.variantSku || null,
+                  variantStock:
+                    item.variantStock !== undefined &&
+                    item.variantStock !== null
+                      ? Number(item.variantStock)
+                      : null,
                 });
                 clearAutocompleteInput();
               }
@@ -258,10 +368,22 @@ onMounted(() => {
                         <span class="text-sm text-gray-600 font-medium">
                           ${item.productUnit || "uni"}
                         </span>
+                        ${item.variantLabel
+                          ? html`<span
+                              class="inline-flex items-center ml-2 px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                            >
+                              ${item.variantLabel}
+                            </span>`
+                          : ""}
                         ${props.mode === "materials" &&
                         item.productStock !== undefined
                           ? html`<span class="text-sm text-gray-500">
                               • Stock: ${item.productStock}</span
+                            >`
+                          : ""}
+                        ${props.mode === "transaction" && item.variantId
+                          ? html`<span class="text-sm text-gray-500">
+                              • Stock var: ${item.variantStock ?? 0}</span
                             >`
                           : ""}
                       </div>
