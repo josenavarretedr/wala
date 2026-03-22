@@ -141,7 +141,7 @@
           class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full border border-white shadow-lg"
         >
           <BrightCrown class="w-4 h-4" />
-          Premium
+          Pro
         </span>
       </button>
 

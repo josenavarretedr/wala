@@ -22,31 +22,32 @@ const preferenceClient = new Preference(client);
  * Configuración de planes Premium
  */
 const PLANS = {
-  test: {
-    name: 'Premium Prueba',
-    amount: 5.00,
-    duration: 7, // días (1 semana)
+  pro_monthly: {
+    plan: 'pro',
+    name: 'Pro Mensual',
+    amount: 50.00,
+    duration: 30,
     currency: 'PEN',
   },
-  monthly: {
-    name: 'Premium Mensual',
-    amount: 27.00,
-    duration: 30, // días
-    currency: 'PEN',
-  },
-  annual: {
-    name: 'Premium Anual',
-    amount: 225.00,
+  pro_yearly: {
+    plan: 'pro',
+    name: 'Pro Anual',
+    amount: 500.00,
     duration: 365,
     currency: 'PEN',
   },
-  lifetime: {
-    name: 'Premium de por Vida',
-    amount: 400.00,
-    duration: null, // sin vencimiento
+  max: {
+    plan: 'max',
+    name: 'Max',
+    amount: 360.00,
+    duration: null,
     currency: 'PEN',
   },
 };
+
+function getPaymentMethod(paymentMethodId) {
+  return paymentMethodId === 'yape' ? 'yape' : 'card';
+}
 
 /**
  * Crear preferencia de pago en Mercado Pago
@@ -76,7 +77,7 @@ async function createPreference(businessId, planType, userEmail) {
         email: userEmail,
       },
       external_reference: externalReference,
-      statement_descriptor: 'WALA Premium',
+      statement_descriptor: 'WALA Pro',
       back_urls: {
         success: `${process.env.APP_URL || 'http://localhost:5173'}/business/${businessId}/premium?status=success`,
         failure: `${process.env.APP_URL || 'http://localhost:5173'}/business/${businessId}/premium?status=failure`,
@@ -130,11 +131,11 @@ async function processPayment(formData, businessId, planType, uid) {
       throw new Error('No tienes permisos para este negocio');
     }
 
-    // Validar que no tenga suscripción activa del mismo tipo
+    // Validar solo mismo planVariant activo (permite upgrade mensual -> anual)
     const existingSubscription = businessData.subscription;
     if (existingSubscription &&
       existingSubscription.status === 'active' &&
-      existingSubscription.planType === planType) {
+      existingSubscription.planVariant === planType) {
       throw new Error(`Ya tienes una suscripción ${plan.name} activa`);
     }
 
@@ -157,7 +158,7 @@ async function processPayment(formData, businessId, planType, uid) {
         },
       },
       external_reference: externalReference,
-      statement_descriptor: 'WALA Premium',
+      statement_descriptor: 'WALA Pro',
       metadata: {
         business_id: businessId,
         plan_type: planType,
@@ -176,7 +177,13 @@ async function processPayment(formData, businessId, planType, uid) {
 
     // Si el pago fue aprobado, actualizar Firestore
     if (payment.status === 'approved') {
-      await activateSubscription(businessId, planType, payment, externalReference);
+      await activateSubscription(
+        businessId,
+        planType,
+        payment,
+        externalReference,
+        getPaymentMethod(payment.payment_method_id)
+      );
     }
 
     return {
@@ -185,7 +192,9 @@ async function processPayment(formData, businessId, planType, uid) {
       status: payment.status,
       statusDetail: payment.status_detail,
       externalReference,
+      planVariant: planType,
       planType,
+      method: getPaymentMethod(payment.payment_method_id),
       amount: plan.amount,
     };
   } catch (error) {
@@ -197,7 +206,7 @@ async function processPayment(formData, businessId, planType, uid) {
 /**
  * Activar suscripción en Firestore
  */
-async function activateSubscription(businessId, planType, payment, externalReference) {
+async function activateSubscription(businessId, planType, payment, externalReference, paymentMethod = 'card') {
   try {
     const plan = PLANS[planType];
     const now = Timestamp.now();
@@ -212,12 +221,14 @@ async function activateSubscription(businessId, planType, payment, externalRefer
 
     // Actualizar documento del negocio
     const subscriptionData = {
-      plan: 'premium',
+      plan: plan.plan,
       planType: planType,
+      planVariant: planType,
       status: 'active',
       amount: plan.amount,
       currency: plan.currency,
-      paymentMethod: 'mercadopago',
+      paymentMethod: paymentMethod,
+      paymentId: payment.id.toString(),
       transactionId: payment.id.toString(),
       startDate: now,
       endDate: endDate,
@@ -239,11 +250,16 @@ async function activateSubscription(businessId, planType, payment, externalRefer
       .collection('businesses')
       .doc(businessId)
       .collection('subscriptions')
-      .add({
+      .doc(payment.id.toString())
+      .set({
+        paymentId: payment.id.toString(),
+        plan: plan.plan,
         planType: planType,
+        planVariant: planType,
         amount: plan.amount,
         currency: plan.currency,
-        status: 'approved',
+        status: payment.status,
+        method: paymentMethod,
         mpPaymentId: payment.id.toString(),
         mpStatus: payment.status,
         mpStatusDetail: payment.status_detail,

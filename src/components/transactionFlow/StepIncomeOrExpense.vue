@@ -148,7 +148,7 @@
             class="absolute top-1/2 -translate-y-1/2 right-2 sm:top-3 sm:right-3 sm:translate-y-0 flex items-center gap-1.5 px-2 sm:px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border border-orange-600 shadow-lg z-10"
           >
             <BrightCrown class="w-3 h-3 sm:w-4 sm:h-4" />
-            Premium
+            Pro
           </span>
 
           <div

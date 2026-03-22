@@ -21,7 +21,7 @@
           class="flex-[3] py-3 px-4 sm:py-4 sm:px-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm sm:text-base font-bold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] hover:from-orange-600 hover:to-orange-700 hover:shadow-orange-500/35 flex items-center justify-center gap-2"
         >
           <BrightCrown class="w-5 h-5 flex-shrink-0" />
-          <span class="hidden sm:inline">Descubre WALA Premium</span>
+          <span class="hidden sm:inline">Descubre WALA Pro</span>
           <span class="sm:hidden">Premium</span>
         </button>
       </div>

@@ -519,7 +519,7 @@ const fasesEmbudo = [
     value: "mofu_b",
     icon: "🎯",
     label: "MOFU-B",
-    desc: "Activación. WALA Premium.",
+    desc: "Activación. WALA Pro.",
     activeClass: "border-blue-500 bg-blue-50",
   },
   {
@@ -535,12 +535,12 @@ const fasesEmbudo = [
 const avisosFase = {
   tofu: {
     texto:
-      "TOFU: videos cortos 40–60s. CTA → registro en WALA freemium. Nunca se menciona el programa ni WALA Premium.",
+      "TOFU: videos cortos 40–60s. CTA → registro en WALA freemium. Nunca se menciona el programa ni WALA Pro.",
     clases: "bg-pink-50 text-pink-700 border border-pink-100",
   },
   mofu_a: {
     texto:
-      "MOFU-A (nuevo en V8): Huevo de Oro suave ~1 min. CTA → Probá WALA Premium 7 días gratis. Audiencia: ya usa freemium. No se menciona el programa.",
+      "MOFU-A (nuevo en V8): Huevo de Oro suave ~1 min. CTA → Probá WALA Pro 7 días gratis. Audiencia: ya usa freemium. No se menciona el programa.",
     clases: "bg-indigo-50 text-indigo-700 border border-indigo-100",
   },
   mofu_b: {
@@ -550,7 +550,7 @@ const avisosFase = {
   },
   bofu: {
     texto:
-      "BOFU: video personal 1–2 min. CTA → primera asesoría diagnóstico gratis + WALA Premium incluido. Solo Voz A (José). Nunca se menciona el precio.",
+      "BOFU: video personal 1–2 min. CTA → primera asesoría diagnóstico gratis + WALA Pro incluido. Solo Voz A (José). Nunca se menciona el precio.",
     clases: "bg-amber-50 text-amber-700 border border-amber-100",
   },
   auto: null,

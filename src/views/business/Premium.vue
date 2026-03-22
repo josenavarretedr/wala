@@ -8,14 +8,14 @@
             class="inline-flex items-center gap-2 px-4 py-2 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
           >
             <BrightCrown class="w-4 h-4" />
-            Premium
+            Pro
           </div>
         </div>
 
         <h1
           class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-gray-900 mb-6"
         >
-          WALA <span class="text-orange-500">Premium</span>
+          WALA <span class="text-orange-500">Pro</span>
         </h1>
 
         <p class="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto">
@@ -32,14 +32,18 @@
 
         <PlanSelector v-model="selectedPlan" />
 
-        <!-- Botón para abrir Payment Brick -->
+        <!-- CTA Global -->
         <button
+          v-if="isPaidPlan"
           @click="openPaymentModal"
           :disabled="isProcessing"
           class="w-full sm:w-auto mx-auto block bg-gradient-to-r from-blue-500 to-blue-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {{ isProcessing ? "Procesando..." : "Continuar con el pago" }}
         </button>
+        <p v-else class="text-center text-sm text-gray-500 font-medium">
+          El plan Free no requiere pago.
+        </p>
 
         <!-- Mensaje de seguridad Mercado Pago -->
         <div
@@ -54,124 +58,13 @@
         </div>
       </div>
 
-      <!-- Card principal -->
       <div
-        class="bg-white rounded-3xl shadow-xl border border-gray-100 p-8 sm:p-12 mb-8"
+        class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 sm:p-8 mb-8"
       >
-        <!-- Características principales -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 text-left">
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center mt-1"
-            >
-              <svg
-                class="w-4 h-4 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                Registro ilimitado
-              </h3>
-              <p class="text-sm text-gray-600">
-                Registra todos tus ingresos y egresos sin límites
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center mt-1"
-            >
-              <svg
-                class="w-4 h-4 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                Reportes y análisis
-              </h3>
-              <p class="text-sm text-gray-600">
-                Visualiza el estado de tu negocio en tiempo real
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center mt-1"
-            >
-              <svg
-                class="w-4 h-4 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                Control de inventario
-              </h3>
-              <p class="text-sm text-gray-600">
-                Gestiona tus productos y materiales
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-start gap-3">
-            <div
-              class="flex-shrink-0 w-6 h-6 bg-emerald-100 rounded-full flex items-center justify-center mt-1"
-            >
-              <svg
-                class="w-4 h-4 text-emerald-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                Cuentas por cobrar
-              </h3>
-              <p class="text-sm text-gray-600">
-                Lleva el control de tus clientes y cobros pendientes
-              </p>
-            </div>
-          </div>
-        </div>
+        <p class="text-center text-gray-600">
+          Selecciona el plan que mejor se adapta a tu negocio. Puedes pagar con
+          tarjeta o Yape para planes Pro y Max.
+        </p>
       </div>
     </div>
 
@@ -315,7 +208,7 @@
       class="bg-white rounded-2xl border border-purple-100 p-6 sm:p-8 text-center"
     >
       <p class="text-gray-700 mb-4">
-        ¿Sabías que puedes acceder a WALA Premium a través de un
+        ¿Sabías que puedes acceder a WALA Pro a través de un
         <span class="font-semibold text-purple-600"
           >programa de fortalecimiento empresarial</span
         >?
@@ -344,7 +237,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useMercadoPago } from "@/composables/useMercadoPago";
@@ -363,7 +256,7 @@ const { showToast } = useToast();
 const businessId = computed(
   () => businessStore.currentBusinessId || route.params.businessId,
 );
-const selectedPlan = ref("monthly"); // Plan de prueba por defecto
+const selectedPlan = ref("pro_monthly");
 const selectedPaymentMethod = ref("card"); // 'card' o 'yape'
 const showPaymentModal = ref(false);
 const showSuccessModal = ref(false);
@@ -372,11 +265,13 @@ const paymentResult = ref({});
 const mpScriptLoaded = ref(false);
 
 const PLAN_CONFIGS = {
-  // test: { name: "Premium Prueba", amount: 5.0 },
-  monthly: { name: "Premium Mensual", amount: 27.0 },
-  annual: { name: "Premium Anual", amount: 225.0 },
-  lifetime: { name: "Premium de por Vida", amount: 400.0 },
+  free: { name: "Free", amount: 0.0 },
+  pro_monthly: { name: "Pro Mensual", amount: 50.0 },
+  pro_yearly: { name: "Pro Anual", amount: 500.0 },
+  max: { name: "Max", amount: 360.0 },
 };
+
+const isPaidPlan = computed(() => selectedPlan.value !== "free");
 
 const currentPlanName = computed(() => PLAN_CONFIGS[selectedPlan.value].name);
 const formattedAmount = computed(
@@ -401,6 +296,14 @@ const loadMercadoPagoScript = () => {
 
 const openPaymentModal = async () => {
   try {
+    if (!isPaidPlan.value) {
+      showToast({
+        type: "info",
+        message: "El plan Free no requiere pago.",
+      });
+      return;
+    }
+
     if (!businessId.value) {
       showToast({
         type: "error",
@@ -411,30 +314,6 @@ const openPaymentModal = async () => {
 
     showPaymentModal.value = true;
     isProcessing.value = true;
-
-    // Esperar un tick para que el DOM se actualice
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const planConfig = PLAN_CONFIGS[selectedPlan.value];
-
-    console.log("🔍 Datos para renderizar Brick:", {
-      businessId: businessId.value,
-      planType: selectedPlan.value,
-      amount: planConfig.amount,
-    });
-
-    // Solo renderizar Payment Brick si el método es tarjeta
-    if (selectedPaymentMethod.value === "card") {
-      await renderPaymentBrick(
-        "paymentBrick_container",
-        planConfig.amount,
-        businessId.value,
-        selectedPlan.value,
-        handlePaymentSuccess,
-        handlePaymentError,
-      );
-    }
-    // Si es Yape, el componente YapePayment se renderiza automáticamente
   } catch (error) {
     console.error("Error abriendo modal de pago:", error);
     showToast({
@@ -450,6 +329,7 @@ const openPaymentModal = async () => {
 const closePaymentModal = () => {
   unmountBrick();
   showPaymentModal.value = false;
+  selectedPaymentMethod.value = "card";
 };
 
 const handlePaymentSuccess = (data) => {
@@ -490,6 +370,64 @@ onMounted(async () => {
       type: "error",
       message: "Error cargando el sistema de pagos. Recarga la página.",
     });
+  }
+});
+
+watch([selectedPaymentMethod, showPaymentModal], async ([method, isOpen]) => {
+  if (!isOpen) {
+    await unmountBrick();
+    return;
+  }
+
+  if (method !== "card" || !isPaidPlan.value) {
+    await unmountBrick();
+    return;
+  }
+
+  await nextTick();
+  const planConfig = PLAN_CONFIGS[selectedPlan.value];
+  if (!planConfig) return;
+
+  try {
+    console.log("🔍 Datos para renderizar Brick:", {
+      businessId: businessId.value,
+      planType: selectedPlan.value,
+      amount: planConfig.amount,
+    });
+
+    await renderPaymentBrick(
+      "paymentBrick_container",
+      planConfig.amount,
+      businessId.value,
+      selectedPlan.value,
+      handlePaymentSuccess,
+      handlePaymentError,
+    );
+  } catch (error) {
+    console.error("Error renderizando Brick al cambiar método:", error);
+  }
+});
+
+watch(selectedPlan, async () => {
+  if (!showPaymentModal.value || selectedPaymentMethod.value !== "card") {
+    return;
+  }
+
+  await nextTick();
+  const planConfig = PLAN_CONFIGS[selectedPlan.value];
+  if (!planConfig) return;
+
+  try {
+    await renderPaymentBrick(
+      "paymentBrick_container",
+      planConfig.amount,
+      businessId.value,
+      selectedPlan.value,
+      handlePaymentSuccess,
+      handlePaymentError,
+    );
+  } catch (error) {
+    console.error("Error renderizando Brick al cambiar plan:", error);
   }
 });
 

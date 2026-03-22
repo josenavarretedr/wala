@@ -7,6 +7,8 @@ const { createPreference, processPayment } = require('./paymentService');
 const { processYapePayment } = require('./yapeService');
 const { processWebhook } = require('./webhookHandler');
 
+const VALID_PLAN_TYPES = ['pro_monthly', 'pro_yearly', 'max'];
+
 const app = express();
 
 // Configurar CORS
@@ -28,9 +30,9 @@ app.post('/create_preference', validateAuth, async (req, res) => {
       });
     }
 
-    if (!['test', 'monthly', 'annual', 'lifetime'].includes(planType)) {
+    if (!VALID_PLAN_TYPES.includes(planType)) {
       return res.status(400).json({
-        error: 'planType debe ser: test, monthly, annual o lifetime',
+        error: 'planType debe ser: pro_monthly, pro_yearly o max',
       });
     }
 
@@ -101,9 +103,9 @@ app.post('/process_yape_payment', validateAuth, async (req, res) => {
       });
     }
 
-    if (!['test', 'monthly', 'annual', 'lifetime'].includes(planType)) {
+    if (!VALID_PLAN_TYPES.includes(planType)) {
       return res.status(400).json({
-        error: 'planType debe ser: test, monthly, annual o lifetime'
+        error: 'planType debe ser: pro_monthly, pro_yearly o max'
       });
     }
 

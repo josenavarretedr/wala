@@ -22,23 +22,26 @@ const client = new MercadoPagoConfig({
 const paymentClient = new Payment(client);
 
 const PLANS = {
-  test: {
-    durationDays: 7,
-    name: 'Premium Prueba'
-  },
-  monthly: {
+  pro_monthly: {
+    plan: 'pro',
     durationDays: 30,
-    name: 'Premium Mensual'
+    name: 'Pro Mensual'
   },
-  annual: {
+  pro_yearly: {
+    plan: 'pro',
     durationDays: 365,
-    name: 'Premium Anual'
+    name: 'Pro Anual'
   },
-  lifetime: {
+  max: {
+    plan: 'max',
     durationDays: null,
-    name: 'Premium Vitalicio'
+    name: 'Max'
   }
 };
+
+function getPaymentMethod(paymentMethodId) {
+  return paymentMethodId === 'yape' ? 'yape' : 'card';
+}
 
 /**
  * Validar firma de webhook de Mercado Pago
@@ -181,30 +184,51 @@ async function handleApprovedPayment(businessId, planType, payment) {
       expiryDate = admin.firestore.Timestamp.fromMillis(expiryMs);
     }
 
-    // Crear documento de suscripción
+    const paymentMethod = getPaymentMethod(payment.payment_method_id);
+
+    // Crear documento de suscripción activa
     const subscription = {
+      plan: planConfig.plan,
+      planVariant: planType,
       planType,
       planName: planConfig.name,
       startDate,
-      expiryDate,
+      endDate: expiryDate,
       status: 'active',
       paymentId: payment.id.toString(),
-      paymentMethod: payment.payment_method_id,
+      paymentMethod,
       amount: payment.transaction_amount,
       currency: payment.currency_id,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      externalReference: payment.external_reference || null,
+      autoRenew: false,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 
-    // Guardar suscripción
-    await businessRef.collection('subscriptions').doc(payment.id.toString()).set(subscription);
+    // Guardar/actualizar historial de suscripción por paymentId
+    await businessRef.collection('subscriptions').doc(payment.id.toString()).set({
+      paymentId: payment.id.toString(),
+      plan: planConfig.plan,
+      planType,
+      planVariant: planType,
+      amount: payment.transaction_amount,
+      currency: payment.currency_id,
+      status: payment.status,
+      method: paymentMethod,
+      mpPaymentId: payment.id.toString(),
+      mpStatus: payment.status,
+      mpStatusDetail: payment.status_detail,
+      externalReference: payment.external_reference || null,
+      paymentMethodId: payment.payment_method_id,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      metadata: {
+        payerEmail: payment.payer?.email || null,
+        installments: payment.installments || null,
+      },
+    }, { merge: true });
 
-    // Actualizar business
+    // Actualizar suscripción vigente del negocio
     await businessRef.update({
-      premium: true,
-      premiumPlan: planType,
-      premiumStartDate: startDate,
-      premiumExpiryDate: expiryDate,
+      subscription,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 

@@ -199,7 +199,7 @@ ${datosSerializados}
 - Mapeo de fases V9:
   TOFU → preferir Viral o Técnica con narrativa Directa (40-60s). Gancho anclado a resultado identitario (miedo/caos/tranquilidad). Over-delivery obligatorio en el desarrollo.
   MOFU-A → Huevo de Oro profundo 1-1.5 min, narrativa Estructurada obligatoria. CTA dual. Costo de inacción obligatorio. Urgencia en CTA Momento 2. Voz A obligatoria.
-  MOFU-B → Huevo de Oro suave ~1 min, narrativa Directa o Estructurada. Solo mención de WALA Premium, sin programa. Voz B obligatoria.
+  MOFU-B → Huevo de Oro suave ~1 min, narrativa Directa o Estructurada. Solo mención de WALA Pro, sin programa. Voz B obligatoria.
   BOFU → video personal 1-2 min, narrativa Estructurada obligatoria, solo Voz A. CTA con diagnóstico gratis + garantía de resultado + urgencia.
 - Distribución de voces: ~70% Voz A (José) / ~30% Voz B (WALA). BOFU siempre Voz A. Voz B nunca en BOFU.
 - Maximizar variedad: no repetir la misma combinación ruta+tipo+narrativa en videos consecutivos.
@@ -243,7 +243,7 @@ ${datosSerializados}
 
     // Normalización semántica V9 (override local):
     // - mofu_a = costo de inacción + CTA dual + urgencia + voz A
-    // - mofu_b = activación WALA Premium + voz B (sin programa/llamada)
+    // - mofu_b = activación WALA Pro + voz B (sin programa/llamada)
     if (Array.isArray(result.plan_videos)) {
       result.plan_videos = result.plan_videos.map((video = {}) => {
         const fase = normalizarFaseFunnelV8(video.fase_funnel || 'tofu') || 'tofu';
@@ -272,7 +272,7 @@ ${datosSerializados}
             faseCorregida === 'mofu_a'
               ? 'Caso estructurado con costo de inacción obligatorio, CTA dual y urgencia (voz A).'
               : faseCorregida === 'mofu_b'
-                ? 'Activación de WALA Premium con 7 días gratis, sin programa ni llamada (voz B).'
+                ? 'Activación de WALA Pro con 7 días gratis, sin programa ni llamada (voz B).'
                 : video.enfoque_breve
           )
         };
@@ -569,14 +569,14 @@ Genera SOLO la estructura base con meta_analisis y generacion usando el plan ya 
     "caso_validacion": "[10-35s] Storytelling causal. Emprendedor tenía WALA pero no sabía qué hacer con la info. PERO / POR ESO obligatorio.",
     "costo_inaccion": "[40-58s] OBLIGATORIO — 2-3 frases. Qué seguía pasando sin la metodología. Fórmula: Cada [período] que [situación], [consecuencia].",
     "proceso_resultado": "[60-75s] Qué hicieron juntos. WALA como herramienta, metodología de José como solución.",
-    "cta": "[80-90s] CTA DUAL OBLIGATORIO. Momento 1 [80-85s]: WALA Premium 7 días gratis. Momento 2 [85-90s]: programa + llamada + urgencia."
+    "cta": "[80-90s] CTA DUAL OBLIGATORIO. Momento 1 [80-85s]: WALA Pro 7 días gratis. Momento 2 [85-90s]: programa + llamada + urgencia."
   }`
         : fasePlan === 'bofu'
           ? `{
     "hook": "[0-5s] HOOK POST-TRANSFORMACIÓN — quién es el emprendedor DESPUÉS. No el problema.",
     "caso_arco": "[10-45s] 4 momentos obligatorios: ANTES (miedo/caos) → PROBLEMA específico → PROCESO (José + WALA) → AHORA (tranquilidad).",
     "costo_inaccion": "[50-70s] OBLIGATORIO — 2-3 frases. Qué pasaba ANTES de arrancar. Conectar con el miedo al negocio propio.",
-    "cta": "[75-100s] CTA BOFU COMPLETO en orden: (1) diagnóstico gratis, (2) WALA Premium incluido, (3) garantía: Y si en 2 meses no tenés más claridad no te cobro, (4) urgencia: Los cupos son limitados."
+    "cta": "[75-100s] CTA BOFU COMPLETO en orden: (1) diagnóstico gratis, (2) WALA Pro incluido, (3) garantía: Y si en 2 meses no tenés más claridad no te cobro, (4) urgencia: Los cupos son limitados."
   }`
           : `{
     "hook": "[0-5s] ORACIÓN COMPLETA del gancho hablado (8-15 palabras).",
@@ -738,7 +738,7 @@ REGLAS FINALES PARA ESTE VIDEO:
 
   - mofu_a:
     * voz obligatoria "A".
-    * CTA dual OBLIGATORIO dentro de guion_completo.cta: Momento 1 menciona WALA Premium + 7 días gratis; Momento 2 menciona el programa + "agendemos una llamada".
+    * CTA dual OBLIGATORIO dentro de guion_completo.cta: Momento 1 menciona WALA Pro + 7 días gratis; Momento 2 menciona el programa + "agendemos una llamada".
     * cta.mencion_asesoria = true. Nunca incluir precio numérico.
     * hormozi_elementos.urgencia_en_cta = true OBLIGATORIO — la frase de urgencia va al final del Momento 2: "Los cupos son limitados. Si sentís que es tu momento, escribime hoy." o variante equivalente.
     * hormozi_elementos.garantia_en_cta = false (la garantía es solo de BOFU).
@@ -755,7 +755,7 @@ REGLAS FINALES PARA ESTE VIDEO:
 
   - bofu:
     * voz obligatoria "A". Nunca Voz B.
-    * cta.texto_completo debe incluir en este orden: (1) "diagnóstico gratis", (2) "WALA Premium incluido", (3) frase de garantía: "Y si en 2 meses no tenés más claridad sobre tu negocio que hoy, no te cobro. Así de simple.", (4) frase de urgencia: "Los cupos son limitados. Si sentís que es tu momento, el link está en mi perfil."
+    * cta.texto_completo debe incluir en este orden: (1) "diagnóstico gratis", (2) "WALA Pro incluido", (3) frase de garantía: "Y si en 2 meses no tenés más claridad sobre tu negocio que hoy, no te cobro. Así de simple.", (4) frase de urgencia: "Los cupos son limitados. Si sentís que es tu momento, el link está en mi perfil."
     * cta.mencion_asesoria = true. Nunca incluir precio numérico.
     * hormozi_elementos.garantia_en_cta = true OBLIGATORIO.
     * hormozi_elementos.urgencia_en_cta = true OBLIGATORIO.

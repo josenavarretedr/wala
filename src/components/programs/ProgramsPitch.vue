@@ -81,7 +81,7 @@
           style="line-height: 1.6"
         >
           En ambos casos, la asesoría incluye el acceso a
-          <span class="font-semibold text-purple-600">WALA Premium</span>.
+          <span class="font-semibold text-purple-600">WALA Pro</span>.
         </p>
       </div>
 
@@ -142,7 +142,7 @@
               @click="goToPremium"
               class="w-full sm:w-auto bg-orange-500 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 hover:bg-orange-600"
             >
-              Ver WALA Premium
+              Ver WALA Pro
             </button>
           </div>
         </div>

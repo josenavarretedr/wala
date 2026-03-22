@@ -640,6 +640,20 @@ export function useInventory() {
         updatePayload.cost = Number(updatedData.cost);
       }
 
+      // Actualizar stock si existe
+      if (updatedData.stock !== undefined && updatedData.stock !== null) {
+        updatePayload.stock = Number(updatedData.stock);
+      }
+
+      // Actualizar stock mínimo si existe (permite null para limpiar)
+      if (updatedData.minStock !== undefined) {
+        if (updatedData.minStock === null || updatedData.minStock === '') {
+          updatePayload.minStock = null;
+        } else {
+          updatePayload.minStock = Number(updatedData.minStock);
+        }
+      }
+
       // Actualizar unidad si existe
       if (updatedData.unit !== undefined) {
         updatePayload.unit = updatedData.unit;

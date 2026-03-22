@@ -78,7 +78,7 @@
           <!-- Mensaje adicional -->
           <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p class="text-sm text-blue-800 text-center">
-              🎉 Ahora tienes acceso a todas las funcionalidades Premium de WALA
+              🎉 Ahora tienes acceso a todas las funcionalidades Pro de WALA
             </p>
           </div>
 
@@ -120,11 +120,13 @@ const router = useRouter();
 
 const planName = computed(() => {
   const planTypes = {
-    monthly: "Premium Mensual",
-    annual: "Premium Anual",
-    lifetime: "Premium de por Vida",
+    pro_monthly: "Pro Mensual",
+    pro_yearly: "Pro Anual",
+    max: "Max",
   };
-  return planTypes[props.paymentData.planType] || "Premium";
+  const planVariant =
+    props.paymentData.planVariant || props.paymentData.planType;
+  return planTypes[planVariant] || "Plan";
 });
 
 const formattedAmount = computed(() => {
@@ -140,11 +142,14 @@ const activationDate = computed(() => {
 });
 
 const expirationDate = computed(() => {
-  if (props.paymentData.planType === "lifetime") {
+  const planVariant =
+    props.paymentData.planVariant || props.paymentData.planType;
+
+  if (planVariant === "max") {
     return null;
   }
 
-  const days = props.paymentData.planType === "monthly" ? 30 : 365;
+  const days = planVariant === "pro_monthly" ? 30 : 365;
   const expDate = new Date();
   expDate.setDate(expDate.getDate() + days);
 

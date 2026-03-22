@@ -18,7 +18,7 @@
     <div v-if="showBadge" :class="badgeOverlayClasses">
       <div :class="badgeClasses">
         <BrightCrown class="w-3.5 h-3.5" />
-        <span>Premium</span>
+        <span>Pro</span>
       </div>
     </div>
 
@@ -85,10 +85,10 @@ watch(
     console.log("🔒 PremiumLockWrapper - isLocked changed:", newVal);
     console.log(
       "🔒 contentClasses will be:",
-      newVal ? "blur-sm select-none" : ""
+      newVal ? "blur-sm select-none" : "",
     );
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Clases CSS calculadas directamente desde las props
@@ -100,7 +100,7 @@ const contentClasses = computed(() => {
     "🎨 Computing contentClasses:",
     classes,
     "isLocked:",
-    props.isLocked
+    props.isLocked,
   );
   return classes;
 });
@@ -108,12 +108,12 @@ const contentClasses = computed(() => {
 const showBadge = computed(() => props.isLocked);
 
 const badgeOverlayClasses = computed(
-  () => "absolute inset-0 flex items-center justify-center pointer-events-none"
+  () => "absolute inset-0 flex items-center justify-center pointer-events-none",
 );
 
 const badgeClasses = computed(
   () =>
-    "flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full shadow-lg"
+    "flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full shadow-lg",
 );
 
 /**

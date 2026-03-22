@@ -204,7 +204,7 @@ const routes = [
         component: () => import('@/views/business/Premium.vue'),
         meta: {
           requiresAuth: true,
-          title: 'WALA Premium'
+          title: 'WALA Pro'
         }
       },
 

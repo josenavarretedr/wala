@@ -14,25 +14,23 @@ const paymentClient = new Payment(client);
 
 // Configuración de planes
 const PLANS = {
-  test: {
-    name: 'Premium Prueba',
-    amount: 5,
-    durationDays: 7 // 1 semana
-  },
-  monthly: {
-    name: 'Premium Mensual',
-    amount: 27,
+  pro_monthly: {
+    plan: 'pro',
+    name: 'Pro Mensual',
+    amount: 50,
     durationDays: 30
   },
-  annual: {
-    name: 'Premium Anual',
-    amount: 225,
+  pro_yearly: {
+    plan: 'pro',
+    name: 'Pro Anual',
+    amount: 500,
     durationDays: 365
   },
-  lifetime: {
-    name: 'Premium de por Vida',
-    amount: 400,
-    durationDays: null // Sin vencimiento
+  max: {
+    plan: 'max',
+    name: 'Max',
+    amount: 360,
+    durationDays: null
   }
 };
 
@@ -129,12 +127,14 @@ async function activateYapeSubscription(businessId, planType, payment, externalR
 
     // Crear datos de suscripción con la misma estructura que paymentService.js
     const subscriptionData = {
-      plan: 'premium',
+      plan: plan.plan,
       planType: planType,
+      planVariant: planType,
       status: 'active',
       amount: plan.amount,
       currency: 'PEN',
       paymentMethod: 'yape',
+      paymentId: payment.id.toString(),
       transactionId: payment.id.toString(),
       startDate: now,
       endDate: endDate,
@@ -155,11 +155,16 @@ async function activateYapeSubscription(businessId, planType, payment, externalR
     await db.collection('businesses')
       .doc(businessId)
       .collection('subscriptions')
-      .add({
+      .doc(payment.id.toString())
+      .set({
+        paymentId: payment.id.toString(),
+        plan: plan.plan,
         planType: planType,
+        planVariant: planType,
         amount: plan.amount,
         currency: 'PEN',
-        status: 'approved',
+        status: payment.status,
+        method: 'yape',
         mpPaymentId: payment.id.toString(),
         mpStatus: payment.status,
         mpStatusDetail: payment.status_detail,
@@ -227,7 +232,9 @@ async function processYapePayment(token, businessId, planType, phoneNumber, user
         status: payment.status,
         statusDetail: payment.status_detail,
         externalReference: payment.external_reference,
+        planVariant: planType,
         planType: planType,
+        method: 'yape',
         amount: payment.transaction_amount
       };
 

@@ -149,7 +149,7 @@ La garantía nunca se explica en detalle en el video. Se nombra en una frase den
 no te cobro. Así de simple."
 ```
 
-Esta frase va DESPUÉS de los elementos principales del CTA (diagnóstico gratis, WALA Premium incluido) y ANTES del link. Es el último empujón antes de la acción.
+Esta frase va DESPUÉS de los elementos principales del CTA (diagnóstico gratis, WALA Pro incluido) y ANTES del link. Es el último empujón antes de la acción.
 
 ### Reglas de la garantía
 
@@ -178,7 +178,7 @@ Es un elemento de valor que el espectador NO esperaba cuando vio el gancho. Lleg
 
 **TOFU (campo obligatorio):** Todo video TOFU debe tener al menos un elemento de over-delivery en el desarrollo. Es la principal razón por la que el espectador guarda el video o lo comparte.
 
-**MOFU-B (recomendado):** El over-delivery en MOFU-B muestra una funcionalidad de WALA Premium que el usuario freemium no esperaba ver.
+**MOFU-B (recomendado):** El over-delivery en MOFU-B muestra una funcionalidad de WALA Pro que el usuario freemium no esperaba ver.
 
 **MOFU-A y BOFU:** El over-delivery es el caso mismo — la transformación del emprendedor ya es un "bonus" narrativo que supera las expectativas.
 
@@ -293,7 +293,7 @@ WALA lo resuelve gratis.
 Está en el link de mi perfil. Es gratis."
 ```
 
-**Regla crítica:** En TOFU nunca se menciona WALA Premium, la asesoría ni el programa. Sin garantía. Sin urgencia.
+**Regla crítica:** En TOFU nunca se menciona WALA Pro, la asesoría ni el programa. Sin garantía. Sin urgencia.
 
 ---
 
@@ -315,7 +315,7 @@ Está en el link de mi perfil. Es gratis."
 Momento 1 (min 1:00–1:10):
 
 ```
-"Si todavía no usás WALA Premium, empezá por ahí.
+"Si todavía no usás WALA Pro, empezá por ahí.
 Link en mi perfil. 7 días gratis."
 ```
 
@@ -333,7 +333,7 @@ escribime hoy. El link está en mi perfil."
 
 ### NIVEL 3 — MOFU-B (Activación)
 
-**Objetivo:** Convertir freemium → WALA Premium (7 días gratis).
+**Objetivo:** Convertir freemium → WALA Pro (7 días gratis).
 
 **Lógica:** El gancho muestra la diferencia entre tener datos (freemium) y tener claridad real (Premium). Over-delivery muestra una funcionalidad de Premium que el usuario freemium no esperaba.
 
@@ -347,7 +347,7 @@ escribime hoy. El link está en mi perfil."
 
 ```
 "Si ya usás WALA y querés ver esto en tu negocio,
-probá WALA Premium 7 días gratis.
+probá WALA Pro 7 días gratis.
 Link en mi perfil. Sin compromisos."
 ```
 
@@ -374,7 +374,7 @@ escribime hoy.
 La primera asesoría diagnóstico es gratis.
 Agendamos 30 minutos, revisamos tu caso,
 y si tiene sentido trabajar juntos, arrancamos.
-WALA Premium incluido desde el día uno.
+WALA Pro incluido desde el día uno.
 Y si en 2 meses no tenés más claridad sobre tu negocio que hoy,
 no te cobro. Así de simple.
 [Los cupos son limitados. / Si sentís que es tu momento,]
@@ -476,8 +476,8 @@ Los siguientes errores hacen que un guion sea rechazado automáticamente.
 
 [78s]    MICRO-HOOK #3 (Anticipación)
 
-[80-85s] CTA MOMENTO 1 — WALA Premium
-         "Si todavía no usás WALA Premium, empezá por ahí.
+[80-85s] CTA MOMENTO 1 — WALA Pro
+         "Si todavía no usás WALA Pro, empezá por ahí.
          Link en mi perfil. 7 días gratis."
 
 [85-90s] CTA MOMENTO 2 — Programa + Urgencia
@@ -508,11 +508,11 @@ Los siguientes errores hacen que un guion sea rechazado automáticamente.
 [38s]    MICRO-HOOK #2
 
 [40-55s] QUÉ PUEDE HACER HOY
-         Acción concreta dentro de WALA Premium que resuelve el dolor del video.
+         Acción concreta dentro de WALA Pro que resuelve el dolor del video.
 
 [55-60s] CTA MOFU-B
          "Si ya usás WALA y querés ver esto en tu negocio,
-         probá WALA Premium 7 días gratis.
+         probá WALA Pro 7 días gratis.
          Link en mi perfil. Sin compromisos."
 ```
 
@@ -555,7 +555,7 @@ Los siguientes errores hacen que un guion sea rechazado automáticamente.
          La primera asesoría diagnóstico es gratis.
          Agendamos 30 minutos, revisamos tu caso,
          y si tiene sentido trabajar juntos, arrancamos.
-         WALA Premium incluido desde el día uno.
+         WALA Pro incluido desde el día uno.
          Y si en 2 meses no tenés más claridad sobre tu negocio que hoy,
          no te cobro. Así de simple.
          Los cupos son limitados. Si sentís que es tu momento,

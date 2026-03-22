@@ -141,8 +141,7 @@ const props = defineProps({
   planType: {
     type: String,
     required: true,
-    validator: (value) =>
-      ["test", "monthly", "annual", "lifetime"].includes(value),
+    validator: (value) => ["pro_monthly", "pro_yearly", "max"].includes(value),
   },
 });
 
@@ -168,12 +167,11 @@ const showInstructions = ref(false);
 // Computed
 const planName = computed(() => {
   const plans = {
-    test: "Premium Prueba",
-    monthly: "Premium Mensual",
-    annual: "Premium Anual",
-    lifetime: "Premium de por Vida",
+    pro_monthly: "Pro Mensual",
+    pro_yearly: "Pro Anual",
+    max: "Max",
   };
-  return plans[props.planType] || "Premium";
+  return plans[props.planType] || "Plan";
 });
 
 const isFormValid = computed(() => {

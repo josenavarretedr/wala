@@ -82,7 +82,7 @@
           class="flex items-center gap-1.5 px-3 py-1.5 bg-white text-orange-600 text-xs font-semibold rounded-full border border-orange-600 shadow-lg hover:shadow-xl transition-all hover:scale-105"
         >
           <BrightCrown class="w-4 h-4" />
-          Premium
+          Pro
         </button>
         <router-link
           v-else

@@ -58,7 +58,7 @@ export function useYape() {
    * @param {Object} paymentData - Datos del pago
    * @param {string} paymentData.token - Token de Yape
    * @param {string} paymentData.businessId - ID del negocio
-   * @param {string} paymentData.planType - Tipo de plan (monthly/annual/lifetime)
+  * @param {string} paymentData.planType - Tipo de plan (pro_monthly/pro_yearly/max)
    * @param {string} paymentData.phoneNumber - Número de celular
    * @returns {Promise<Object>} Resultado del pago
    */

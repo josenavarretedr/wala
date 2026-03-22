@@ -513,7 +513,7 @@
           "timestamp": "[76-79s]",
           "categoria": "Anticipación",
           "texto": "Y esto es lo que realmente hizo la diferencia...",
-          "objetivo": "Introducir mención de WALA Premium y posibilidad de asesoría"
+          "objetivo": "Introducir mención de WALA Pro y posibilidad de asesoría"
         }
       ],
 
@@ -526,7 +526,7 @@
           "por eso",
           "así que"
         ],
-        "flujo": "Minimarket caótico → PERO dueña anotaba todo → Revisamos registros → ENTONCES encontramos mezcla de gastos → POR LO TANTO números mentira → Separamos y ordenamos con WALA Premium → POR ESO en 3 semanas claridad total → ENTONCES pudo tomar decisiones"
+        "flujo": "Minimarket caótico → PERO dueña anotaba todo → Revisamos registros → ENTONCES encontramos mezcla de gastos → POR LO TANTO números mentira → Separamos y ordenamos con WALA Pro → POR ESO en 3 semanas claridad total → ENTONCES pudo tomar decisiones"
       },
 
       "guion_completo": {
@@ -534,28 +534,28 @@
         "microhook_1": "[6-10s] No te lo vas a creer...",
         "desarrollo_1": "[11-30s] Un minimarket. 2 años trabajando. La dueña trabajaba 10 horas diarias, vendía bien. Anotaba TODO en un cuaderno enorme. PERO cuando le pregunté cuánto ganó el trimestre, no supo decirme. POR LO TANTO todo ese esfuerzo de registrar no le daba claridad. ENTONCES decidimos revisar todo desde cero.",
         "microhook_2": "[31-34s] Y cuando encontramos el problema, todo cambió...",
-        "desarrollo_2": "[35-55s] Resulta que mezclaba TODO: la comida de su familia, la luz de su casa, los productos del negocio. POR ESO cuando sumaba, los números no tenían sentido. PERO además no tenía forma de ver tendencias. ENTONCES no sabía si estaba mejorando o empeorando. ASÍ QUE empezamos de cero. Separamos gastos personales vs negocio. Organizamos por categorías. Usamos WALA Premium para tener todo en tiempo real.",
+        "desarrollo_2": "[35-55s] Resulta que mezclaba TODO: la comida de su familia, la luz de su casa, los productos del negocio. POR ESO cuando sumaba, los números no tenían sentido. PERO además no tenía forma de ver tendencias. ENTONCES no sabía si estaba mejorando o empeorando. ASÍ QUE empezamos de cero. Separamos gastos personales vs negocio. Organizamos por categorías. Usamos WALA Pro para tener todo en tiempo real.",
         "microhook_3": "[56-59s] Y ahora viene la parte que te va a servir...",
         "desarrollo_3": "[60-75s] En 3 semanas ya tenía claridad total. Podía ver cuánto ganaba por semana. Identificamos productos que no dejaban margen. Ajustamos precios. ENTONCES empezó a tomar decisiones con datos, no con intuición. POR ESO su negocio mejoró sin trabajar más horas.",
         "microhook_4": "[76-79s] Y esto es lo que realmente hizo la diferencia...",
         "micro_accion": "[80-88s] Vos podés empezar esto hoy: elegí tus gastos de esta semana. Separalos - negocio / personal. Anotá cuánto de cada uno. WALA te ayuda a mantener eso ordenado con Resumen Semanal. Es gratis para empezar, link en mi perfil.",
-        "cierre_consultor": "[89-95s] Este es el tipo de transformaciones que trabajamos en las asesorías. En mis sesiones uso WALA Premium para tener análisis completo en tiempo real. Si querés resultados así en tu negocio, escribime. Pero podés empezar gratis hoy con WALA básico. Link en mi perfil, probalo y contame qué descubriste."
+        "cierre_consultor": "[89-95s] Este es el tipo de transformaciones que trabajamos en las asesorías. En mis sesiones uso WALA Pro para tener análisis completo en tiempo real. Si querés resultados así en tu negocio, escribime. Pero podés empezar gratis hoy con WALA básico. Link en mi perfil, probalo y contame qué descubriste."
       },
 
       "micro_accion": {
         "descripcion": "Revisar gastos de esta semana y separarlos en negocio vs personal, luego registrar en WALA con Resumen Semanal",
         "herramienta": "WALA",
-        "mencion_wala": "Premium en asesorías + básico gratuito para empezar - 'En mis sesiones uso WALA Premium para análisis completo. Pero podés empezar gratis'",
+        "mencion_wala": "Premium en asesorías + básico gratuito para empezar - 'En mis sesiones uso WALA Pro para análisis completo. Pero podés empezar gratis'",
         "cta_link": "Link en mi perfil (dos veces: una para acción inmediata, otra en cierre final)",
         "cta_feedback": "Sí - 'Probalo y contame qué descubriste'",
         "tiempo_estimado": "5-10 minutos",
         "nivel_esfuerzo": "bajo",
         "objetivo_psicologico": "Aspiración ('quiero esos resultados') + sensación de que puede empezar hoy mismo sin contratar",
-        "funcionalidad_wala_relacionada": "Resumen Semanal (freemium) + mención de WALA Premium en asesorías",
+        "funcionalidad_wala_relacionada": "Resumen Semanal (freemium) + mención de WALA Pro en asesorías",
         "validacion": "✓ Ejecutable hoy con WALA / ✓ Menciona Premium en contexto de asesoría / ✓ Tono aspiracional no agresivo"
       },
 
-      "caption": "La transformación de un minimarket en 3 semanas 🚀\n\nCaso real de asesoría:\n→ Trabajaba 10hs diarias\n→ Anotaba TODO\n→ Pero no sabía cuánto ganaba\n\nEl problema: mezclaba gastos personales con del negocio.\n\nLa solución:\n→ Separamos todo\n→ Organizamos con WALA Premium\n→ Claridad en tiempo real\n\nResultado: decisiones con datos, no intuición.\nMejoró sin trabajar más horas.\n\nEmpezá vos hoy:\nSepará tus gastos de esta semana.\nWALA te ayuda con Resumen Semanal.\n\nGratis para empezar. Link en mi perfil 👆\n\nSi querés resultados así, escribime para asesoría.\n\n¿Te pasa esto? Contame 👇\n\n#asesoria #minimarket #negocio #registrofinanciero #wala #comercio #emprendimiento",
+      "caption": "La transformación de un minimarket en 3 semanas 🚀\n\nCaso real de asesoría:\n→ Trabajaba 10hs diarias\n→ Anotaba TODO\n→ Pero no sabía cuánto ganaba\n\nEl problema: mezclaba gastos personales con del negocio.\n\nLa solución:\n→ Separamos todo\n→ Organizamos con WALA Pro\n→ Claridad en tiempo real\n\nResultado: decisiones con datos, no intuición.\nMejoró sin trabajar más horas.\n\nEmpezá vos hoy:\nSepará tus gastos de esta semana.\nWALA te ayuda con Resumen Semanal.\n\nGratis para empezar. Link en mi perfil 👆\n\nSi querés resultados así, escribime para asesoría.\n\n¿Te pasa esto? Contame 👇\n\n#asesoria #minimarket #negocio #registrofinanciero #wala #comercio #emprendimiento",
 
       "notas_produccion": {
         "locacion_sugerida": "Parque o calle tranquila para tono reflexivo/profesional",

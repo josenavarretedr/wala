@@ -230,7 +230,7 @@
           class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
         >
           <BrightCrown class="w-4 h-4" />
-          Premium
+          Pro
         </span>
       </button>
     </div>

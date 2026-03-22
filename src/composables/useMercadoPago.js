@@ -19,6 +19,9 @@ export function useMercadoPago() {
   let mp = null;
   let bricksBuilder = null;
   let paymentBrickController = null;
+  let isRenderingBrick = false;
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   /**
    * Inicializar SDK de Mercado Pago
@@ -75,14 +78,29 @@ export function useMercadoPago() {
    */
   const renderPaymentBrick = async (containerId, amount, businessId, planType, onSuccess, onError) => {
     try {
+      if (isRenderingBrick) {
+        return;
+      }
+
+      isRenderingBrick = true;
+
       if (!mp || !bricksBuilder) {
         initMercadoPago();
       }
 
       // Destruir instancia anterior si existe
       if (paymentBrickController) {
-        paymentBrickController.unmount();
+        await Promise.resolve(paymentBrickController.unmount());
+        paymentBrickController = null;
+        await wait(50);
       }
+
+      const containerElement = document.getElementById(containerId);
+      if (!containerElement) {
+        throw new Error(`No se encontró el contenedor del Payment Brick: ${containerId}`);
+      }
+
+      containerElement.innerHTML = '';
 
       const settings = {
         initialization: {
@@ -173,15 +191,17 @@ export function useMercadoPago() {
       console.error('Error renderizando Payment Brick:', err);
       error.value = err.message;
       throw err;
+    } finally {
+      isRenderingBrick = false;
     }
   };
 
   /**
    * Destruir instancia del Brick
    */
-  const unmountBrick = () => {
+  const unmountBrick = async () => {
     if (paymentBrickController) {
-      paymentBrickController.unmount();
+      await Promise.resolve(paymentBrickController.unmount());
       paymentBrickController = null;
     }
   };
