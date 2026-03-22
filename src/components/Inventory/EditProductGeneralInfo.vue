@@ -394,6 +394,70 @@
       </p>
     </div>
 
+    <!-- Fecha de Vencimiento -->
+    <div class="border border-gray-200 rounded-lg p-4">
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="flex items-center gap-2">
+              <svg
+                class="w-5 h-5 text-rose-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                ></path>
+              </svg>
+              Producto Perecible
+            </div>
+          </label>
+          <p class="text-xs text-gray-500">
+            Activa esta opción si el producto requiere fecha de vencimiento
+          </p>
+        </div>
+
+        <button
+          type="button"
+          @click="localFormData.isPerishable = !localFormData.isPerishable"
+          :class="[
+            'relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2',
+            localFormData.isPerishable ? 'bg-rose-600' : 'bg-gray-200',
+          ]"
+        >
+          <span
+            :class="[
+              'inline-block h-6 w-6 transform rounded-full bg-white transition-transform',
+              localFormData.isPerishable ? 'translate-x-7' : 'translate-x-1',
+            ]"
+          ></span>
+        </button>
+      </div>
+
+      <div v-if="localFormData.isPerishable" class="mt-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          Fecha de vencimiento *
+        </label>
+        <input
+          v-model="localFormData.expirationDate"
+          type="date"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all"
+        />
+        <p class="text-xs text-gray-500 mt-1">
+          Esta fecha se mostrará en la ficha del producto como alerta.
+        </p>
+      </div>
+      <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-600">
+          Este producto no requiere fecha de vencimiento.
+        </p>
+      </div>
+    </div>
+
     <!-- Control de Stock -->
     <div class="border border-gray-200 rounded-lg p-4">
       <div class="flex items-center justify-between">
@@ -490,6 +554,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import NavigationBtnEditProduct from "./NavigationBtnEditProduct.vue";
+import { useToast } from "@/composables/useToast";
 
 // Props
 const props = defineProps({
@@ -505,6 +570,7 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(["save"]);
+const { error: showError } = useToast();
 
 // Estado local
 const localFormData = ref({ ...props.initialData });
@@ -556,8 +622,24 @@ watch(
   },
 );
 
+watch(
+  () => localFormData.value.isPerishable,
+  (isPerishable) => {
+    if (!isPerishable) {
+      localFormData.value.expirationDate = null;
+    }
+  },
+);
+
 // Método para manejar el guardado
 const handleSave = (payload) => {
+  if (localFormData.value.isPerishable && !localFormData.value.expirationDate) {
+    showError(
+      "Si el producto es perecible, debes indicar la fecha de vencimiento",
+    );
+    return;
+  }
+
   emit("save", payload);
 };
 </script>

@@ -80,6 +80,8 @@ const productData = ref({
   type: "MERCH",
   unit: "uni",
   trackStock: true,
+  isPerishable: false,
+  expirationDate: null,
 });
 
 // Cargar datos del producto
@@ -100,6 +102,8 @@ const loadProductData = async () => {
       type: product.type || "MERCH",
       unit: product.unit || "uni",
       trackStock: product.trackStock !== undefined ? product.trackStock : true,
+      isPerishable: Boolean(product.isPerishable),
+      expirationDate: product.expirationDate || null,
     };
 
     console.log(

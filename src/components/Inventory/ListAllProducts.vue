@@ -173,6 +173,8 @@ function buildIndex(items) {
         unit: p.unit || "uni",
         type: p.type ? p.type : "MERCH",
         trackStock: p.trackStock ? p.trackStock : false,
+        isPerishable: Boolean(p.isPerishable),
+        expirationDate: p.expirationDate || null,
       }
     ),
   );

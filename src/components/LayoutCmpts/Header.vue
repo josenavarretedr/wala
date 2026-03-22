@@ -57,7 +57,7 @@
           class="flex items-center gap-1.5 px-3 py-1 bg-gray-400 text-white text-xs font-semibold rounded-full cursor-pointer hover:bg-gray-500 transition-colors"
         >
           <Crown class="w-4 h-4" />
-          Gratis
+          Free
         </span>
       </div>
     </div>

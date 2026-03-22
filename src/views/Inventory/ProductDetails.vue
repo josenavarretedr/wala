@@ -59,6 +59,8 @@
         :product-id="product.uuid"
         :product-type="product.type"
         :track-stock="product.trackStock"
+        :is-perishable="product.isPerishable"
+        :expiration-date="product.expirationDate"
         :unit="product.unit"
         :stock-log="product.stockLog"
         :classification="product.classification"

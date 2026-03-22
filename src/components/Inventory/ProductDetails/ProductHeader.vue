@@ -183,6 +183,29 @@
           <span>{{ trackStockLabelShort }}</span>
         </div>
 
+        <!-- Badge: Vencimiento -->
+        <div
+          v-if="props.isPerishable"
+          :key="`expiration-${props.expirationDate || 'none'}`"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium"
+          :class="expirationBadgeClass"
+        >
+          <svg
+            class="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              :d="expirationBadgeIcon"
+            ></path>
+          </svg>
+          <span>{{ expirationBadgeLabel }}</span>
+        </div>
+
         <!-- 🤖 Badge: Clasificación IA -->
         <div
           v-if="classification && classification.category"
@@ -270,6 +293,14 @@ const props = defineProps({
   trackStock: {
     type: Boolean,
     default: false,
+  },
+  isPerishable: {
+    type: Boolean,
+    default: false,
+  },
+  expirationDate: {
+    type: String,
+    default: null,
   },
   unit: {
     type: String,
@@ -418,6 +449,115 @@ const trackStockIcon = computed(() => {
   return props.trackStock
     ? "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" // Clipboard check
     : "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"; // Clipboard list
+});
+
+// ==========================================
+// COMPUTED: Vencimiento
+// ==========================================
+const parseLocalDate = (dateString) => {
+  if (!dateString || typeof dateString !== "string") return null;
+  const [year, month, day] = dateString.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+};
+
+const expirationInfo = computed(() => {
+  if (!props.isPerishable) {
+    return {
+      status: "none",
+      daysRemaining: null,
+      label: "No perecible",
+    };
+  }
+
+  if (!props.expirationDate) {
+    return {
+      status: "missing",
+      daysRemaining: null,
+      label: "Perecible sin fecha",
+    };
+  }
+
+  const expiration = parseLocalDate(props.expirationDate);
+  if (!expiration || Number.isNaN(expiration.getTime())) {
+    return {
+      status: "invalid",
+      daysRemaining: null,
+      label: "Fecha inválida",
+    };
+  }
+
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  );
+
+  const diffMs = expiration.getTime() - startOfToday.getTime();
+  const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysRemaining < 0) {
+    return {
+      status: "expired",
+      daysRemaining: Math.abs(daysRemaining),
+      label: `Vencido hace ${Math.abs(daysRemaining)} día(s)`,
+    };
+  }
+
+  if (daysRemaining === 0) {
+    return {
+      status: "today",
+      daysRemaining: 0,
+      label: "Vence hoy",
+    };
+  }
+
+  if (daysRemaining <= 7) {
+    return {
+      status: "soon",
+      daysRemaining,
+      label: `F.V. en ${daysRemaining} día(s)`,
+    };
+  }
+
+  return {
+    status: "ok",
+    daysRemaining,
+    label: `F.V. en ${daysRemaining} día(s)`,
+  };
+});
+
+const expirationBadgeLabel = computed(() => expirationInfo.value.label);
+
+const expirationBadgeClass = computed(() => {
+  const classes = {
+    missing: "bg-gray-50 text-gray-600 border border-gray-200",
+    invalid: "bg-gray-50 text-gray-600 border border-gray-200",
+    expired: "bg-red-50 text-red-700 border border-red-200",
+    today: "bg-orange-50 text-orange-700 border border-orange-200",
+    soon: "bg-amber-50 text-amber-700 border border-amber-200",
+    ok: "bg-rose-50 text-rose-700 border border-rose-200",
+  };
+
+  return classes[expirationInfo.value.status] || classes.missing;
+});
+
+const expirationBadgeIcon = computed(() => {
+  const icons = {
+    missing:
+      "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    invalid:
+      "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    expired:
+      "M12 8v4m0 4h.01M8 3h8a2 2 0 012 2v14a2 2 0 01-2 2H8a2 2 0 01-2-2V5a2 2 0 012-2z",
+    today:
+      "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
+    soon: "M12 8v4l2.5 2.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    ok: "M5 13l4 4L19 7",
+  };
+
+  return icons[expirationInfo.value.status] || icons.missing;
 });
 
 // ==========================================

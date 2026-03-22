@@ -655,6 +655,16 @@ export function useInventory() {
         updatePayload.trackStock = Boolean(updatedData.trackStock);
       }
 
+      // Actualizar si es perecible
+      if (updatedData.isPerishable !== undefined) {
+        updatePayload.isPerishable = Boolean(updatedData.isPerishable);
+      }
+
+      // Actualizar fecha de vencimiento (string YYYY-MM-DD o null)
+      if (updatedData.expirationDate !== undefined) {
+        updatePayload.expirationDate = updatedData.expirationDate || null;
+      }
+
       // Actualizar costStructure si existe (completo o campos específicos)
       if (updatedData.costStructure !== undefined) {
         // Si se pasa el objeto completo

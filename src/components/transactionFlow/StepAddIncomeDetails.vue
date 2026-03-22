@@ -93,7 +93,7 @@
     <Transition name="slide-fade">
       <div v-if="transactionStore.itemToAddInTransaction.value.description">
         <!-- Cantidad, Unidad y Precio - Layout optimizado -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <!-- Cantidad -->
           <div class="space-y-2">
             <label class="text-sm font-medium text-gray-700">Cantidad</label>
@@ -118,58 +118,6 @@
                 }"
               ></div>
             </div>
-            <!-- Indicador de stock disponible -->
-            <div class="flex flex-col gap-1">
-              <p class="text-xs text-gray-500">Ingresa la cantidad a vender</p>
-              <p
-                v-if="
-                  transactionStore.itemToAddInTransaction.value
-                    .oldOrNewProduct !== 'new' &&
-                  transactionStore.itemToAddInTransaction.value.trackStock &&
-                  transactionStore.itemToAddInTransaction.value.stock > 0
-                "
-                class="text-xs text-blue-600 font-medium"
-              >
-                📦 Stock disponible:
-                {{ transactionStore.itemToAddInTransaction.value.stock }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }}
-              </p>
-              <p
-                v-else-if="
-                  transactionStore.itemToAddInTransaction.value
-                    .oldOrNewProduct !== 'new' &&
-                  transactionStore.itemToAddInTransaction.value.trackStock &&
-                  transactionStore.itemToAddInTransaction.value.stock <= 0
-                "
-                class="text-xs text-amber-600 font-medium"
-              >
-                ⚠️ No hay stock disponible
-              </p>
-              <p
-                v-if="hasStockWarning && !proceedAnyway"
-                class="text-xs text-red-600 font-medium"
-              >
-                ⛔ La cantidad excede el stock disponible ({{
-                  transactionStore.itemToAddInTransaction.value.stock
-                }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }})
-              </p>
-              <!-- Info tooltip sobre composición faltante -->
-              <p
-                v-if="
-                  needsCompositionSetup &&
-                  transactionStore.itemToAddInTransaction.value
-                    .oldOrNewProduct !== 'new'
-                "
-                class="text-xs text-purple-600 font-medium"
-              >
-                💡 Este producto aún no tiene composición de materiales definida
-              </p>
-            </div>
           </div>
 
           <!-- Unidad -->
@@ -192,8 +140,57 @@
             </select>
           </div>
 
+          <!-- Indicador de stock disponible -->
+          <div class="col-span-2 sm:col-span-2 flex flex-col gap-1">
+            <p class="text-xs text-gray-500">Ingresa la cantidad a vender</p>
+            <p
+              v-if="
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct !== 'new' &&
+                transactionStore.itemToAddInTransaction.value.trackStock &&
+                transactionStore.itemToAddInTransaction.value.stock > 0
+              "
+              class="text-xs text-blue-600 font-medium"
+            >
+              📦 Stock disponible:
+              {{ transactionStore.itemToAddInTransaction.value.stock }}
+              {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }}
+            </p>
+            <p
+              v-else-if="
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct !== 'new' &&
+                transactionStore.itemToAddInTransaction.value.trackStock &&
+                transactionStore.itemToAddInTransaction.value.stock <= 0
+              "
+              class="text-xs text-amber-600 font-medium"
+            >
+              ⚠️ No hay stock disponible
+            </p>
+            <p
+              v-if="hasStockWarning && !proceedAnyway"
+              class="text-xs text-red-600 font-medium"
+            >
+              ⛔ La cantidad excede el stock disponible ({{
+                transactionStore.itemToAddInTransaction.value.stock
+              }}
+              {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }})
+            </p>
+            <!-- Info tooltip sobre composición faltante -->
+            <p
+              v-if="
+                needsCompositionSetup &&
+                transactionStore.itemToAddInTransaction.value
+                  .oldOrNewProduct !== 'new'
+              "
+              class="text-xs text-purple-600 font-medium"
+            >
+              💡 Este producto aún no tiene composición de materiales definida
+            </p>
+          </div>
+
           <!-- Precio -->
-          <div class="space-y-2">
+          <div class="space-y-2 col-span-2 sm:col-span-1">
             <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
             <div class="relative">
               <input

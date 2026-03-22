@@ -12,7 +12,7 @@
           class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center"
         >
           <component
-            :is="showRecords ? EyeClosed : Eye"
+            :is="!showRecords ? EyeClosed : Eye"
             class="w-4 h-4 text-purple-600"
           />
         </div>
@@ -35,7 +35,18 @@
     <Transition name="expand">
       <div v-if="showRecords" class="mt-6">
         <div class="space-y-3 sm:space-y-4">
-          <template v-if="transactionStore.transactionsInStore.value.length">
+          <template v-if="isLoading">
+            <div
+              class="bg-gray-50 rounded-lg p-6 sm:p-8 flex flex-col items-center justify-center text-center"
+            >
+              <SpinnerIcon size="xl" class="text-purple-600 mb-3" />
+              <p class="text-sm text-gray-500">Cargando movimientos...</p>
+            </div>
+          </template>
+
+          <template
+            v-else-if="transactionStore.transactionsInStore.value.length"
+          >
             <component
               v-for="(record, index) in dataOrdenada"
               :is="getRecordComponent(record.type)"
@@ -92,6 +103,7 @@ import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
 import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
 import CardViewAllRecords from "@/components/HistorialRecords/CardViewAllRecords.vue";
+import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 
 // Props
 const props = defineProps({
@@ -102,7 +114,8 @@ const props = defineProps({
 });
 
 // Estado del toggle
-const showRecords = ref(false);
+const showRecords = ref(true);
+const isLoading = ref(false);
 
 const transactionStore = useTransactionStore();
 
@@ -117,7 +130,7 @@ const dataOrdenada = computed(() => {
       (tx) =>
         tx.type !== "closure" &&
         tx.type !== "opening" &&
-        tx.category !== "adjustment"
+        tx.category !== "adjustment",
     )
     .map((tx) => {
       // Si es una transacción de ingreso, calcular el estado de pago
@@ -159,12 +172,17 @@ function getRecordComponent(type) {
 
 // Cargar transacciones según el día
 const loadTransactions = async () => {
-  if (props.dayString) {
-    // Cargar transacciones de un día específico
-    await transactionStore.getTransactionsByDayStore(props.dayString);
-  } else {
-    // Cargar transacciones del día actual
-    await transactionStore.getTransactionsToday();
+  isLoading.value = true;
+  try {
+    if (props.dayString) {
+      // Cargar transacciones de un día específico
+      await transactionStore.getTransactionsByDayStore(props.dayString);
+    } else {
+      // Cargar transacciones del día actual
+      await transactionStore.getTransactionsToday();
+    }
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -176,7 +194,7 @@ watch(
   () => props.dayString,
   () => {
     loadTransactions();
-  }
+  },
 );
 </script>
 
