@@ -154,7 +154,7 @@ export function useInventoryStore() {
 
       // ⚡ OPTIMIZACIÓN: Procesar materials en paralelo
       const materialPromises = materialItems.map(async (material) => {
-        const productId = material.uuid || material.selectedProductUuid;
+        const productId = material.productId || material.selectedProductUuid || material.uuid;
 
         // Verificar si el producto ya existe
         if (material.oldOrNewProduct === "old") {
@@ -228,6 +228,9 @@ export function useInventoryStore() {
           description: `Compra: ${material.description}`,
           createdAt: new Date(),
           ...(transactionId && { transactionId }), // Agregar transactionId si existe
+          ...(material.variantId && { variantId: material.variantId }),
+          ...(material.variantLabel && { variantLabel: material.variantLabel }),
+          ...(material.variantSku && { variantSku: material.variantSku }),
         };
 
         const stockLogId = await addStockLogInInventory(stockLogData, 'buy');

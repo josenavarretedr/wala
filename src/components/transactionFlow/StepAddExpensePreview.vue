@@ -81,6 +81,13 @@
                   <div class="font-semibold text-gray-900 truncate mb-1">
                     {{ material.description.trim().toUpperCase() }}
                   </div>
+                  <div v-if="material.variantLabel" class="mb-1">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                    >
+                      {{ material.variantLabel }}
+                    </span>
+                  </div>
                   <div class="text-sm text-gray-600">
                     {{ material.quantity }} {{ material.unit || "uni" }} × S/
                     {{ material.cost.toFixed(2) }}

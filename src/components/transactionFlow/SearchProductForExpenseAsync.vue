@@ -25,20 +25,69 @@ function normalize(s = "") {
   return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildSearchTokens(query = "") {
+  return normalize(query)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter(Boolean);
 }
 
 function buildIndex(items) {
-  index.value = items.map((p) => ({
-    productId: p.uuid,
-    productDescription: p.description,
-    productDescription_lc: normalize(p.description || ""),
-    productPrice: p.price,
-    productCost: p.cost, // Agregar el costo de compra
-    productUnit: p.unit || "uni",
-    productStock: p.stock ?? 0,
-    productTrackStock: p.trackStock ?? false,
-  }));
+  const filteredItems = items.filter((p) => p.trackStock === true);
+  const flatIndex = [];
+
+  filteredItems.forEach((p) => {
+    const productDescription_lc = normalize(p.description || "");
+    const baseItem = {
+      productId: p.uuid,
+      productDescription: p.description,
+      productDescription_lc,
+      productPrice: p.price,
+      productCost: p.cost,
+      productUnit: p.unit || "uni",
+      productStock: p.stock ?? 0,
+      productTrackStock: p.trackStock ?? false,
+      hasVariants: Boolean(p.hasVariants),
+    };
+
+    const variants = Array.isArray(p.variantCombos)
+      ? p.variantCombos.filter((variant) => variant?.isActive !== false)
+      : [];
+
+    if (baseItem.hasVariants && variants.length) {
+      variants.forEach((variant) => {
+        const variantLabel = String(variant?.label || "").trim();
+
+        flatIndex.push({
+          ...baseItem,
+          searchText_lc: normalize(
+            `${baseItem.productDescription} ${variantLabel}`,
+          ),
+          variantId: variant?.id || null,
+          variantLabel,
+          variantSku: variant?.sku || null,
+          variantStock: Number(variant?.stock || 0),
+        });
+      });
+      return;
+    }
+
+    flatIndex.push({
+      ...baseItem,
+      searchText_lc: productDescription_lc,
+      variantId: null,
+      variantLabel: null,
+      variantSku: null,
+      variantStock: null,
+    });
+  });
+
+  index.value = flatIndex;
 }
 
 // Cargar inventario y construir índice inicial
@@ -49,19 +98,25 @@ buildIndex(inventoryStore.allItemsInInventory.value);
 watch(
   () => inventoryStore.allItemsInInventory.value,
   (val) => buildIndex(val),
-  { deep: true }
+  { deep: true },
 );
 
 // ===== DEBOUNCE DEL FILTRADO =====
 let _debounceTimer;
 function getItemsDebounced(query) {
   const q = normalize(query || "");
+  const tokens = buildSearchTokens(query || "");
 
   return new Promise((resolve) => {
     clearTimeout(_debounceTimer);
     _debounceTimer = setTimeout(() => {
       const dataFiltered = q
-        ? index.value.filter((i) => i.productDescription_lc.includes(q))
+        ? index.value.filter((entry) => {
+            if (!tokens.length) return true;
+            return tokens.every((token) =>
+              (entry.searchText_lc || "").includes(token),
+            );
+          })
         : index.value;
 
       resolve(
@@ -72,7 +127,7 @@ function getItemsDebounced(query) {
                 productDescription: `Registrar nuevo material/insumo: ${query}`,
                 isNewProduct: true,
               },
-            ]
+            ],
       );
     }, 120);
   });
@@ -81,7 +136,7 @@ function getItemsDebounced(query) {
 // Función helper para limpiar el input del autocomplete
 function clearAutocompleteInput() {
   const autocompleteInput = document.querySelector(
-    "#autocomplete-expense-material input"
+    "#autocomplete-expense-material input",
   );
   if (autocompleteInput) {
     autocompleteInput.value = "";
@@ -118,6 +173,11 @@ onMounted(() => {
                 unit: "uni",
                 stock: 0,
                 trackStock: true, // Por defecto los materiales tienen seguimiento
+                hasVariants: false,
+                variantId: null,
+                variantLabel: null,
+                variantSku: null,
+                variantStock: null,
               });
 
               clearAutocompleteInput();
@@ -126,7 +186,7 @@ onMounted(() => {
 
             // Manejar material/insumo existente
             const selected = inventoryStore.allItemsInInventory.value.find(
-              (p) => p.uuid === item.productId
+              (p) => p.uuid === item.productId,
             );
             if (selected) {
               transactionStore.modifyItemToAddInExpenseMaterial({
@@ -135,14 +195,24 @@ onMounted(() => {
                 oldOrNewProduct: "old",
                 selectedProductUuid: selected.uuid,
                 unit: selected.unit || "uni",
-                stock: selected.stock ?? 0,
+                stock: item.variantId
+                  ? Number(item.variantStock || 0)
+                  : (selected.stock ?? 0),
                 trackStock: selected.trackStock ?? false,
+                hasVariants: Boolean(selected.hasVariants),
+                variantId: item.variantId || null,
+                variantLabel: item.variantLabel || null,
+                variantSku: item.variantSku || null,
+                variantStock:
+                  item.variantStock !== undefined && item.variantStock !== null
+                    ? Number(item.variantStock)
+                    : null,
               });
               clearAutocompleteInput();
             } else {
               console.error(
                 "Material seleccionado no encontrado:",
-                item.productId
+                item.productId,
               );
             }
           },
@@ -182,11 +252,21 @@ onMounted(() => {
                         <span class="text-sm text-gray-600 font-medium">
                           ${item.productUnit || "uni"}
                         </span>
+                        ${item.variantLabel
+                          ? html`<span
+                              class="inline-flex items-center ml-2 px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                            >
+                              ${item.variantLabel}
+                            </span>`
+                          : ""}
                         ${item.productTrackStock
                           ? html`<span
                               class="ml-2 text-xs text-blue-600 font-medium"
                             >
-                              📦 Stock: ${item.productStock}
+                              📦 Stock:
+                              ${item.variantId
+                                ? (item.variantStock ?? 0)
+                                : item.productStock}
                             </span>`
                           : ""}
                       </div>

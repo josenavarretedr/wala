@@ -99,6 +99,21 @@
             class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 transition-all duration-200"
           />
 
+          <div
+            v-if="
+              transactionStore.itemToAddInExpenseMaterial.value.variantLabel
+            "
+            class="mt-2"
+          >
+            <span
+              class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+            >
+              {{
+                transactionStore.itemToAddInExpenseMaterial.value.variantLabel
+              }}
+            </span>
+          </div>
+
           <Transition name="fade-scale">
             <button
               v-if="
@@ -381,6 +396,12 @@
                     <h4 class="font-semibold text-gray-900 truncate">
                       {{ material.description }}
                     </h4>
+                    <span
+                      v-if="material.variantLabel"
+                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-violet-100 text-violet-800 flex-shrink-0"
+                    >
+                      {{ material.variantLabel }}
+                    </span>
                     <span
                       v-if="material.oldOrNewProduct === 'new'"
                       class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 flex-shrink-0"
@@ -1174,6 +1195,10 @@ const canAddMaterial = computed(() => {
     !material.cost ||
     !material.unit
   ) {
+    return false;
+  }
+
+  if (material.hasVariants && !material.variantId) {
     return false;
   }
 
