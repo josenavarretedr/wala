@@ -40,17 +40,17 @@
         </label>
         <input
           v-model.number="localFormData.price"
+          @input="handlePriceInput"
           type="number"
           step="0.01"
           min="0"
-          :readonly="hasCostData && hasMarginBeenAdjusted"
           placeholder="0.00"
           class="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
         />
         <p class="text-xs text-gray-500 mt-1">
           {{
-            hasCostData && hasMarginBeenAdjusted
-              ? "Precio controlado por el deslizador de margen"
+            hasCostData
+              ? "Si cambias el precio, el margen se recalcula automáticamente"
               : "Precio al que vendes este producto"
           }}
         </p>
@@ -109,7 +109,7 @@
       <p
         class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2"
       >
-        Margen Bruto · Sobre Precio de Venta
+        Margen de Utilidad · Sobre Costo
       </p>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -155,7 +155,7 @@
           @input="handleSaleMarginSliderInput"
           type="range"
           min="0"
-          max="90"
+          :max="MAX_MARGIN_PERCENT"
           step="0.5"
           class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-purple-600"
         />
@@ -341,9 +341,7 @@
             </button>
           </div>
 
-          <p class="text-base text-gray-700">
-            Fórmula de margen sobre precio de venta:
-          </p>
+          <p class="text-base text-gray-700">Fórmula de margen sobre costo:</p>
           <div
             class="bg-purple-50 border border-purple-200 rounded-xl p-4 text-purple-900"
           >
@@ -364,8 +362,8 @@
                 <span class="fraction-bottom">
                   {{
                     showFormulaWithValues
-                      ? `S/ ${formatPrice(localFormData.price)}`
-                      : "Precio"
+                      ? `S/ ${formatPrice(localFormData.cost)}`
+                      : "Costo"
                   }}
                 </span>
               </span>
@@ -394,8 +392,8 @@
                 <span class="fraction-bottom">
                   {{
                     showFormulaWithValues
-                      ? `( 1 - ${saleMarginPercentage}% )`
-                      : "( 1 - Margen% )"
+                      ? `1 + (${saleMarginPercentage}% / 100)`
+                      : "1 + (Margen% / 100)"
                   }}
                 </span>
               </span>
@@ -492,6 +490,7 @@ const hasMarginBeenAdjusted = ref(false);
 const syncingPriceFromMargin = ref(false);
 const showMarginInfoModal = ref(false);
 const showFormulaWithValues = ref(false);
+const MAX_MARGIN_PERCENT = 120;
 
 // Watch para sincronizar con props.initialData cuando cambie externamente
 watch(
@@ -535,20 +534,18 @@ const formatPrice = (price) => {
 
 const clampMargin = (margin) => {
   const safeMargin = Number.isFinite(margin) ? margin : 0;
-  return Math.min(90, Math.max(0, safeMargin));
+  return Math.min(MAX_MARGIN_PERCENT, Math.max(0, safeMargin));
 };
 
 const calculateSaleMarginFromPrice = (price, cost) => {
-  if (!price || !cost || price <= 0) return 0;
-  return clampMargin(((price - cost) / price) * 100);
+  if (!price || !cost || cost <= 0) return 0;
+  return clampMargin(((price - cost) / cost) * 100);
 };
 
 const calculatePriceFromSaleMargin = (margin, cost) => {
   if (!cost || cost <= 0) return 0;
   const clampedMargin = clampMargin(margin);
-  const divisor = 1 - clampedMargin / 100;
-  if (divisor <= 0) return cost;
-  return cost / divisor;
+  return cost * (1 + clampedMargin / 100);
 };
 
 const applyPriceValidation = () => {
@@ -592,6 +589,11 @@ const handleSaleMarginSliderInput = (event) => {
   syncPriceFromCurrentMargin();
 };
 
+const handlePriceInput = () => {
+  if (syncingPriceFromMargin.value) return;
+  hasMarginBeenAdjusted.value = false;
+};
+
 watch(
   () => [localFormData.value.cost, localFormData.value.type],
   () => {
@@ -631,9 +633,7 @@ watch(
       applyPriceValidation();
     }
 
-    if (!hasMarginBeenAdjusted.value) {
-      syncMarginFromCurrentPrice();
-    }
+    syncMarginFromCurrentPrice();
   },
 );
 
