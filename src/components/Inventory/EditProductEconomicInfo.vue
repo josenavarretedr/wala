@@ -31,7 +31,7 @@
               type="button"
               @click="showMarginInfoModal = true"
               class="inline-flex items-center justify-center text-blue-600 hover:text-blue-700 transition-colors"
-              aria-label="Ver fórmula del margen de utilidad"
+              aria-label="Ver fórmula de rentabilidad sobre el costo"
             >
               <InfoCircle class="w-4 h-4" />
             </button>
@@ -41,6 +41,7 @@
         <input
           v-model.number="localFormData.price"
           @input="handlePriceInput"
+          @blur="handlePriceBlur"
           type="number"
           step="0.01"
           min="0"
@@ -50,7 +51,7 @@
         <p class="text-xs text-gray-500 mt-1">
           {{
             hasCostData
-              ? "Si cambias el precio, el margen se recalcula automáticamente"
+              ? "Si cambias el precio, la rentabilidad se recalcula automáticamente"
               : "Precio al que vendes este producto"
           }}
         </p>
@@ -109,7 +110,7 @@
       <p
         class="text-xs font-semibold text-purple-400 uppercase tracking-wide mb-2"
       >
-        Margen de Utilidad · Sobre Costo
+        Crecimiento de tu inversión
       </p>
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -137,21 +138,22 @@
         </div>
       </div>
       <p class="text-xs text-purple-500 mt-1.5">
-        De cada venta, ganas S/ {{ marginAmount }} (sobre S/
-        {{ formatPrice(localFormData.price) }} cobrados)
+        ¡Hiciste crecer tu inversión! <br />
+        De cada compra realizada, ganas S/ {{ marginAmount }} (sobre S/
+        {{ formatPrice(localFormData.cost) }} invertidos)
       </p>
 
       <div class="mt-3 pt-3 border-t border-purple-100">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-medium text-purple-700"
-            >Ajustar margen de utilidad</span
+            >Ajustar rentabilidad sobre el costo</span
           >
           <span class="text-xs font-semibold text-purple-800 tabular-nums"
             >{{ saleMarginPercentage }}%</span
           >
         </div>
         <input
-          :value="saleMarginPercentage"
+          :value="sliderMarginPercentage"
           @input="handleSaleMarginSliderInput"
           type="range"
           min="0"
@@ -159,6 +161,13 @@
           step="0.5"
           class="w-full h-2 rounded-lg appearance-none cursor-pointer accent-purple-600"
         />
+        <p
+          v-if="Number(saleMarginPercentage) > MAX_MARGIN_PERCENT"
+          class="text-[11px] text-amber-600 mt-1"
+        >
+          La rentabilidad actual supera {{ MAX_MARGIN_PERCENT }}%; el deslizador
+          se mantiene en su tope.
+        </p>
       </div>
     </div>
 
@@ -309,7 +318,7 @@
           class="flex items-center justify-between px-4 py-3 border-b border-gray-200"
         >
           <h3 class="text-xl font-extrabold text-slate-800 tracking-tight">
-            ¿Cómo se calcula el margen?
+            ¿Cómo se calcula la rentabilidad?
           </h3>
           <img
             :src="walaLogoIcon"
@@ -341,14 +350,16 @@
             </button>
           </div>
 
-          <p class="text-base text-gray-700">Fórmula de margen sobre costo:</p>
+          <p class="text-base text-gray-700">
+            Fórmula de rentabilidad sobre el costo:
+          </p>
           <div
             class="bg-purple-50 border border-purple-200 rounded-xl p-4 text-purple-900"
           >
             <div
               class="flex items-center justify-center gap-4 flex-wrap formula-text text-center"
             >
-              <span>Margen % =</span>
+              <span>Rentabilidad % =</span>
               <span class="fraction">
                 <span class="fraction-top">
                   {{
@@ -393,7 +404,7 @@
                   {{
                     showFormulaWithValues
                       ? `1 + (${saleMarginPercentage}% / 100)`
-                      : "1 + (Margen% / 100)"
+                      : "1 + (Rentabilidad% / 100)"
                   }}
                 </span>
               </span>
@@ -411,7 +422,7 @@
               </p>
             </div>
             <div class="bg-purple-50 border border-purple-200 rounded-lg py-2">
-              <p class="text-purple-500 font-medium">Margen</p>
+              <p class="text-purple-500 font-medium">Rentabilidad</p>
               <p class="text-purple-700 font-semibold">
                 {{ saleMarginPercentage }}%
               </p>
@@ -492,6 +503,11 @@ const showMarginInfoModal = ref(false);
 const showFormulaWithValues = ref(false);
 const MAX_MARGIN_PERCENT = 120;
 
+const sliderMarginPercentage = computed(() => {
+  const margin = Number(saleMarginPercentage.value || "0");
+  return clampMargin(margin).toFixed(2);
+});
+
 // Watch para sincronizar con props.initialData cuando cambie externamente
 watch(
   () => props.initialData,
@@ -539,7 +555,7 @@ const clampMargin = (margin) => {
 
 const calculateSaleMarginFromPrice = (price, cost) => {
   if (!price || !cost || cost <= 0) return 0;
-  return clampMargin(((price - cost) / cost) * 100);
+  return ((price - cost) / cost) * 100;
 };
 
 const calculatePriceFromSaleMargin = (margin, cost) => {
@@ -556,6 +572,11 @@ const applyPriceValidation = () => {
   if (localFormData.value.price < localFormData.value.cost) {
     localFormData.value.price = Number(localFormData.value.cost.toFixed(2));
   }
+};
+
+const handlePriceBlur = () => {
+  applyPriceValidation();
+  syncMarginFromCurrentPrice();
 };
 
 const syncMarginFromCurrentPrice = () => {
@@ -605,8 +626,6 @@ watch(
       return;
     }
 
-    applyPriceValidation();
-
     if (hasMarginBeenAdjusted.value) {
       syncPriceFromCurrentMargin();
       return;
@@ -628,10 +647,6 @@ watch(
   () => {
     if (localFormData.value.type === "RAW_MATERIAL") return;
     if (syncingPriceFromMargin.value) return;
-
-    if (hasCostData.value) {
-      applyPriceValidation();
-    }
 
     syncMarginFromCurrentPrice();
   },
@@ -667,6 +682,8 @@ const navigateToCosting = () => {
 
 // Método para manejar el guardado
 const handleSave = (payload) => {
+  applyPriceValidation();
+  syncMarginFromCurrentPrice();
   emit("save", payload);
 };
 </script>

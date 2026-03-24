@@ -187,7 +187,9 @@
         </div>
         <p class="text-xs text-purple-500 mt-1.5">
           De cada venta, ganas S/ {{ marginAmount }} (sobre S/
-          {{ formatPrice(price) }} cobrados)
+          {{ formatPrice(price) }} cobrados). <br />
+          Puedes hacer descuentos hasta {{ saleMarginPercentage }}% sin perder
+          dinero.
         </p>
       </div>
 
