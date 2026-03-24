@@ -348,7 +348,7 @@ function handlePartialAmountInputFocus() {
     nextTick(() => {
       premium("Registra abonos o pagos parciales", {
         actionLink: {
-          text: "Actualiza a Wala Premium",
+          text: "Actualiza a Wala Pro",
           route: `/business/${route.params.businessId}/premium`,
         },
       });

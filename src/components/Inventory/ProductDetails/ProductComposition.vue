@@ -187,7 +187,7 @@ const handleEditComposition = () => {
     nextTick(() => {
       premium("Define la composición de tus productos", {
         actionLink: {
-          text: "Actualiza a Wala Premium",
+          text: "Actualiza a Wala Pro",
           route: `/business/${route.params.businessId}/premium`,
         },
       });

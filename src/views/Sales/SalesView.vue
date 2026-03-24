@@ -148,7 +148,7 @@ const selectTimeRange = (value) => {
       } no pueden ser analizados.`,
       {
         actionLink: {
-          text: "Actualiza a Wala Premium",
+          text: "Actualiza a Wala Pro",
           route: `/business/${route.params.businessId}/premium`,
         },
       },
@@ -196,7 +196,7 @@ const handleLockedClick = (widgetType) => {
       `Análisis de ${periodLabels[selectedTimeRange.value]} no disponible.`,
     {
       actionLink: {
-        text: "Actualiza a Wala Premium",
+        text: "Actualiza a Wala Pro",
         route: `/business/${route.params.businessId}/premium`,
       },
     },

@@ -362,7 +362,7 @@ const filteredReceivablesByClient = computed(() => {
     .map((group) => ({
       ...group,
       transactions: group.transactions.filter(
-        (t) => t.paymentStatus === currentFilter.value
+        (t) => t.paymentStatus === currentFilter.value,
       ),
       totalPending: group.transactions
         .filter((t) => t.paymentStatus === currentFilter.value)
@@ -376,7 +376,7 @@ function openPaymentModal(transaction) {
   // Validar que exista apertura
   if (!opening.value) {
     warning(
-      "Debes aperturar antes de registrar transacciones en cuentas por cobrar"
+      "Debes aperturar antes de registrar transacciones en cuentas por cobrar",
     );
     return;
   }
@@ -385,10 +385,10 @@ function openPaymentModal(transaction) {
       "Registra pagos parciales y gestiona mejor tus cuentas por cobrar.",
       {
         actionLink: {
-          text: "Actualiza a Wala Premium",
+          text: "Actualiza a Wala Pro",
           route: `/business/${route.params.businessId}/premium`,
         },
-      }
+      },
     );
     return;
   }
@@ -445,7 +445,8 @@ function getTransactionTotal(transaction) {
 /* Hover effects para dispositivos con soporte */
 @media (hover: hover) {
   .hover\:shadow-md:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    box-shadow:
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
       0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 }

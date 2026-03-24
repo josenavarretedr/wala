@@ -222,7 +222,7 @@ const handleSelectedType = (type) => {
     nextTick(() => {
       premium("Crea cotizaciones y conviértelas en ventas", {
         actionLink: {
-          text: "Actualiza a Wala Premium",
+          text: "Actualiza a Wala Pro",
           route: `/business/${route.params.businessId}/premium`,
         },
       });

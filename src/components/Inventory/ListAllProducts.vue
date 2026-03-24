@@ -242,7 +242,7 @@ function selectProduct(product) {
 
   // if (!isPremium.value) {
   //   premium(
-  //     "Encuentra, ordena y mejora tu inventario y más con Wala Premium. Actualiza tu plan, controla tu inventario"
+  //     "Encuentra, ordena y mejora tu inventario y más con Wala Pro. Actualiza tu plan, controla tu inventario"
   //   );
   //   return;
   // }

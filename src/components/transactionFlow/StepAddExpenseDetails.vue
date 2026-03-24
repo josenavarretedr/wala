@@ -863,7 +863,7 @@
             </button>
 
             <!-- MIXED -->
-            <button
+            <!-- <button
               type="button"
               @click="selectOverheadUsage('MIXED')"
               :class="[
@@ -903,7 +903,7 @@
                   >Apoya ambas áreas (alquiler, servicios generales)</span
                 >
               </div>
-            </button>
+            </button> -->
           </div>
 
           <!-- ========================================== -->

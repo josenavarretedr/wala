@@ -395,7 +395,10 @@
     </div>
 
     <!-- Variantes -->
-    <div class="border border-gray-200 rounded-lg p-4 space-y-4">
+    <div
+      class="border border-gray-200 rounded-lg p-4 space-y-4"
+      v-if="localFormData.type !== 'SERVICE'"
+    >
       <div class="flex items-center justify-between gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -589,7 +592,10 @@
     </div>
 
     <!-- Fecha de Vencimiento -->
-    <div class="border border-gray-200 rounded-lg p-4">
+    <div
+      class="border border-gray-200 rounded-lg p-4"
+      v-if="localFormData.type !== 'SERVICE'"
+    >
       <div class="flex items-center justify-between gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -653,7 +659,10 @@
     </div>
 
     <!-- Control de Stock -->
-    <div class="border border-gray-200 rounded-lg p-4">
+    <div
+      class="border border-gray-200 rounded-lg p-4"
+      v-if="localFormData.type !== 'SERVICE'"
+    >
       <div class="flex items-center justify-between">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">

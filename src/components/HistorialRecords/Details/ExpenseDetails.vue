@@ -387,15 +387,12 @@ const { premium } = useToast();
 // ========================================
 
 const handlePremiumClick = () => {
-  premium(
-    "La clasificación automática con IA está disponible en Wala Premium.",
-    {
-      actionLink: {
-        text: "Actualiza a Wala Premium",
-        route: `/business/${route.params.businessId}/premium`,
-      },
+  premium("La clasificación automática con IA está disponible en Wala Pro.", {
+    actionLink: {
+      text: "Actualiza a Wala Pro",
+      route: `/business/${route.params.businessId}/premium`,
     },
-  );
+  });
 };
 
 // ========================================

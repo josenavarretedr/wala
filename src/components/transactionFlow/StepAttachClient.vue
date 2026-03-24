@@ -501,7 +501,7 @@ function openCreateClientModal() {
   if (!isPremium.value) {
     premium("Gestionada tus clientes.", {
       actionLink: {
-        text: "Actualiza a Wala Premium",
+        text: "Actualiza a Wala Pro",
         route: `/business/${route.params.businessId}/premium`,
       },
     });
