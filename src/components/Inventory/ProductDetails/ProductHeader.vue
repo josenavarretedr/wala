@@ -52,7 +52,11 @@
       <!-- Subtítulo: Stock actual y Rotación (PRIORITARIO) -->
       <div class="flex flex-wrap items-center gap-2 mb-3 text-sm text-gray-600">
         <!-- Stock actual -->
-        <div :key="`stock-${stock}`" class="inline-flex items-center gap-1.5">
+        <div
+          :key="`stock-${stock}`"
+          class="inline-flex items-center gap-1.5"
+          v-if="props.trackStock"
+        >
           <svg
             class="w-4 h-4 text-blue-600"
             fill="none"
@@ -73,7 +77,7 @@
         </div>
 
         <!-- Separador -->
-        <span class="text-gray-300">•</span>
+        <span class="text-gray-300" v-if="props.trackStock">•</span>
 
         <!-- Rotación -->
         <div

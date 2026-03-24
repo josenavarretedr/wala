@@ -68,7 +68,7 @@
             </p>
             <p class="text-xs text-purple-600/80 mt-0.5">
               <span class="hidden sm:inline"
-                >Define ingredientes y pasos de preparación</span
+                >Define materiales y pasos de preparación</span
               >
               <span class="inline sm:hidden">Ingredientes y pasos</span>
             </p>

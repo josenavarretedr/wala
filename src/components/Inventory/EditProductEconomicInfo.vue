@@ -394,8 +394,8 @@
                 <span class="fraction-bottom">
                   {{
                     showFormulaWithValues
-                      ? `( 1 - (${saleMarginPercentage}% / 100) )`
-                      : "( 1 - Margen% / 100 )"
+                      ? `( 1 - ${saleMarginPercentage}% )`
+                      : "( 1 - Margen% )"
                   }}
                 </span>
               </span>
