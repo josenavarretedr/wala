@@ -1,183 +1,110 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8 px-4">
-    <div class="max-w-4xl mx-auto">
-      <!-- Header con botón de volver -->
-      <div class="mb-6">
-        <button
-          @click="goBack"
-          class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+  <div class="max-w-4xl mx-auto pb-28 lg:pb-24">
+    <!-- Header con botón de volver -->
+    <div class="mb-6">
+      <button
+        @click="goBack"
+        class="inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          <svg
-            class="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Volver
-        </button>
-        <h1 class="text-2xl font-semibold text-gray-900 mb-1">Mis datos</h1>
-        <p class="text-sm text-gray-500">Información personal de tu cuenta</p>
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        Volver
+      </button>
+      <h1 class="text-2xl font-semibold text-gray-900 mb-1">Mis datos</h1>
+      <p class="text-sm text-gray-500">Información personal de tu cuenta</p>
+    </div>
+
+    <div
+      class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
+    >
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-gray-900">
+          Información personal
+        </h2>
       </div>
 
-      <!-- Contenido -->
-      <div class="space-y-4">
-        <!-- Card de información personal -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
+      <form @submit.prevent="handleSave" class="space-y-2">
+        <section
+          v-for="section in profileSections"
+          :key="section.id"
+          class="py-5 border-b border-gray-100 last:border-b-0"
         >
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-lg font-semibold text-gray-900">
-              Información personal
-            </h2>
-            <button
-              v-if="!isEditing"
-              @click="isEditing = true"
-              class="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all"
+          <div class="flex items-start gap-3 mb-4">
+            <div
+              class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center"
             >
-              Editar
-            </button>
-          </div>
-
-          <form @submit.prevent="handleSave" class="space-y-6">
-            <!-- Nombre completo -->
-            <div>
-              <label class="block text-sm font-medium text-gray-900 mb-2">
-                Nombre completo
-              </label>
-              <input
-                v-model="formData.name"
-                type="text"
-                :disabled="!isEditing"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm disabled:bg-gray-50 disabled:text-gray-500"
-                placeholder="Ej: Juan Pérez"
-              />
+              <component :is="section.icon" class="w-5 h-5 text-blue-600" />
             </div>
-
-            <!-- Email (no editable) -->
             <div>
-              <label class="block text-sm font-medium text-gray-900 mb-2">
-                Correo electrónico
-              </label>
-              <input
-                v-model="formData.email"
-                type="email"
-                disabled
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
-              />
-              <p class="mt-1 text-xs text-gray-500">
-                El correo electrónico no se puede modificar
+              <h3 class="text-sm font-semibold text-gray-900">
+                {{ section.title }}
+              </h3>
+              <p class="text-xs text-gray-500 mt-0.5">
+                {{ section.description }}
               </p>
             </div>
+          </div>
 
-            <!-- Botones de acción (solo en modo edición) -->
-            <div v-if="isEditing" class="flex gap-3 pt-4">
-              <button
-                type="button"
-                @click="handleCancel"
-                class="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all duration-200"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="submit"
-                :disabled="isSaving"
-                class="flex-1 py-2.5 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
-              >
-                <span v-if="!isSaving" class="flex items-center justify-center">
-                  <svg
-                    class="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  Guardar cambios
-                </span>
-                <span v-else class="flex items-center justify-center">
-                  <div
-                    class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
-                  ></div>
-                  Guardando...
-                </span>
-              </button>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div v-for="field in section.fields" :key="field.key">
+              <label class="block text-sm font-medium text-gray-900 mb-2">
+                {{ field.label }}
+              </label>
+              <input
+                v-model="formData[field.key]"
+                type="text"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
+                :placeholder="field.placeholder"
+              />
             </div>
+          </div>
+        </section>
 
-            <!-- Mensaje de éxito/error -->
+        <section class="py-5 border-b border-gray-100">
+          <div class="flex items-start gap-3 mb-4">
             <div
-              v-if="message"
-              :class="[
-                'rounded-lg p-4',
-                message.type === 'success'
-                  ? 'bg-green-50 border border-green-200'
-                  : 'bg-red-50 border border-red-200',
-              ]"
+              class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center"
             >
-              <div class="flex items-start">
-                <svg
-                  v-if="message.type === 'success'"
-                  class="w-5 h-5 text-green-400 mr-2 flex-shrink-0 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <svg
-                  v-else
-                  class="w-5 h-5 text-red-400 mr-2 flex-shrink-0 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span
-                  :class="[
-                    'text-sm',
-                    message.type === 'success'
-                      ? 'text-green-700'
-                      : 'text-red-700',
-                  ]"
-                >
-                  {{ message.text }}
-                </span>
-              </div>
+              <Mail class="w-5 h-5 text-blue-600" />
             </div>
-          </form>
-        </div>
+            <div>
+              <h3 class="text-sm font-semibold text-gray-900">Cuenta</h3>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Datos de acceso de tu cuenta
+              </p>
+            </div>
+          </div>
 
-        <!-- Card de información de la cuenta -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
-        >
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Correo electrónico
+          </label>
+          <input
+            v-model="formData.email"
+            type="email"
+            disabled
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            El correo electrónico no se puede modificar
+          </p>
+        </section>
+
+        <section class="pt-5">
+          <h3 class="text-sm font-semibold text-gray-900 mb-3">
             Información de la cuenta
-          </h2>
-          <div class="space-y-3 text-sm">
+          </h3>
+          <div class="space-y-2 text-sm">
             <div class="flex justify-between py-2 border-b border-gray-100">
               <span class="text-gray-600">ID de usuario</span>
               <span class="font-mono text-gray-900">{{
@@ -197,9 +124,47 @@
               </span>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
+      </form>
     </div>
+
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 translate-y-4"
+      enter-to-class="opacity-100 translate-y-0"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0"
+      leave-to-class="opacity-0 translate-y-2"
+    >
+      <div
+        v-if="hasChanges"
+        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] sm:w-[70%] lg:w-1/3"
+      >
+        <div class="mb-2 flex justify-center">
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200"
+          >
+            Tienes cambios sin guardar
+          </span>
+        </div>
+
+        <button
+          @click="handleSave"
+          :disabled="isSaving"
+          class="w-full py-3 px-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-semibold text-sm shadow-lg shadow-blue-500/20"
+        >
+          <span v-if="!isSaving" class="flex items-center justify-center">
+            Guardar cambios
+          </span>
+          <span v-else class="flex items-center justify-center">
+            <div
+              class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
+            ></div>
+            Guardando...
+          </span>
+        </button>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -210,25 +175,67 @@ import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { getFirestore, doc, updateDoc, getDoc } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
+import { ProfileCircle, Map, Mail } from "@iconoir/vue";
+import { useToast } from "@/composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const db = getFirestore(appFirebase);
+const toast = useToast();
 
-const isEditing = ref(false);
 const isSaving = ref(false);
-const message = ref(null);
 
 const formData = ref({
   name: "",
+  lastName: "",
+  phone: "",
+  country: "",
+  region: "",
+  province: "",
+  district: "",
   email: "",
 });
 
-const originalData = ref({});
+const originalData = ref({ ...formData.value });
+const isFormReady = ref(false);
+
+const profileSections = [
+  {
+    id: "personal",
+    title: "Datos personales",
+    description: "Información base del emprendedor",
+    icon: ProfileCircle,
+    fields: [
+      { key: "name", label: "Nombre", placeholder: "Ej: Juan" },
+      { key: "lastName", label: "Apellidos", placeholder: "Ej: Pérez Gómez" },
+      { key: "phone", label: "Teléfono", placeholder: "" },
+    ],
+  },
+  {
+    id: "ubicacion",
+    title: "Ubicación",
+    description: "Datos territoriales de contacto",
+    icon: Map,
+    fields: [
+      { key: "country", label: "País", placeholder: "" },
+      { key: "region", label: "Región / Estado", placeholder: "" },
+      { key: "province", label: "Provincia", placeholder: "" },
+      { key: "district", label: "Distrito / Ciudad", placeholder: "" },
+    ],
+  },
+];
 
 const createdAt = computed(() => {
   return userStore.userData?.createdAt || null;
+});
+
+const hasChanges = computed(() => {
+  if (!isFormReady.value) return false;
+
+  return Object.keys(formData.value).some(
+    (key) => formData.value[key] !== originalData.value[key],
+  );
 });
 
 onMounted(() => {
@@ -245,31 +252,52 @@ const loadUserData = async () => {
 
       if (userSnap.exists()) {
         const userData = userSnap.data();
+        const profile = userData.profile || {};
+
         formData.value = {
-          name: userData.name || user.displayName || "",
+          name: profile.name || userData.name || user.displayName || "",
+          lastName: profile.lastName || "",
+          phone: profile.phone || "",
+          country: profile.country || "",
+          region: profile.region || "",
+          province: profile.province || "",
+          district: profile.district || "",
           email: user.email || "",
         };
       } else {
         formData.value = {
           name: user.displayName || "",
+          lastName: "",
+          phone: "",
+          country: "",
+          region: "",
+          province: "",
+          district: "",
           email: user.email || "",
         };
       }
       originalData.value = { ...formData.value };
+      isFormReady.value = true;
     } catch (error) {
       console.error("Error al cargar datos del usuario:", error);
       formData.value = {
         name: user.displayName || "",
+        lastName: "",
+        phone: "",
+        country: "",
+        region: "",
+        province: "",
+        district: "",
         email: user.email || "",
       };
       originalData.value = { ...formData.value };
+      isFormReady.value = true;
     }
   }
 };
 
 const handleSave = async () => {
   isSaving.value = true;
-  message.value = null;
 
   try {
     const user = authStore.user;
@@ -279,35 +307,30 @@ const handleSave = async () => {
 
     await updateDoc(userRef, {
       name: formData.value.name,
+      profile: {
+        name: formData.value.name,
+        lastName: formData.value.lastName,
+        phone: formData.value.phone,
+        country: formData.value.country,
+        region: formData.value.region,
+        province: formData.value.province,
+        district: formData.value.district,
+      },
       updatedAt: new Date(),
     });
 
-    message.value = {
-      type: "success",
-      text: "Tus datos se han actualizado correctamente",
-    };
-    isEditing.value = false;
+    toast.success("Tus datos se han actualizado correctamente", {
+      duration: 2200,
+    });
     originalData.value = { ...formData.value };
-
-    // Limpiar mensaje después de 3 segundos
-    setTimeout(() => {
-      message.value = null;
-    }, 3000);
   } catch (error) {
     console.error("Error al guardar:", error);
-    message.value = {
-      type: "error",
-      text: "Error al guardar los cambios. Inténtalo de nuevo.",
-    };
+    toast.error("Error al guardar los cambios. Inténtalo de nuevo.", {
+      duration: 2600,
+    });
   } finally {
     isSaving.value = false;
   }
-};
-
-const handleCancel = () => {
-  formData.value = { ...originalData.value };
-  isEditing.value = false;
-  message.value = null;
 };
 
 const formatDate = (date) => {
