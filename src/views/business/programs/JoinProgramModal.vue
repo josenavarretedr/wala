@@ -248,29 +248,6 @@
           </div>
         </div>
 
-        <!-- Success message -->
-        <div
-          v-if="success"
-          class="mb-4 bg-green-50 border border-green-200 rounded-lg p-3"
-        >
-          <div class="flex items-start">
-            <svg
-              class="w-5 h-5 text-green-400 mr-2 flex-shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p class="text-sm text-green-700">{{ success }}</p>
-          </div>
-        </div>
-
         <!-- Buttons -->
         <div class="flex gap-3">
           <button
@@ -307,7 +284,11 @@
               <div
                 class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"
               ></div>
-              Uniéndome...
+              {{
+                syncingPremium
+                  ? "Uniéndome y activando Wala Pro..."
+                  : "Uniéndome..."
+              }}
             </span>
           </button>
         </div>
@@ -337,15 +318,103 @@
         </div>
       </div>
     </div>
+
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
+    >
+      <div
+        v-if="showSuccessModal"
+        class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+        @click.self="finalizeJoin(false)"
+      >
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8">
+          <div class="flex justify-center mb-5">
+            <div
+              class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 text-emerald-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="3"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <h3 class="text-2xl font-bold text-gray-900 text-center mb-2">
+            ¡Inscripción completada!
+          </h3>
+          <p class="text-center text-gray-600 mb-5">
+            Te inscribiste en
+            <strong>{{ joinResult?.programName }}</strong>
+            de
+            <strong>{{ joinResult?.organizationName }}</strong>
+          </p>
+
+          <div
+            class="bg-gradient-to-br from-blue-50 to-blue-100/60 border border-blue-100 rounded-xl p-4 mb-4"
+          >
+            <p class="text-sm font-semibold text-blue-900 text-center">
+              ✨ Wala Pro activado para tu negocio
+            </p>
+            <p
+              v-if="formattedEndDate"
+              class="text-xs text-blue-800 text-center mt-1"
+            >
+              Válido hasta: {{ formattedEndDate }}
+            </p>
+          </div>
+
+          <div
+            v-if="joinResult?.premiumSyncFailed"
+            class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4"
+          >
+            <p class="text-xs text-yellow-800 text-center">
+              {{ joinResult?.syncWarning }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <button
+              @click="finalizeJoin(true)"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            >
+              Ir a Programas
+            </button>
+            <button
+              @click="finalizeJoin(false)"
+              class="w-full border border-gray-300 text-gray-700 hover:bg-gray-50 py-2.5 rounded-lg text-sm font-semibold transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { usePrograms } from "@/composables/usePrograms";
 import { useUserStore } from "@/stores/useUserStore";
 
 const emit = defineEmits(["close", "joined"]);
+const router = useRouter();
+const route = useRoute();
 
 const { joinByCode, loading, error: storeError } = usePrograms();
 const userStore = useUserStore();
@@ -357,6 +426,9 @@ const success = ref(null);
 const programFound = ref(null);
 const dataAuthorized = ref(false);
 const modalContainer = ref(null);
+const syncingPremium = ref(false);
+const showSuccessModal = ref(false);
+const joinResult = ref(null);
 
 const currentBusinessName = computed(() => {
   return (
@@ -364,6 +436,20 @@ const currentBusinessName = computed(() => {
     userStore.currentBusiness?.businessId ||
     "Mi Negocio"
   );
+});
+
+const formattedEndDate = computed(() => {
+  const endDateRaw = joinResult.value?.subscription?.endDate;
+  if (!endDateRaw) return null;
+
+  const parsedDate = new Date(endDateRaw);
+  if (Number.isNaN(parsedDate.getTime())) return null;
+
+  return parsedDate.toLocaleDateString("es-PE", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 });
 
 // Enfocar el modal al montarse para capturar eventos de teclado
@@ -436,6 +522,7 @@ async function handleSubmit() {
 
   error.value = null;
   success.value = null;
+  syncingPremium.value = true;
 
   try {
     console.log("📝 Uniéndose al programa...");
@@ -445,20 +532,29 @@ async function handleSubmit() {
 
     console.log("✅ Resultado:", result);
 
-    success.value = `¡Te has unido exitosamente a "${result.programName}"!`;
-
-    // Esperar 1.5 segundos para que el usuario vea el mensaje de éxito
-    setTimeout(() => {
-      emit("joined", {
-        programId: result.programId,
-        programName: result.programName,
-      });
-    }, 1500);
+    joinResult.value = result;
+    showSuccessModal.value = true;
   } catch (err) {
     console.error("❌ Error al unirse:", err);
     error.value =
       err.message || "Error al unirse al programa. Intenta nuevamente.";
+  } finally {
+    syncingPremium.value = false;
   }
+}
+
+function finalizeJoin(goToPrograms = false) {
+  if (goToPrograms) {
+    const businessId = route.params.businessId;
+    if (businessId) {
+      router.push(`/business/${businessId}/programs`);
+    }
+  }
+
+  emit("joined", {
+    programId: joinResult.value?.programId,
+    programName: joinResult.value?.programName,
+  });
 }
 </script>
 

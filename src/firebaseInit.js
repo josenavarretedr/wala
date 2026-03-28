@@ -54,6 +54,7 @@ const storage = getStorage(appFirebase);
  * @see {@link https://firebase.google.com/docs/functions}
  */
 const functions = getFunctions(appFirebase, 'southamerica-east1');
+const functionsUsCentral1 = getFunctions(appFirebase, 'us-central1');
 
 // Verificar si estamos en un entorno local para conectar a los emuladores
 if (window.location.hostname === 'localhost') {
@@ -61,8 +62,9 @@ if (window.location.hostname === 'localhost') {
   connectAuthEmulator(auth, 'http://localhost:9099');
   connectStorageEmulator(storage, 'localhost', 9199);
   connectFunctionsEmulator(functions, 'localhost', 5001);
+  connectFunctionsEmulator(functionsUsCentral1, 'localhost', 5001);
   console.log('🔌 Emuladores conectados: Firestore, Auth, Storage, Functions');
 }
 
 export default appFirebase;
-export { db, auth, storage, functions };
+export { db, auth, storage, functions, functionsUsCentral1 };

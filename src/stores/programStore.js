@@ -17,9 +17,10 @@ import {
   Timestamp
 } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
-import { db, functions } from '@/firebaseInit'
+import { db, functionsUsCentral1 } from '@/firebaseInit'
 import { useAuthStore } from './authStore'
 import { useUserStore } from './useUserStore'
+import { useBusinessStore } from './businessStore'
 
 export const useProgramStore = defineStore('program', () => {
   // ═══════════════════════════════════════════════════════════
@@ -229,6 +230,7 @@ export const useProgramStore = defineStore('program', () => {
   async function joinProgramByCode(code) {
     const authStore = useAuthStore()
     const userStore = useUserStore()
+    const businessStore = useBusinessStore()
 
     if (!code || !code.trim()) {
       throw new Error('Debes ingresar un código de invitación')
@@ -246,9 +248,8 @@ export const useProgramStore = defineStore('program', () => {
     error.value = null
 
     try {
-      console.log(`🔐 Intentando unirse con código: ${code}`)
+      console.log(`🔐 Intentando unirse con código vía Cloud Function: ${code}`)
 
-      // 1. Verificar que sea gerente
       const currentBusiness = userStore.userBusinesses.find(
         b => b.businessId === userStore.currentBusiness.businessId
       )
@@ -261,104 +262,89 @@ export const useProgramStore = defineStore('program', () => {
         throw new Error('Solo los gerentes pueden unir el negocio a programas')
       }
 
-      const codeUpper = code.trim().toUpperCase()
-
-      // 2. Buscar programa por código (codUser para participantes)
-      const programsRef = collection(db, 'programs')
-      const q = query(
-        programsRef,
-        where('codUser', '==', codeUpper),
-        where('isActive', '==', true)
-      )
-
-      const querySnapshot = await getDocs(q)
-
-      if (querySnapshot.empty) {
-        throw new Error('Código no válido o programa inactivo')
+      const payload = {
+        code: code.trim().toUpperCase(),
+        businessId: userStore.currentBusiness.businessId
       }
 
-      const programDoc = querySnapshot.docs[0]
-      const programId = programDoc.id
-      const programData = programDoc.data()
+      const joinProgramByCodeCallable = httpsCallable(functionsUsCentral1, 'joinProgramByCode')
+      const callableResult = await joinProgramByCodeCallable(payload)
 
-      console.log(`✅ Programa encontrado: ${programData.name}`)
+      const result = callableResult?.data || {}
 
-      const userId = authStore.user.uid
+      if (!result.success) {
+        throw new Error(result.message || 'No se pudo completar la afiliación al programa')
+      }
+
+      console.log(`🎉 Join exitoso vía Cloud Function: ${result.programName}`)
+
       const businessId = userStore.currentBusiness.businessId
+      const currentBusinessRelation = userStore.userBusinesses.find(
+        b => b.businessId === businessId
+      ) || userStore.currentBusiness
 
-      // 3. 🆕 Verificar si ya está inscrito (en la nueva estructura)
-      const participantRef = doc(db, 'programs', programId, 'participants', userId)
-      const participantSnap = await getDoc(participantRef)
+      const previousSubscription = businessStore.business?.subscription
+        ? { ...businessStore.business.subscription }
+        : null
 
-      if (participantSnap.exists()) {
-        const existingData = participantSnap.data()
-        if (existingData.status === 'active') {
-          throw new Error('Ya estás inscrito en este programa')
-        }
-        // Si había salido antes, se puede reactivar
-        console.log('⚠️ Usuario existía previamente, reactivando...')
-      }
-
-      // 4. 🆕 Crear documento en participants/{userId}
-      const participantData = {
-        userId,
-        userEmail: authStore.user.email || '',
-        userName: userStore.userProfile?.nombre || authStore.user.displayName || 'Usuario',
-        businessId,
-        businessName: userStore.currentBusiness.razonSocial || 'Sin nombre',
-        role: 'participant',
-        status: 'active',
-        joinedAt: serverTimestamp(),
-        currentPhase: programData.currentPhase || 'baseline',
-        metadata: {
-          totalActivitiesCompleted: 0,
-          lastActivityAt: null,
-          progressPercentage: 0,
-          attendanceRate: 0
+      if (businessStore.business?.id === businessId) {
+        businessStore.business.subscription = {
+          ...(businessStore.business.subscription || {}),
+          plan: result?.subscription?.plan || 'pro',
+          status: result?.subscription?.status || 'active',
+          planType: result?.subscription?.planType || 'pro_monthly',
+          planVariant: result?.subscription?.planVariant || 'pro_monthly'
         }
       }
 
-      await setDoc(participantRef, participantData, { merge: true })
+      let premiumSyncFailed = false
+      let syncWarning = null
 
-      console.log(`✅ Participante creado en programs/${programId}/participants/${userId}`)
+      try {
+        await businessStore.loadBusiness(businessId, currentBusinessRelation)
+      } catch (syncError) {
+        premiumSyncFailed = true
+        syncWarning = 'El join fue exitoso, pero no se pudo sincronizar el estado Pro inmediatamente.'
+        console.error('⚠️ Error sincronizando business tras join:', syncError)
 
-      // 5. Actualizar metadata del programa
-      const programRef = doc(db, 'programs', programId)
-      await updateDoc(programRef, {
-        'metadata.totalParticipants': increment(1)
-      })
-
-      // 6. Actualizar documento del business con el programId
-      const businessRef = doc(db, 'businesses', businessId)
-      const businessSnap = await getDoc(businessRef)
-
-      if (businessSnap.exists()) {
-        const currentPrograms = businessSnap.data().programs || []
-        if (!currentPrograms.includes(programId)) {
-          await updateDoc(businessRef, {
-            programs: arrayUnion(programId)
-          })
-          console.log(`✅ ProgramId agregado a businesses/${businessId}.programs`)
+        if (businessStore.business?.id === businessId && previousSubscription) {
+          businessStore.business.subscription = previousSubscription
         }
       }
 
-      console.log(`🎉 Te has unido exitosamente a "${programData.name}"`)
-
-      // Recargar programas activos
       await loadActivePrograms()
 
       return {
         success: true,
-        programId,
-        programName: programData.name,
-        organizationName: programData.organizationName
+        programId: result.programId,
+        programName: result.programName,
+        organizationName: result.organizationName,
+        message: result.message,
+        subscription: result.subscription || null,
+        premiumSyncFailed,
+        syncWarning
       }
 
     } catch (err) {
       console.error('❌ Error uniéndose al programa:', err)
 
-      // Extraer mensaje de error legible
-      let errorMessage = err.message || 'Error al unirse al programa'
+      const firebaseCode = err?.code?.replace('functions/', '')
+
+      let errorMessage = err?.message || 'Error al unirse al programa'
+
+      if (firebaseCode === 'already-exists') {
+        errorMessage = 'Tu negocio ya está participando en este programa'
+      } else if (firebaseCode === 'permission-denied') {
+        errorMessage = 'Solo los gerentes pueden unir el negocio a programas'
+      } else if (firebaseCode === 'not-found') {
+        errorMessage = 'Código no válido o programa inactivo'
+      } else if (firebaseCode === 'failed-precondition') {
+        errorMessage = err?.message || 'El programa no está listo para afiliación (revisa metadata.endDate)'
+      } else if (firebaseCode === 'internal') {
+        errorMessage = 'Error interno al llamar joinProgramByCode. Si usas emuladores, reinícialos para recargar regiones de funciones.'
+      } else if (firebaseCode === 'unauthenticated') {
+        errorMessage = 'Tu sesión no está autenticada para ejecutar joinProgramByCode. Cierra sesión e ingresa nuevamente.'
+      }
 
       error.value = errorMessage
       throw new Error(errorMessage)

@@ -1,7 +1,33 @@
 /* eslint-disable */
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const crypto = require('crypto');
+
+function parseDateValue(value) {
+  if (!value) return null;
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof value?.toDate === 'function') {
+    const dateFromTimestamp = value.toDate();
+    return Number.isNaN(dateFromTimestamp.getTime()) ? null : dateFromTimestamp;
+  }
+
+  if (typeof value === 'number' || typeof value === 'string') {
+    const parsedDate = new Date(value);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  }
+
+  if (typeof value === 'object' && value !== null && typeof value._seconds === 'number') {
+    const dateFromSeconds = new Date(value._seconds * 1000);
+    return Number.isNaN(dateFromSeconds.getTime()) ? null : dateFromSeconds;
+  }
+
+  return null;
+}
 
 /**
  * Cloud Function: Unirse a un programa por código de invitación
@@ -69,7 +95,7 @@ exports.joinProgramByCode = functions
 
       const userBusinessSnap = await userBusinessRef.get();
 
-      if (!userBusinessSnap.exists()) {
+      if (!userBusinessSnap.exists) {
         console.warn(`⚠️  Usuario ${uid} no tiene acceso a business ${businessId}`);
         throw new functions.https.HttpsError(
           'permission-denied',
@@ -111,7 +137,28 @@ exports.joinProgramByCode = functions
 
       console.log(`🔍 Buscando código: ${codeUppercase} (hash: ${codeHash})`);
 
-      // Buscar en todos los programas activos
+      // Primero intentar código directo del programa (codUser)
+      const codUserProgramSnapshot = await db
+        .collection('programs')
+        .where('codUser', '==', codeUppercase)
+        .where('isActive', '==', true)
+        .limit(1)
+        .get();
+
+      let validInvite = null;
+      let validProgramId = null;
+      let validProgramData = null;
+      let codeSource = null;
+
+      if (!codUserProgramSnapshot.empty) {
+        const programDoc = codUserProgramSnapshot.docs[0];
+        validProgramId = programDoc.id;
+        validProgramData = programDoc.data();
+        codeSource = 'codUser';
+        console.log(`✅ Código codUser válido para programa: ${validProgramId} (${validProgramData.name})`);
+      }
+
+      // Fallback: buscar en invites por hash si no hubo match en codUser
       const programsSnapshot = await db
         .collection('programs')
         .where('isActive', '==', true)
@@ -125,62 +172,61 @@ exports.joinProgramByCode = functions
         );
       }
 
-      let validInvite = null;
-      let validProgramId = null;
-      let validProgramData = null;
+      if (!validProgramId) {
+        // Iterar sobre cada programa para buscar el código en invites
+        for (const programDoc of programsSnapshot.docs) {
+          const invitesSnapshot = await db
+            .collection('programs')
+            .doc(programDoc.id)
+            .collection('invites')
+            .where('codeHash', '==', codeHash)
+            .where('isActive', '==', true)
+            .limit(1)
+            .get();
 
-      // Iterar sobre cada programa para buscar el código
-      for (const programDoc of programsSnapshot.docs) {
-        const invitesSnapshot = await db
-          .collection('programs')
-          .doc(programDoc.id)
-          .collection('invites')
-          .where('codeHash', '==', codeHash)
-          .where('isActive', '==', true)
-          .limit(1)
-          .get();
+          if (!invitesSnapshot.empty) {
+            const inviteDoc = invitesSnapshot.docs[0];
+            const inviteData = inviteDoc.data();
 
-        if (!invitesSnapshot.empty) {
-          const inviteDoc = invitesSnapshot.docs[0];
-          const inviteData = inviteDoc.data();
+            // Validar expiración
+            if (inviteData.expiresAt) {
+              const expiresAt = inviteData.expiresAt.toDate();
+              const now = new Date();
 
-          // Validar expiración
-          if (inviteData.expiresAt) {
-            const expiresAt = inviteData.expiresAt.toDate();
-            const now = new Date();
-
-            if (expiresAt < now) {
-              console.warn(`⚠️  Código expirado: ${expiresAt} < ${now}`);
-              throw new functions.https.HttpsError(
-                'failed-precondition',
-                `El código de invitación expiró el ${expiresAt.toLocaleDateString('es-PE')}`,
-              );
+              if (expiresAt < now) {
+                console.warn(`⚠️  Código expirado: ${expiresAt} < ${now}`);
+                throw new functions.https.HttpsError(
+                  'failed-precondition',
+                  `El código de invitación expiró el ${expiresAt.toLocaleDateString('es-PE')}`,
+                );
+              }
             }
-          }
 
-          // Validar usos máximos
-          if (inviteData.maxUses && inviteData.maxUses > 0) {
-            if (inviteData.currentUses >= inviteData.maxUses) {
-              console.warn(`⚠️  Código sin usos disponibles: ${inviteData.currentUses}/${inviteData.maxUses}`);
-              throw new functions.https.HttpsError(
-                'failed-precondition',
-                'El código de invitación ha alcanzado el máximo de usos permitidos',
-              );
+            // Validar usos máximos
+            if (inviteData.maxUses && inviteData.maxUses > 0) {
+              if (inviteData.currentUses >= inviteData.maxUses) {
+                console.warn(`⚠️  Código sin usos disponibles: ${inviteData.currentUses}/${inviteData.maxUses}`);
+                throw new functions.https.HttpsError(
+                  'failed-precondition',
+                  'El código de invitación ha alcanzado el máximo de usos permitidos',
+                );
+              }
             }
-          }
 
-          validInvite = {
-            id: inviteDoc.id,
-            ref: inviteDoc.ref,
-            data: inviteData,
-          };
-          validProgramId = programDoc.id;
-          validProgramData = programDoc.data();
-          break;
+            validInvite = {
+              id: inviteDoc.id,
+              ref: inviteDoc.ref,
+              data: inviteData,
+            };
+            validProgramId = programDoc.id;
+            validProgramData = programDoc.data();
+            codeSource = 'invite';
+            break;
+          }
         }
       }
 
-      if (!validInvite) {
+      if (!validProgramId) {
         console.warn(`⚠️  Código inválido o inactivo: ${codeUppercase}`);
         throw new functions.https.HttpsError(
           'not-found',
@@ -188,23 +234,48 @@ exports.joinProgramByCode = functions
         );
       }
 
-      console.log(`✅ Código válido para programa: ${validProgramId} (${validProgramData.name})`);
+      console.log(`✅ Código válido para programa: ${validProgramId} (${validProgramData.name}) | fuente=${codeSource || 'unknown'}`);
 
       // ═══════════════════════════════════════════════════════════
-      // VALIDACIÓN 6: Verificar que no esté ya afiliado
+      // VALIDACIÓN 6: metadata.endDate obligatorio para activar premium
       // ═══════════════════════════════════════════════════════════
-      const existingMembershipRef = db
-        .collection('programs')
-        .doc(validProgramId)
-        .collection('memberships')
-        .doc(businessId);
+      const programEndDate = parseDateValue(validProgramData?.metadata?.endDate);
 
-      const existingMembershipSnap = await existingMembershipRef.get();
+      if (!programEndDate) {
+        console.warn(`⚠️  Programa ${validProgramId} sin metadata.endDate válido`);
+        throw new functions.https.HttpsError(
+          'failed-precondition',
+          'El programa no tiene una fecha de culminación válida (metadata.endDate). Contacta al facilitador.',
+        );
+      }
 
-      if (existingMembershipSnap.exists()) {
-        const membershipData = existingMembershipSnap.data();
+      const programRef = db.collection('programs').doc(validProgramId);
+      const membershipRef = programRef.collection('memberships').doc(businessId);
+      const participantRef = programRef.collection('participants').doc(uid);
+      const indexRef = db.collection('users').doc(uid).collection('programs').doc(validProgramId);
+      const businessRef = db.collection('businesses').doc(businessId);
+      let responseSubscription = null;
 
-        if (membershipData.status === 'active') {
+      await db.runTransaction(async (transaction) => {
+        const [programSnapTx, membershipSnap, participantSnap, businessSnap] = await Promise.all([
+          transaction.get(programRef),
+          transaction.get(membershipRef),
+          transaction.get(participantRef),
+          transaction.get(businessRef),
+        ]);
+
+        if (!programSnapTx.exists) {
+          throw new functions.https.HttpsError('not-found', 'El programa no existe');
+        }
+
+        if (!businessSnap.exists) {
+          throw new functions.https.HttpsError('failed-precondition', 'No se encontró el negocio para aplicar la suscripción');
+        }
+
+        const membershipData = membershipSnap.exists ? membershipSnap.data() : null;
+        const participantData = participantSnap.exists ? participantSnap.data() : null;
+
+        if (membershipData?.status === 'active' || participantData?.status === 'active') {
           console.warn(`⚠️  Business ${businessId} ya está afiliado al programa ${validProgramId}`);
           throw new functions.https.HttpsError(
             'already-exists',
@@ -212,95 +283,138 @@ exports.joinProgramByCode = functions
           );
         }
 
-        // Si estaba como 'left', reactivar membership
-        console.log(`🔄 Reactivando membership para business ${businessId}`);
+        const businessData = businessSnap.data() || {};
+        const existingSubscription = businessData.subscription || {};
+        const existingEndDate = parseDateValue(existingSubscription.endDate);
+        const hasUnlimitedPremium = existingSubscription?.status === 'active' &&
+          ['premium', 'pro', 'max'].includes(existingSubscription?.plan) &&
+          !existingSubscription?.endDate;
 
-        await existingMembershipRef.update({
+        let finalEndDate = Timestamp.fromDate(programEndDate);
+
+        if (hasUnlimitedPremium) {
+          finalEndDate = null;
+        } else if (existingEndDate && existingEndDate > programEndDate) {
+          finalEndDate = Timestamp.fromDate(existingEndDate);
+        }
+
+        const nowTimestamp = FieldValue.serverTimestamp();
+
+        const membershipPayload = {
+          userId: uid,
+          businessId,
           status: 'active',
-          rejoinedAt: admin.firestore.FieldValue.serverTimestamp(),
+          inviteId: validInvite?.id || null,
+          inviteCode: codeUppercase,
           leftAt: null,
-        });
+          metadata: {
+            currentPhase: validProgramData?.currentPhase || 'baseline',
+            sessionsCompleted: membershipData?.metadata?.sessionsCompleted || 0,
+            lastSessionAt: membershipData?.metadata?.lastSessionAt || null,
+          },
+        };
 
-        // Actualizar índice en user
-        const indexRef = db
-          .collection('users')
-          .doc(uid)
-          .collection('programs')
-          .doc(validProgramId);
+        if (membershipData) {
+          membershipPayload.rejoinedAt = nowTimestamp;
+        } else {
+          membershipPayload.joinedAt = nowTimestamp;
+        }
 
-        await indexRef.update({
+        const participantPayload = {
+          userId: uid,
+          userEmail: context.auth.token.email || '',
+          userName: context.auth.token.name || 'Usuario',
+          businessId,
+          businessName: businessData.razonSocial || businessData.nombre || 'Sin nombre',
+          role: 'participant',
           status: 'active',
-          rejoinedAt: admin.firestore.FieldValue.serverTimestamp(),
+          currentPhase: validProgramData?.currentPhase || 'baseline',
           leftAt: null,
-        });
+          metadata: {
+            totalActivitiesCompleted: participantData?.metadata?.totalActivitiesCompleted || 0,
+            lastActivityAt: participantData?.metadata?.lastActivityAt || null,
+            progressPercentage: participantData?.metadata?.progressPercentage || 0,
+            attendanceRate: participantData?.metadata?.attendanceRate || 0,
+          },
+        };
 
-        console.log(`✅ Membership reactivada exitosamente`);
+        if (participantData) {
+          participantPayload.rejoinedAt = nowTimestamp;
+        } else {
+          participantPayload.joinedAt = nowTimestamp;
+        }
 
-        return {
-          success: true,
+        const indexPayload = {
           programId: validProgramId,
           programName: validProgramData.name,
           organizationName: validProgramData.organizationName,
-          message: `Te has vuelto a unir exitosamente al programa "${validProgramData.name}"`,
+          businessId,
+          status: 'active',
+          role: 'participant',
+          leftAt: null,
         };
-      }
 
-      // ═══════════════════════════════════════════════════════════
-      // CREAR NUEVA MEMBERSHIP
-      // ═══════════════════════════════════════════════════════════
-      console.log(`📝 Creando nueva membership para business ${businessId}`);
+        if (membershipData || participantData) {
+          indexPayload.rejoinedAt = nowTimestamp;
+        } else {
+          indexPayload.joinedAt = nowTimestamp;
+        }
 
-      const newMembership = {
-        userId: uid,
-        businessId: businessId,
-        status: 'active',
-        joinedAt: admin.firestore.FieldValue.serverTimestamp(),
-        leftAt: null,
-        inviteId: validInvite.id,
-        inviteCode: codeUppercase,
-        metadata: {
-          currentPhase: 'baseline',
-          sessionsCompleted: 0,
-          lastSessionAt: null,
-        },
-      };
+        const subscriptionPayload = {
+          ...existingSubscription,
+          plan: 'pro',
+          planType: 'pro_monthly',
+          planVariant: 'pro_monthly',
+          status: 'active',
+          endDate: finalEndDate,
+          updatedAt: nowTimestamp,
+        };
 
-      await existingMembershipRef.set(newMembership);
-      console.log(`✅ Membership creada en /programs/${validProgramId}/memberships/${businessId}`);
+        if (!existingSubscription?.startDate) {
+          subscriptionPayload.startDate = nowTimestamp;
+        }
 
-      // ═══════════════════════════════════════════════════════════
-      // CREAR ÍNDICE EN USER
-      // ═══════════════════════════════════════════════════════════
-      const indexRef = db
-        .collection('users')
-        .doc(uid)
-        .collection('programs')
-        .doc(validProgramId);
+        responseSubscription = {
+          plan: 'pro',
+          status: 'active',
+          planType: 'pro_monthly',
+          planVariant: 'pro_monthly',
+          endDate: finalEndDate ? finalEndDate.toDate().toISOString() : null,
+        };
 
-      const indexData = {
-        programId: validProgramId,
-        programName: validProgramData.name,
-        organizationName: validProgramData.organizationName,
-        businessId: businessId,
-        status: 'active',
-        joinedAt: admin.firestore.FieldValue.serverTimestamp(),
-        leftAt: null,
-        role: 'participant',
-      };
+        transaction.set(membershipRef, membershipPayload, { merge: true });
+        transaction.set(participantRef, participantPayload, { merge: true });
+        transaction.set(indexRef, indexPayload, { merge: true });
+        transaction.set(
+          businessRef,
+          {
+            programs: FieldValue.arrayUnion(validProgramId),
+            subscription: subscriptionPayload,
+            updatedAt: nowTimestamp,
+          },
+          { merge: true },
+        );
 
-      await indexRef.set(indexData);
-      console.log(`✅ Índice creado en /users/${uid}/programs/${validProgramId}`);
+        transaction.set(
+          programRef,
+          {
+            metadata: {
+              totalParticipants: FieldValue.increment(1),
+            },
+          },
+          { merge: true },
+        );
 
-      // ═══════════════════════════════════════════════════════════
-      // INCREMENTAR USO DEL CÓDIGO
-      // ═══════════════════════════════════════════════════════════
-      await validInvite.ref.update({
-        currentUses: admin.firestore.FieldValue.increment(1),
-        lastUsedAt: admin.firestore.FieldValue.serverTimestamp(),
-        lastUsedBy: uid,
+        if (validInvite?.ref) {
+          transaction.update(validInvite.ref, {
+            currentUses: FieldValue.increment(1),
+            lastUsedAt: nowTimestamp,
+            lastUsedBy: uid,
+          });
+        }
       });
 
-      console.log(`✅ Uso del código incrementado (${validInvite.data.currentUses + 1}/${validInvite.data.maxUses || '∞'})`);
+      console.log(`✅ Join + subscription aplicados de forma transaccional para business ${businessId}`);
 
       // ═══════════════════════════════════════════════════════════
       // RESPUESTA EXITOSA
@@ -310,6 +424,7 @@ exports.joinProgramByCode = functions
         programId: validProgramId,
         programName: validProgramData.name,
         organizationName: validProgramData.organizationName,
+        subscription: responseSubscription,
         message: `¡Bienvenido al programa "${validProgramData.name}"! Tu negocio ahora forma parte de esta iniciativa de ${validProgramData.organizationName}.`,
       };
     } catch (error) {
