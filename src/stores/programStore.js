@@ -342,6 +342,25 @@ export const useProgramStore = defineStore('program', () => {
         }
       }
 
+      // 7. Activar suscripción premium basada en la fecha de fin del programa
+      const programEndDate = programData.metadata?.endDate || null
+
+      if (programEndDate) {
+        await updateDoc(businessRef, {
+          'subscription.plan': 'premium',
+          'subscription.status': 'active',
+          'subscription.source': 'program',
+          'subscription.programId': programId,
+          'subscription.endDate': programEndDate,
+          'subscription.startDate': serverTimestamp(),
+          'subscription.updatedAt': serverTimestamp(),
+        })
+        const endDateDisplay = typeof programEndDate.toDate === 'function'
+          ? programEndDate.toDate().toLocaleDateString('es-PE')
+          : new Date(programEndDate).toLocaleDateString('es-PE')
+        console.log(`✅ Suscripción premium activada hasta: ${endDateDisplay}`)
+      }
+
       console.log(`🎉 Te has unido exitosamente a "${programData.name}"`)
 
       // Recargar programas activos
