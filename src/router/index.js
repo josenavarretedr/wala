@@ -273,6 +273,15 @@ const routes = [
           title: 'Detalle de Asesoría'
         }
       },
+      {
+        path: 'programs/:programId/consultings/:dossierId/read',
+        name: 'program-consulting-dossier-read',
+        component: () => import('@/views/business/programs/ProgramConsultingDossierRead.vue'),
+        meta: {
+          requiresAuth: true,
+          title: 'Expediente de Asesoría'
+        }
+      },
       // Backward compatibility route
       {
         path: 'programs/:programId/monitoring-participation/:activityId',

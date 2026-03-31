@@ -128,6 +128,13 @@ function createEmptyAssessment() {
   return assessment
 }
 
+function getTimestampValue(value) {
+  if (!value) return 0
+  if (typeof value.toDate === 'function') return value.toDate().getTime()
+  if (value instanceof Date) return value.getTime()
+  return new Date(value).getTime()
+}
+
 export const useConsultingDossierStore = defineStore('consultingDossier', () => {
   const dossiers = ref([])
   const currentDossier = ref(null)
@@ -511,6 +518,54 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     return dossiers.value.find((dossier) => dossier.participantId === participantId && dossier.isActive)
   }
 
+  function getStepProgress(currentStep) {
+    const fallback = {
+      step: currentStep || '',
+      label: getStepLabel(currentStep),
+      current: 0,
+      total: CONSULTING_DOSSIER_STEPS.length,
+      percent: 0,
+      isClosed: false,
+    }
+
+    if (!currentStep) return fallback
+
+    const index = CONSULTING_DOSSIER_STEPS.indexOf(currentStep)
+    if (index === -1) return fallback
+
+    const current = index + 1
+    const total = CONSULTING_DOSSIER_STEPS.length
+    const percent = Math.round((current / total) * 100)
+
+    return {
+      step: currentStep,
+      label: getStepLabel(currentStep),
+      current,
+      total,
+      percent,
+      isClosed: currentStep === 'closed',
+    }
+  }
+
+  async function loadActiveParticipantDossier(programId, participantId, businessId) {
+    if (!programId || !participantId) return null
+
+    if (!dossiers.value.length) {
+      await loadProgramDossiers(programId)
+    }
+
+    const candidates = dossiers.value
+      .filter((dossier) => {
+        const sameParticipant = dossier.participantId === participantId
+        const sameBusiness = businessId ? dossier.businessId === businessId : true
+        const isActive = dossier.isActive !== false
+        return sameParticipant && sameBusiness && isActive
+      })
+      .sort((a, b) => getTimestampValue(b.updatedAt) - getTimestampValue(a.updatedAt))
+
+    return candidates[0] || null
+  }
+
   return {
     dossiers,
     currentDossier,
@@ -527,5 +582,7 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     saveS0Assessment,
     saveProgramConsultingDossier,
     getDossierByParticipant,
+    getStepProgress,
+    loadActiveParticipantDossier,
   }
 })

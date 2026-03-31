@@ -64,81 +64,132 @@
 
       <!-- Contenido de Actividades -->
       <div v-else class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Empty State -->
-        <div
-          v-if="!visibleFilteredActivities.length && !stageGate"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
-        >
+        <template v-if="isConsultingTab">
           <div
-            class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+            v-if="loadingDossier"
+            class="flex items-center justify-center py-12"
           >
-            <svg
-              class="w-8 h-8 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-              />
-            </svg>
+            <SpinnerIcon size="xl" class="text-purple-600" />
           </div>
-          <h3 class="text-lg font-medium text-gray-900 mb-2">
-            No hay actividades
-          </h3>
-          <p class="text-gray-600">
-            {{ getEmptyMessage() }}
-          </p>
-        </div>
 
-        <!-- Timeline de Actividades -->
-        <template v-else>
-          <ListActivities
-            v-if="visibleFilteredActivities.length"
-            :activities="visibleFilteredActivities"
-            user-role="participant"
-            :current-user-id="currentUserId"
-            :participations="userParticipations"
-            @click="goToActivity"
+          <CardDossier
+            v-else-if="activeParticipantDossier"
+            :dossier="activeParticipantDossier"
+            :progress="activeDossierProgress"
+            @click="goToDossierRead"
           />
 
-          <!-- Stage Gate: bloqueo de etapas siguientes -->
-          <div v-if="stageGate" class="flex items-center justify-center py-10">
+          <div
+            v-else
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
+          >
             <div
-              class="bg-white rounded-xl shadow-sm border border-amber-200 p-8 text-center max-w-sm w-full"
+              class="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-purple-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              No tienes expediente asignado
+            </h3>
+            <p class="text-gray-600">
+              Tu facilitador aun no te ha habilitado un expediente de asesoria
+              para este programa.
+            </p>
+          </div>
+        </template>
+
+        <template v-else>
+          <!-- Empty State -->
+          <div
+            v-if="!visibleFilteredActivities.length && !stageGate"
+            class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center"
+          >
+            <div
+              class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"
+            >
+              <svg
+                class="w-8 h-8 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
+              </svg>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">
+              No hay actividades
+            </h3>
+            <p class="text-gray-600">
+              {{ getEmptyMessage() }}
+            </p>
+          </div>
+
+          <!-- Timeline de Actividades -->
+          <template v-else>
+            <ListActivities
+              v-if="visibleFilteredActivities.length"
+              :activities="visibleFilteredActivities"
+              user-role="participant"
+              :current-user-id="currentUserId"
+              :participations="userParticipations"
+              @click="goToActivity"
+            />
+
+            <!-- Stage Gate: bloqueo de etapas siguientes -->
+            <div
+              v-if="stageGate"
+              class="flex items-center justify-center py-10"
             >
               <div
-                class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4"
+                class="bg-white rounded-xl shadow-sm border border-amber-200 p-8 text-center max-w-sm w-full"
               >
-                <svg
-                  class="w-7 h-7 text-amber-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <div
+                  class="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                </svg>
+                  <svg
+                    class="w-7 h-7 text-amber-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                </div>
+                <h3 class="text-base font-semibold text-gray-900 mb-2">
+                  Contenido bloqueado
+                </h3>
+                <p class="text-sm text-gray-600">
+                  Completa la etapa de
+                  <span class="font-semibold text-amber-700">
+                    {{ stageGate.name }}
+                  </span>
+                  antes de continuar con tu proceso.
+                </p>
               </div>
-              <h3 class="text-base font-semibold text-gray-900 mb-2">
-                Contenido bloqueado
-              </h3>
-              <p class="text-sm text-gray-600">
-                Completa la etapa de
-                <span class="font-semibold text-amber-700">
-                  {{ stageGate.name }}
-                </span>
-                antes de continuar con tu proceso.
-              </p>
             </div>
-          </div>
+          </template>
         </template>
       </div>
     </div>
@@ -154,16 +205,19 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { useActivitiesStore } from "@/stores/activitiesStore";
 import { useAuthStore } from "@/stores/authStore";
+import { useConsultingDossierStore } from "@/stores/consultingDossierStore";
 import { useStageProgress } from "@/composables/useStageProgress";
 import { InfoCircle, Community } from "@iconoir/vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import ListActivities from "@/components/activities/ListActivities.vue";
 import ItemsProgram from "@/components/programs/ItemsProgram.vue";
+import CardDossier from "@/components/programs/consulting/CardDossier.vue";
 import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
 const router = useRouter();
 const activitiesStore = useActivitiesStore();
+const consultingDossierStore = useConsultingDossierStore();
 const authStore = useAuthStore();
 const { info } = useToast();
 
@@ -181,6 +235,17 @@ const activities = computed(() => activitiesStore.activities);
 const loadingActivities = computed(() => activitiesStore.loading);
 const userParticipations = ref([]);
 const programStages = computed(() => activitiesStore.programStages);
+const activeParticipantDossier = ref(null);
+
+const isConsultingTab = computed(
+  () => activeTab.value === "consulting" || activeTab.value === "monitoring",
+);
+const loadingDossier = computed(() => consultingDossierStore.loading);
+const activeDossierProgress = computed(() =>
+  consultingDossierStore.getStepProgress(
+    activeParticipantDossier.value?.currentStep,
+  ),
+);
 
 const { isStageLockedForUser, getPrerequisiteStageName } = useStageProgress();
 
@@ -262,7 +327,22 @@ const filteredActivities = computed(() => {
 
   // Filtrar por tipo (tab)
   if (activeTab.value !== "all") {
-    filtered = filtered.filter((a) => a.type === activeTab.value);
+    if (activeTab.value === "form" || activeTab.value === "activity") {
+      // Compatibilidad: la UI usa "form", pero en BD puede existir "activity".
+      filtered = filtered.filter(
+        (a) => a.type === "activity" || a.type === "form",
+      );
+    } else if (
+      activeTab.value === "consulting" ||
+      activeTab.value === "monitoring"
+    ) {
+      // Compatibilidad: asesorías históricas guardadas como "monitoring".
+      filtered = filtered.filter(
+        (a) => a.type === "consulting" || a.type === "monitoring",
+      );
+    } else {
+      filtered = filtered.filter((a) => a.type === activeTab.value);
+    }
   }
 
   // Filtrar por estado de participación
@@ -329,6 +409,7 @@ onMounted(async () => {
       activitiesStore.loadActivities(programId.value),
       activitiesStore.loadProgramStages(programId.value),
       loadUserParticipations(),
+      loadParticipantDossier(),
     ]);
   }
 });
@@ -365,6 +446,25 @@ async function loadUserParticipations() {
     userParticipations.value = participations;
   } catch (error) {
     console.error("Error loading user participations:", error);
+  }
+}
+
+async function loadParticipantDossier() {
+  try {
+    if (!currentUserId.value || !businessId.value) {
+      activeParticipantDossier.value = null;
+      return;
+    }
+
+    activeParticipantDossier.value =
+      await consultingDossierStore.loadActiveParticipantDossier(
+        programId.value,
+        currentUserId.value,
+        businessId.value,
+      );
+  } catch (error) {
+    console.error("Error loading participant dossier:", error);
+    activeParticipantDossier.value = null;
   }
 }
 
@@ -413,6 +513,13 @@ function handleFilterChanged(filter) {
 
   if (filter.type === "all") {
     info("Mostrando todas tus actividades");
+  } else if (filter.type === "consulting" || filter.type === "monitoring") {
+    const count = activeParticipantDossier.value ? 1 : 0;
+    info(
+      count
+        ? "Mostrando tu expediente de asesoria"
+        : "No tienes expediente de asesoria asignado",
+    );
   } else {
     const count = filteredActivities.value.length;
     const plural = count !== 1 ? "s" : "";
@@ -451,5 +558,18 @@ function getEmptyMessage() {
 
 function goToInfo() {
   router.push(`/business/${businessId.value}/programs/${programId.value}/info`);
+}
+
+function goToDossierRead(dossier) {
+  if (!dossier?.id) return;
+
+  router.push({
+    name: "program-consulting-dossier-read",
+    params: {
+      businessId: businessId.value,
+      programId: programId.value,
+      dossierId: dossier.id,
+    },
+  });
 }
 </script>

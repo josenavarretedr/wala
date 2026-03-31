@@ -153,7 +153,22 @@ const filteredActivities = computed(() => {
 
   // Filtrar por tipo (tab)
   if (activeTab.value !== "all") {
-    filtered = filtered.filter((a) => a.type === activeTab.value);
+    if (activeTab.value === "form" || activeTab.value === "activity") {
+      // Compatibilidad: la UI usa "form", pero en BD puede existir "activity".
+      filtered = filtered.filter(
+        (a) => a.type === "activity" || a.type === "form",
+      );
+    } else if (
+      activeTab.value === "consulting" ||
+      activeTab.value === "monitoring"
+    ) {
+      // Compatibilidad: asesorías históricas guardadas como "monitoring".
+      filtered = filtered.filter(
+        (a) => a.type === "consulting" || a.type === "monitoring",
+      );
+    } else {
+      filtered = filtered.filter((a) => a.type === activeTab.value);
+    }
   }
 
   // Filtrar por etapa

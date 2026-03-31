@@ -12,7 +12,14 @@
             <span class="sesion-tag tag-educativa">Sesión educativa</span>
             <span class="sesion-name">{{ cycle.planSessionName }}</span>
           </div>
-          <input v-model="cycle.planDate" class="sesion-date-input" type="date" />
+          <input
+            v-model="cycle.planDate"
+            class="sesion-date-input"
+            type="date"
+            :readonly="props.readOnly"
+            :disabled="props.readOnly"
+            :tabindex="props.readOnly ? -1 : 0"
+          />
         </div>
 
         <div class="sesion-content">
@@ -21,6 +28,9 @@
             <textarea
               v-model="cycle.educationSummary"
               placeholder="Describe cómo se explicó la relevancia de las áreas"
+              :readonly="props.readOnly"
+              :disabled="props.readOnly"
+              :tabindex="props.readOnly ? -1 : 0"
             />
           </div>
           <div class="field-block">
@@ -28,6 +38,9 @@
             <textarea
               v-model="cycle.agreements"
               placeholder="Acuerdos principales de la sesión"
+              :readonly="props.readOnly"
+              :disabled="props.readOnly"
+              :tabindex="props.readOnly ? -1 : 0"
             />
           </div>
         </div>
@@ -40,15 +53,41 @@
               :key="pIndex"
               class="plan-area"
             >
-              <div class="plan-area-head" :class="cycle.className">Área {{ pIndex + 1 }}</div>
+              <div class="plan-area-head" :class="cycle.className">
+                Área {{ pIndex + 1 }}
+              </div>
               <input
                 v-model="planArea.areaName"
                 class="plan-area-input"
                 placeholder="Nombre del área"
+                :readonly="props.readOnly"
+                :disabled="props.readOnly"
+                :tabindex="props.readOnly ? -1 : 0"
               />
-              <input v-model="planArea.action1" class="plan-area-input" placeholder="Acción 1" />
-              <input v-model="planArea.action2" class="plan-area-input" placeholder="Acción 2" />
-              <input v-model="planArea.action3" class="plan-area-input" placeholder="Acción 3" />
+              <input
+                v-model="planArea.action1"
+                class="plan-area-input"
+                placeholder="Acción 1"
+                :readonly="props.readOnly"
+                :disabled="props.readOnly"
+                :tabindex="props.readOnly ? -1 : 0"
+              />
+              <input
+                v-model="planArea.action2"
+                class="plan-area-input"
+                placeholder="Acción 2"
+                :readonly="props.readOnly"
+                :disabled="props.readOnly"
+                :tabindex="props.readOnly ? -1 : 0"
+              />
+              <input
+                v-model="planArea.action3"
+                class="plan-area-input"
+                placeholder="Acción 3"
+                :readonly="props.readOnly"
+                :disabled="props.readOnly"
+                :tabindex="props.readOnly ? -1 : 0"
+              />
             </div>
           </div>
         </div>
@@ -60,7 +99,14 @@
             <span class="sesion-tag tag-seguimiento">Sesión seguimiento</span>
             <span class="sesion-name">{{ cycle.followSessionName }}</span>
           </div>
-          <input v-model="cycle.followDate" class="sesion-date-input" type="date" />
+          <input
+            v-model="cycle.followDate"
+            class="sesion-date-input"
+            type="date"
+            :readonly="props.readOnly"
+            :disabled="props.readOnly"
+            :tabindex="props.readOnly ? -1 : 0"
+          />
         </div>
 
         <div class="revision-wrap">
@@ -76,10 +122,23 @@
             <tbody>
               <tr v-for="(row, idx) in cycle.reviewRows" :key="idx">
                 <td>
-                  <input v-model="row.action" class="rev-input" placeholder="Acción" />
+                  <input
+                    v-model="row.action"
+                    class="rev-input"
+                    placeholder="Acción"
+                    :readonly="props.readOnly"
+                    :disabled="props.readOnly"
+                    :tabindex="props.readOnly ? -1 : 0"
+                  />
                 </td>
                 <td>
-                  <select v-model="row.status" class="status-select">
+                  <select
+                    v-model="row.status"
+                    class="status-select"
+                    :readonly="props.readOnly"
+                    :disabled="props.readOnly"
+                    :tabindex="props.readOnly ? -1 : 0"
+                  >
                     <option value="">Seleccionar</option>
                     <option value="completed">Completada</option>
                     <option value="in_progress">En proceso</option>
@@ -91,6 +150,9 @@
                     v-model="row.observation"
                     class="rev-input"
                     placeholder="Observación"
+                    :readonly="props.readOnly"
+                    :disabled="props.readOnly"
+                    :tabindex="props.readOnly ? -1 : 0"
                   />
                 </td>
               </tr>
@@ -105,6 +167,9 @@
               v-model="cycle.conclusions"
               class="short"
               placeholder="Conclusiones de la sesión"
+              :readonly="props.readOnly"
+              :disabled="props.readOnly"
+              :tabindex="props.readOnly ? -1 : 0"
             />
           </div>
           <div class="field-block">
@@ -113,6 +178,9 @@
               v-model="cycle.nextCommitments"
               class="short"
               placeholder="Compromisos para la siguiente sesión"
+              :readonly="props.readOnly"
+              :disabled="props.readOnly"
+              :tabindex="props.readOnly ? -1 : 0"
             />
           </div>
         </div>
@@ -126,6 +194,10 @@ const props = defineProps({
   modelValue: {
     type: Array,
     required: true,
+  },
+  readOnly: {
+    type: Boolean,
+    default: false,
   },
 });
 </script>
