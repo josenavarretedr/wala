@@ -1,448 +1,23 @@
 <template>
   <div class="dossier-page">
-    <div class="topbar">
-      <button @click="goBack" class="back-btn">← Volver a Consulting</button>
-      <button class="save-btn">Guardar borrador</button>
-    </div>
+    <ConsultingTopbar :is-dirty="isDirty" :is-saving="isSaving" @back="goBack" @save="saveDraft" />
 
     <div class="cover">
       <div class="cover-inner">
-        <div class="cover-top">
-          <div class="brand">WALA</div>
-          <div class="doc-type">
-            Expediente de seguimiento<br />
-            Programa de asesorías individuales
-          </div>
-        </div>
-
-        <div class="cover-title">Plan de<br />Seguimiento</div>
-        <div class="cover-sub">
-          Registro de diagnóstico, planes de acción y evolución por ciclo
-        </div>
-
-        <div class="datos-grid">
-          <div class="dato-cell wide">
-            <div class="dato-label">Nombre del negocio</div>
-            <input
-              v-model="general.businessName"
-              class="dato-input"
-              type="text"
-            />
-          </div>
-          <div class="dato-cell">
-            <div class="dato-label">Rubro / sector</div>
-            <input v-model="general.sector" class="dato-input" type="text" />
-          </div>
-          <div class="dato-cell wide">
-            <div class="dato-label">Nombre del emprendedor/a</div>
-            <input
-              v-model="general.entrepreneurName"
-              class="dato-input"
-              type="text"
-            />
-          </div>
-          <div class="dato-cell">
-            <div class="dato-label">Contacto</div>
-            <input v-model="general.contact" class="dato-input" type="text" />
-          </div>
-          <div class="dato-cell">
-            <div class="dato-label">Asesor/a responsable</div>
-            <input
-              v-model="general.facilitatorName"
-              class="dato-input"
-              type="text"
-            />
-          </div>
-          <div class="dato-cell">
-            <div class="dato-label">Programa</div>
-            <input
-              v-model="general.programName"
-              class="dato-input"
-              type="text"
-            />
-          </div>
-          <div class="dato-cell">
-            <div class="dato-label">Fecha de inicio</div>
-            <input v-model="general.startDate" class="dato-input" type="date" />
-          </div>
-        </div>
-
-        <div class="ciclos-timeline">
-          <div v-for="step in timelineSteps" :key="step.id" class="tl-step">
-            <div class="tl-dot" :class="step.dotClass">{{ step.short }}</div>
-            <div class="tl-label" v-html="step.label" />
-          </div>
-        </div>
+        <ConsultingCover :model-value="general" />
+        <ConsultingCycles :steps="timelineSteps" />
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-header">
-        <div class="section-num">1</div>
-        <div>
-          <div class="section-title">Diagnóstico inicial</div>
-          <div class="section-desc">
-            Sesión 0 · Aplicación de la matriz de desempeño · Escala 0–3
-          </div>
-        </div>
-      </div>
-
-      <div class="matriz-wrap">
-        <table class="matriz-table">
-          <thead>
-            <tr>
-              <th style="width: 52%; text-align: left">Indicador</th>
-              <th>Pre</th>
-              <th>Post C1</th>
-              <th>Post C2</th>
-              <th>Post C3</th>
-            </tr>
-          </thead>
-          <tbody>
-            <template v-for="area in areas" :key="area.key">
-              <tr class="area-header-row">
-                <td colspan="5">
-                  {{ area.title }} <span>{{ area.subtitle }}</span>
-                </td>
-              </tr>
-              <tr
-                v-for="indicator in area.indicators"
-                :key="indicator.code"
-                class="indicator-row"
-              >
-                <td>
-                  <span class="ind-code">{{ indicator.code }}</span
-                  >{{ indicator.text }}
-                </td>
-                <td
-                  class="score-cell"
-                  v-for="period in periods"
-                  :key="`${indicator.code}-${period.key}`"
-                >
-                  <select
-                    v-model.number="scores[indicator.code][period.key]"
-                    class="score-select"
-                  >
-                    <option :value="null">–</option>
-                    <option :value="0">0</option>
-                    <option :value="1">1</option>
-                    <option :value="2">2</option>
-                    <option :value="3">3</option>
-                  </select>
-                </td>
-              </tr>
-            </template>
-
-            <tr class="total-row">
-              <td>Total</td>
-              <td
-                v-for="period in periods"
-                :key="`tot-${period.key}`"
-                class="total-score"
-              >
-                {{ getTotal(period.key) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-header">
-        <div class="section-num">2</div>
-        <div>
-          <div class="section-title">Áreas críticas identificadas</div>
-          <div class="section-desc">
-            Las 3 áreas prioritarias definidas por puntaje y por lo que el
-            emprendedor manifiesta
-          </div>
-        </div>
-      </div>
-
-      <div class="criticas-grid">
-        <div
-          v-for="(critical, idx) in criticalAreas"
-          :key="idx"
-          class="critica-card"
-        >
-          <div class="critica-card-top">
-            <div class="critica-num">Área crítica #{{ idx + 1 }}</div>
-            <select v-model="critical.areaKey" class="critica-area-select">
-              <option v-for="area in areas" :key="area.key" :value="area.key">
-                {{ area.title }}
-              </option>
-            </select>
-            <div class="critica-puntaje">
-              <label>Puntaje</label>
-              <input v-model="critical.score" type="text" />
-            </div>
-          </div>
-          <div class="critica-card-body">
-            <div class="critica-field">
-              <label>Indicador más débil</label>
-              <textarea
-                v-model="critical.weakIndicator"
-                placeholder="¿Qué indicador fue el más bajo?"
-              />
-            </div>
-            <div class="critica-field">
-              <label>Justificación</label>
-              <textarea
-                v-model="critical.justification"
-                placeholder="Motivo de priorización"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-for="cycle in cycles" :key="cycle.key" class="ciclo-section">
-      <div class="ciclo-tab" :class="cycle.className">
-        {{ cycle.title }}
-        <span class="ciclo-dates">{{ cycle.subtitle }}</span>
-      </div>
-
-      <div class="ciclo-body">
-        <div class="sesion-block">
-          <div class="sesion-header">
-            <div class="sesion-title">
-              <span class="sesion-tag tag-educativa">Sesión educativa</span>
-              <span class="sesion-name">{{ cycle.planSessionName }}</span>
-            </div>
-            <input
-              v-model="cycle.planDate"
-              class="sesion-date-input"
-              type="date"
-            />
-          </div>
-
-          <div class="sesion-content">
-            <div class="field-block">
-              <label>Resumen de explicación al emprendedor</label>
-              <textarea
-                v-model="cycle.educationSummary"
-                placeholder="Describe cómo se explicó la relevancia de las áreas"
-              />
-            </div>
-            <div class="field-block">
-              <label>Acuerdos clave</label>
-              <textarea
-                v-model="cycle.agreements"
-                placeholder="Acuerdos principales de la sesión"
-              />
-            </div>
-          </div>
-
-          <div class="plan-wrap">
-            <div class="plan-title">Plan de acción — {{ cycle.title }}</div>
-            <div class="plan-areas">
-              <div
-                v-for="(planArea, pIndex) in cycle.planAreas"
-                :key="pIndex"
-                class="plan-area"
-              >
-                <div class="plan-area-head" :class="cycle.className">
-                  Área {{ pIndex + 1 }}
-                </div>
-                <input
-                  v-model="planArea.areaName"
-                  class="plan-area-input"
-                  placeholder="Nombre del área"
-                />
-                <input
-                  v-model="planArea.action1"
-                  class="plan-area-input"
-                  placeholder="Acción 1"
-                />
-                <input
-                  v-model="planArea.action2"
-                  class="plan-area-input"
-                  placeholder="Acción 2"
-                />
-                <input
-                  v-model="planArea.action3"
-                  class="plan-area-input"
-                  placeholder="Acción 3"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="sesion-block">
-          <div class="sesion-header">
-            <div class="sesion-title">
-              <span class="sesion-tag tag-seguimiento">Sesión seguimiento</span>
-              <span class="sesion-name">{{ cycle.followSessionName }}</span>
-            </div>
-            <input
-              v-model="cycle.followDate"
-              class="sesion-date-input"
-              type="date"
-            />
-          </div>
-
-          <div class="revision-wrap">
-            <div class="plan-title">Revisión de acciones comprometidas</div>
-            <table class="revision-table">
-              <thead>
-                <tr>
-                  <th>Acción</th>
-                  <th>Estado</th>
-                  <th>Observación</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(row, idx) in cycle.reviewRows" :key="idx">
-                  <td>
-                    <input
-                      v-model="row.action"
-                      class="rev-input"
-                      placeholder="Acción"
-                    />
-                  </td>
-                  <td>
-                    <select v-model="row.status" class="status-select">
-                      <option value="">Seleccionar</option>
-                      <option value="completed">Completada</option>
-                      <option value="in_progress">En proceso</option>
-                      <option value="not_done">No realizada</option>
-                    </select>
-                  </td>
-                  <td>
-                    <input
-                      v-model="row.observation"
-                      class="rev-input"
-                      placeholder="Observación"
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="sesion-content">
-            <div class="field-block">
-              <label>Conclusiones</label>
-              <textarea
-                v-model="cycle.conclusions"
-                class="short"
-                placeholder="Conclusiones de la sesión"
-              />
-            </div>
-            <div class="field-block">
-              <label>Compromisos siguientes</label>
-              <textarea
-                v-model="cycle.nextCommitments"
-                class="short"
-                placeholder="Compromisos para la siguiente sesión"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="evolucion-section">
-      <div class="section-header">
-        <div class="section-num">3</div>
-        <div>
-          <div class="section-title">Evaluación final del programa</div>
-          <div class="section-desc">
-            Comparativa de puntajes por área y conclusiones del proceso completo
-          </div>
-        </div>
-      </div>
-
-      <div class="evolucion-grid">
-        <div class="evol-col">
-          <div class="evol-col-head">Área</div>
-          <div
-            class="evol-area"
-            v-for="area in areas"
-            :key="`name-${area.key}`"
-          >
-            <span class="evol-area-name">{{ area.title }}</span>
-          </div>
-        </div>
-
-        <div
-          v-for="period in periods"
-          :key="`eval-${period.key}`"
-          class="evol-col"
-        >
-          <div class="evol-col-head">{{ period.label }}</div>
-          <div
-            class="evol-area"
-            v-for="area in areas"
-            :key="`${period.key}-${area.key}`"
-          >
-            <input
-              v-model="finalByArea[period.key][area.key]"
-              class="evol-score-input"
-              type="text"
-              placeholder="–"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="cierre-notes">
-        <div class="cierre-block">
-          <label>Principales logros del emprendedor durante el programa</label>
-          <textarea
-            v-model="closing.achievements"
-            placeholder="¿Qué cambió concretamente en su negocio?"
-          />
-        </div>
-        <div class="cierre-block">
-          <label>Áreas que quedan como tarea pendiente</label>
-          <textarea
-            v-model="closing.pending"
-            placeholder="¿Qué necesita continuar trabajando?"
-          />
-        </div>
-        <div class="cierre-block">
-          <label>Recomendación del asesor para continuar</label>
-          <textarea
-            v-model="closing.recommendation"
-            placeholder="Siguientes pasos recomendados"
-          />
-        </div>
-        <div class="cierre-block">
-          <label>Testimonio / palabras del emprendedor al cierre</label>
-          <textarea
-            v-model="closing.testimony"
-            placeholder="Percepción del emprendedor"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div class="footer">
-      <div class="clave-items">
-        <span class="scale-label">Escala:</span>
-        <div class="clave-item">
-          <div class="clave-dot k0">0</div>
-          Sin conocimiento
-        </div>
-        <div class="clave-item">
-          <div class="clave-dot k1">1</div>
-          Conocimiento mínimo
-        </div>
-        <div class="clave-item">
-          <div class="clave-dot k2">2</div>
-          Mucho conocimiento, poca aplicación
-        </div>
-        <div class="clave-item">
-          <div class="clave-dot k3">3</div>
-          Aplica el conocimiento
-        </div>
-      </div>
-      <div class="footer-brand">WALA</div>
-    </div>
+    <MatrizIndicadoresWala :model-value="scores" :periods="periods" :areas="areas" />
+    <AreasCriticas :model-value="criticalAreas" :areas="areas" />
+    <ConsultingCycle :model-value="cycles" />
+    <ConsultingResumen
+      :areas="areas"
+      :periods="periods"
+      :final-by-area="finalByArea"
+      :closing="closing"
+    />
   </div>
 </template>
 
@@ -450,10 +25,33 @@
 import { computed, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useConsultingDossierStore } from "@/stores/consultingDossierStore";
+import { useToast } from "@/composables/useToast";
+import ConsultingTopbar from "@/components/programs/consulting/ConsultingTopbar.vue";
+import ConsultingCover from "@/components/programs/consulting/ConsultingCover.vue";
+import ConsultingCycles from "@/components/programs/consulting/ConsultingCycles.vue";
+import MatrizIndicadoresWala from "@/components/programs/consulting/MatrizIndicadoresWala.vue";
+import AreasCriticas from "@/components/programs/consulting/AreasCriticas.vue";
+import ConsultingCycle from "@/components/programs/consulting/ConsultingCycle.vue";
+import ConsultingResumen from "@/components/programs/consulting/ConsultingResumen.vue";
 
 const route = useRoute();
 const router = useRouter();
-const dossierStore = useConsultingDossierStore();
+const toast = useToast();
+const isSaving = ref(false);
+const baselineSnapshot = ref("");
+
+function getDossierStoreWithSaveAction() {
+  let store = useConsultingDossierStore();
+
+  if (typeof store.saveProgramConsultingDossier === "function") {
+    return store;
+  }
+
+  // En algunos ciclos de HMR, Pinia puede mantener una instancia vieja sin acciones nuevas.
+  store.$dispose();
+  store = useConsultingDossierStore();
+  return store;
+}
 
 const periods = [
   { key: "pre", label: "Pre (diagnóstico)" },
@@ -687,13 +285,74 @@ const closing = reactive({
 const programId = computed(() => route.params.programId);
 const dossierId = computed(() => route.params.dossierId);
 
-function getTotal(periodKey) {
-  return Object.values(scores).reduce((sum, scoreByPeriod) => {
-    if (typeof scoreByPeriod[periodKey] === "number") {
-      return sum + scoreByPeriod[periodKey];
-    }
-    return sum;
-  }, 0);
+function clone(data) {
+  return JSON.parse(JSON.stringify(data));
+}
+
+function toSerializableDraft() {
+  return {
+    general: clone(general),
+    diagnosticScores: clone(scores),
+    criticalAreas: clone(criticalAreas.value),
+    consultingCycles: clone(cycles.value),
+    finalEvaluationByArea: clone(finalByArea),
+    closingSummary: clone(closing),
+  };
+}
+
+function resetBaseline() {
+  baselineSnapshot.value = JSON.stringify(toSerializableDraft());
+}
+
+const isDirty = computed(() => {
+  return JSON.stringify(toSerializableDraft()) !== baselineSnapshot.value;
+});
+
+function hydrateDraft(dossier) {
+  const draft = dossier?.stageData?.programConsultingDossier;
+
+  general.businessName = dossier?.businessName || "";
+  general.sector = dossier?.sector || "";
+  general.entrepreneurName = dossier?.participantName || "";
+  general.contact = dossier?.contact || "";
+  general.facilitatorName = dossier?.facilitatorName || "";
+  general.programName = dossier?.programName || "";
+  general.startDate = dossier?.startDate || "";
+
+  if (draft?.diagnosticScores) {
+    Object.keys(scores).forEach((indicatorCode) => {
+      const source = draft.diagnosticScores[indicatorCode];
+      if (!source) return;
+
+      periods.forEach((period) => {
+        scores[indicatorCode][period.key] = source[period.key] ?? null;
+      });
+    });
+  }
+
+  if (Array.isArray(draft?.criticalAreas) && draft.criticalAreas.length) {
+    criticalAreas.value = clone(draft.criticalAreas);
+  }
+
+  if (Array.isArray(draft?.consultingCycles) && draft.consultingCycles.length) {
+    cycles.value = clone(draft.consultingCycles);
+  }
+
+  if (draft?.finalEvaluationByArea) {
+    periods.forEach((period) => {
+      areas.forEach((area) => {
+        finalByArea[period.key][area.key] =
+          draft.finalEvaluationByArea?.[period.key]?.[area.key] ?? "";
+      });
+    });
+  }
+
+  if (draft?.closingSummary) {
+    closing.achievements = draft.closingSummary.achievements || "";
+    closing.pending = draft.closingSummary.pending || "";
+    closing.recommendation = draft.closingSummary.recommendation || "";
+    closing.testimony = draft.closingSummary.testimony || "";
+  }
 }
 
 function goBack() {
@@ -702,22 +361,50 @@ function goBack() {
 
 async function hydrateHeaderData() {
   try {
+    const dossierStore = useConsultingDossierStore();
     const dossier = await dossierStore.loadDossier(
       programId.value,
       dossierId.value,
     );
-    general.businessName = dossier?.businessName || "";
-    general.entrepreneurName = dossier?.participantName || "";
-    general.facilitatorName = dossier?.facilitatorName || "";
+    hydrateDraft(dossier);
+    resetBaseline();
   } catch (error) {
     console.error("No se pudo hidratar el encabezado del expediente:", error);
+    toast.error("No se pudieron cargar los datos del expediente");
+  }
+}
+
+async function saveDraft() {
+  if (!isDirty.value || isSaving.value) return;
+
+  isSaving.value = true;
+
+  try {
+    const dossierStore = getDossierStoreWithSaveAction();
+    if (typeof dossierStore.saveProgramConsultingDossier !== "function") {
+      throw new Error("Accion saveProgramConsultingDossier no disponible");
+    }
+
+    const payload = toSerializableDraft();
+    await dossierStore.saveProgramConsultingDossier(
+      programId.value,
+      dossierId.value,
+      payload,
+    );
+    resetBaseline();
+    toast.success("Borrador guardado correctamente");
+  } catch (error) {
+    console.error("No se pudo guardar el borrador del expediente:", error);
+    toast.error("No se pudo guardar el borrador. Intenta nuevamente.");
+  } finally {
+    isSaving.value = false;
   }
 }
 
 hydrateHeaderData();
 </script>
 
-<style scoped>
+<style>
 .dossier-page {
   @apply min-h-screen bg-gray-50 text-gray-900 text-[13px] leading-relaxed pb-10;
 }
@@ -741,6 +428,10 @@ hydrateHeaderData();
 
 .save-btn:hover {
   @apply bg-blue-700 border-blue-700;
+}
+
+.save-btn:disabled {
+  @apply bg-gray-200 border-gray-200 text-gray-500 cursor-not-allowed shadow-none;
 }
 
 .cover {

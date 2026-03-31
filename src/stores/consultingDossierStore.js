@@ -433,6 +433,80 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     }
   }
 
+  async function saveProgramConsultingDossier(programId, dossierId, payload) {
+    const authStore = useAuthStore()
+    const updaterId = authStore.user?.uid
+
+    if (!updaterId) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    const dossier = dossiers.value.find((item) => item.id === dossierId) || currentDossier.value
+    if (!dossier) {
+      throw new Error('Expediente no encontrado en memoria')
+    }
+
+    const currentStageData = dossier.stageData || {}
+    const nextStageData = {
+      ...currentStageData,
+      programConsultingDossier: {
+        diagnosticScores: payload.diagnosticScores || {},
+        criticalAreas: payload.criticalAreas || [],
+        consultingCycles: payload.consultingCycles || [],
+        finalEvaluationByArea: payload.finalEvaluationByArea || {},
+        closingSummary: payload.closingSummary || {},
+      },
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const dossierRef = doc(db, 'programs', programId, 'consultingDossiers', dossierId)
+
+      await updateDoc(dossierRef, {
+        businessName: payload.general?.businessName || '',
+        sector: payload.general?.sector || '',
+        participantName: payload.general?.entrepreneurName || '',
+        contact: payload.general?.contact || '',
+        facilitatorName: payload.general?.facilitatorName || '',
+        programName: payload.general?.programName || '',
+        startDate: payload.general?.startDate || '',
+        stageData: nextStageData,
+        updatedAt: serverTimestamp(),
+        updatedBy: updaterId,
+      })
+
+      const updateLocal = (item) => {
+        if (item.id !== dossierId) return item
+        return {
+          ...item,
+          businessName: payload.general?.businessName || '',
+          sector: payload.general?.sector || '',
+          participantName: payload.general?.entrepreneurName || '',
+          contact: payload.general?.contact || '',
+          facilitatorName: payload.general?.facilitatorName || '',
+          programName: payload.general?.programName || '',
+          startDate: payload.general?.startDate || '',
+          stageData: nextStageData,
+          updatedAt: Timestamp.now(),
+          updatedBy: updaterId,
+        }
+      }
+
+      dossiers.value = dossiers.value.map(updateLocal)
+      if (currentDossier.value?.id === dossierId) {
+        currentDossier.value = updateLocal(currentDossier.value)
+      }
+    } catch (err) {
+      console.error('❌ Error guardando expediente de programa:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function getDossierByParticipant(participantId) {
     return dossiers.value.find((dossier) => dossier.participantId === participantId && dossier.isActive)
   }
@@ -451,6 +525,7 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     createDossier,
     updateDossierStep,
     saveS0Assessment,
+    saveProgramConsultingDossier,
     getDossierByParticipant,
   }
 })
