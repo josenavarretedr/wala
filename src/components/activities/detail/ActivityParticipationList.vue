@@ -125,11 +125,11 @@
                 <div
                   class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold text-green-700"
                 >
-                  {{ getInitials(row.userName) }}
+                  {{ getInitials(getRowUserName(row)) }}
                 </div>
                 <div class="min-w-0">
                   <p class="font-medium text-gray-900 truncate">
-                    {{ row.userName }}
+                    {{ getRowUserName(row) }}
                   </p>
                   <p class="text-xs text-gray-400 truncate">
                     {{ row.userEmail }}
@@ -139,7 +139,7 @@
             </td>
             <!-- Negocio -->
             <td class="px-5 py-3 text-gray-600 truncate max-w-[200px]">
-              {{ row.businessName || "—" }}
+              {{ getRowBusinessName(row) || "—" }}
             </td>
             <!-- Preguntas -->
             <td class="px-5 py-3 text-center">
@@ -236,14 +236,14 @@
           <div
             class="w-9 h-9 bg-green-100 rounded-full flex items-center justify-center shrink-0 text-sm font-semibold text-green-700"
           >
-            {{ getInitials(row.userName) }}
+            {{ getInitials(getRowUserName(row)) }}
           </div>
 
           <!-- Info -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between">
               <p class="text-sm font-medium text-gray-900 truncate">
-                {{ row.userName }}
+                {{ getRowUserName(row) }}
               </p>
               <span
                 :class="[
@@ -257,7 +257,7 @@
               </span>
             </div>
             <p class="text-xs text-gray-500 truncate mt-0.5">
-              {{ row.businessName || "—" }}
+              {{ getRowBusinessName(row) || "—" }}
             </p>
 
             <!-- Indicadores -->
@@ -385,10 +385,35 @@ const filteredMatrix = computed(() => {
   const q = searchQuery.value.toLowerCase();
   return props.matrix.filter(
     (r) =>
-      r.userName.toLowerCase().includes(q) ||
-      r.businessName.toLowerCase().includes(q),
+      getRowUserName(r).toLowerCase().includes(q) ||
+      getRowBusinessName(r).toLowerCase().includes(q),
   );
 });
+
+function getRowUserName(row) {
+  return (
+    row?.profileUser?.name ||
+    row?.profileUser?.nombre ||
+    row?.userName ||
+    row?.name ||
+    "Usuario"
+  );
+}
+
+function getRowBusinessName(row) {
+  return (
+    row?.businessProfile?.businessName ||
+    row?.businessProfile?.razonSocial ||
+    row?.businessProfile?.nombreNegocio ||
+    row?.businessProfile?.nombre ||
+    row?.businessProfile?.businessName ||
+    row?.businessProfile?.razonSocial ||
+    row?.businessProfile?.nombreNegocio ||
+    row?.businessProfile?.nombre ||
+    row?.businessName ||
+    ""
+  );
+}
 
 function getInitials(name) {
   if (!name) return "?";
@@ -437,9 +462,9 @@ function toggleAttendance(row, fieldId, event) {
     pendingAttendance.value[key] = {
       participationId: row.participation?.id || null,
       userId: row.userId,
-      userName: row.userName,
+      userName: getRowUserName(row),
       businessId: row.businessId,
-      businessName: row.businessName,
+      businessName: getRowBusinessName(row),
       fieldId,
       attended,
     };

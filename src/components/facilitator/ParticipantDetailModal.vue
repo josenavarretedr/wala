@@ -4,7 +4,7 @@
       <!-- Header -->
       <div class="modal-header">
         <div>
-          <h2>{{ participant.userName || "Sin nombre" }}</h2>
+          <h2>{{ participantDisplayName || "Sin nombre" }}</h2>
           <p class="subtitle">{{ participant.email }}</p>
         </div>
         <button @click="$emit('close')" class="btn-close" title="Cerrar">
@@ -26,7 +26,7 @@
           <div class="info-grid">
             <div class="info-item">
               <label>Nombre Completo</label>
-              <strong>{{ participant.userName || "Sin nombre" }}</strong>
+              <strong>{{ participantDisplayName || "Sin nombre" }}</strong>
             </div>
             <div class="info-item">
               <label>Email</label>
@@ -195,6 +195,15 @@ const userParticipations = computed(() => {
   );
 });
 
+const participantDisplayName = computed(() => {
+  return (
+    props.participant?.profileUser?.name ||
+    props.participant?.profileUser?.nombre ||
+    props.participant?.userName ||
+    ""
+  );
+});
+
 const sessionsCompleted = computed(() => {
   return userParticipations.value.filter((p) => {
     const activity = activities.value.find((a) => a.id === p.activityId);
@@ -306,7 +315,7 @@ function sendEmail() {
     `Seguimiento - Programa ${props.programId}`
   );
   const body = encodeURIComponent(
-    `Hola ${props.participant.userName || "participante"},\n\n` +
+    `Hola ${participantDisplayName.value || "participante"},\n\n` +
       `Me comunico contigo respecto al programa en el que participas.\n\n` +
       `Saludos cordiales.`
   );

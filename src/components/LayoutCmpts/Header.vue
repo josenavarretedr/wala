@@ -25,7 +25,7 @@
           <h1
             class="text-xl md:text-2xl lg:text-2xl font-semibold text-gray-800 tracking-wide group-hover:text-blue-700"
           >
-            {{ displayName }}
+            {{ displayName.toUpperCase() }}
           </h1>
         </component>
 
@@ -36,7 +36,7 @@
           class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg cursor-pointer hover:bg-orange-50 transition-colors"
         >
           <BrightCrown class="w-4 h-4" />
-          {{ planInfo.name }}
+          <!-- {{ planInfo.name }} -->
         </span>
         <span
           v-else
@@ -174,7 +174,12 @@ const handleBadgeClick = (event) => {
 
 const businessName = computed(() => {
   const currentBusiness = businessStore.business;
-  return currentBusiness?.businessName || null;
+  return (
+    currentBusiness?.businessName ||
+    currentBusiness?.nombre ||
+    currentBusiness?.name ||
+    null
+  );
 });
 
 // Watch para actualizar el título dinámicamente

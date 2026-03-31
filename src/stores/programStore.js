@@ -813,7 +813,7 @@ export const useProgramStore = defineStore('program', () => {
         }
 
         // Obtener nombre del gerente
-        let managerName = member.businessName || 'No especificado'
+        let managerName = member.profileUser?.name || member.userName || 'No especificado'
 
         if (member.userId) {
           try {
@@ -831,11 +831,12 @@ export const useProgramStore = defineStore('program', () => {
         participants.push({
           id: businessId,
           businessId: businessId,
-          businessName: businessData.nombreNegocio || member.businessName || 'Sin nombre',
+          businessName: member.businessProfile?.businessName || member.businessProfile?.businessName || businessData.nombreNegocio || member.businessName || 'Sin nombre',
           businessType: businessData.tipo || 'No especificado',
           managerName: managerName,
           managerEmail: member.userEmail || '',
           managerId: member.userId || '',
+          userName: member.profileUser?.name || member.userName || managerName,
           status: member.status || 'active',
           joinedAt: member.joinedAt,
           leftAt: member.leftAt,

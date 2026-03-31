@@ -1,5 +1,5 @@
 /* eslint-disable */
-const functions = require('firebase-functions');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const crypto = require('crypto');
@@ -29,6 +29,22 @@ function parseDateValue(value) {
   return null;
 }
 
+function getFirstNonEmpty(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function asPlainObject(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  return value;
+}
+
 /**
  * Cloud Function: Unirse a un programa por código de invitación
  *
@@ -46,34 +62,38 @@ function parseDateValue(value) {
  * Actualiza:
  * - Incrementa currentUses del invite
  */
-exports.joinProgramByCode = functions
-  .region('us-central1')
-  .https.onCall(async (data, context) => {
+exports.joinProgramByCode = onCall(
+  {
+    region: 'us-central1',
+    cors: true,
+  },
+  async (request) => {
+    const { data, auth } = request;
     // ═══════════════════════════════════════════════════════════
     // VALIDACIÓN 1: Usuario autenticado
     // ═══════════════════════════════════════════════════════════
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
+    if (!auth) {
+      throw new HttpsError(
         'unauthenticated',
         'Debes estar autenticado para unirte a un programa',
       );
     }
 
-    const { code, businessId } = data;
-    const uid = context.auth.uid;
+    const { code, businessId } = data || {};
+    const uid = auth.uid;
 
     // ═══════════════════════════════════════════════════════════
     // VALIDACIÓN 2: Parámetros requeridos
     // ═══════════════════════════════════════════════════════════
     if (!code || typeof code !== 'string') {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'El código de invitación es requerido',
       );
     }
 
     if (!businessId || typeof businessId !== 'string') {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'El ID del negocio es requerido',
       );
@@ -97,7 +117,7 @@ exports.joinProgramByCode = functions
 
       if (!userBusinessSnap.exists) {
         console.warn(`⚠️  Usuario ${uid} no tiene acceso a business ${businessId}`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'permission-denied',
           'No tienes acceso a este negocio. Verifica que el negocio exista en tu cuenta.',
         );
@@ -108,7 +128,7 @@ exports.joinProgramByCode = functions
       // Verificar que el negocio esté activo
       if (!userBusinessData.activo) {
         console.warn(`⚠️  Business ${businessId} está inactivo`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'permission-denied',
           'El negocio no está activo',
         );
@@ -121,7 +141,7 @@ exports.joinProgramByCode = functions
 
       if (userRole !== 'gerente') {
         console.warn(`⚠️  Usuario ${uid} no es gerente (rol: ${userRole})`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'permission-denied',
           'Solo los gerentes pueden unir el negocio a programas de acompañamiento',
         );
@@ -166,7 +186,7 @@ exports.joinProgramByCode = functions
 
       if (programsSnapshot.empty) {
         console.warn(`⚠️  No hay programas activos`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'not-found',
           'No hay programas disponibles en este momento',
         );
@@ -195,7 +215,7 @@ exports.joinProgramByCode = functions
 
               if (expiresAt < now) {
                 console.warn(`⚠️  Código expirado: ${expiresAt} < ${now}`);
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                   'failed-precondition',
                   `El código de invitación expiró el ${expiresAt.toLocaleDateString('es-PE')}`,
                 );
@@ -206,7 +226,7 @@ exports.joinProgramByCode = functions
             if (inviteData.maxUses && inviteData.maxUses > 0) {
               if (inviteData.currentUses >= inviteData.maxUses) {
                 console.warn(`⚠️  Código sin usos disponibles: ${inviteData.currentUses}/${inviteData.maxUses}`);
-                throw new functions.https.HttpsError(
+                throw new HttpsError(
                   'failed-precondition',
                   'El código de invitación ha alcanzado el máximo de usos permitidos',
                 );
@@ -228,7 +248,7 @@ exports.joinProgramByCode = functions
 
       if (!validProgramId) {
         console.warn(`⚠️  Código inválido o inactivo: ${codeUppercase}`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'not-found',
           'Código de invitación inválido o inactivo. Verifica con la organización que te proporcionó el código.',
         );
@@ -243,7 +263,7 @@ exports.joinProgramByCode = functions
 
       if (!programEndDate) {
         console.warn(`⚠️  Programa ${validProgramId} sin metadata.endDate válido`);
-        throw new functions.https.HttpsError(
+        throw new HttpsError(
           'failed-precondition',
           'El programa no tiene una fecha de culminación válida (metadata.endDate). Contacta al facilitador.',
         );
@@ -254,22 +274,26 @@ exports.joinProgramByCode = functions
       const participantRef = programRef.collection('participants').doc(uid);
       const indexRef = db.collection('users').doc(uid).collection('programs').doc(validProgramId);
       const businessRef = db.collection('businesses').doc(businessId);
+      const businessProfileRef = businessRef.collection('settings').doc('businessProfile');
+      const userRef = db.collection('users').doc(uid);
       let responseSubscription = null;
 
       await db.runTransaction(async (transaction) => {
-        const [programSnapTx, membershipSnap, participantSnap, businessSnap] = await Promise.all([
+        const [programSnapTx, membershipSnap, participantSnap, businessSnap, businessProfileSnap, userSnap] = await Promise.all([
           transaction.get(programRef),
           transaction.get(membershipRef),
           transaction.get(participantRef),
           transaction.get(businessRef),
+          transaction.get(businessProfileRef),
+          transaction.get(userRef),
         ]);
 
         if (!programSnapTx.exists) {
-          throw new functions.https.HttpsError('not-found', 'El programa no existe');
+          throw new HttpsError('not-found', 'El programa no existe');
         }
 
         if (!businessSnap.exists) {
-          throw new functions.https.HttpsError('failed-precondition', 'No se encontró el negocio para aplicar la suscripción');
+          throw new HttpsError('failed-precondition', 'No se encontró el negocio para aplicar la suscripción');
         }
 
         const membershipData = membershipSnap.exists ? membershipSnap.data() : null;
@@ -277,13 +301,33 @@ exports.joinProgramByCode = functions
 
         if (membershipData?.status === 'active' || participantData?.status === 'active') {
           console.warn(`⚠️  Business ${businessId} ya está afiliado al programa ${validProgramId}`);
-          throw new functions.https.HttpsError(
+          throw new HttpsError(
             'already-exists',
             `Tu negocio ya está participando en el programa "${validProgramData.name}"`,
           );
         }
 
         const businessData = businessSnap.data() || {};
+        const businessProfileDocData = businessProfileSnap.exists ? businessProfileSnap.data() || {} : {};
+        const businessProfileData = asPlainObject(
+          businessProfileDocData.businessProfile || businessProfileDocData,
+        );
+        const userData = userSnap.exists ? userSnap.data() || {} : {};
+        const userProfileData = asPlainObject(userData.profile);
+
+        if (!businessProfileSnap.exists || Object.keys(businessProfileData).length === 0) {
+          throw new HttpsError(
+            'failed-precondition',
+            `No se encontró información en businesses/${businessId}/settings/businessProfile. Completa el perfil del negocio antes de unirte al programa.`,
+          );
+        }
+
+        if (Object.keys(userProfileData).length === 0) {
+          throw new HttpsError(
+            'failed-precondition',
+            `No se encontró información en users/${uid}.profile. Completa tu perfil de usuario antes de unirte al programa.`,
+          );
+        }
         const existingSubscription = businessData.subscription || {};
         const existingEndDate = parseDateValue(existingSubscription.endDate);
         const hasUnlimitedPremium = existingSubscription?.status === 'active' &&
@@ -299,6 +343,32 @@ exports.joinProgramByCode = functions
         }
 
         const nowTimestamp = FieldValue.serverTimestamp();
+        const participantBusinessName = getFirstNonEmpty(
+          businessProfileData.businessName,
+          businessProfileData.razonSocial,
+          businessProfileData.nombreNegocio,
+          businessData.razonSocial,
+          businessData.nombreNegocio,
+          businessData.nombre,
+          'Sin nombre',
+        );
+        const participantUserName = getFirstNonEmpty(
+          userProfileData.name,
+          userProfileData.nombre,
+          userData.nombre,
+          auth.token.name,
+          'Usuario',
+        );
+
+        const businessProfile = {
+          ...businessProfileData,
+          businessName: participantBusinessName,
+        };
+
+        const profileUser = {
+          ...userProfileData,
+          name: participantUserName,
+        };
 
         const membershipPayload = {
           userId: uid,
@@ -322,10 +392,12 @@ exports.joinProgramByCode = functions
 
         const participantPayload = {
           userId: uid,
-          userEmail: context.auth.token.email || '',
-          userName: context.auth.token.name || 'Usuario',
+          userEmail: auth.token.email || '',
+          userName: participantUserName,
           businessId,
-          businessName: businessData.razonSocial || businessData.nombre || 'Sin nombre',
+          businessName: participantBusinessName,
+          businessProfile,
+          profileUser,
           role: 'participant',
           status: 'active',
           currentPhase: validProgramData?.currentPhase || 'baseline',
@@ -431,14 +503,15 @@ exports.joinProgramByCode = functions
       console.error('❌ Error en joinProgramByCode:', error);
 
       // Si es un error de Firebase Functions, re-lanzarlo
-      if (error instanceof functions.https.HttpsError) {
+      if (error instanceof HttpsError) {
         throw error;
       }
 
       // Error genérico
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'internal',
         `Error al unirse al programa: ${error.message}`,
       );
     }
-  });
+  },
+);

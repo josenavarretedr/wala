@@ -173,7 +173,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
-import { getFirestore, doc, updateDoc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, getDoc } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
 import { ProfileCircle, Map, Mail } from "@iconoir/vue";
 import { useToast } from "@/composables/useToast";
@@ -305,19 +305,23 @@ const handleSave = async () => {
 
     const userRef = doc(db, "users", user.uid);
 
-    await updateDoc(userRef, {
-      name: formData.value.name,
-      profile: {
+    await setDoc(
+      userRef,
+      {
         name: formData.value.name,
-        lastName: formData.value.lastName,
-        phone: formData.value.phone,
-        country: formData.value.country,
-        region: formData.value.region,
-        province: formData.value.province,
-        district: formData.value.district,
+        profile: {
+          name: formData.value.name,
+          lastName: formData.value.lastName,
+          phone: formData.value.phone,
+          country: formData.value.country,
+          region: formData.value.region,
+          province: formData.value.province,
+          district: formData.value.district,
+        },
+        updatedAt: new Date(),
       },
-      updatedAt: new Date(),
-    });
+      { merge: true },
+    );
 
     toast.success("Tus datos se han actualizado correctamente", {
       duration: 2200,

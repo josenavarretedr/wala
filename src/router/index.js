@@ -592,6 +592,22 @@ const routes = [
         }
       },
       {
+        path: ':programId/consultings',
+        name: 'ProgramConsultings',
+        component: () => import('@/views/facilitator/ProgramConsultings.vue'),
+        meta: {
+          title: 'Asesorías del Programa'
+        }
+      },
+      {
+        path: ':programId/consultings/:dossierId',
+        name: 'ProgramConsultingDossier',
+        component: () => import('@/views/facilitator/ProgramConsultingDossier.vue'),
+        meta: {
+          title: 'Expediente de Consulting'
+        }
+      },
+      {
         path: ':programId/reports',
         name: 'ProgramReports',
         component: () => import('@/views/facilitator/ProgramReports.vue'),

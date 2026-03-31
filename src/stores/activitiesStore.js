@@ -19,6 +19,29 @@ import {
 import { db } from '@/firebaseInit'
 import { useAuthStore } from './authStore'
 
+function getParticipantUserName(participant) {
+  return (
+    participant?.profileUser?.name ||
+    participant?.profileUser?.nombre ||
+    participant?.userName ||
+    participant?.name ||
+    'Usuario'
+  )
+}
+
+function getParticipantBusinessName(participant) {
+  return (
+    participant?.businessProfile?.businessName ||
+    participant?.businessProfile?.razonSocial ||
+    participant?.businessProfile?.nombreNegocio ||
+    participant?.businessProfile?.businessName ||
+    participant?.businessProfile?.razonSocial ||
+    participant?.businessProfile?.nombreNegocio ||
+    participant?.businessName ||
+    ''
+  )
+}
+
 export const useActivitiesStore = defineStore('activities', () => {
   // ═══════════════════════════════════════════════════════════
   // STATE
@@ -601,9 +624,9 @@ export const useActivitiesStore = defineStore('activities', () => {
           activityId,
           activityType: 'activity',
           userId,
-          userName: participantData.userName || 'Usuario',
+          userName: getParticipantUserName(participantData),
           businessId: participantData.businessId || '',
-          businessName: participantData.businessName || '',
+          businessName: getParticipantBusinessName(participantData),
           status: 'attendance_marked',
           createdBy: authStore.user.uid,
           submittedAt: serverTimestamp(),
@@ -703,9 +726,9 @@ export const useActivitiesStore = defineStore('activities', () => {
           activityId,
           activityType: 'session',
           userId,
-          userName: userData.userName || userData.name || 'Usuario',
+          userName: getParticipantUserName(userData),
           businessId: userData.businessId || '',
-          businessName: userData.businessName || '',
+          businessName: getParticipantBusinessName(userData),
           attendance: attendanceData,
           status: attended ? 'completed' : 'absent',
           submittedAt: serverTimestamp()
@@ -775,9 +798,9 @@ export const useActivitiesStore = defineStore('activities', () => {
         activityId,
         activityType: 'consulting',
         userId: consultingData.userId,
-        userName: consultingData.userName || 'Usuario',
+        userName: getParticipantUserName(consultingData),
         businessId: consultingData.businessId || '',
-        businessName: consultingData.businessName || '',
+        businessName: getParticipantBusinessName(consultingData),
         consultingData: {
           modality: consultingData.modality,
           consultingDate: consultingData.consultingDate || consultingData.monitoringDate, // Backward compatibility
@@ -878,9 +901,9 @@ export const useActivitiesStore = defineStore('activities', () => {
         activityId,
         activityType: 'activity',
         userId: participantData.userId,
-        userName: participantData.userName || 'Usuario',
+        userName: getParticipantUserName(participantData),
         businessId: participantData.businessId || '',
-        businessName: participantData.businessName || '',
+        businessName: getParticipantBusinessName(participantData),
         status: 'draft',
         createdBy: authStore.user.uid,
         createdAt: serverTimestamp(),
@@ -1209,10 +1232,10 @@ export const useActivitiesStore = defineStore('activities', () => {
           odocId: participant.odocId,
           odocDate: participant.joinedAt || null,
           userId,
-          userName: participant.userName || participant.name || 'Usuario',
+          userName: getParticipantUserName(participant),
           userEmail: participant.userEmail || participant.email || '',
           businessId: participant.businessId || '',
-          businessName: participant.businessName || '',
+          businessName: getParticipantBusinessName(participant),
           participation: p,
           isComplete: p ? isParticipationComplete(activity, p) : false,
           hasResponses,

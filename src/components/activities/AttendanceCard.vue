@@ -12,7 +12,7 @@
       />
       <div class="flex-1 min-w-0">
         <p class="font-medium text-gray-900 truncate">
-          {{ participant.userName }}
+          {{ participantDisplayName }}
         </p>
         <p class="text-xs text-gray-500 truncate">
           {{ participant.userEmail }}
@@ -72,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 const props = defineProps({
   participant: {
@@ -89,6 +89,15 @@ const emit = defineEmits(["update"]);
 
 const showNotes = ref(false);
 const localNotes = ref(props.attendance.notes || "");
+
+const participantDisplayName = computed(() => {
+  return (
+    props.participant?.profileUser?.name ||
+    props.participant?.profileUser?.nombre ||
+    props.participant?.userName ||
+    "Usuario"
+  );
+});
 
 // Mostrar notas automáticamente si ya hay contenido
 if (props.attendance.notes) {

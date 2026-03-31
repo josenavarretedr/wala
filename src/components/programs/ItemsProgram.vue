@@ -149,7 +149,7 @@
 
 <script setup>
 import { computed, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { List, Book, GraphUp, Calendar, Community, Map } from "@iconoir/vue";
 import { useUserStore } from "@/stores/useUserStore";
 
@@ -188,6 +188,7 @@ const emit = defineEmits([
 ]);
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 
 const activeStatusFilter = ref("all");
@@ -220,7 +221,7 @@ const items = computed(() => {
       name: "Asesorías",
       icon: GraphUp,
       color: "purple",
-      type: "filter",
+      type: !props.showStatusFilter ? "navigation" : "filter",
     },
     // Backward compatibility
     {
@@ -260,6 +261,13 @@ const items = computed(() => {
 });
 
 const isActive = (itemId) => {
+  if (itemId === "consulting" && !props.showStatusFilter) {
+    return (
+      route.name === "ProgramConsultings" &&
+      route.params.programId === props.programId
+    );
+  }
+
   if (
     itemId === "all" ||
     itemId === "form" ||
@@ -298,7 +306,9 @@ const getIconHoverColor = (color) => {
 const handleClick = (item) => {
   if (item.type === "navigation") {
     // Navegación a otra ruta
-    if (item.id === "participants") {
+    if (item.id === "consulting") {
+      router.push(`/programs/${props.programId}/consultings`);
+    } else if (item.id === "participants") {
       router.push(`/programs/${props.programId}/participants`);
     } else if (item.id === "stages") {
       const role = userStore.userProfile?.rol;

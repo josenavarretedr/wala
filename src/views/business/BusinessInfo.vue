@@ -151,6 +151,8 @@ import { useAuthStore } from "@/stores/authStore";
 import {
   getFirestore,
   doc,
+  getDoc,
+  setDoc,
   updateDoc,
   collection,
   getDocs,
@@ -405,11 +407,67 @@ watch(
 function loadBusinessData() {
   const business = businessStore.business;
   if (business) {
-    const setupInit = business.setupInit || {};
+    loadBusinessProfileData(business);
+  }
+}
+
+async function loadBusinessProfileData(business) {
+  try {
+    isFormReady.value = false;
+
+    const businessProfileRef = doc(
+      db,
+      "businesses",
+      business.id,
+      "settings",
+      "businessProfile",
+    );
+
+    const businessProfileSnap = await getDoc(businessProfileRef);
+    const businessProfile = businessProfileSnap.exists()
+      ? businessProfileSnap.data()
+      : null;
+
+    const profileSource = businessProfile || business.setupInit || {};
 
     formData.value = {
       nombreNegocio:
-        setupInit.nombreNegocio || business.nombre || business.name || "",
+        profileSource.nombreNegocio ||
+        business.businessName ||
+        business.nombre ||
+        business.name ||
+        "",
+      anioInicio: profileSource.anioInicio || "",
+      direccionNegocio: profileSource.direccionNegocio || "",
+      codigoPostal: profileSource.codigoPostal || "",
+      telefonoNegocio: profileSource.telefonoNegocio || "",
+      departamento: profileSource.departamento || "",
+      lineaNegocio: profileSource.lineaNegocio || "",
+      descripcionSector: profileSource.descripcionSector || "",
+      formaLegal: profileSource.formaLegal || "",
+      posicionNegocio: profileSource.posicionNegocio || "",
+      experiencia: profileSource.experiencia || "",
+      oportunidadesMercado: profileSource.oportunidadesMercado || "",
+      calidadOportunidades: profileSource.calidadOportunidades || "",
+      numTrabajadores: profileSource.numTrabajadores || "",
+      localizacionPermanente: profileSource.localizacionPermanente || "",
+      capitalInvertido: profileSource.capitalInvertido || "",
+      planesLargoPlazo: profileSource.planesLargoPlazo || "",
+    };
+  } catch (error) {
+    console.error(
+      "Error al cargar businessProfile, usando fallback legacy:",
+      error,
+    );
+
+    const setupInit = business.setupInit || {};
+    formData.value = {
+      nombreNegocio:
+        setupInit.nombreNegocio ||
+        business.businessName ||
+        business.nombre ||
+        business.name ||
+        "",
       anioInicio: setupInit.anioInicio || "",
       direccionNegocio: setupInit.direccionNegocio || "",
       codigoPostal: setupInit.codigoPostal || "",
@@ -427,6 +485,7 @@ function loadBusinessData() {
       capitalInvertido: setupInit.capitalInvertido || "",
       planesLargoPlazo: setupInit.planesLargoPlazo || "",
     };
+  } finally {
     originalData.value = { ...formData.value };
     isFormReady.value = true;
   }
@@ -486,28 +545,47 @@ const handleSave = async () => {
 
   try {
     const businessId = route.params.businessId;
-    const businessRef = doc(db, "businesses", businessId);
+    const normalizedBusinessName = (
+      formData.value.nombreNegocio || ""
+    ).toLocaleUpperCase("es-ES");
 
-    // 1. Actualizar el documento principal del negocio
-    await updateDoc(businessRef, {
-      setupInit: {
+    // Reflejar en UI el mismo valor que se persiste como nombre canónico.
+    formData.value.nombreNegocio = normalizedBusinessName;
+
+    const businessRef = doc(db, "businesses", businessId);
+    const businessProfileRef = doc(
+      db,
+      "businesses",
+      businessId,
+      "settings",
+      "businessProfile",
+    );
+
+    // 1. Guardar perfil del negocio en settings/businessProfile
+    await setDoc(
+      businessProfileRef,
+      {
         ...formData.value,
+        nombreNegocio: normalizedBusinessName,
+        updatedAt: new Date(),
       },
-      nombre: formData.value.nombreNegocio,
+      { merge: true },
+    );
+
+    // 2. Actualizar nombre canónico del negocio en documento raíz
+    await updateDoc(businessRef, {
+      businessName: normalizedBusinessName,
       updatedAt: new Date(),
     });
 
-    // 2. Actualizar el nombre del negocio en todas las relaciones usuarios-negocio
+    // 3. Actualizar el nombre del negocio en todas las relaciones usuarios-negocio
     // Solo actualizamos businessName, que es el campo que se replica
-    await updateBusinessNameInUserRelations(
-      businessId,
-      formData.value.nombreNegocio,
-    );
+    await updateBusinessNameInUserRelations(businessId, normalizedBusinessName);
 
-    // 3. Actualizar el store local del negocio
+    // 4. Actualizar el store local del negocio
     await businessStore.loadBusiness(businessId);
 
-    // 4. Actualizar el store local del usuario (para reflejar el cambio en currentBusiness)
+    // 5. Actualizar el store local del usuario (para reflejar el cambio en currentBusiness)
     if (authStore.user?.uid) {
       await userStore.loadUserBusinesses(authStore.user.uid);
 

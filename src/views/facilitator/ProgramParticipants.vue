@@ -88,7 +88,7 @@
           >
             <td class="participant-cell">
               <div class="participant-info">
-                <strong>{{ participant.userName || "Sin nombre" }}</strong>
+                <strong>{{ getParticipantUserName(participant) || "Sin nombre" }}</strong>
                 <small>{{ participant.email }}</small>
               </div>
             </td>
@@ -168,7 +168,7 @@
           class="participant-card"
         >
           <div class="card-header">
-            <h3>{{ participant.userName || "Sin nombre" }}</h3>
+            <h3>{{ getParticipantUserName(participant) || "Sin nombre" }}</h3>
             <span
               class="badge"
               :class="{
@@ -347,7 +347,7 @@ const filteredParticipants = computed(() => {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(
       (p) =>
-        p.userName?.toLowerCase().includes(query) ||
+        getParticipantUserName(p).toLowerCase().includes(query) ||
         p.email?.toLowerCase().includes(query)
     );
   }
@@ -464,7 +464,7 @@ function exportParticipants() {
     "Estado",
   ];
   const rows = filteredParticipants.value.map((p) => [
-    p.userName || "Sin nombre",
+    getParticipantUserName(p) || "Sin nombre",
     p.email || "",
     p.sessionsCompleted,
     p.sessionsRequired,
@@ -484,6 +484,15 @@ function exportParticipants() {
   a.href = url;
   a.download = `participantes_${new Date().toISOString().split("T")[0]}.csv`;
   a.click();
+}
+
+function getParticipantUserName(participant) {
+  return (
+    participant?.profileUser?.name ||
+    participant?.profileUser?.nombre ||
+    participant?.userName ||
+    ""
+  );
 }
 
 // ═══════════════════════════════════════════════════════════

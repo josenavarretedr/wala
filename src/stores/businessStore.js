@@ -18,7 +18,7 @@ export const useBusinessStore = defineStore('business', {
 
   getters: {
     getBusinessId: (state) => state.business?.id || null,
-    getBusinessName: (state) => state.business?.nombre || null,
+    getBusinessName: (state) => state.business?.businessName || state.business?.nombre || state.business?.name || null,
     getBusinessType: (state) => state.business?.tipo || null,
     isBusinessOwner: (state) => (userId) => state.business?.gerenteId === userId,
     getEmployeeCount: (state) => state.employees.length,
@@ -614,7 +614,7 @@ export const useBusinessStore = defineStore('business', {
 
       if (plan === 'pro') {
         return {
-          maxEmployees: 999999, 
+          maxEmployees: 999999,
           maxProducts: 999999, // inventario ilimitado
           advancedReports: true, // Comparación de periodos
           multiLocation: false,

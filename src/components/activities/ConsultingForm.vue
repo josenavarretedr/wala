@@ -62,7 +62,8 @@
                   :key="participant.userId"
                   :value="participant.userId"
                 >
-                  {{ participant.userName }} - {{ participant.businessName }}
+                  {{ getParticipantUserName(participant) }} -
+                  {{ getParticipantBusinessName(participant) }}
                 </option>
               </select>
               <p v-if="errors.userId" class="text-red-600 text-sm mt-1">
@@ -504,7 +505,7 @@ const form = reactive({
 
 const hasAnyRating = computed(() => {
   return Object.values(form.responses).some(
-    (category) => Object.keys(category).length > 0
+    (category) => Object.keys(category).length > 0,
   );
 });
 
@@ -547,9 +548,8 @@ function prefillForm() {
       setRating(category.key, index, randomRating);
     });
     // Agregar comentario de ejemplo
-    form.categoryComments[
-      category.key
-    ] = `Comentario de prueba para ${category.label}`;
+    form.categoryComments[category.key] =
+      `Comentario de prueba para ${category.label}`;
   });
 
   // Agregar comentarios adicionales
@@ -587,10 +587,30 @@ const calculateOverallScore = () => {
 function handleParticipantChange() {
   const participant = participants.value.find((p) => p.userId === form.userId);
   if (participant) {
-    form.userName = participant.userName;
+    form.userName = getParticipantUserName(participant);
     form.businessId = participant.businessId;
-    form.businessName = participant.businessName;
+    form.businessName = getParticipantBusinessName(participant);
   }
+}
+
+function getParticipantUserName(participant) {
+  return (
+    participant?.profileUser?.name ||
+    participant?.profileUser?.nombre ||
+    participant?.userName ||
+    "Usuario"
+  );
+}
+
+function getParticipantBusinessName(participant) {
+  return (
+    participant?.businessProfile?.businessName ||
+    participant?.businessProfile?.razonSocial ||
+    participant?.businessProfile?.businessName ||
+    participant?.businessProfile?.razonSocial ||
+    participant?.businessName ||
+    ""
+  );
 }
 
 function handleFileUpload(event) {
@@ -623,7 +643,7 @@ function validateForm() {
 
   // Validar que al menos una pregunta esté respondida
   const hasResponses = Object.values(form.responses).some(
-    (category) => Object.keys(category).length > 0
+    (category) => Object.keys(category).length > 0,
   );
 
   if (!hasResponses) {
@@ -676,7 +696,7 @@ async function loadProgramParticipants() {
       db,
       "programs",
       props.programId,
-      "participants"
+      "participants",
     );
     const q = query(participantsRef);
     const snapshot = await getDocs(q);
@@ -689,7 +709,7 @@ async function loadProgramParticipants() {
       .filter((p) => p.status === "active");
 
     console.log(
-      `✅ ${participants.value.length} participantes cargados para asesoría`
+      `✅ ${participants.value.length} participantes cargados para asesoría`,
     );
   } catch (error) {
     console.error("Error al cargar participantes:", error);
