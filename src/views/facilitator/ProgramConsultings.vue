@@ -79,12 +79,12 @@
               <th
                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
-                Estado
+                Ciclo activo
               </th>
               <th
                 class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
-                Riesgo
+                Áreas críticas
               </th>
               <th
                 class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -130,23 +130,33 @@
               <td class="px-4 py-3">
                 <span
                   class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium"
-                  :class="getStepBadgeClass(row.dossier?.currentStep)"
+                  :class="getCycleBadgeClass(getRowCycleState(row.dossier))"
                 >
                   {{
-                    row.dossier
-                      ? getStepLabel(row.dossier.currentStep)
-                      : "Sin expediente"
+                    getRowCycleState(row.dossier)?.currentCycleLabel ||
+                    (row.dossier ? "Sin ciclo" : "Sin expediente")
                   }}
                 </span>
               </td>
 
               <td class="px-4 py-3">
-                <span
-                  class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium"
-                  :class="getRiskBadgeClass(row.dossier?.riskLevel)"
+                <div
+                  v-if="
+                    getCriticalAreaLabels(getRowCycleState(row.dossier)).length
+                  "
+                  class="flex flex-wrap gap-1"
                 >
-                  {{ getRiskLabel(row.dossier?.riskLevel) }}
-                </span>
+                  <span
+                    v-for="areaName in getCriticalAreaLabels(
+                      getRowCycleState(row.dossier),
+                    )"
+                    :key="`${row.participant.userId}-${areaName}`"
+                    class="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700"
+                  >
+                    {{ areaName }}
+                  </span>
+                </div>
+                <span v-else class="text-xs text-gray-500">Sin definir</span>
               </td>
 
               <td class="px-4 py-3 text-right">
@@ -184,8 +194,23 @@ import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 const route = useRoute();
 const router = useRouter();
 const programStore = useProgramStore();
-const { dossiers, loading, loadProgramDossiers, createDossier, getStepLabel } =
-  useConsultingDossiers();
+const {
+  dossiers,
+  loading,
+  loadProgramDossiers,
+  createDossier,
+  getDossierCycleCardState,
+} = useConsultingDossiers();
+
+const AREA_LABELS = {
+  negocioFamilia: "Negocio y familia",
+  marketing: "Marketing",
+  compras: "Compras",
+  controlStock: "Control de stock",
+  costeo: "Costeo",
+  registros: "Registros",
+  planificacion: "Planificación",
+};
 
 const programId = computed(() => route.params.programId);
 const program = ref(null);
@@ -248,25 +273,25 @@ function getParticipantBusinessName(participant) {
   );
 }
 
-function getStepBadgeClass(step) {
-  if (!step) return "bg-gray-100 text-gray-700";
-  if (step === "closed") return "bg-gray-100 text-gray-700";
-  if (step.includes("completed")) return "bg-green-100 text-green-700";
-  return "bg-blue-100 text-blue-700";
+function getRowCycleState(dossier) {
+  if (!dossier) return null;
+  return getDossierCycleCardState(dossier);
 }
 
-function getRiskLabel(riskLevel) {
-  if (riskLevel === "high") return "Alto";
-  if (riskLevel === "medium") return "Medio";
-  if (riskLevel === "low") return "Bajo";
-  return "Sin riesgo";
+function getCycleBadgeClass(cycleState) {
+  if (!cycleState) return "bg-gray-100 text-gray-700";
+  if (cycleState.isClosed) return "bg-emerald-100 text-emerald-700";
+  if (!cycleState.hasCycleData) return "bg-gray-100 text-gray-700";
+  return "bg-purple-100 text-purple-700";
 }
 
-function getRiskBadgeClass(riskLevel) {
-  if (riskLevel === "high") return "bg-red-100 text-red-700";
-  if (riskLevel === "medium") return "bg-amber-100 text-amber-700";
-  if (riskLevel === "low") return "bg-emerald-100 text-emerald-700";
-  return "bg-gray-100 text-gray-700";
+function getCriticalAreaLabels(cycleState) {
+  if (!Array.isArray(cycleState?.criticalAreaNames)) return [];
+
+  return cycleState.criticalAreaNames
+    .slice(0, 3)
+    .map((areaKey) => AREA_LABELS[areaKey] || areaKey)
+    .filter((label) => typeof label === "string" && label.length > 0);
 }
 
 async function loadParticipants() {

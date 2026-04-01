@@ -57,7 +57,7 @@
           </button>
 
           <!-- Opción: Consultor/Facilitador -->
-          <button
+          <!-- <button
             @click="selectRole('facilitator')"
             type="button"
             class="group relative p-6 rounded-xl border-2 border-gray-200 hover:border-green-400 hover:bg-green-50 transition-all duration-200 text-left"
@@ -89,7 +89,7 @@
                 </p>
               </div>
             </div>
-          </button>
+          </button> -->
         </div>
       </div>
 

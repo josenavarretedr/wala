@@ -1,17 +1,29 @@
 <template>
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">2</div>
-      <div>
-        <div class="section-title">Áreas críticas identificadas</div>
-        <div class="section-desc">
-          Las 3 áreas prioritarias definidas por puntaje y por lo que el
-          emprendedor manifiesta
+    <div class="section-header section-header-with-toggle">
+      <div class="section-header-main">
+        <div class="section-num">2</div>
+        <div>
+          <div class="section-title">Áreas críticas identificadas</div>
+          <div class="section-desc">
+            Las 3 áreas prioritarias definidas por puntaje y por lo que el
+            emprendedor manifiesta
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="section-toggle-btn section-toggle-inline"
+        :aria-expanded="isExpanded"
+        aria-controls="areas-criticas-content"
+        @click="isExpanded = !isExpanded"
+      >
+        {{ isExpanded ? "Ocultar contenido" : "Mostrar contenido" }}
+      </button>
     </div>
 
-    <div class="criticas-grid">
+    <div v-show="isExpanded" id="areas-criticas-content" class="criticas-grid">
       <div
         v-for="(critical, idx) in props.modelValue"
         :key="idx"
@@ -30,7 +42,7 @@
               {{ area.title }}
             </option>
           </select>
-          <div class="critica-puntaje">
+          <!-- <div class="critica-puntaje">
             <label>Puntaje</label>
             <input
               v-model="critical.score"
@@ -39,14 +51,14 @@
               :disabled="props.readOnly"
               :tabindex="props.readOnly ? -1 : 0"
             />
-          </div>
+          </div> -->
         </div>
         <div class="critica-card-body">
           <div class="critica-field">
-            <label>Indicador más débil</label>
+            <label>Resumen del área</label>
             <textarea
-              v-model="critical.weakIndicator"
-              placeholder="¿Qué indicador fue el más bajo?"
+              v-model="critical.resumenArea"
+              placeholder="Resumen del área crítica"
               :readonly="props.readOnly"
               :disabled="props.readOnly"
               :tabindex="props.readOnly ? -1 : 0"
@@ -69,6 +81,8 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
+
 const props = defineProps({
   areas: {
     type: Array,
@@ -83,4 +97,6 @@ const props = defineProps({
     default: false,
   },
 });
+
+const isExpanded = ref(false);
 </script>

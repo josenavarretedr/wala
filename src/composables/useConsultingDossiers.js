@@ -21,7 +21,11 @@ export function useConsultingDossiers() {
     createDossier,
     updateDossierStep,
     saveS0Assessment,
+    saveProgramConsultingDossier,
+    markCycleCompleted,
+    reopenCycleWithCascade,
     getDossierByParticipant,
+    getDossierCycleCardState,
   } = store
 
   return {
@@ -38,6 +42,10 @@ export function useConsultingDossiers() {
     createDossier,
     updateDossierStep,
     saveS0Assessment,
+    saveProgramConsultingDossier,
+    markCycleCompleted,
+    reopenCycleWithCascade,
     getDossierByParticipant,
+    getDossierCycleCardState,
   }
 }

@@ -1,16 +1,32 @@
 <template>
   <div class="section">
-    <div class="section-header">
-      <div class="section-num">1</div>
-      <div>
-        <div class="section-title">Diagnóstico inicial</div>
-        <div class="section-desc">
-          Sesión 0 · Aplicación de la matriz de desempeño · Escala 0–3
+    <div class="section-header section-header-with-toggle">
+      <div class="section-header-main">
+        <div class="section-num">1</div>
+        <div>
+          <div class="section-title">Diagnóstico inicial</div>
+          <div class="section-desc">
+            Sesión 0 · Aplicación de la matriz de desempeño · Escala 0–3
+          </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        class="section-toggle-btn section-toggle-inline"
+        :aria-expanded="isExpanded"
+        aria-controls="matriz-indicadores-content"
+        @click="isExpanded = !isExpanded"
+      >
+        {{ isExpanded ? "Ocultar contenido" : "Mostrar contenido" }}
+      </button>
     </div>
 
-    <div class="matriz-wrap">
+    <div
+      v-show="isExpanded"
+      id="matriz-indicadores-content"
+      class="matriz-wrap"
+    >
       <table class="matriz-table">
         <thead>
           <tr>
@@ -34,7 +50,8 @@
               class="indicator-row"
             >
               <td>
-                <span class="ind-code">{{ indicator.code }}</span>{{ indicator.text }}
+                <span class="ind-code">{{ indicator.code }}</span
+                >{{ indicator.text }}
               </td>
               <td
                 class="score-cell"
@@ -72,6 +89,8 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
+
 const props = defineProps({
   periods: {
     type: Array,
@@ -86,6 +105,8 @@ const props = defineProps({
     required: true,
   },
 });
+
+const isExpanded = ref(false);
 
 function getTotal(periodKey) {
   return Object.values(props.modelValue).reduce((sum, scoreByPeriod) => {

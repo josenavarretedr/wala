@@ -16,22 +16,27 @@
       <div class="cover read-only-scope">
         <div class="cover-inner">
           <ConsultingCover :model-value="general" :read-only="true" />
-          <ConsultingCycles :steps="timelineSteps" />
+          <!-- <ConsultingCycles :steps="timelineSteps" /> -->
         </div>
       </div>
 
       <div class="read-only-scope">
-        <!-- <MatrizIndicadoresWala
+        <MatrizIndicadoresWalaUserView
           :model-value="scores"
           :periods="periods"
           :areas="areas"
-        /> -->
+        />
         <AreasCriticas
           :model-value="criticalAreas"
           :areas="areas"
           :read-only="true"
         />
-        <ConsultingCycle :model-value="cycles" :read-only="true" />
+        <ConsultingCycle
+          :model-value="cycles"
+          :areas="areas"
+          :critical-areas="criticalAreas"
+          :read-only="true"
+        />
         <!-- <ConsultingResumen
           :areas="areas"
           :periods="periods"
@@ -52,6 +57,7 @@ import { useToast } from "@/composables/useToast";
 import ConsultingCover from "@/components/programs/consulting/ConsultingCover.vue";
 import ConsultingCycles from "@/components/programs/consulting/ConsultingCycles.vue";
 import MatrizIndicadoresWala from "@/components/programs/consulting/MatrizIndicadoresWala.vue";
+import MatrizIndicadoresWalaUserView from "@/components/programs/consulting/MatrizIndicadoresWalaUserView.vue";
 import AreasCriticas from "@/components/programs/consulting/AreasCriticas.vue";
 import ConsultingCycle from "@/components/programs/consulting/ConsultingCycle.vue";
 import ConsultingResumen from "@/components/programs/consulting/ConsultingResumen.vue";
@@ -206,10 +212,23 @@ const criticalAreas = ref([
     areaKey: "negocioFamilia",
     score: "",
     weakIndicator: "",
+    resumenArea: "",
     justification: "",
   },
-  { areaKey: "marketing", score: "", weakIndicator: "", justification: "" },
-  { areaKey: "compras", score: "", weakIndicator: "", justification: "" },
+  {
+    areaKey: "marketing",
+    score: "",
+    weakIndicator: "",
+    resumenArea: "",
+    justification: "",
+  },
+  {
+    areaKey: "compras",
+    score: "",
+    weakIndicator: "",
+    resumenArea: "",
+    justification: "",
+  },
 ]);
 
 function createCycle(
@@ -236,12 +255,13 @@ function createCycle(
       { areaName: "", action1: "", action2: "", action3: "" },
       { areaName: "", action1: "", action2: "", action3: "" },
     ],
-    reviewRows: [
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-    ],
+    reviewRows: Array.from({ length: 9 }, () => ({
+      area: "",
+      action: "",
+      frecuencia: "",
+      status: "",
+      observation: "",
+    })),
     conclusions: "",
     nextCommitments: "",
   });
@@ -521,6 +541,14 @@ onMounted(() => {
   @apply flex gap-3 mb-4 items-start;
 }
 
+.section-header-with-toggle {
+  @apply justify-between;
+}
+
+.section-header-main {
+  @apply flex gap-3 items-start;
+}
+
 .section-num {
   @apply w-7 h-7 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[11px] font-bold;
 }
@@ -531,6 +559,45 @@ onMounted(() => {
 
 .section-desc {
   @apply text-gray-600 text-xs;
+}
+
+.section-toggle-btn {
+  @apply mt-3 mb-4 flex w-fit items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700 shadow-sm transition-all duration-200;
+}
+
+.section-toggle-btn::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.section-toggle-btn:hover {
+  @apply border-blue-300 bg-blue-100;
+}
+
+.section-toggle-btn:focus-visible {
+  @apply outline-none ring-2 ring-blue-200 ring-offset-2;
+}
+
+.section-toggle-btn[aria-expanded="true"] {
+  @apply border-blue-600 bg-blue-600 text-white;
+}
+
+.section-toggle-btn[aria-expanded="true"]::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+
+.section-toggle-inline {
+  @apply mt-0 mb-0 ml-3 shrink-0 self-start;
+}
+
+.ciclo-head-row {
+  @apply mb-3 flex items-start justify-between gap-3;
 }
 
 .matriz-wrap,
@@ -844,7 +911,20 @@ onMounted(() => {
   pointer-events: none;
 }
 
+.read-only-scope :deep(button.section-toggle-btn) {
+  pointer-events: auto;
+}
+
 @media (max-width: 1024px) {
+  .section-header-with-toggle,
+  .ciclo-head-row {
+    @apply flex-col items-start;
+  }
+
+  .section-toggle-inline {
+    @apply ml-0;
+  }
+
   .evolucion-grid {
     grid-template-columns: 1fr;
   }

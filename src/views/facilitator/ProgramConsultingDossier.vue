@@ -1,17 +1,92 @@
 <template>
   <div class="dossier-page">
-    <ConsultingTopbar :is-dirty="isDirty" :is-saving="isSaving" @back="goBack" @save="saveDraft" />
+    <ConsultingTopbar
+      :is-dirty="isDirty"
+      :is-saving="isSaving"
+      @back="goBack"
+      @save="saveDraft"
+    />
 
     <div class="cover">
       <div class="cover-inner">
         <ConsultingCover :model-value="general" />
-        <ConsultingCycles :steps="timelineSteps" />
+        <!-- <ConsultingCycles :steps="timelineSteps" /> -->
       </div>
     </div>
 
-    <MatrizIndicadoresWala :model-value="scores" :periods="periods" :areas="areas" />
+    <MatrizIndicadoresWala
+      :model-value="scores"
+      :periods="periods"
+      :areas="areas"
+    />
     <AreasCriticas :model-value="criticalAreas" :areas="areas" />
-    <ConsultingCycle :model-value="cycles" />
+    <ConsultingCycle
+      :model-value="cycles"
+      :areas="areas"
+      :critical-areas="criticalAreas"
+    />
+
+    <section class="max-w-7xl mx-auto px-4 sm:px-6 py-2">
+      <div class="bg-white border border-gray-200 rounded-xl shadow-sm p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3">
+          Estado de ciclos
+        </h3>
+
+        <div class="grid gap-2 md:grid-cols-3">
+          <article
+            v-for="cycle in cycles"
+            :key="`cycle-control-${cycle.key}`"
+            class="rounded-lg border border-gray-200 bg-gray-50 p-3"
+          >
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <p class="text-xs font-semibold text-gray-800">
+                {{ cycle.title }}
+              </p>
+              <span
+                class="inline-flex items-center rounded-full px-2 py-1 text-[11px] font-semibold"
+                :class="
+                  cycle.completedByFacilitator
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-700'
+                "
+              >
+                {{ cycle.completedByFacilitator ? "Completado" : "Activo" }}
+              </span>
+            </div>
+
+            <p class="text-[11px] text-gray-500 mb-2">
+              {{ getCycleActionSummary(cycle) }}
+            </p>
+
+            <button
+              type="button"
+              class="w-full rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-200"
+              :class="
+                cycle.completedByFacilitator
+                  ? 'bg-amber-600 text-white hover:bg-amber-700'
+                  : 'bg-emerald-600 text-white hover:bg-emerald-700'
+              "
+              :disabled="
+                Boolean(cycleActionLoadingByKey[cycle.key]) || isSaving
+              "
+              @click="handleCycleCompletionToggle(cycle)"
+            >
+              <span v-if="cycleActionLoadingByKey[cycle.key]"
+                >Procesando...</span
+              >
+              <span v-else>
+                {{
+                  cycle.completedByFacilitator
+                    ? "Reabrir ciclo"
+                    : "Marcar ciclo completado"
+                }}
+              </span>
+            </button>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <ConsultingResumen
       :areas="areas"
       :periods="periods"
@@ -39,17 +114,37 @@ const router = useRouter();
 const toast = useToast();
 const isSaving = ref(false);
 const baselineSnapshot = ref("");
+const cycleActionLoadingByKey = ref({
+  c1: false,
+  c2: false,
+  c3: false,
+});
 
 function getDossierStoreWithSaveAction() {
   let store = useConsultingDossierStore();
 
-  if (typeof store.saveProgramConsultingDossier === "function") {
+  const hasRequiredActions =
+    typeof store.saveProgramConsultingDossier === "function" &&
+    typeof store.markCycleCompleted === "function" &&
+    typeof store.reopenCycleWithCascade === "function";
+
+  if (hasRequiredActions) {
     return store;
   }
 
   // En algunos ciclos de HMR, Pinia puede mantener una instancia vieja sin acciones nuevas.
   store.$dispose();
   store = useConsultingDossierStore();
+
+  const refreshedHasRequiredActions =
+    typeof store.saveProgramConsultingDossier === "function" &&
+    typeof store.markCycleCompleted === "function" &&
+    typeof store.reopenCycleWithCascade === "function";
+
+  if (!refreshedHasRequiredActions) {
+    throw new Error("Store de expediente desactualizado. Recarga la pagina.");
+  }
+
   return store;
 }
 
@@ -194,10 +289,23 @@ const criticalAreas = ref([
     areaKey: "negocioFamilia",
     score: "",
     weakIndicator: "",
+    resumenArea: "",
     justification: "",
   },
-  { areaKey: "marketing", score: "", weakIndicator: "", justification: "" },
-  { areaKey: "compras", score: "", weakIndicator: "", justification: "" },
+  {
+    areaKey: "marketing",
+    score: "",
+    weakIndicator: "",
+    resumenArea: "",
+    justification: "",
+  },
+  {
+    areaKey: "compras",
+    score: "",
+    weakIndicator: "",
+    resumenArea: "",
+    justification: "",
+  },
 ]);
 
 function createCycle(
@@ -224,12 +332,13 @@ function createCycle(
       { areaName: "", action1: "", action2: "", action3: "" },
       { areaName: "", action1: "", action2: "", action3: "" },
     ],
-    reviewRows: [
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-      { action: "", status: "", observation: "" },
-    ],
+    reviewRows: Array.from({ length: 9 }, () => ({
+      area: "",
+      action: "",
+      frecuencia: "",
+      status: "",
+      observation: "",
+    })),
     conclusions: "",
     nextCommitments: "",
   });
@@ -357,6 +466,122 @@ function hydrateDraft(dossier) {
 
 function goBack() {
   router.push(`/programs/${programId.value}/consultings`);
+}
+
+function countMissingStatuses(cycle) {
+  if (!Array.isArray(cycle?.reviewRows)) return 0;
+
+  return cycle.reviewRows.filter((row) => {
+    const hasAction =
+      typeof row?.action === "string" && row.action.trim().length > 0;
+    if (!hasAction) return false;
+    return !(typeof row?.status === "string" && row.status.trim().length > 0);
+  }).length;
+}
+
+function countActions(cycle) {
+  if (!Array.isArray(cycle?.reviewRows)) return 0;
+
+  return cycle.reviewRows.filter((row) => {
+    return typeof row?.action === "string" && row.action.trim().length > 0;
+  }).length;
+}
+
+function getCycleActionSummary(cycle) {
+  const totalActions = countActions(cycle);
+  const missingStatuses = countMissingStatuses(cycle);
+
+  if (totalActions === 0) return "Sin acciones cargadas";
+  if (!missingStatuses) return `${totalActions} acciones con estado`;
+
+  return `${totalActions} acciones, ${missingStatuses} sin estado`;
+}
+
+function getCycleCascadeMessage(cycleKey) {
+  if (cycleKey === "c1") {
+    return "Reabrir C1 también desmarcará C2 y C3. ¿Deseas continuar?";
+  }
+  if (cycleKey === "c2") {
+    return "Reabrir C2 también desmarcará C3. ¿Deseas continuar?";
+  }
+  return "¿Deseas reabrir este ciclo?";
+}
+
+async function refreshAfterCycleAction() {
+  const dossierStore = getDossierStoreWithSaveAction();
+  const dossier = await dossierStore.loadDossier(
+    programId.value,
+    dossierId.value,
+  );
+  hydrateDraft(dossier);
+  resetBaseline();
+}
+
+async function handleCycleCompletionToggle(cycle) {
+  if (!cycle?.key) return;
+
+  if (isDirty.value) {
+    await saveDraft();
+    if (isDirty.value) {
+      toast.error("Guarda el borrador antes de cambiar el estado del ciclo");
+      return;
+    }
+  }
+
+  const cycleKey = cycle.key;
+  cycleActionLoadingByKey.value[cycleKey] = true;
+
+  try {
+    const dossierStore = getDossierStoreWithSaveAction();
+
+    if (
+      typeof dossierStore.markCycleCompleted !== "function" ||
+      typeof dossierStore.reopenCycleWithCascade !== "function"
+    ) {
+      throw new Error("Acciones de ciclo no disponibles en store");
+    }
+
+    if (cycle.completedByFacilitator) {
+      const shouldContinue = window.confirm(getCycleCascadeMessage(cycleKey));
+      if (!shouldContinue) return;
+
+      const result = await dossierStore.reopenCycleWithCascade(
+        programId.value,
+        dossierId.value,
+        cycleKey,
+      );
+
+      await refreshAfterCycleAction();
+      const impacted = (result?.reopenedCycleKeys || [])
+        .join(", ")
+        .toUpperCase();
+      toast.success(
+        `Ciclo reabierto correctamente${impacted ? ` (${impacted})` : ""}`,
+      );
+      return;
+    }
+
+    const result = await dossierStore.markCycleCompleted(
+      programId.value,
+      dossierId.value,
+      cycleKey,
+    );
+
+    await refreshAfterCycleAction();
+
+    if (result?.missingStatuses > 0) {
+      toast.info(
+        `Ciclo completado con advertencia: ${result.missingStatuses} acciones sin estado.`,
+      );
+    } else {
+      toast.success("Ciclo marcado como completado");
+    }
+  } catch (error) {
+    console.error("No se pudo actualizar el estado del ciclo:", error);
+    toast.error("No se pudo actualizar el estado del ciclo");
+  } finally {
+    cycleActionLoadingByKey.value[cycleKey] = false;
+  }
 }
 
 async function hydrateHeaderData() {
@@ -549,6 +774,14 @@ hydrateHeaderData();
   @apply flex gap-3 mb-4 items-start;
 }
 
+.section-header-with-toggle {
+  @apply justify-between;
+}
+
+.section-header-main {
+  @apply flex gap-3 items-start;
+}
+
 .section-num {
   @apply w-7 h-7 rounded-lg bg-gray-900 text-white flex items-center justify-center text-[11px] font-bold;
 }
@@ -559,6 +792,45 @@ hydrateHeaderData();
 
 .section-desc {
   @apply text-gray-600 text-xs;
+}
+
+.section-toggle-btn {
+  @apply mt-3 mb-4 flex w-fit items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3.5 py-2 text-xs font-semibold text-blue-700 shadow-sm transition-all duration-200;
+}
+
+.section-toggle-btn::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+  transform-origin: center;
+  transition: transform 0.2s ease;
+}
+
+.section-toggle-btn:hover {
+  @apply border-blue-300 bg-blue-100;
+}
+
+.section-toggle-btn:focus-visible {
+  @apply outline-none ring-2 ring-blue-200 ring-offset-2;
+}
+
+.section-toggle-btn[aria-expanded="true"] {
+  @apply border-blue-600 bg-blue-600 text-white;
+}
+
+.section-toggle-btn[aria-expanded="true"]::after {
+  transform: rotate(-135deg) translateY(-1px);
+}
+
+.section-toggle-inline {
+  @apply mt-0 mb-0 ml-3 shrink-0 self-start;
+}
+
+.ciclo-head-row {
+  @apply mb-3 flex items-start justify-between gap-3;
 }
 
 .matriz-wrap,
@@ -850,6 +1122,15 @@ hydrateHeaderData();
 }
 
 @media (max-width: 1024px) {
+  .section-header-with-toggle,
+  .ciclo-head-row {
+    @apply flex-col items-start;
+  }
+
+  .section-toggle-inline {
+    @apply ml-0;
+  }
+
   .evolucion-grid {
     grid-template-columns: 1fr;
   }

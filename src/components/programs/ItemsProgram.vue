@@ -2,14 +2,20 @@
   <div class="space-y-4">
     <!-- Grid de filtros por tipo -->
     <div class="p-2 sm:p-4 lg:px-8 lg:py-4">
-      <!-- Grid móvil: 4 columnas como MicroApps -->
-      <div class="grid grid-cols-4 gap-2 max-w-md mx-auto lg:hidden">
+      <!-- Grid móvil: columnas dinámicas según cantidad de filtros visibles -->
+      <div
+        :class="[
+          'grid gap-2 mx-auto lg:hidden',
+          mobileGridColsClass,
+          items.length <= 3 ? 'max-w-sm' : 'max-w-md',
+        ]"
+      >
         <button
           v-for="item in items"
           :key="item.id"
           :class="[
             'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
-            'col-span-1 p-2 sm:p-3',
+            'col-span-1 p-2.5 sm:p-3',
             item.color === 'gray' &&
               'hover:shadow-lg hover:border-gray-300 hover:bg-gray-50',
             item.color === 'blue' &&
@@ -42,7 +48,7 @@
             :class="[
               'text-center px-1',
               'text-gray-600 font-medium',
-              'text-xs',
+              'text-xs sm:text-sm',
             ]"
           >
             {{ item.name }}
@@ -106,14 +112,14 @@
         class="max-w-7xl mx-auto mt-11 px-4 sm:px-6 lg:px-8"
       >
         <div
-          class="flex items-center gap-2 bg-white rounded-lg shadow-sm border border-gray-200 p-1 min-w-[280px] max-w-md mx-auto"
+          class="flex items-center gap-1.5 bg-white rounded-lg shadow-sm border border-gray-200 p-0.5 min-w-[260px] max-w-sm mx-auto"
         >
           <button
             v-for="status in statusFilters"
             :key="status.id"
             @click="handleStatusFilter(status.id)"
             :class="[
-              'flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200',
+              'flex-1 py-1.5 px-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200',
               activeStatusFilter === status.id
                 ? 'bg-green-600 text-white shadow-sm'
                 : 'text-gray-600 hover:bg-gray-50',
@@ -125,7 +131,7 @@
       </div>
 
       <!-- Filtro de Etapa -->
-      <div
+      <!-- <div
         v-if="stages.length > 0"
         class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8"
       >
@@ -142,7 +148,7 @@
             <option value="none">Sin etapa</option>
           </select>
         </div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -174,6 +180,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  hideNavigationItems: {
+    type: Boolean,
+    default: false,
+  },
   userParticipations: {
     type: Array,
     default: () => [],
@@ -200,6 +210,12 @@ const statusFilters = [
   { id: "pending", name: "Pendientes" },
 ];
 
+const mobileGridColsClass = computed(() => {
+  if (items.value.length <= 2) return "grid-cols-2";
+  if (items.value.length === 3) return "grid-cols-3";
+  return "grid-cols-4";
+});
+
 const items = computed(() => {
   const baseItems = [
     {
@@ -221,7 +237,10 @@ const items = computed(() => {
       name: "Asesorías",
       icon: GraphUp,
       color: "purple",
-      type: !props.showStatusFilter ? "navigation" : "filter",
+      type:
+        !props.hideNavigationItems && !props.showStatusFilter
+          ? "navigation"
+          : "filter",
     },
     // Backward compatibility
     {
@@ -245,8 +264,8 @@ const items = computed(() => {
     });
   }
 
-  // Solo mostrar "Participantes" si NO es vista de usuario (no tiene showStatusFilter)
-  if (!props.showStatusFilter) {
+  // Solo mostrar "Participantes" en vistas de gestión/facilitador
+  if (!props.hideNavigationItems && !props.showStatusFilter) {
     baseItems.push({
       id: "participants",
       name: "Participantes",
@@ -261,7 +280,11 @@ const items = computed(() => {
 });
 
 const isActive = (itemId) => {
-  if (itemId === "consulting" && !props.showStatusFilter) {
+  if (
+    itemId === "consulting" &&
+    !props.hideNavigationItems &&
+    !props.showStatusFilter
+  ) {
     return (
       route.name === "ProgramConsultings" &&
       route.params.programId === props.programId

@@ -47,7 +47,8 @@
         v-model:active-tab="activeTab"
         :activities="activities"
         :stages="programStages"
-        :show-status-filter="true"
+        :show-status-filter="!isConsultingTab"
+        :hide-navigation-items="true"
         :user-participations="userParticipations"
         @filter-changed="handleFilterChanged"
         @status-filter-changed="handleStatusFilterChanged"
@@ -241,11 +242,15 @@ const isConsultingTab = computed(
   () => activeTab.value === "consulting" || activeTab.value === "monitoring",
 );
 const loadingDossier = computed(() => consultingDossierStore.loading);
-const activeDossierProgress = computed(() =>
-  consultingDossierStore.getStepProgress(
-    activeParticipantDossier.value?.currentStep,
-  ),
-);
+const activeDossierProgress = computed(() => {
+  if (!activeParticipantDossier.value) {
+    return consultingDossierStore.getStepProgress(null);
+  }
+
+  return consultingDossierStore.getDossierCycleCardState(
+    activeParticipantDossier.value,
+  );
+});
 
 const { isStageLockedForUser, getPrerequisiteStageName } = useStageProgress();
 

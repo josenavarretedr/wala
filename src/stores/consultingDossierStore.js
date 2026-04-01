@@ -135,6 +135,123 @@ function getTimestampValue(value) {
   return new Date(value).getTime()
 }
 
+const CONSULTING_CYCLE_KEYS = ['c1', 'c2', 'c3']
+const CONSULTING_CYCLE_DEPENDENCIES = {
+  c1: ['c2', 'c3'],
+  c2: ['c3'],
+  c3: [],
+}
+const PLAN_ACTION_KEYS = ['action1', 'action2', 'action3']
+
+function getProgramConsultingDraft(stageData) {
+  return stageData?.programConsultingDossier || {}
+}
+
+function normalizeCycle(cycle, cycleKey) {
+  const key = cycle?.key || cycleKey
+  const normalized = {
+    ...(cycle || {}),
+    key,
+    planAreas: Array.isArray(cycle?.planAreas) ? cycle.planAreas : [],
+    reviewRows: Array.isArray(cycle?.reviewRows) ? cycle.reviewRows : [],
+    completedByFacilitator: Boolean(cycle?.completedByFacilitator),
+    completedAt: cycle?.completedAt || null,
+    completedBy: cycle?.completedBy || null,
+  }
+
+  return normalized
+}
+
+function normalizeConsultingCycles(cycles) {
+  const source = Array.isArray(cycles) ? cycles : []
+  const byKey = source.reduce((acc, cycle) => {
+    if (typeof cycle?.key !== 'string' || !cycle.key) return acc
+    acc[cycle.key] = normalizeCycle(cycle, cycle.key)
+    return acc
+  }, {})
+
+  return CONSULTING_CYCLE_KEYS.map((cycleKey) => {
+    return byKey[cycleKey] || normalizeCycle({ key: cycleKey }, cycleKey)
+  })
+}
+
+function countCycleActions(cycle) {
+  if (!Array.isArray(cycle?.reviewRows)) return 0
+
+  return cycle.reviewRows.filter((row) => {
+    return typeof row?.action === 'string' && row.action.trim().length > 0
+  }).length
+}
+
+function countCycleActionsWithoutStatus(cycle) {
+  if (!Array.isArray(cycle?.reviewRows)) return 0
+
+  return cycle.reviewRows.filter((row) => {
+    const hasAction = typeof row?.action === 'string' && row.action.trim().length > 0
+    if (!hasAction) return false
+    return !(typeof row?.status === 'string' && row.status.trim().length > 0)
+  }).length
+}
+
+function isPlanSetForCycle(cycle) {
+  if (!Array.isArray(cycle?.planAreas)) return false
+
+  return cycle.planAreas.some((planArea) => {
+    return PLAN_ACTION_KEYS.some((actionKey) => {
+      const value = planArea?.[actionKey]
+      return typeof value === 'string' && value.trim().length > 0
+    })
+  })
+}
+
+function getCurrentCycleKey(cycles) {
+  const firstPending = cycles.find((cycle) => !cycle.completedByFacilitator)
+  return firstPending?.key || null
+}
+
+function computeCycleMetadata(cycles) {
+  const normalized = normalizeConsultingCycles(cycles)
+  const currentCycleKey = getCurrentCycleKey(normalized)
+
+  return {
+    currentCycleKey,
+    isFullyCompleted: normalized.every((cycle) => cycle.completedByFacilitator),
+    cycleOrder: [...CONSULTING_CYCLE_KEYS],
+    dependencies: { ...CONSULTING_CYCLE_DEPENDENCIES },
+    completedByCycle: normalized.reduce((acc, cycle) => {
+      acc[cycle.key] = cycle.completedByFacilitator
+      return acc
+    }, {}),
+  }
+}
+
+function buildProgramConsultingDraft(stageData, draftOverrides = {}) {
+  const currentDraft = getProgramConsultingDraft(stageData)
+  const nextDraft = {
+    ...currentDraft,
+    ...draftOverrides,
+  }
+
+  const normalizedCycles = normalizeConsultingCycles(nextDraft.consultingCycles)
+
+  return {
+    diagnosticScores: nextDraft.diagnosticScores || {},
+    criticalAreas: nextDraft.criticalAreas || [],
+    consultingCycles: normalizedCycles,
+    finalEvaluationByArea: nextDraft.finalEvaluationByArea || {},
+    closingSummary: nextDraft.closingSummary || {},
+    cycleMetadata: computeCycleMetadata(normalizedCycles),
+  }
+}
+
+function getCycleByKey(cycles, cycleKey) {
+  return cycles.find((cycle) => cycle.key === cycleKey)
+}
+
+function getDependentCycleKeys(cycleKey) {
+  return CONSULTING_CYCLE_DEPENDENCIES[cycleKey] || []
+}
+
 export const useConsultingDossierStore = defineStore('consultingDossier', () => {
   const dossiers = ref([])
   const currentDossier = ref(null)
@@ -289,6 +406,9 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
             planActions: [],
             followUp: [],
           },
+          programConsultingDossier: buildProgramConsultingDraft({}, {
+            consultingCycles: normalizeConsultingCycles([]),
+          }),
         },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -454,15 +574,17 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     }
 
     const currentStageData = dossier.stageData || {}
+    const nextProgramConsultingDraft = buildProgramConsultingDraft(currentStageData, {
+      diagnosticScores: payload.diagnosticScores || {},
+      criticalAreas: payload.criticalAreas || [],
+      consultingCycles: payload.consultingCycles || [],
+      finalEvaluationByArea: payload.finalEvaluationByArea || {},
+      closingSummary: payload.closingSummary || {},
+    })
+
     const nextStageData = {
       ...currentStageData,
-      programConsultingDossier: {
-        diagnosticScores: payload.diagnosticScores || {},
-        criticalAreas: payload.criticalAreas || [],
-        consultingCycles: payload.consultingCycles || [],
-        finalEvaluationByArea: payload.finalEvaluationByArea || {},
-        closingSummary: payload.closingSummary || {},
-      },
+      programConsultingDossier: nextProgramConsultingDraft,
     }
 
     loading.value = true
@@ -511,6 +633,223 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
       throw err
     } finally {
       loading.value = false
+    }
+  }
+
+  async function markCycleCompleted(programId, dossierId, cycleKey) {
+    const authStore = useAuthStore()
+    const updaterId = authStore.user?.uid
+
+    if (!updaterId) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    if (!CONSULTING_CYCLE_KEYS.includes(cycleKey)) {
+      throw new Error('Ciclo no valido')
+    }
+
+    const dossier = dossiers.value.find((item) => item.id === dossierId) || currentDossier.value
+    if (!dossier) {
+      throw new Error('Expediente no encontrado en memoria')
+    }
+
+    if (dossier.facilitatorId && dossier.facilitatorId !== updaterId) {
+      throw new Error('Solo el facilitador asignado puede completar ciclos')
+    }
+
+    const currentStageData = dossier.stageData || {}
+    const currentDraft = getProgramConsultingDraft(currentStageData)
+    const nextCycles = normalizeConsultingCycles(currentDraft.consultingCycles)
+    const targetCycle = getCycleByKey(nextCycles, cycleKey)
+
+    if (!targetCycle) {
+      throw new Error('No se encontro el ciclo a completar')
+    }
+
+    const missingStatuses = countCycleActionsWithoutStatus(targetCycle)
+    targetCycle.completedByFacilitator = true
+    targetCycle.completedAt = Timestamp.now()
+    targetCycle.completedBy = updaterId
+
+    const nextProgramConsultingDraft = buildProgramConsultingDraft(currentStageData, {
+      ...currentDraft,
+      consultingCycles: nextCycles,
+    })
+    const nextStageData = {
+      ...currentStageData,
+      programConsultingDossier: nextProgramConsultingDraft,
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const dossierRef = doc(db, 'programs', programId, 'consultingDossiers', dossierId)
+      await updateDoc(dossierRef, {
+        stageData: nextStageData,
+        updatedAt: serverTimestamp(),
+        updatedBy: updaterId,
+      })
+
+      const updateLocal = (item) => {
+        if (item.id !== dossierId) return item
+        return {
+          ...item,
+          stageData: nextStageData,
+          updatedAt: Timestamp.now(),
+          updatedBy: updaterId,
+        }
+      }
+
+      dossiers.value = dossiers.value.map(updateLocal)
+      if (currentDossier.value?.id === dossierId) {
+        currentDossier.value = updateLocal(currentDossier.value)
+      }
+
+      return {
+        missingStatuses,
+        cycleMetadata: nextProgramConsultingDraft.cycleMetadata,
+      }
+    } catch (err) {
+      console.error('❌ Error completando ciclo del expediente:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function reopenCycleWithCascade(programId, dossierId, cycleKey) {
+    const authStore = useAuthStore()
+    const updaterId = authStore.user?.uid
+
+    if (!updaterId) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    if (!CONSULTING_CYCLE_KEYS.includes(cycleKey)) {
+      throw new Error('Ciclo no valido')
+    }
+
+    const dossier = dossiers.value.find((item) => item.id === dossierId) || currentDossier.value
+    if (!dossier) {
+      throw new Error('Expediente no encontrado en memoria')
+    }
+
+    if (dossier.facilitatorId && dossier.facilitatorId !== updaterId) {
+      throw new Error('Solo el facilitador asignado puede reabrir ciclos')
+    }
+
+    const currentStageData = dossier.stageData || {}
+    const currentDraft = getProgramConsultingDraft(currentStageData)
+    const nextCycles = normalizeConsultingCycles(currentDraft.consultingCycles)
+    const keysToReopen = [cycleKey, ...getDependentCycleKeys(cycleKey)]
+
+    keysToReopen.forEach((key) => {
+      const cycle = getCycleByKey(nextCycles, key)
+      if (!cycle) return
+      cycle.completedByFacilitator = false
+      cycle.completedAt = null
+      cycle.completedBy = null
+    })
+
+    const nextProgramConsultingDraft = buildProgramConsultingDraft(currentStageData, {
+      ...currentDraft,
+      consultingCycles: nextCycles,
+    })
+    const nextStageData = {
+      ...currentStageData,
+      programConsultingDossier: nextProgramConsultingDraft,
+    }
+
+    loading.value = true
+    error.value = null
+
+    try {
+      const dossierRef = doc(db, 'programs', programId, 'consultingDossiers', dossierId)
+      await updateDoc(dossierRef, {
+        stageData: nextStageData,
+        updatedAt: serverTimestamp(),
+        updatedBy: updaterId,
+      })
+
+      const updateLocal = (item) => {
+        if (item.id !== dossierId) return item
+        return {
+          ...item,
+          stageData: nextStageData,
+          updatedAt: Timestamp.now(),
+          updatedBy: updaterId,
+        }
+      }
+
+      dossiers.value = dossiers.value.map(updateLocal)
+      if (currentDossier.value?.id === dossierId) {
+        currentDossier.value = updateLocal(currentDossier.value)
+      }
+
+      return {
+        reopenedCycleKeys: keysToReopen,
+        cycleMetadata: nextProgramConsultingDraft.cycleMetadata,
+      }
+    } catch (err) {
+      console.error('❌ Error reabriendo ciclo del expediente:', err)
+      error.value = err.message
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function getDossierCycleCardState(dossier) {
+    const fallbackProgress = getStepProgress(dossier?.currentStep)
+    const draft = getProgramConsultingDraft(dossier?.stageData)
+    const cycles = normalizeConsultingCycles(draft.consultingCycles)
+    const metadata = computeCycleMetadata(cycles)
+    const currentCycle = metadata.currentCycleKey
+      ? getCycleByKey(cycles, metadata.currentCycleKey)
+      : null
+
+    if (!draft || !Array.isArray(draft.consultingCycles) || !draft.consultingCycles.length) {
+      return {
+        ...fallbackProgress,
+        hasCycleData: false,
+        currentCycleKey: null,
+        currentCycleLabel: '',
+        actionCount: 0,
+        totalActions: 0,
+        planSet: false,
+        criticalAreaNames: [],
+      }
+    }
+
+    const completedCount = cycles.filter((cycle) => cycle.completedByFacilitator).length
+    const totalCycles = CONSULTING_CYCLE_KEYS.length
+    const percent = Math.round((completedCount / totalCycles) * 100)
+    const cycleNumber = metadata.currentCycleKey ? metadata.currentCycleKey.slice(1) : null
+    const currentCycleLabel = metadata.isFullyCompleted
+      ? 'Completado'
+      : `Ciclo ${cycleNumber} activo`
+
+    return {
+      step: fallbackProgress.step,
+      label: currentCycleLabel,
+      current: completedCount,
+      total: totalCycles,
+      percent,
+      isClosed: metadata.isFullyCompleted,
+      hasCycleData: true,
+      currentCycleKey: metadata.currentCycleKey,
+      currentCycleLabel,
+      actionCount: countCycleActions(currentCycle),
+      totalActions: countCycleActions(currentCycle),
+      planSet: isPlanSetForCycle(currentCycle),
+      missingStatuses: countCycleActionsWithoutStatus(currentCycle),
+      criticalAreaNames: (draft.criticalAreas || [])
+        .slice(0, 3)
+        .map((area) => area?.areaKey)
+        .filter((areaKey) => typeof areaKey === 'string' && areaKey.length > 0),
+      cycleMetadata: metadata,
     }
   }
 
@@ -581,8 +920,11 @@ export const useConsultingDossierStore = defineStore('consultingDossier', () => 
     updateDossierStep,
     saveS0Assessment,
     saveProgramConsultingDossier,
+    markCycleCompleted,
+    reopenCycleWithCascade,
     getDossierByParticipant,
     getStepProgress,
+    getDossierCycleCardState,
     loadActiveParticipantDossier,
   }
 })
