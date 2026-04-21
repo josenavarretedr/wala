@@ -433,8 +433,18 @@ onMounted(() => {
   }
 });
 
-// Reinicializar si cambian las props
-watch([() => props.modelValue, () => props.areas, () => props.periods], () => {
+// Reinicializar si cambian las props. modelValue requiere deep watch
+// porque en algunas vistas se hidrata mutando keys internas.
+watch(
+  () => props.modelValue,
+  () => {
+    syncSelectedAreasWithProps();
+    initChartsByViewport();
+  },
+  { deep: true },
+);
+
+watch([() => props.areas, () => props.periods], () => {
   syncSelectedAreasWithProps();
   initChartsByViewport();
 });

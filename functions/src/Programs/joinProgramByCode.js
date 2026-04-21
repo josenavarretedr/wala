@@ -3,6 +3,12 @@ const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const crypto = require('crypto');
+const {
+  normalizePlan,
+  isPaidPlan,
+  getFeaturesForPlan,
+  buildSubscriptionPayload,
+} = require('../Helpers/subscriptionHelper');
 
 function parseDateValue(value) {
   if (!value) return null;
@@ -329,10 +335,14 @@ exports.joinProgramByCode = onCall(
           );
         }
         const existingSubscription = businessData.subscription || {};
+        const existingPlan = normalizePlan(existingSubscription.plan || 'free');
         const existingEndDate = parseDateValue(existingSubscription.endDate);
-        const hasUnlimitedPremium = existingSubscription?.status === 'active' &&
-          ['premium', 'pro', 'max'].includes(existingSubscription?.plan) &&
+        const hasActivePaid = existingSubscription?.status === 'active' &&
+          isPaidPlan(existingPlan);
+        const hasUnlimitedPremium = hasActivePaid &&
           !existingSubscription?.endDate;
+
+        const resolvedPlan = hasActivePaid ? existingPlan : 'pro';
 
         let finalEndDate = Timestamp.fromDate(programEndDate);
 
@@ -433,24 +443,21 @@ exports.joinProgramByCode = onCall(
         }
 
         const subscriptionPayload = {
-          ...existingSubscription,
-          plan: 'pro',
-          planType: 'pro_monthly',
-          planVariant: 'pro_monthly',
-          status: 'active',
-          endDate: finalEndDate,
-          updatedAt: nowTimestamp,
+          ...buildSubscriptionPayload({
+            existingSubscription,
+            targetPlan: resolvedPlan,
+            status: 'active',
+            endDate: finalEndDate,
+            nowTimestamp,
+            updatedBy: uid,
+          }),
         };
 
-        if (!existingSubscription?.startDate) {
-          subscriptionPayload.startDate = nowTimestamp;
-        }
-
         responseSubscription = {
-          plan: 'pro',
+          plan: resolvedPlan,
           status: 'active',
-          planType: 'pro_monthly',
-          planVariant: 'pro_monthly',
+          planType: subscriptionPayload.planType,
+          planVariant: subscriptionPayload.planVariant,
           endDate: finalEndDate ? finalEndDate.toDate().toISOString() : null,
         };
 
@@ -462,6 +469,7 @@ exports.joinProgramByCode = onCall(
           {
             programs: FieldValue.arrayUnion(validProgramId),
             subscription: subscriptionPayload,
+            features: getFeaturesForPlan(resolvedPlan),
             updatedAt: nowTimestamp,
           },
           { merge: true },

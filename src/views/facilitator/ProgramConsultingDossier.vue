@@ -19,6 +19,11 @@
       :periods="periods"
       :areas="areas"
     />
+    <MatrizIndicadoresWalaUserView
+      :model-value="scores"
+      :periods="periods"
+      :areas="areas"
+    />
     <AreasCriticas :model-value="criticalAreas" :areas="areas" />
     <ConsultingCycle
       :model-value="cycles"
@@ -105,6 +110,7 @@ import ConsultingTopbar from "@/components/programs/consulting/ConsultingTopbar.
 import ConsultingCover from "@/components/programs/consulting/ConsultingCover.vue";
 import ConsultingCycles from "@/components/programs/consulting/ConsultingCycles.vue";
 import MatrizIndicadoresWala from "@/components/programs/consulting/MatrizIndicadoresWala.vue";
+import MatrizIndicadoresWalaUserView from "@/components/programs/consulting/MatrizIndicadoresWalaUserView.vue";
 import AreasCriticas from "@/components/programs/consulting/AreasCriticas.vue";
 import ConsultingCycle from "@/components/programs/consulting/ConsultingCycle.vue";
 import ConsultingResumen from "@/components/programs/consulting/ConsultingResumen.vue";

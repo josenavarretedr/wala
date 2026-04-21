@@ -18,6 +18,26 @@ const client = new MercadoPagoConfig({
 const paymentClient = new Payment(client);
 const preferenceClient = new Preference(client);
 
+function normalizeMercadoPagoError(error) {
+  const cause = Array.isArray(error?.cause) ? error.cause : [];
+  const firstCause = cause[0] || {};
+  const status = error?.httpStatus || error?.status || firstCause?.status;
+  const code = firstCause?.code || error?.code || 'unknown_error';
+  const description = firstCause?.description || error?.message || 'Error al procesar pago';
+
+  const normalizedError = new Error(description);
+  normalizedError.code = code;
+  normalizedError.httpStatus = Number.isInteger(status) ? status : 500;
+  normalizedError.details = {
+    code,
+    status,
+    description,
+    cause,
+  };
+
+  return normalizedError;
+}
+
 /**
  * Configuración de planes Premium
  */
@@ -143,6 +163,31 @@ async function processPayment(formData, businessId, planType, uid) {
     const externalReference = `business_${businessId}_${planType}_${timestamp}`;
 
     // Crear el pago en Mercado Pago
+    const payerEmail = formData?.payer?.email;
+    const payerIdentificationType = formData?.payer?.identification?.type;
+    const payerIdentificationNumber = formData?.payer?.identification?.number;
+
+    if (!formData?.token || !formData?.payment_method_id) {
+      const validationError = new Error('Datos de pago incompletos: token o payment_method_id ausente.');
+      validationError.httpStatus = 400;
+      validationError.details = {
+        hasToken: Boolean(formData?.token),
+        paymentMethodId: formData?.payment_method_id || null,
+      };
+      throw validationError;
+    }
+
+    if (!payerEmail || !payerIdentificationType || !payerIdentificationNumber) {
+      const validationError = new Error('Datos del pagador incompletos: email o identificación ausente.');
+      validationError.httpStatus = 400;
+      validationError.details = {
+        hasPayerEmail: Boolean(payerEmail),
+        payerIdentificationType: payerIdentificationType || null,
+        hasPayerIdentificationNumber: Boolean(payerIdentificationNumber),
+      };
+      throw validationError;
+    }
+
     const paymentData = {
       transaction_amount: plan.amount,
       token: formData.token,
@@ -151,10 +196,10 @@ async function processPayment(formData, businessId, planType, uid) {
       payment_method_id: formData.payment_method_id,
       issuer_id: formData.issuer_id,
       payer: {
-        email: formData.payer.email,
+        email: payerEmail,
         identification: {
-          type: formData.payer.identification.type,
-          number: formData.payer.identification.number,
+          type: payerIdentificationType,
+          number: payerIdentificationNumber,
         },
       },
       external_reference: externalReference,
@@ -199,7 +244,7 @@ async function processPayment(formData, businessId, planType, uid) {
     };
   } catch (error) {
     console.error('❌ Error procesando pago:', error);
-    throw error;
+    throw normalizeMercadoPagoError(error);
   }
 }
 

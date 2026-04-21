@@ -2,6 +2,9 @@
 
 ## ✅ CREDENCIALES CONFIGURADAS
 
+> Tener credenciales cargadas no garantiza que Yape esté habilitado para cobrar.
+> Antes de probar pagos con Yape, valida que el `MP_ACCESS_TOKEN` vea `yape` en `payment_methods/search` para `site_id=MPE`.
+
 ### 🔑 Producción
 
 - **Public Key**: `APP_USR-168b04ae-9119-48e7-91bd-dc6a046acbfd`
@@ -158,6 +161,33 @@ O si usas otro servicio de hosting, sube la carpeta `dist/`.
 ---
 
 ## 🔧 TROUBLESHOOTING
+
+### ❌ Error: `yape_not_enabled_for_collector`
+
+**Causa**: El `MP_ACCESS_TOKEN` del backend no tiene Yape habilitado para la cuenta/aplicación cobradora en Perú.
+
+**Validación rápida (recomendada antes de pruebas):**
+
+```bash
+curl -H "Authorization: Bearer TU_MP_ACCESS_TOKEN" \
+  "https://api.mercadopago.com/v1/payment_methods/search?site_id=MPE"
+```
+
+Si en `results` no aparece `id: yape`, ese token no podrá cobrar Yape (aunque el frontend genere token Yape correctamente).
+
+**Chequeo de frontend (Public Key):**
+
+```bash
+curl "https://api.mercadopago.com/v1/payment_methods?public_key=TU_PUBLIC_KEY"
+```
+
+Debes ver `yape` activo en ambos lados (Public Key y Access Token) para que el flujo completo funcione.
+
+**Solución**:
+
+1. Habilitar Yape en la aplicación/cuenta correcta en Mercado Pago Developers.
+2. Regenerar/usar credenciales de la misma aplicación (pareja Public Key + Access Token).
+3. Reiniciar emuladores o redeploy de Functions para tomar el nuevo entorno.
 
 ### ❌ Error: "Invalid access token"
 
@@ -324,13 +354,12 @@ Una vez completado el checklist, tu sistema de pagos está listo para recibir pa
 
 **Soporte**: Si tienes problemas, revisa los logs en Firebase Console o contacta a soporte de Mercado Pago.
 
-
 ---
 
 ## Changelog
 
 ### [Auditoría - Marzo 2026]
+
 - Revisado: Funcionalidad verificada como activa en código fuente.
 - Sin cambios de contenido en esta auditoría.
 - Documentación movida al estado vigente confirmado.
-

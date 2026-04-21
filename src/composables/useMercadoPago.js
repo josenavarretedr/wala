@@ -5,6 +5,13 @@ import { getAuth } from 'firebase/auth';
 const MP_PUBLIC_KEY = import.meta.env.VITE_MP_PUBLIC_KEY || 'TEST-d9db5058-7d42-47a5-a224-9a283c925466';
 const FUNCTIONS_URL = import.meta.env.VITE_FUNCTIONS_URL || 'http://127.0.0.1:5001/wala-lat/southamerica-east1';
 
+function getPublicKeyMode(publicKey) {
+  if (typeof publicKey !== 'string') return 'UNKNOWN';
+  if (publicKey.startsWith('TEST-')) return 'TEST';
+  if (publicKey.startsWith('APP_USR-')) return 'PROD';
+  return 'UNKNOWN';
+}
+
 // Log para verificar entorno (solo en desarrollo)
 if (import.meta.env.DEV) {
   console.log('🔑 Modo:', import.meta.env.MODE);
@@ -145,7 +152,9 @@ export function useMercadoPago() {
                   body: JSON.stringify({
                     formData,
                     businessId,
-                    planType
+                    planType,
+                    selectedPaymentMethod,
+                    mpPublicKeyMode: getPublicKeyMode(MP_PUBLIC_KEY)
                   })
                 });
 

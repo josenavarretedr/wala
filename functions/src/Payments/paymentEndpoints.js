@@ -11,6 +11,13 @@ const VALID_PLAN_TYPES = ['pro_monthly', 'pro_yearly', 'max'];
 
 const app = express();
 
+function getMercadoPagoModeFromCredential(value) {
+  if (typeof value !== 'string') return 'UNKNOWN';
+  if (value.startsWith('TEST-')) return 'TEST';
+  if (value.startsWith('APP_USR-')) return 'PROD';
+  return 'UNKNOWN';
+}
+
 // Configurar CORS
 app.use(cors({ origin: true }));
 app.use(express.json());
@@ -56,12 +63,38 @@ app.post('/create_preference', validateAuth, async (req, res) => {
  */
 app.post('/process_payment', validateAuth, async (req, res) => {
   try {
-    const { formData, businessId, planType } = req.body;
+    const { formData, businessId, planType, selectedPaymentMethod, mpPublicKeyMode } = req.body;
     const { uid } = req.user;
 
     if (!formData || !businessId || !planType) {
       return res.status(400).json({
         error: 'Se requiere formData, businessId y planType',
+      });
+    }
+
+    const accessTokenMode = getMercadoPagoModeFromCredential(process.env.MP_ACCESS_TOKEN);
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true' || Boolean(process.env.FIREBASE_EMULATOR_HUB);
+
+    if (isEmulator && accessTokenMode === 'PROD') {
+      return res.status(400).json({
+        error: 'Emulador detectado con credenciales PROD. Para pruebas usa MP_ACCESS_TOKEN TEST y MP_PUBLIC_KEY TEST.',
+      });
+    }
+
+    if (mpPublicKeyMode && mpPublicKeyMode !== 'UNKNOWN' && accessTokenMode !== 'UNKNOWN' && mpPublicKeyMode !== accessTokenMode) {
+      return res.status(400).json({
+        error: `Credenciales de Mercado Pago mezcladas (${mpPublicKeyMode} vs ${accessTokenMode}). Usa Public Key y Access Token del mismo entorno.`,
+      });
+    }
+
+    if (!formData?.token || !formData?.payment_method_id) {
+      return res.status(400).json({
+        error: 'Faltan datos de pago del Brick (token o payment_method_id).',
+        data: {
+          selectedPaymentMethod: selectedPaymentMethod || null,
+          hasToken: Boolean(formData?.token),
+          paymentMethodId: formData?.payment_method_id || null,
+        },
       });
     }
 
@@ -82,8 +115,12 @@ app.post('/process_payment', validateAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error en process_payment:', error);
-    res.status(500).json({
+    const status = Number.isInteger(error?.httpStatus) ? error.httpStatus : 500;
+    const safeStatus = status >= 400 && status < 600 ? status : 500;
+
+    res.status(safeStatus).json({
       error: error.message || 'Error procesando pago',
+      data: error?.details || null,
     });
   }
 });
@@ -94,7 +131,7 @@ app.post('/process_payment', validateAuth, async (req, res) => {
  */
 app.post('/process_yape_payment', validateAuth, async (req, res) => {
   try {
-    const { token, businessId, planType, phoneNumber } = req.body;
+    const { token, businessId, planType, phoneNumber, mpPublicKeyMode } = req.body;
     const { uid, email } = req.user;
 
     if (!token || !businessId || !planType || !phoneNumber) {
@@ -106,6 +143,22 @@ app.post('/process_yape_payment', validateAuth, async (req, res) => {
     if (!VALID_PLAN_TYPES.includes(planType)) {
       return res.status(400).json({
         error: 'planType debe ser: pro_monthly, pro_yearly o max'
+      });
+    }
+
+    const accessTokenMode = getMercadoPagoModeFromCredential(process.env.MP_ACCESS_TOKEN);
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true' || Boolean(process.env.FIREBASE_EMULATOR_HUB);
+
+    // En emulador, para flujos de prueba de Yape se deben usar credenciales TEST.
+    if (isEmulator && accessTokenMode === 'PROD') {
+      return res.status(400).json({
+        error: 'Emulador detectado con credenciales PROD. Para pruebas Yape usa MP_ACCESS_TOKEN TEST y MP_PUBLIC_KEY TEST.',
+      });
+    }
+
+    if (mpPublicKeyMode && mpPublicKeyMode !== 'UNKNOWN' && accessTokenMode !== 'UNKNOWN' && mpPublicKeyMode !== accessTokenMode) {
+      return res.status(400).json({
+        error: `Credenciales de Mercado Pago mezcladas (${mpPublicKeyMode} vs ${accessTokenMode}). Usa Public Key y Access Token del mismo entorno.`
       });
     }
 
@@ -133,18 +186,50 @@ app.post('/process_yape_payment', validateAuth, async (req, res) => {
         status: result.status,
         amount: result.amount
       });
+
+      return res.status(200).json({
+        success: true,
+        data: result
+      });
     }
 
-    res.status(200).json({
-      success: result.success,
-      data: result,
-      error: result.success ? null : result.message
+    // Pago rechazado por Mercado Pago (token válido pero pago no aprobado)
+    console.log('⚠️ Pago Yape rechazado por MP:', {
+      businessId,
+      planType,
+      status: result.status,
+      statusDetail: result.statusDetail
+    });
+
+    return res.status(422).json({
+      success: false,
+      message: result.message,
+      data: {
+        status: result.status,
+        statusDetail: result.statusDetail,
+        paymentId: result.paymentId
+      }
     });
 
   } catch (error) {
     console.error('❌ Error en process_yape_payment:', error);
-    res.status(500).json({
-      error: error.message || 'Error procesando pago con Yape'
+    const isMercadoPagoInternalError = error?.message === 'internal_error' || error?.details?.description === 'internal_error';
+
+    if (isMercadoPagoInternalError) {
+      return res.status(502).json({
+        error: 'Mercado Pago devolvió internal_error. Verifica credenciales TEST/PROD, habilitación de Yape y datos de prueba válidos.',
+        message: 'Mercado Pago devolvió internal_error. Verifica credenciales TEST/PROD, habilitación de Yape y datos de prueba válidos.',
+        data: error?.details || null,
+      });
+    }
+
+    const status = Number.isInteger(error?.httpStatus) ? error.httpStatus : 500;
+    const safeStatus = status >= 400 && status < 600 ? status : 500;
+
+    res.status(safeStatus).json({
+      error: error.message || 'Error procesando pago con Yape',
+      message: error.message || 'Error procesando pago con Yape',
+      data: error?.details || null
     });
   }
 });

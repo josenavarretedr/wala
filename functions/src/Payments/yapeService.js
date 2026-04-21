@@ -12,6 +12,13 @@ const client = new MercadoPagoConfig({
 });
 const paymentClient = new Payment(client);
 
+const YAPE_CAPABILITY_TTL_MS = 5 * 60 * 1000;
+let yapeCapabilityCache = {
+  checkedAt: 0,
+  enabled: null,
+  sampleMethods: [],
+};
+
 // Configuración de planes
 const PLANS = {
   pro_monthly: {
@@ -57,11 +64,87 @@ function validateYapeData(token, businessId, planType, phoneNumber) {
   return true;
 }
 
+function normalizeMercadoPagoError(error) {
+  const cause = Array.isArray(error?.cause) ? error.cause : [];
+  const firstCause = cause[0] || {};
+  const status = error?.httpStatus || error?.status || firstCause?.status;
+  const code = firstCause?.code || error?.code || 'unknown_error';
+  const description = firstCause?.description || error?.message || 'Error al procesar pago con Yape';
+
+  const normalizedError = new Error(description);
+  normalizedError.code = code;
+  normalizedError.httpStatus = Number.isInteger(status) ? status : 500;
+  normalizedError.details = {
+    code,
+    status,
+    description,
+    cause,
+  };
+
+  return normalizedError;
+}
+
+async function validateYapeCapability(accessTokenValue) {
+  const now = Date.now();
+  if (yapeCapabilityCache.enabled !== null && (now - yapeCapabilityCache.checkedAt) < YAPE_CAPABILITY_TTL_MS) {
+    return yapeCapabilityCache;
+  }
+
+  const response = await fetch('https://api.mercadopago.com/v1/payment_methods/search?site_id=MPE', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessTokenValue}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const error = new Error('No se pudo validar disponibilidad de Yape para la credencial de Mercado Pago.');
+    error.httpStatus = 502;
+    throw error;
+  }
+
+  const payload = await response.json();
+  const methods = Array.isArray(payload?.results) ? payload.results : [];
+  const yapeMethod = methods.find((method) => method?.id === 'yape');
+  const enabled = Boolean(yapeMethod && yapeMethod.status === 'active');
+
+  yapeCapabilityCache = {
+    checkedAt: now,
+    enabled,
+    sampleMethods: methods.slice(0, 10).map((method) => method?.id).filter(Boolean),
+  };
+
+  if (!enabled) {
+    const capabilityError = new Error('La credencial MP_ACCESS_TOKEN no tiene Yape habilitado para cobros en MPE. Activa Yape en tu aplicación de Mercado Pago o usa una credencial con Yape habilitado.');
+    capabilityError.httpStatus = 400;
+    capabilityError.code = 'yape_not_enabled_for_collector';
+    capabilityError.details = {
+      availableMethodsSample: yapeCapabilityCache.sampleMethods,
+    };
+    throw capabilityError;
+  }
+
+  return yapeCapabilityCache;
+}
+
 /**
  * Crear pago con Yape en Mercado Pago
  */
 async function createYapePayment(token, businessId, planType, phoneNumber, userEmail, userId) {
   try {
+    if (!accessToken) {
+      const configError = new Error('Mercado Pago no está configurado: falta MP_ACCESS_TOKEN');
+      configError.httpStatus = 500;
+      throw configError;
+    }
+
+    if (!userEmail || typeof userEmail !== 'string') {
+      const validationError = new Error('No se pudo obtener el email del pagador. Inicia sesión con una cuenta que tenga email válido.');
+      validationError.httpStatus = 400;
+      throw validationError;
+    }
+
     const plan = PLANS[planType];
     const externalReference = `business_${businessId}_yape_${planType}_${Date.now()}`;
 
@@ -104,7 +187,7 @@ async function createYapePayment(token, businessId, planType, phoneNumber, userE
 
   } catch (error) {
     console.error('❌ Error creando pago Yape en Mercado Pago:', error);
-    throw new Error(error.message || 'Error al procesar pago con Yape');
+    throw normalizeMercadoPagoError(error);
   }
 }
 

@@ -235,6 +235,37 @@ Después de un pago exitoso, verifica en Firebase Console:
 - Verifica que el OTP tenga exactamente 6 dígitos
 - Usa uno de los números de prueba de la tabla
 
+### Error: "internal_error" al llamar `process_yape_payment`
+
+**Causa más común:** mezcla de entorno o credenciales de Mercado Pago (TEST/PROD), o uso de datos de prueba con credenciales de producción.
+
+**Checklist de solución (en orden):**
+
+1. En frontend local usa `VITE_MP_PUBLIC_KEY=TEST-...`.
+2. En Functions local usa `MP_ACCESS_TOKEN=TEST-...` y `MP_PUBLIC_KEY=TEST-...`.
+3. Reinicia emuladores para recargar variables (`firebase emulators:start`).
+4. Reintenta con datos de prueba oficiales:
+
+- Celular: `111111111`
+- OTP: `123456`
+
+**Nota:** si estás en emulador con Access Token PROD, el backend ahora responde 400 con mensaje explícito para evitar el 500 genérico.
+
+### Error: "La credencial MP_ACCESS_TOKEN no tiene Yape habilitado..."
+
+**Causa:** la cuenta/aplicación asociada al Access Token no tiene Yape habilitado para cobros en Perú (MPE).
+
+**Cómo validarlo rápido:**
+
+- Ejecuta `GET /v1/payment_methods/search?site_id=MPE` con tu `MP_ACCESS_TOKEN`.
+- Si no aparece `yape` en `results`, esa credencial no puede procesar pagos Yape.
+
+**Solución:**
+
+1. Habilitar Yape en tu aplicación de Mercado Pago (panel de integraciones).
+2. O usar otra credencial (TEST/PROD según entorno) donde `yape` sí aparezca activo.
+3. Reiniciar emuladores después de cambiar `.env`.
+
 ### Pago aprobado pero suscripción no se activa
 
 **Causa:** Error al actualizar Firestore.
@@ -277,7 +308,6 @@ Una vez que todos los tests pasen:
    ```
 
 2. **Probar con Yape real:**
-
    - Usa tu propio número de celular
    - Genera OTP real en la app Yape
    - Prueba con el plan más económico (S/ 27)
@@ -294,13 +324,12 @@ Una vez que todos los tests pasen:
 - [Tarjetas de prueba Perú](https://www.mercadopago.com.pe/developers/es/docs/checkout-api-payments/additional-content/your-integrations/test/cards)
 - [Guía de producción](./MERCADOPAGO_PRODUCTION_GUIDE.md)
 
-
 ---
 
 ## Changelog
 
 ### [Auditoría - Marzo 2026]
+
 - Revisado: Funcionalidad verificada como activa en código fuente.
 - Sin cambios de contenido en esta auditoría.
 - Documentación movida al estado vigente confirmado.
-

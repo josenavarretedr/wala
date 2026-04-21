@@ -637,9 +637,20 @@ const routes = [
   // Admin
   {
     path: '/admin',
-    name: 'AdminView',
-    component: () => import('@/views/Admin.vue'),
-    meta: { requiresAuth: true },
+    component: () => import('@/layouts/MainLayout.vue'),
+    meta: { requiresAuth: true, requiresAdminRole: true },
+    children: [
+      {
+        path: '',
+        redirect: '/admin/users'
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/Admin/UsersDirectory.vue'),
+        meta: { title: 'Directorio de Usuarios' }
+      }
+    ]
   },
 
   // 404 - Debe ser la última ruta
@@ -713,6 +724,20 @@ router.beforeEach(async (to, from, next) => {
     }
 
     console.log('✅ Usuario tiene rol de facilitador')
+  }
+
+  // Verificar rol de admin para rutas específicas
+  if (to.meta.requiresAdminRole && authStore.user) {
+    const ADMIN_EMAILS = [
+      "josenavarretedr@gmail.com",
+      "admin@wala.lat"
+    ];
+    
+    if (!ADMIN_EMAILS.includes(authStore.user.email)) {
+      console.log('❌ Acceso denegado - Se requiere ser Administrador');
+      return next('/unauthorized');
+    }
+    console.log('✅ Usuario es Administrador');
   }
 
   // Si el usuario está autenticado y va a rutas de invitado

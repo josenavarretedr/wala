@@ -72,4 +72,11 @@ exports.onStreakUpdated = onboarding.onStreakUpdated;
 
 
 
+// 👑 ADMIN PANEL - Panel de administradores
+const adminModule = require('./src/Admin/getAllUsersAdmin');
+exports.adminGetAllBusinesses = adminModule.adminGetAllBusinesses;
+exports.adminGetAllPrograms = adminModule.adminGetAllPrograms;
+exports.adminUpdateSubscription = adminModule.adminUpdateSubscription;
+exports.adminEnrollBusinessInProgram = adminModule.adminEnrollBusinessInProgram;
+
 
