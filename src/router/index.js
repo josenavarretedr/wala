@@ -465,6 +465,32 @@ const routes = [
   },
 
   // ═════════════════════════════════════════════════════════════
+  // 📘 RUTAS DE SESIONES (Cuadernillos Interactivos)
+  // ═════════════════════════════════════════════════════════════
+  {
+    path: '/sesiones',
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/sesiones/sesion-1'
+      },
+      {
+        path: 'sesion-1',
+        name: 'Sesion1Costeo',
+        component: () => import('@/views/sesiones/Sesion1Costeo.vue'),
+        meta: { title: 'Sesion 1 · Costeo' }
+      },
+      {
+        path: ':sesionSlug',
+        name: 'SesionPendiente',
+        component: () => import('@/views/sesiones/SesionPendiente.vue'),
+        meta: { title: 'Sesion en construccion' }
+      }
+    ]
+  },
+
+  // ═════════════════════════════════════════════════════════════
   // 🎬 RUTAS DE GESTIÓN DE GUIONES (Marketing)
   // ═════════════════════════════════════════════════════════════
 
@@ -732,7 +758,7 @@ router.beforeEach(async (to, from, next) => {
       "josenavarretedr@gmail.com",
       "admin@wala.lat"
     ];
-    
+
     if (!ADMIN_EMAILS.includes(authStore.user.email)) {
       console.log('❌ Acceso denegado - Se requiere ser Administrador');
       return next('/unauthorized');
