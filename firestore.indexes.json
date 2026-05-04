@@ -165,6 +165,42 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "comercial",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docType", "order": "ASCENDING" },
+        { "fieldPath": "statusPipeline", "order": "ASCENDING" },
+        { "fieldPath": "fechaEvento", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "comercial",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docType", "order": "ASCENDING" },
+        { "fieldPath": "zona", "order": "ASCENDING" },
+        { "fieldPath": "fechaEvento", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "comercial",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docType", "order": "ASCENDING" },
+        { "fieldPath": "cohorte", "order": "ASCENDING" },
+        { "fieldPath": "fechaEvento", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "comercial",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docType", "order": "ASCENDING" },
+        { "fieldPath": "eventType", "order": "ASCENDING" },
+        { "fieldPath": "fechaEvento", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

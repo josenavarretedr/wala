@@ -737,14 +737,9 @@ S/100 ÷ 200 = S/0.50</pre
           <pre
             class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100"
           >
-PRECIO MINIMO = Costo Total Real + Ganancia minima que quieres</pre
+PRECIO MINIMO = Costo Total Real / (1 - % margen)</pre
           >
-          <p>O si prefieres pensarlo en porcentaje:</p>
-          <pre
-            class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100"
-          >
-PRECIO MINIMO = Costo Total Real × (1 + porcentaje de ganancia)</pre
-          >
+
           <p class="font-semibold text-slate-800">Ejemplo:</p>
           <ul class="list-disc space-y-1 pl-5">
             <li>Costo total real: S/8</li>
@@ -753,10 +748,10 @@ PRECIO MINIMO = Costo Total Real × (1 + porcentaje de ganancia)</pre
           <pre
             class="overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100"
           >
-S/8 × 1.30 = S/10.40</pre
+S/8 / (1 - 0.30) = S/11.43</pre
           >
           <p>
-            Entonces, vender por debajo de S/10.40 seria una mala decision para
+            Entonces, vender por debajo de S/11.43 seria una mala decision para
             ese producto.
           </p>
         </div>
@@ -808,7 +803,7 @@ S/8 × 1.30 = S/10.40</pre
           <pre
             class="mt-2 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100"
           >
-Costo total real × (1 + porcentaje de ganancia) = precio minimo</pre
+Costo total real / (1 - % margen) = precio minimo</pre
           >
           <p class="mt-3 text-sm text-slate-700">
             Mi precio minimo es: <strong>{{ currency(precioMinimo) }}</strong>
@@ -935,6 +930,7 @@ Costo total real × (1 + porcentaje de ganancia) = precio minimo</pre
         />
         <SesionImagePlaceholder
           alt="Lista de chequeo con errores comunes de costeo marcados en una libreta de trabajo"
+          :src="costos11Image"
         />
 
         <p class="mb-3 text-slate-700">
@@ -967,7 +963,7 @@ Costo total real × (1 + porcentaje de ganancia) = precio minimo</pre
           />
         </div>
 
-        <SesionSectionTitle
+        <!-- <SesionSectionTitle
           mode="exercise"
           title="Mi compromiso de esta semana"
         />
@@ -997,7 +993,7 @@ Costo total real × (1 + porcentaje de ganancia) = precio minimo</pre
             multiline
             :rows="3"
           />
-        </div>
+        </div> -->
 
         <SesionSectionTitle
           mode="exercise"
@@ -1154,6 +1150,7 @@ import costos7Image from "@/assets/sesiones/costos/costos7.png";
 import costos8Image from "@/assets/sesiones/costos/costos8.png";
 import costos9Image from "@/assets/sesiones/costos/costos9.png";
 import costos10Image from "@/assets/sesiones/costos/costos10.png";
+import costos11Image from "@/assets/sesiones/costos/costos111.png";
 
 const createRows = (count, keys) => {
   return Array.from({ length: count }, () =>
@@ -1348,7 +1345,7 @@ const margenGanancia = computed(() => {
 });
 
 const precioMinimo = computed(
-  () => costoTotalReal.value * (1 + margenGanancia.value / 100),
+  () => costoTotalReal.value / (1 - margenGanancia.value / 100),
 );
 
 const comparacionPrecio = computed(() => {

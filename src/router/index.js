@@ -660,11 +660,18 @@ const routes = [
     component: () => import('@/views/NotFound.vue'),
   },
 
+  {
+    path: '/admin/commercial',
+    name: 'AdminCommercial',
+    component: () => import('@/views/Admin/AdminCommercialDashboard.vue'),
+    meta: { title: 'Tablero Comercial' }
+  },
+
   // Admin
   {
     path: '/admin',
     component: () => import('@/layouts/MainLayout.vue'),
-    meta: { requiresAuth: true, requiresAdminRole: true },
+    meta: { requiresAuth: true },
     children: [
       {
         path: '',
@@ -674,7 +681,7 @@ const routes = [
         path: 'users',
         name: 'AdminUsers',
         component: () => import('@/views/Admin/UsersDirectory.vue'),
-        meta: { title: 'Directorio de Usuarios' }
+        meta: { requiresAdminRole: true, title: 'Directorio de Usuarios' }
       }
     ]
   },

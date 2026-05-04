@@ -206,6 +206,31 @@ service cloud.firestore {
     }
 
     // ═════════════════════════════════════════════════════════════
+    // 📊 MÓDULO ADMIN COMERCIAL
+    // Colección top-level `comercial` — solo acceso admin
+    // comercial/settings  → docType: 'settings'
+    // comercial/{id}      → docType: 'record'
+    // ═════════════════════════════════════════════════════════════
+
+    function isAdminUser() {
+      // Admin identificado por UID o token claim.
+      // Ajustar UIDs según producción o añadir custom claim isAdmin == true.
+      return request.auth != null && (
+        request.auth.token.email.matches('.*@wala\\.pe') ||
+        request.auth.token.isAdmin == true
+      );
+    }
+
+    match /comercial/{docId} {
+      allow read, write: if isAdminUser();
+
+      // Subcollections futuras (por si acaso)
+      match /{sub=**} {
+        allow read, write: if isAdminUser();
+      }
+    }
+
+    // ═════════════════════════════════════════════════════════════
     // 📸 SHARE LIMITS (Control de cuota de shares)
     // ═════════════════════════════════════════════════════════════
     match /shareLimits/{userId} {
