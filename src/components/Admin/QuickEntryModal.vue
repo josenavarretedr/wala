@@ -5,7 +5,7 @@
         <!-- Header -->
         <div class="modal-header">
           <h2 class="modal-title">
-            Registrar {{ eventLabels[currentStep].title }}
+            Registrar Visita en Frío
           </h2>
           <button @click="closeModal" class="modal-close">
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -16,30 +16,13 @@
 
         <!-- Progress Bar -->
         <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: (currentStep / 4) * 100 + '%' }"></div>
+          <div class="progress-fill" :style="{ width: (currentStep / 3) * 100 + '%' }"></div>
         </div>
 
         <!-- Body -->
         <div class="modal-body">
-          <!-- Step 1: Tipo de Evento -->
+          <!-- Step 1: Datos Base del Contacto -->
           <div v-if="currentStep === 1" class="step-content">
-            <h3 class="step-title">¿Qué tipo de evento registras?</h3>
-            <div class="event-grid">
-              <button
-                v-for="(label, type) in eventTypes"
-                :key="type"
-                @click="selectEventType(type)"
-                :class="{ active: formData.eventType === type }"
-                class="event-btn"
-              >
-                {{ label.icon }}
-                <span>{{ label.name }}</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 2: Datos Base del Contacto (texto libre, sin referencias externas) -->
-          <div v-else-if="currentStep === 2" class="step-content">
             <h3 class="step-title">Datos del Contacto</h3>
 
             <label class="field-label">Negocio *</label>
@@ -59,13 +42,40 @@
             />
 
             <label class="field-label">Teléfono *</label>
-            <input
-              v-model="formData.contactPhone"
-              type="tel"
-              placeholder="Ej: +51 987 654 321"
-              class="field-input"
-            />
-            <small class="field-hint" style="font-size:0.75rem; color:#6b7280;">Incluye el código de país si no es de Perú (ej: +52). Si es de Perú (9 dígitos) se añadirá +51 automáticamente.</small>
+            <div class="phone-input-group">
+              <!-- Custom Country Dropdown -->
+              <div class="custom-select-container">
+                <div class="custom-select-trigger" @click="toggleDropdown">
+                  <img :src="`https://flagcdn.com/w20/${selectedCountry.iso}.png`" :alt="selectedCountry.iso" class="flag-icon" />
+                  <span>{{ selectedCountry.dial }}</span>
+                  <svg class="h-4 w-4 arrow" :class="{ open: showDropdown }" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                
+                <div v-if="showDropdown" class="custom-select-menu">
+                  <div 
+                    v-for="country in countries" 
+                    :key="country.iso" 
+                    class="custom-select-option"
+                    @click="selectCountry(country)"
+                  >
+                    <img :src="`https://flagcdn.com/w20/${country.iso}.png`" :alt="country.iso" class="flag-icon" />
+                    <span class="country-name">{{ country.name }}</span>
+                    <span class="country-dial">{{ country.dial }}</span>
+                  </div>
+                </div>
+                <!-- Backdrop to close dropdown -->
+                <div v-if="showDropdown" class="dropdown-backdrop" @click="showDropdown = false"></div>
+              </div>
+
+              <input
+                v-model="formData.localPhone"
+                type="tel"
+                placeholder="987 654 321"
+                class="field-input phone-number"
+              />
+            </div>
 
             <label class="field-label">Zona</label>
             <select v-model="formData.zona" class="field-select">
@@ -78,142 +88,49 @@
               <option value="">Seleccionar sector</option>
               <option v-for="sector in sectores" :key="sector" :value="sector">{{ sector }}</option>
             </select>
-
-            <label class="field-label">Campaña</label>
-            <select v-model="formData.campana" class="field-select">
-              <option value="">Sin campaña</option>
-              <option v-for="c in campanas" :key="c" :value="c">{{ c }}</option>
-            </select>
-
-            <label class="field-label">Cohorte</label>
-            <select v-model="formData.cohorte" class="field-select">
-              <option value="">Sin cohorte</option>
-              <option v-for="c in cohortes" :key="c" :value="c">{{ c }}</option>
-            </select>
           </div>
 
-          <!-- Step 3: Detalles por Tipo -->
-          <div v-else-if="currentStep === 3" class="step-content">
-            <!-- Visita -->
-            <div v-if="formData.eventType === 'visita'">
-              <h3 class="step-title">Detalles de la Visita</h3>
-              <label class="field-label">Resultado</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input v-model="formData.resultado" type="radio" value="agendado" />
-                  <span>✅ Agendado (para diagnóstico)</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.resultado" type="radio" value="no_agendado" />
-                  <span>❌ No agendado</span>
-                </label>
-              </div>
-              <template v-if="formData.resultado === 'agendado'">
-                <label class="field-label">Fecha agendada</label>
-                <input v-model="formData.fechaAgendada" type="date" class="field-input" />
-              </template>
-              <label class="field-label">Notas</label>
-              <textarea v-model="formData.notas" placeholder="Observaciones de la visita..." rows="2" class="field-input"></textarea>
+          <!-- Step 2: Detalles de la Visita -->
+          <div v-else-if="currentStep === 2" class="step-content">
+            <h3 class="step-title">Detalles de la Visita</h3>
+            <label class="field-label">Resultado</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input v-model="formData.resultado" type="radio" value="agendado" />
+                <span>✅ Agendado (para diagnóstico)</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.resultado" type="radio" value="no_agendado" />
+                <span>❌ No agendado</span>
+              </label>
             </div>
-
-            <!-- Diagnóstico -->
-            <div v-else-if="formData.eventType === 'diagnostico'">
-              <h3 class="step-title">Resultado del Diagnóstico</h3>
-              <label class="field-label">Resultado</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input v-model="formData.resultado" type="radio" value="cierre_advisory" />
-                  <span>💼 Cierre Advisory (S/.225)</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.resultado" type="radio" value="cierre_wala" />
-                  <span>🎯 Cierre WALA (S/.49/mes)</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.resultado" type="radio" value="en_seguimiento" />
-                  <span>📋 En seguimiento</span>
-                </label>
-              </div>
-              <label class="field-label">Áreas críticas identificadas</label>
-              <input
-                v-model="formData.areasCriticasInput"
-                type="text"
-                placeholder="Ej: Flujo de Caja, Inventario"
-                class="field-input"
-              />
-              <label class="field-label">Monto estimado de solución (S/.)</label>
-              <input v-model.number="formData.monto" type="number" class="field-input" />
-              <label class="field-label">Notas</label>
-              <textarea v-model="formData.notas" placeholder="Observaciones del diagnóstico..." rows="2" class="field-input"></textarea>
-            </div>
-
-            <!-- Cierre -->
-            <div v-else-if="formData.eventType === 'cierre'">
-              <h3 class="step-title">Confirmación de Cierre</h3>
-              <label class="field-label">Tipo de cierre</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input v-model="formData.tipoCierre" type="radio" value="advisory" />
-                  <span>💼 Advisory - S/.225</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.tipoCierre" type="radio" value="wala" />
-                  <span>🎯 WALA - S/.49/mes</span>
-                </label>
-              </div>
-              <label class="field-label">Fecha de inicio</label>
+            <template v-if="formData.resultado === 'agendado'">
+              <label class="field-label">Fecha agendada</label>
               <input v-model="formData.fechaAgendada" type="date" class="field-input" />
-              <label class="field-label">Monto final acordado (S/.)</label>
-              <input v-model.number="formData.monto" type="number" class="field-input" />
-              <label class="field-label">Resultado</label>
-              <input v-model="formData.resultado" type="text" placeholder="Ej: cierre_advisory" class="field-input" />
-            </div>
-
-            <!-- Seguimiento -->
-            <div v-else-if="formData.eventType === 'seguimiento'">
-              <h3 class="step-title">Registro de Seguimiento</h3>
-              <label class="field-label">Tipo de seguimiento</label>
-              <div class="radio-group">
-                <label class="radio-item">
-                  <input v-model="formData.tipoSeguimiento" type="radio" value="pre_diagnostico" />
-                  <span>🔍 Pre-diagnóstico (48h después visita)</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.tipoSeguimiento" type="radio" value="post_diagnostico" />
-                  <span>📊 Post-diagnóstico (respuesta a propuesta)</span>
-                </label>
-                <label class="radio-item">
-                  <input v-model="formData.tipoSeguimiento" type="radio" value="post_cierre" />
-                  <span>✅ Post-cierre (onboarding)</span>
-                </label>
-              </div>
-              <label class="field-label">Resultado</label>
-              <input v-model="formData.resultado" type="text" placeholder="¿Cuál fue el resultado?" class="field-input" />
-              <label class="field-label">Notas</label>
-              <textarea v-model="formData.notas" placeholder="Detalles del seguimiento..." rows="3" class="field-input"></textarea>
-            </div>
+            </template>
+            <label class="field-label">Notas</label>
+            <textarea v-model="formData.notas" placeholder="Observaciones de la visita..." rows="2" class="field-input"></textarea>
           </div>
 
-          <!-- Step 4: Resumen -->
-          <div v-else-if="currentStep === 4" class="step-content">
+          <!-- Step 3: Resumen -->
+          <div v-else-if="currentStep === 3" class="step-content">
             <h3 class="step-title">Resumen antes de guardar</h3>
             <div class="summary-box">
               <p><strong>Negocio:</strong> {{ formData.businessName }}</p>
-              <p><strong>Contacto:</strong> {{ formData.contactName }} ({{ formData.contactPhone }})</p>
+              <p><strong>Contacto:</strong> {{ formData.contactName }} ({{ fullPhone }})</p>
               <p><strong>Zona:</strong> {{ formData.zona }}</p>
               <p><strong>Sector:</strong> {{ formData.sector }}</p>
-              <p v-if="formData.campana"><strong>Campaña:</strong> {{ formData.campana }}</p>
-              <p v-if="formData.cohorte"><strong>Cohorte:</strong> {{ formData.cohorte }}</p>
-              <p><strong>Evento:</strong> {{ eventTypes[formData.eventType]?.name }}</p>
+              <p><strong>Evento:</strong> Visita en frío</p>
               <p v-if="formData.resultado"><strong>Resultado:</strong> {{ formData.resultado }}</p>
-              <p v-if="formData.monto"><strong>Monto:</strong> S/.{{ formData.monto }}</p>
               <p v-if="formData.notas"><strong>Notas:</strong> {{ formData.notas }}</p>
             </div>
 
             <!-- Copy Button for WhatsApp -->
             <div v-if="whatsappMsg" class="whatsapp-copy">
               <p class="copy-label">📱 Mensaje de WhatsApp:</p>
-              <button @click="copyWhatsapp" class="btn-copy-whatsapp">🔗 Copiar mensaje</button>
+              <button @click="copyWhatsapp" class="btn-copy-whatsapp">
+                {{ showToast ? '✓ Copiado' : '🔗 Copiar mensaje' }}
+              </button>
               <p class="copy-preview">{{ whatsappMsg.substring(0, 120) }}...</p>
             </div>
           </div>
@@ -222,7 +139,7 @@
         <!-- Footer -->
         <div class="modal-footer">
           <button v-if="currentStep > 1" @click="previousStep" class="btn-secondary">← Atrás</button>
-          <button v-if="currentStep < 4" @click="nextStep" :disabled="!canProceed" class="btn-primary">
+          <button v-if="currentStep < 3" @click="nextStep" :disabled="!canProceed" class="btn-primary">
             Siguiente →
           </button>
           <button v-else @click="submitForm" class="btn-success">✓ Guardar registro</button>
@@ -239,103 +156,73 @@ import { Timestamp } from "firebase/firestore";
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
   zonas: { type: Array, default: () => [] },
-  sectores: { type: Array, default: () => [] },
-  campanas: { type: Array, default: () => [] },
-  cohortes: { type: Array, default: () => [] },
+  sectores: { type: Array, default: () => [] }
 });
 
 const emit = defineEmits(["close", "submit"]);
 
 const currentStep = ref(1);
 const showToast = ref(false);
+const showDropdown = ref(false);
+
+const countries = [
+  { iso: 'pe', dial: '+51', name: 'Perú' },
+  { iso: 'mx', dial: '+52', name: 'México' },
+  { iso: 'ar', dial: '+54', name: 'Argentina' },
+  { iso: 'cl', dial: '+56', name: 'Chile' },
+  { iso: 'co', dial: '+57', name: 'Colombia' },
+  { iso: 'bo', dial: '+591', name: 'Bolivia' },
+  { iso: 'ec', dial: '+593', name: 'Ecuador' },
+  { iso: 'es', dial: '+34', name: 'España' },
+  { iso: 'us', dial: '+1', name: 'Estados Unidos' },
+];
+
+const selectedCountry = ref(countries[0]); // Default Perú
 
 const defaultForm = () => ({
-  eventType: null,
-  statusPipeline: "nuevo",
   businessName: "",
   contactName: "",
-  contactPhone: "",
+  localPhone: "",
   zona: "",
   sector: "",
-  campana: "",
-  cohorte: "",
   resultado: "agendado",
-  monto: 0,
   notas: "",
   fechaAgendada: "",
-  tipoCierre: "advisory",
-  tipoSeguimiento: "pre_diagnostico",
-  areasCriticasInput: "",  // texto libre → se convierte a array al submit
 });
 
 const formData = ref(defaultForm());
 
-const eventTypes = {
-  visita: { icon: "👁️", name: "Visita en frío" },
-  diagnostico: { icon: "🔍", name: "Diagnóstico" },
-  cierre: { icon: "✅", name: "Cierre" },
-  seguimiento: { icon: "📋", name: "Seguimiento" },
+const fullPhone = computed(() => {
+  return `${selectedCountry.value.dial} ${formData.value.localPhone}`.trim();
+});
+
+const toggleDropdown = () => {
+  showDropdown.value = !showDropdown.value;
 };
 
-const eventLabels = {
-  1: { title: "Evento" },
-  2: { title: "Contacto" },
-  3: { title: "Detalles" },
-  4: { title: "Revisión" },
-};
-
-// Determina el statusPipeline inicial según eventType
-const inferStatusPipeline = (eventType) => {
-  const map = {
-    visita: "nuevo",
-    diagnostico: "diagnosticado",
-    cierre: "cerrado",
-    seguimiento: "en_seguimiento",
-  };
-  return map[eventType] ?? "nuevo";
+const selectCountry = (country) => {
+  selectedCountry.value = country;
+  showDropdown.value = false;
 };
 
 const canProceed = computed(() => {
-  if (currentStep.value === 1) return formData.value.eventType !== null;
-  if (currentStep.value === 2) {
+  if (currentStep.value === 1) {
     return (
       formData.value.businessName.trim() !== "" &&
       formData.value.contactName.trim() !== "" &&
-      formData.value.contactPhone.trim() !== ""
+      formData.value.localPhone.trim() !== ""
     );
   }
-  if (currentStep.value === 3) {
-    if (formData.value.eventType === "visita") return formData.value.resultado !== null;
-    if (formData.value.eventType === "diagnostico") return formData.value.resultado !== null;
-    if (formData.value.eventType === "cierre") {
-      return formData.value.tipoCierre !== null && formData.value.monto > 0;
-    }
-    if (formData.value.eventType === "seguimiento") return formData.value.tipoSeguimiento !== null;
+  if (currentStep.value === 2) {
+    return formData.value.resultado !== null;
   }
   return true;
 });
 
 const whatsappMsg = computed(() => {
   const name = formData.value.contactName || "[Nombre]";
-  if (formData.value.eventType === "visita") {
-    return `Buenos días ${name}, soy José. Te contacto de WALA — hacemos diagnósticos empresariales gratuitos. ¿Tienes 30 minutos esta semana?`;
-  }
-  if (formData.value.eventType === "diagnostico") {
-    return `${name}, aquí está el resumen del diagnóstico. Te propongo un plan de acción. ¿Cuándo nos vemos?`;
-  }
-  if (formData.value.eventType === "cierre") {
-    return `¡Excelente ${name}! Bienvenido a WALA. Empezamos este ${formData.value.fechaAgendada || "[fecha]"}. Próximos pasos...`;
-  }
-  if (formData.value.eventType === "seguimiento") {
-    return `${name}, quería confirmarte que todo está en orden. ¿Alguna duda?`;
-  }
-  return "";
+  return `Buenos días ${name}, soy José. Te contacto de WALA — hacemos diagnósticos empresariales gratuitos. ¿Tienes 30 minutos esta semana?`;
 });
-
-const selectEventType = (type) => {
-  formData.value.eventType = type;
-  formData.value.statusPipeline = inferStatusPipeline(type);
-};
 
 const nextStep = () => { if (canProceed.value) currentStep.value++; };
 const previousStep = () => { if (currentStep.value > 1) currentStep.value--; };
@@ -348,6 +235,7 @@ const closeModal = () => {
 const resetForm = () => {
   currentStep.value = 1;
   formData.value = defaultForm();
+  selectedCountry.value = countries[0];
 };
 
 const copyWhatsapp = async () => {
@@ -365,32 +253,26 @@ const submitForm = () => {
     ? Timestamp.fromDate(new Date(formData.value.fechaAgendada))
     : Timestamp.now();
 
-  const areasCriticas = formData.value.areasCriticasInput
-    ? formData.value.areasCriticasInput.split(",").map((s) => s.trim()).filter(Boolean)
-    : [];
-
   const payload = {
     docType: "record",
-    eventType: formData.value.eventType,
-    statusPipeline: formData.value.statusPipeline,
+    eventType: "visita",
+    statusPipeline: "nuevo",
     businessName: formData.value.businessName,
     contactName: formData.value.contactName,
-    contactPhone: formData.value.contactPhone,
+    contactPhone: fullPhone.value.replace(/\s+/g, ''), // Sin espacios
     zona: formData.value.zona,
     sector: formData.value.sector,
     resultado: formData.value.resultado,
-    monto: formData.value.monto ?? 0,
+    monto: 0,
     notas: formData.value.notas,
     fechaEvento,
     fechaAgendada: formData.value.fechaAgendada
       ? Timestamp.fromDate(new Date(formData.value.fechaAgendada))
       : null,
-    tipoCierre: formData.value.tipoCierre ?? null,
-    tipoSeguimiento: formData.value.tipoSeguimiento ?? null,
-    areasCriticas,
-    mensajeWhatsapp: whatsappMsg.value,
-    campana: formData.value.campana || null,
-    cohorte: formData.value.cohorte || null,
+    tipoCierre: null,
+    tipoSeguimiento: null,
+    areasCriticas: [],
+    mensajeWhatsapp: whatsappMsg.value
   };
 
   emit("submit", payload);
@@ -455,24 +337,6 @@ const submitForm = () => {
 .step-content { display: flex; flex-direction: column; gap: 1rem; }
 .step-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0; }
 
-.event-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-.event-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 2px solid #e5e7eb;
-  background: #fff;
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.event-btn:hover { border-color: #6366f1; background: #f0f4ff; }
-.event-btn.active { border-color: #4f46e5; background: #eef2ff; color: #4f46e5; }
-
 .field-label { font-size: 0.8rem; font-weight: 600; color: #374151; }
 .field-input {
   width: 100%;
@@ -495,6 +359,109 @@ const submitForm = () => {
   background: #fff;
   cursor: pointer;
   outline: none;
+}
+
+/* Phone input styles */
+.phone-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Custom Select Styles */
+.custom-select-container {
+  position: relative;
+  flex: 0 0 auto;
+  width: 120px;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 0.65rem;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  height: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.custom-select-trigger:hover {
+  border-color: #6366f1;
+}
+
+.flag-icon {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.arrow {
+  margin-left: auto;
+  transition: transform 0.2s;
+  color: #9ca3af;
+}
+
+.arrow.open {
+  transform: rotate(180deg);
+}
+
+.custom-select-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 240px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.custom-select-option:hover {
+  background: #f3f4f6;
+}
+
+.country-name {
+  flex: 1;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.country-dial {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dropdown-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+.phone-number {
+  flex: 1;
 }
 
 .radio-group { display: flex; flex-direction: column; gap: 0.5rem; }

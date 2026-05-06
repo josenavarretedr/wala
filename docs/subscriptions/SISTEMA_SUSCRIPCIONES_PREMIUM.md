@@ -1,4 +1,4 @@
-# 🔐 Sistema de Suscripciones Premium/Free - Documentación Completa
+# 🔐 Sistema de Suscripciones Free / Pro / Max - Documentación Completa
 
 ## 📋 Índice
 
@@ -15,13 +15,14 @@
 
 ## 📖 Introducción
 
-Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nivel de **negocio**, no de usuario. Esto significa que:
+Este sistema implementa un modelo **freemium de 3 tiers** (Free / Pro / Max) a nivel de **negocio**, no de usuario. Esto significa que:
 
-- ✅ **Un negocio** puede tener plan Free o Premium
+- ✅ **Un negocio** puede tener plan **Free**, **Pro** o **Max**
 - ✅ **Todos los usuarios** de ese negocio (gerente + empleados) comparten el mismo plan
 - ✅ Las **features** se habilitan/deshabilitan según el plan del negocio
 - ✅ El control es desde el **frontend** ("efecto placebo")
 - ✅ No requiere Custom Claims de Firebase
+- ✅ `isPremium` es un getter "umbrella" que retorna `true` para planes `pro`, `premium` y `max`
 
 ---
 
@@ -55,6 +56,7 @@ Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nive
 | Archivo              | Tipo       | Descripción                                    |
 | -------------------- | ---------- | ---------------------------------------------- |
 | `useSubscription.js` | Composable | API principal para verificar planes y features |
+| `usePremiumLock.js`  | Composable | Blur/lock visual para contenido premium        |
 | `businessStore.js`   | Store      | Gestiona estado de suscripción y features      |
 | `PremiumBadge.vue`   | Componente | Badge visual del plan actual                   |
 | `FeatureGate.vue`    | Componente | Bloquea/desbloquea contenido según feature     |
@@ -76,10 +78,10 @@ Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nive
   gerenteId: "user-uid",
   // ... otros campos ...
 
-  // ✨ NUEVOS CAMPOS: Suscripción
+  // ✨ CAMPOS DE SUSCRIPCIÓN
   subscription: {
-    plan: "free",              // "free" | "premium" | "trial"
-    status: "active",          // "active" | "inactive" | "expired"
+    plan: "free",              // "free" | "pro" | "max" | "premium" | "trial"
+    status: "active",          // "active" | "inactive" | "expired" | "trial"
     startDate: Timestamp,      // Fecha de inicio
     endDate: Timestamp | null, // null para free, fecha para premium/trial
     trialUsed: false,          // Si ya usó el período de prueba
@@ -94,17 +96,20 @@ Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nive
     updatedBy: "user-uid"
   },
 
-  // ✨ NUEVOS CAMPOS: Features habilitadas (cache)
+  // ✨ CAMPOS DE FEATURES habilitadas (cache por plan)
   features: {
-    maxEmployees: 3,           // free: 3, premium: 999999
-    maxProducts: 100,          // free: 100, premium: 999999
-    advancedReports: false,
-    multiLocation: false,
-    apiAccess: false,
-    prioritySupport: false,
-    customBranding: false,
-    aiClassification: false,
-    exportData: false
+    maxEmployees: 3,           // free: 3, pro/max: 999999
+    maxProducts: 999999,       // ilimitado en todos los planes
+    advancedReports: false,    // pro ✅, max ✅
+    multiLocation: false,      // solo max ✅
+    apiAccess: false,          // solo max ✅
+    prioritySupport: false,    // solo max ✅
+    customBranding: false,     // pro ✅, max ✅
+    aiClassification: false,   // solo max ✅
+    exportData: false,         // pro ✅, max ✅
+    shareLimit: 20,            // free: 20/día, pro/max: 999999
+    groupSessions: false,      // solo max ✅
+    localFairs: false          // solo max ✅
   },
 
   // ✨ NUEVOS CAMPOS: Stats de uso
@@ -123,32 +128,59 @@ Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nive
 ```javascript
 {
   maxEmployees: 3,
-  maxProducts: 100,
+  maxProducts: 999999,       // inventario ilimitado
   advancedReports: false,
   multiLocation: false,
   apiAccess: false,
   prioritySupport: false,
   customBranding: false,
   aiClassification: false,
-  exportData: false
+  exportData: false,
+  shareLimit: 20,            // 20 shares por día
+  groupSessions: false,
+  localFairs: false
 }
 ```
 
-#### 👑 Plan Premium
+#### ⚡ Plan Pro
 
 ```javascript
 {
-  maxEmployees: 999999, // "unlimited"
-  maxProducts: 999999,
-  advancedReports: true,
-  multiLocation: true,
-  apiAccess: true,
-  prioritySupport: true,
-  customBranding: true,
-  aiClassification: true,
-  exportData: true
+  maxEmployees: 999999,      // ilimitado
+  maxProducts: 999999,       // ilimitado
+  advancedReports: true,     // comparación de periodos
+  multiLocation: false,
+  apiAccess: false,
+  prioritySupport: false,
+  customBranding: true,      // compartir personalizado (logos)
+  aiClassification: false,
+  exportData: true,
+  shareLimit: 999999,        // ilimitado
+  groupSessions: false,
+  localFairs: false
 }
 ```
+
+#### 👑 Plan Max
+
+```javascript
+{
+  maxEmployees: 999999,      // ilimitado
+  maxProducts: 999999,       // ilimitado
+  advancedReports: true,     // comparación de periodos
+  multiLocation: true,
+  apiAccess: true,
+  prioritySupport: true,     // asistencia personalizada
+  customBranding: true,
+  aiClassification: true,
+  exportData: true,
+  shareLimit: 999999,        // ilimitado
+  groupSessions: true,       // sesiones grupales personalizadas
+  localFairs: true           // acceso a ferias locales
+}
+```
+
+> **Nota:** El plan `"premium"` en Firestore se trata como equivalente a `"max"` en `getFeaturesForPlan()`.
 
 ---
 
@@ -163,13 +195,15 @@ Este sistema permite implementar un modelo **freemium** (Free vs Premium) a nive
 ```javascript
 const {
   // Estado reactivo
-  isPremium, // computed<boolean>
+  isPremium, // computed<boolean> — true si plan es pro, premium o max
+  isPro, // computed<boolean> — true si plan es exactamente pro
+  isMax, // computed<boolean> — true si plan es exactamente max
   isFree, // computed<boolean>
   isTrialActive, // computed<boolean>
   subscription, // computed<object>
   limits, // computed<object>
   daysRemaining, // computed<number|null>
-  planInfo, // computed<object>
+  planInfo, // computed<object> — { name, status, badge, color, ... }
   shouldShowExpirationWarning, // computed<boolean>
 
   // Verificación de acceso
@@ -185,6 +219,14 @@ const {
   goToPlans, // () => void
 } = useSubscription();
 ```
+
+**`planInfo` detalle:**
+
+| Plan | `name` | `badge` | `color` |
+|------|--------|---------|---------|
+| Free | `"Free"` | 🆓 | `gray` |
+| Pro | `"Pro"` | ⚡ | `indigo` |
+| Max / Premium | `"Max"` | 👑 | `amber` |
 
 **Ejemplo de Uso:**
 
@@ -344,43 +386,75 @@ const handleBlocked = (featureName) => {
 
 ---
 
-### 4. `businessStore` - Getters y Actions
+### 4. `usePremiumLock()` - Bloqueo Visual de Contenido
+
+**Ubicación:** `src/composables/usePremiumLock.js`
+
+Composable para aplicar **blur y overlay** visual a contenido que requiere suscripción.
+
+**API:**
+
+```javascript
+import { usePremiumLock } from '@/composables/usePremiumLock'
+
+const { isLocked, contentClasses, containerClasses, showBadge, badgeOverlayClasses, badgeClasses } = usePremiumLock(
+  isPremium,      // Ref<boolean> | boolean
+  condition       // Ref<boolean> | boolean — cuándo bloquear (ej: selectedRange !== 'today')
+)
+```
+
+**Ejemplo en template:**
+
+```vue
+<div :class="containerClasses">
+  <div :class="contentClasses">Contenido que puede tener blur</div>
+  <div v-if="showBadge" :class="badgeOverlayClasses">
+    <span :class="badgeClasses">👑 Pro</span>
+  </div>
+</div>
+```
+
+---
+
+### 5. `businessStore` - Getters y Actions
 
 **Ubicación:** `src/stores/businessStore.js`
 
-**Nuevos Getters:**
+**Getters:**
 
 ```javascript
 // Estado de suscripción
-subscription; // Objeto completo de suscripción
-isPremium; // boolean - Si tiene plan premium activo
-isFree; // boolean - Si tiene plan free
-isTrialActive; // boolean - Si está en período de prueba activo
-subscriptionDaysRemaining; // number|null - Días restantes
+subscription;                    // Objeto completo de suscripción
+isPremium;                       // boolean - true si plan es pro, premium o max (umbrella)
+isPro;                           // boolean - true si plan es exactamente 'pro'
+isMax;                           // boolean - true si plan es exactamente 'max'
+isFree;                          // boolean - true si no tiene plan o plan es 'free'
+isTrialActive;                   // boolean - Si está en período de prueba activo
+subscriptionDaysRemaining;       // number|null - Días restantes
 
 // Verificación de features
-hasFeature(featureName); // boolean - Verifica si tiene acceso a una feature
+hasFeature(featureName);         // boolean - Verifica feature en business.features
 
 // Verificación de límites
-canAddEmployee; // boolean - Si puede agregar más empleados
-canAddProduct; // boolean - Si puede agregar más productos
-limits; // object - Límites actuales de uso
+canAddEmployee;                  // boolean - usage.employeeCount < features.maxEmployees
+canAddProduct;                   // boolean - usage.productCount < features.maxProducts
+limits;                          // object - { employees: {current, max, available}, products: {...} }
 ```
 
-**Nuevas Actions:**
+**Actions:**
 
 ```javascript
 // Gestión de features
-getFeaturesForPlan(plan); // Obtiene features para un plan
-refreshBusinessFeatures(businessId); // Actualiza features del negocio
+getFeaturesForPlan(plan);                       // 'free' | 'pro' | 'max' | 'premium'
+refreshBusinessFeatures(businessId);            // Recalcula y persiste features
 
 // Gestión de uso
-updateUsageStats(businessId, stats); // Actualiza estadísticas de uso
+updateUsageStats(businessId, stats);            // Actualiza estadísticas de uso
 
 // Gestión de suscripciones
-getDefaultSubscription(); // Obtiene suscripción por defecto (free)
-getDefaultUsageStats(); // Obtiene stats de uso por defecto
-updateSubscriptionPlan(businessId, newPlan, userId); // Actualiza plan
+getDefaultSubscription(userId?);                // Retorna suscripción free por defecto
+getDefaultUsageStats();                         // { employeeCount: 1, productCount: 0 }
+updateSubscriptionPlan(businessId, newPlan, userId); // Actualiza plan y refresca features
 ```
 
 **Ejemplo de Uso:**
@@ -875,20 +949,23 @@ await businessStore.refreshBusinessFeatures(businessStore.getBusinessId);
 
 ---
 
-## 📚 Resumen de Features Disponibles
+## 📚 Resumen de Features por Plan
 
-| Feature               | Nombre Técnico     | Plan Free | Plan Premium |
-| --------------------- | ------------------ | --------- | ------------ |
-| Número de empleados   | `maxEmployees`     | 3         | ∞            |
-| Número de productos   | `maxProducts`      | 100       | ∞            |
-| Reportes básicos      | siempre            | ✅        | ✅           |
-| Reportes avanzados    | `advancedReports`  | ❌        | ✅           |
-| Clasificación IA      | `aiClassification` | ❌        | ✅           |
-| Exportar datos        | `exportData`       | ❌        | ✅           |
-| Múltiples ubicaciones | `multiLocation`    | ❌        | ✅           |
-| Acceso a API          | `apiAccess`        | ❌        | ✅           |
-| Soporte prioritario   | `prioritySupport`  | ❌        | ✅           |
-| Marca personalizada   | `customBranding`   | ❌        | ✅           |
+| Feature               | Nombre Técnico     | 🆓 Free | ⚡ Pro | 👑 Max |
+| --------------------- | ------------------ | ------- | ------ | ------ |
+| Número de empleados   | `maxEmployees`     | 3       | ∞      | ∞      |
+| Número de productos   | `maxProducts`      | ∞       | ∞      | ∞      |
+| Reportes básicos      | siempre            | ✅      | ✅     | ✅     |
+| Reportes avanzados    | `advancedReports`  | ❌      | ✅     | ✅     |
+| Exportar datos        | `exportData`       | ❌      | ✅     | ✅     |
+| Marca personalizada   | `customBranding`   | ❌      | ✅     | ✅     |
+| Shares por día        | `shareLimit`       | 20      | ∞      | ∞      |
+| Clasificación IA      | `aiClassification` | ❌      | ❌     | ✅     |
+| Múltiples ubicaciones | `multiLocation`    | ❌      | ❌     | ✅     |
+| Acceso a API          | `apiAccess`        | ❌      | ❌     | ✅     |
+| Soporte prioritario   | `prioritySupport`  | ❌      | ❌     | ✅     |
+| Sesiones grupales     | `groupSessions`    | ❌      | ❌     | ✅     |
+| Ferias locales        | `localFairs`       | ❌      | ❌     | ✅     |
 
 ---
 
@@ -945,16 +1022,26 @@ Para preguntas o problemas:
 
 ---
 
-**Última actualización:** 2 de noviembre de 2025  
-**Versión:** 1.0.0
-
+**Última actualización:** 6 de mayo de 2026  
+**Versión:** 2.0.0
 
 ---
 
 ## Changelog
 
+### [v2.0.0 - Mayo 2026] — Auditoría de Veracidad
+- 🔴 **BREAKING**: Documentación actualizada de 2 tiers (Free/Premium) a **3 tiers (Free/Pro/Max)**
+- Agregados getters `isPro` e `isMax` en store y composable
+- Actualizado `maxProducts` Free: de 100 a **ilimitado** (999999)
+- Agregadas features nuevas: `shareLimit`, `groupSessions`, `localFairs`
+- Documentado `usePremiumLock.js` como composable del sistema
+- Actualizada tabla de resumen de features con columna por plan
+- Agregada nota sobre `planInfo` con badges por tier (🆓/⚡/👑)
+- Corregidos mensajes de upgrade que referencian Pro/Max en vez de Premium
+
 ### [Auditoría - Marzo 2026]
 - Revisado: Funcionalidad verificada como activa en código fuente.
 - Sin cambios de contenido en esta auditoría.
-- Documentación movida al estado vigente confirmado.
 
+### [v1.0.0 - Noviembre 2025]
+- Creación inicial del documento con modelo Free/Premium.

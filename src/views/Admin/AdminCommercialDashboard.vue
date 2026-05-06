@@ -258,8 +258,6 @@
       :is-open="showQuickEntry"
       :zonas="commerceStore.disponibleZones"
       :sectores="commerceStore.disponibleSectors"
-      :campanas="commerceStore.campanas"
-      :cohortes="commerceStore.cohortes"
       @close="closeQuickEntry"
       @submit="handleQuickEntrySubmit"
     />
