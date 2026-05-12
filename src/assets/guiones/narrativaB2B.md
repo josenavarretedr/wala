@@ -1,211 +1,150 @@
-WALA
-Copiloto para Programas de Emprendimiento
-Documento de Enfoque EstratÃ©gico y Propuesta de Valor B2B
+# WALA: Copiloto para Programas de Emprendimiento
 
-1. PropÃ³sito EstratÃ©gico (WHY)
-   Â¿Por quÃ© existe WALA?
+**Documento de Enfoque Estratégico y Propuesta de Valor B2B**
 
-Los programas de emprendimiento enfrentan una tensiÃ³n constante entre:
+## 1. Propósito Estratégico (WHY)
 
-Implementar procesos formativos y de acompaÃ±amiento de calidad
+### ¿Por qué existe WALA?
 
-Cumplir estÃ¡ndares de trazabilidad y rendiciÃ³n de cuentas
+Los programas de emprendimiento enfrentan una tensión constante entre:
 
-Gestionar procesos sensibles como capital semilla
+- Implementar procesos formativos y de acompañamiento de calidad.
+- Cumplir estándares de trazabilidad y rendición de cuentas.
+- Gestionar procesos sensibles como capital semilla.
+- Operar con equipos técnicos limitados y múltiples herramientas dispersas.
 
-Operar con equipos tÃ©cnicos limitados y mÃºltiples herramientas dispersas
+En este contexto, la gestión del programa se vuelve más compleja que el programa mismo.
 
-En este contexto, la gestiÃ³n del programa se vuelve mÃ¡s compleja que el programa mismo.
+WALA nace para reducir el riesgo operativo y fortalecer la trazabilidad institucional, sin interferir en la metodología ni en la toma de decisiones del programa.
 
-WALA nace para reducir el riesgo operativo y fortalecer la trazabilidad institucional, sin interferir en la metodologÃ­a ni en la toma de decisiones del programa.
+El propósito de WALA no es digitalizar por digitalizar. Es ordenar, documentar y hacer visible el proceso completo del programa, fortaleciendo:
 
-El propÃ³sito de WALA no es digitalizar por digitalizar.
-Es ordenar, documentar y hacer visible el proceso completo del programa, fortaleciendo:
+- Control institucional.
+- Transparencia con participantes.
+- Capacidad de reporte ante financiadores.
+- Gestión basada en evidencia.
 
-Control institucional
+## 2. Enfoque de Intervención (HOW)
 
-Transparencia con participantes
+### ¿Cómo opera WALA dentro de un programa?
 
-Capacidad de reporte ante financiadores
+WALA funciona como un copiloto institucional, acompañando los procesos del programa bajo un enfoque de gestión por hitos y evidencias.
 
-GestiÃ³n basada en evidencia
-
-2. Enfoque de IntervenciÃ³n (HOW)
-   Â¿CÃ³mo opera WALA dentro de un programa?
-
-WALA funciona como un copiloto institucional, acompaÃ±ando los procesos del programa bajo un enfoque de gestiÃ³n por hitos y evidencias.
-
-2.1 GestiÃ³n por procesos
+### 2.1 Gestión por procesos
 
 En lugar de registrar actividades aisladas, WALA estructura el programa como un flujo compuesto por:
 
-Convocatoria
+- Convocatoria
+- Capacitación
+- Asesorías
+- Seguimiento
+- Capital semilla
+- Cierre y reporte
 
-CapacitaciÃ³n
+*Cada fase genera evidencia estructurada.*
 
-AsesorÃ­as
-
-Seguimiento
-
-Capital semilla
-
-Cierre y reporte
-
-Cada fase genera evidencia estructurada.
-
-2.2 Trazabilidad operativa
+### 2.2 Trazabilidad operativa
 
 WALA permite:
 
-Habilitar formularios estructurados definidos por el programa
+- Habilitar formularios estructurados definidos por el programa.
+- Registrar información en tiempo real.
+- Centralizar documentación clave.
+- Visualizar el estado de cada participante.
+- Generar indicadores de avance.
 
-Registrar informaciÃ³n en tiempo real
+> **Nota:** WALA no reemplaza decisiones técnicas, no evalúa proyectos y no aprueba capital semilla. **Documenta el proceso seguido.**
 
-Centralizar documentaciÃ³n clave
+### 2.3 Procesos sensibles: Capital semilla
 
-Visualizar el estado de cada participante
+En etapas críticas como desembolsos, WALA permite:
 
-Generar indicadores de avance
+- Registro estructurado de información financiera.
+- Carga controlada de documentación.
+- Visualización del estado por parte del participante.
+- Evidencia del flujo seguido.
 
-No reemplaza decisiones tÃ©cnicas.
-No evalÃºa proyectos.
-No aprueba capital semilla.
+**Esto fortalece:**
+- Transparencia.
+- Control interno.
+- Claridad comunicacional.
+- Reducción de consultas informales.
 
-Documenta el proceso seguido.
+### 2.4 Rol del facilitador
 
-2.3 Procesos sensibles: Capital semilla
+WALA está diseñado para acompañar, no sobrecargar. Permite:
 
-En etapas crÃ­ticas como desembolsos, WALA permite:
+- Registro en campo.
+- Seguimiento estructurado.
+- Organización de documentación.
+- Reporte ágil por cohorte y programa.
 
-Registro estructurado de informaciÃ³n financiera
+## 3. Propuesta de Valor (WHAT)
 
-Carga controlada de documentaciÃ³n
+### ¿Qué es WALA concretamente?
 
-VisualizaciÃ³n del estado por parte del participante
+WALA es una plataforma institucional diseñada para programas de emprendimiento que buscan:
 
-Evidencia del flujo seguido
+- Mayor trazabilidad.
+- Mejores mecanismos de rendición de cuentas.
+- Centralización de información.
+- Control sobre procesos sensibles.
+- Indicadores claros para toma de decisiones.
 
-Esto fortalece:
+### Componentes principales
 
-Transparencia
+- Gestión de participantes.
+- Seguimiento por fases.
+- Formularios estructurados habilitados por el programa.
+- Canal de visualización del estado del proceso.
+- Registro documental.
+- Reportes operativos por cohorte y programa.
 
-Control interno
-
-Claridad comunicacional
-
-ReducciÃ³n de consultas informales
-
-2.4 Rol del facilitador
-
-WALA estÃ¡ diseÃ±ado para acompaÃ±ar, no sobrecargar.
-
-Permite:
-
-Registro en campo
-
-Seguimiento estructurado
-
-OrganizaciÃ³n de documentaciÃ³n
-
-Reporte Ã¡gil por cohorte y programa
-
-3. Propuesta de Valor (WHAT)
-   Â¿QuÃ© es WALA concretamente?
-
-WALA es una plataforma institucional diseÃ±ada para programas de emprendimiento que buscan:
-
-Mayor trazabilidad
-
-Mejores mecanismos de rendiciÃ³n de cuentas
-
-CentralizaciÃ³n de informaciÃ³n
-
-Control sobre procesos sensibles
-
-Indicadores claros para toma de decisiones
-
-Componentes principales
-
-GestiÃ³n de participantes
-
-Seguimiento por fases
-
-Formularios estructurados habilitados por el programa
-
-Canal de visualizaciÃ³n del estado del proceso
-
-Registro documental
-
-Reportes operativos por cohorte y programa
-
-4. Modelo de ImplementaciÃ³n
+## 4. Modelo de Implementación
 
 WALA se integra al programa existente, no lo reemplaza.
 
-Fase 1: RevisiÃ³n de procesos
+**Fase 1: Revisión de procesos**
+- Identificación de fases del programa.
+- Identificación de hitos críticos.
+- Mapeo de formularios requeridos.
 
-IdentificaciÃ³n de fases del programa
+**Fase 2: Configuración**
+- Adaptación de indicadores.
+- Estructuración de formularios.
+- Parametrización del flujo.
 
-IdentificaciÃ³n de hitos crÃ­ticos
+**Fase 3: Piloto**
+- Implementación en cohorte seleccionada.
+- Ajustes operativos.
+- Evaluación de trazabilidad y reportabilidad.
 
-Mapeo de formularios requeridos
+## 5. Enfoque B2B Institucional
 
-Fase 2: ConfiguraciÃ³n
+WALA no es un producto individual para emprendedores. Es una herramienta institucional integrada al programa.
 
-AdaptaciÃ³n de indicadores
+**Beneficios para la organización implementadora:**
+- Mayor control del proceso.
+- Información centralizada.
+- Reducción de riesgo operativo.
+- Mejora en la rendición de cuentas.
+- Evidencia clara ante financiadores.
 
-EstructuraciÃ³n de formularios
+**Beneficios para el participante:**
+- Claridad sobre su estado.
+- Transparencia en procesos.
+- Comunicación estructurada.
 
-ParametrizaciÃ³n del flujo
+## 6. Posicionamiento Estratégico
 
-Fase 3: Piloto
+- WALA no compite con metodologías.
+- No compite con formadores.
+- No compite con consultores.
 
-ImplementaciÃ³n en cohorte seleccionada
+**WALA fortalece la gestión del programa desde la trazabilidad y la evidencia.**
 
-Ajustes operativos
+## 7. Síntesis (Golden Circle aplicado)
 
-EvaluaciÃ³n de trazabilidad y reportabilidad
-
-5. Enfoque B2B Institucional
-
-WALA no es un producto individual para emprendedores.
-Es una herramienta institucional integrada al programa.
-
-Beneficios para la organizaciÃ³n implementadora:
-
-Mayor control del proceso
-
-InformaciÃ³n centralizada
-
-ReducciÃ³n de riesgo operativo
-
-Mejora en la rendiciÃ³n de cuentas
-
-Evidencia clara ante financiadores
-
-Beneficios para el participante:
-
-Claridad sobre su estado
-
-Transparencia en procesos
-
-ComunicaciÃ³n estructurada
-
-6. Posicionamiento EstratÃ©gico
-
-WALA no compite con metodologÃ­as.
-No compite con formadores.
-No compite con consultores.
-
-WALA fortalece la gestiÃ³n del programa desde la trazabilidad y la evidencia.
-
-7. SÃ­ntesis (Golden Circle aplicado)
-
-WHY
-Fortalecer la trazabilidad y reducir el riesgo operativo en programas de emprendimiento.
-
-HOW
-A travÃ©s de un sistema estructurado de gestiÃ³n por procesos, hitos y evidencia documentada.
-
-WHAT
-Un copiloto institucional que acompaÃ±a, ordena y hace visibles los procesos del programa.
+- **WHY:** Fortalecer la trazabilidad y reducir el riesgo operativo en programas de emprendimiento.
+- **HOW:** A través de un sistema estructurado de gestión por procesos, hitos y evidencia documentada.
+- **WHAT:** Un copiloto institucional que acompaña, ordena y hace visibles los procesos del programa.

@@ -1,6 +1,10 @@
 import { ref } from 'vue'
 import { httpsCallable } from 'firebase/functions'
+import { getFirestore, doc, updateDoc } from 'firebase/firestore'
 import { functionsUsCentral1 } from '@/firebaseInit'
+import appFirebase from '@/firebaseInit'
+
+const db = getFirestore(appFirebase)
 
 function handleError(err, fallback) {
   console.error(`❌ [useAdmin] ${fallback}:`, err)
@@ -129,6 +133,34 @@ export function useAdmin() {
     }
   }
 
+  /**
+   * Actualiza la clasificación operativa de un negocio (industry y businessType)
+   * Escritura directa a Firestore
+   */
+  const updateBusinessClassification = async (businessId, { industry, businessType }) => {
+    loading.value = true
+    error.value = null
+    try {
+      await updateDoc(doc(db, 'businesses', businessId), {
+        industry,
+        businessType,
+        updatedAt: new Date()
+      })
+      
+      // Reflejo local inmediato
+      const idx = businessList.value.findIndex(b => b.businessId === businessId)
+      if (idx !== -1) {
+        businessList.value[idx].industry = industry
+        businessList.value[idx].businessType = businessType
+      }
+    } catch (err) {
+      error.value = handleError(err, 'Error actualizando clasificación')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     error,
@@ -138,5 +170,6 @@ export function useAdmin() {
     loadAllPrograms,
     updateSubscription,
     enrollBusinessInProgram,
+    updateBusinessClassification,
   }
 }

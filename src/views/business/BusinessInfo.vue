@@ -10,98 +10,54 @@
       </p>
     </div>
 
+    <!-- Tabs -->
+    <div class="flex border-b border-gray-200 mb-6">
+      <button
+        @click="activeTab = 'overview'"
+        :class="[
+          'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+          activeTab === 'overview'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        ]"
+      >
+        Datos Generales
+      </button>
+      <button
+        v-if="isManager"
+        @click="activeTab = 'config'"
+        :class="[
+          'px-4 py-3 text-sm font-medium border-b-2 transition-colors',
+          activeTab === 'config'
+            ? 'border-blue-500 text-blue-600'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        ]"
+      >
+        Configuración
+      </button>
+    </div>
+
     <div
       class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8"
     >
-      <div class="flex items-center justify-between mb-6">
-        <h2 class="text-lg font-semibold text-gray-900">Información básica</h2>
-      </div>
+      <form @submit.prevent="handleSave">
+        <!-- Contenido de las pestañas -->
+        <BusinessInfoOverview
+          v-show="activeTab === 'overview'"
+          v-model="formData"
+          :businessId="businessStore.business?.id"
+          :createdAt="createdAt"
+        />
 
-      <form @submit.prevent="handleSave" class="space-y-2">
-        <section
-          v-for="section in businessSections"
-          :key="section.id"
-          class="py-5 border-b border-gray-100 last:border-b-0"
-        >
-          <div class="flex items-start gap-3 mb-4">
-            <div
-              class="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center"
-            >
-              <component :is="section.icon" class="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 class="text-sm font-semibold text-gray-900">
-                {{ section.title }}
-              </h3>
-              <p class="text-xs text-gray-500 mt-0.5">
-                {{ section.description }}
-              </p>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div v-for="field in section.fields" :key="field.id">
-              <label class="block text-sm font-medium text-gray-900 mb-2">
-                {{ field.title }}
-              </label>
-
-              <select
-                v-if="field.type === 'options'"
-                v-model="formData[field.key]"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
-              >
-                <option value="">Seleccione una opción</option>
-                <option
-                  v-for="option in field.options"
-                  :key="option"
-                  :value="option"
-                >
-                  {{ option }}
-                </option>
-              </select>
-
-              <input
-                v-else
-                v-model="formData[field.key]"
-                type="text"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-sm bg-white"
-              />
-
-              <p v-if="field.description" class="mt-1 text-xs text-gray-500">
-                {{ field.description }}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section class="pt-5">
-          <h3 class="text-sm font-semibold text-gray-900 mb-3">
-            Información del sistema
-          </h3>
-          <div class="space-y-2 text-sm">
-            <div class="flex justify-between py-2 border-b border-gray-100">
-              <span class="text-gray-600">ID del negocio</span>
-              <span class="font-mono text-gray-900">{{
-                businessStore.business?.id || "N/A"
-              }}</span>
-            </div>
-            <div class="flex justify-between py-2 border-b border-gray-100">
-              <span class="text-gray-600">Fecha de creación</span>
-              <span class="text-gray-900">{{ formatDate(createdAt) }}</span>
-            </div>
-            <div class="flex justify-between py-2">
-              <span class="text-gray-600">Estado</span>
-              <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-              >
-                Activo
-              </span>
-            </div>
-          </div>
-        </section>
+        <BusinessInfoConfig
+          v-if="isManager"
+          v-show="activeTab === 'config'"
+          v-model="formData"
+        />
       </form>
     </div>
 
+    <!-- Banner Guardar Cambios -->
     <Transition
       enter-active-class="transition-all duration-300 ease-out"
       enter-from-class="opacity-0 translate-y-4"
@@ -143,8 +99,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
-import { useRoute } from "vue-router";
+import { ref, computed, watch, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -158,19 +114,34 @@ import {
   getDocs,
 } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
-import { ProfileCircle, Community, GraphUp } from "@iconoir/vue";
 import { useToast } from "@/composables/useToast";
 
+// Componentes
+import BusinessInfoOverview from "./components/BusinessInfoOverview.vue";
+import BusinessInfoConfig from "./components/BusinessInfoConfig.vue";
+
 const route = useRoute();
+const router = useRouter();
 const businessStore = useBusinessStore();
 const userStore = useUserStore();
 const authStore = useAuthStore();
 const db = getFirestore(appFirebase);
 const toast = useToast();
 
+const isManager = computed(() => userStore.isCurrentBusinessManager);
+
+// Active Tab from query param or default
+const activeTab = ref(route.query.tab || 'overview');
+
+// Sync tab with query params
+watch(activeTab, (newTab) => {
+  router.replace({ query: { ...route.query, tab: newTab } });
+});
+
 const isSaving = ref(false);
 
 const formData = ref({
+  // Perfil de negocio original
   nombreNegocio: "",
   anioInicio: "",
   direccionNegocio: "",
@@ -188,198 +159,33 @@ const formData = ref({
   localizacionPermanente: "",
   capitalInvertido: "",
   planesLargoPlazo: "",
+  
+  // Documento raíz
+  industry: "",
+  businessType: "",
+  moneda: "PEN",
+  country: "PE",
+
+  // Configuración de configuraciones/settings/config
+  workingHours: {
+    monday: { open: '08:00', close: '18:00', isOpen: true },
+    tuesday: { open: '08:00', close: '18:00', isOpen: true },
+    wednesday: { open: '08:00', close: '18:00', isOpen: true },
+    thursday: { open: '08:00', close: '18:00', isOpen: true },
+    friday: { open: '08:00', close: '18:00', isOpen: true },
+    saturday: { open: '09:00', close: '14:00', isOpen: true },
+    sunday: { open: '00:00', close: '00:00', isOpen: false }
+  },
+  notifications: {
+    email: true,
+    push: true,
+    lowStock: true,
+    dailyReport: false
+  }
 });
 
-const originalData = ref({ ...formData.value });
+const originalData = ref(JSON.parse(JSON.stringify(formData.value)));
 const isFormReady = ref(false);
-
-const businessFields = [
-  {
-    id: "field_nombre_negocio",
-    key: "nombreNegocio",
-    type: "text",
-    title: "Nombre del negocio",
-    description: "",
-  },
-  {
-    id: "field_anio_inicio",
-    key: "anioInicio",
-    type: "text",
-    title: "Año en que empezó este negocio",
-    description: "",
-  },
-  {
-    id: "field_direccion_negocio",
-    key: "direccionNegocio",
-    type: "text",
-    title: "Dirección del negocio",
-    description: "Dirección física donde opera",
-  },
-  {
-    id: "field_codigo_postal",
-    key: "codigoPostal",
-    type: "text",
-    title: "Código Postal",
-    description: "",
-  },
-  {
-    id: "field_telefono_negocio",
-    key: "telefonoNegocio",
-    type: "text",
-    title: "Teléfono del negocio",
-    description: "",
-  },
-  {
-    id: "field_departamento",
-    key: "departamento",
-    type: "text",
-    title: "Departamento",
-    description: "",
-  },
-  {
-    id: "field_linea_negocio",
-    key: "lineaNegocio",
-    type: "options",
-    title: "Línea de negocios",
-    description: "Seleccione la línea principal del negocio",
-    options: ["Comercio", "Producción", "Servicios"],
-  },
-  {
-    id: "field_descripcion_sector",
-    key: "descripcionSector",
-    type: "text",
-    title: "Descripción del sector / idea de negocio",
-    description:
-      "Describa brevemente el sector del negocio y/o la idea de negocio del empresari@",
-  },
-  {
-    id: "field_forma_legal",
-    key: "formaLegal",
-    type: "options",
-    title: "Forma legal del negocio",
-    description: "",
-    options: ["Unipersonal", "Sociedad Comercial", "Cooperativa", "Otra"],
-  },
-  {
-    id: "field_posicion_negocio",
-    key: "posicionNegocio",
-    type: "options",
-    title: "Posición en el negocio",
-    description: "",
-    options: ["Dueño(a)", "Gerente(a)", "Otro"],
-  },
-  {
-    id: "field_experiencia",
-    key: "experiencia",
-    type: "options",
-    title: "Años de experiencia gestionando éste u otro negocio",
-    description: "",
-    options: ["Ninguno", "Menos de un año", "1-3 años", "4 años o más"],
-  },
-  {
-    id: "field_oportunidades_mercado",
-    key: "oportunidadesMercado",
-    type: "text",
-    title: "Oportunidades de mercado",
-    description:
-      "Describa brevemente las oportunidades de mercado de su negocio",
-  },
-  {
-    id: "field_calidad_oportunidades",
-    key: "calidadOportunidades",
-    type: "options",
-    title: "¿Tiene el negocio oportunidades de mercado?",
-    description: "",
-    options: ["Excelentes", "Buenas", "Regulares"],
-  },
-  {
-    id: "field_num_trabajadores",
-    key: "numTrabajadores",
-    type: "options",
-    title: "Número de trabajadores",
-    description: "",
-    options: [
-      "Trabajador / Propietari@",
-      "2-5 trabajadores",
-      "6-10 trabajadores",
-      "11 o más trabajadores",
-    ],
-  },
-  {
-    id: "field_localizacion_permanente",
-    key: "localizacionPermanente",
-    type: "options",
-    title: "¿Tiene una localización permanente donde opera su negocio?",
-    description: "",
-    options: ["Sí", "No"],
-  },
-  {
-    id: "field_capital_invertido",
-    key: "capitalInvertido",
-    type: "options",
-    title: "¿Ha invertido capital privado en este negocio?",
-    description: "",
-    options: ["Un poco", "Mucho"],
-  },
-  {
-    id: "field_planes_largo_plazo",
-    key: "planesLargoPlazo",
-    type: "options",
-    title: "¿Tiene planes de quedarse en el negocio por largo tiempo?",
-    description: "",
-    options: ["Sí", "No necesariamente"],
-  },
-];
-
-const businessSections = [
-  {
-    id: "datos_generales",
-    title: "Datos generales",
-    description: "Identificación y ubicación del negocio",
-    icon: ProfileCircle,
-    fields: businessFields.filter((field) =>
-      [
-        "field_nombre_negocio",
-        "field_anio_inicio",
-        "field_direccion_negocio",
-        "field_codigo_postal",
-        "field_telefono_negocio",
-        "field_departamento",
-      ].includes(field.id),
-    ),
-  },
-  {
-    id: "perfil_negocio",
-    title: "Perfil del negocio",
-    description: "Actividad principal y estructura legal",
-    icon: Community,
-    fields: businessFields.filter((field) =>
-      [
-        "field_linea_negocio",
-        "field_descripcion_sector",
-        "field_forma_legal",
-        "field_posicion_negocio",
-        "field_experiencia",
-      ].includes(field.id),
-    ),
-  },
-  {
-    id: "proyeccion",
-    title: "Mercado y proyección",
-    description: "Oportunidades, tamaño y continuidad",
-    icon: GraphUp,
-    fields: businessFields.filter((field) =>
-      [
-        "field_oportunidades_mercado",
-        "field_calidad_oportunidades",
-        "field_num_trabajadores",
-        "field_localizacion_permanente",
-        "field_capital_invertido",
-        "field_planes_largo_plazo",
-      ].includes(field.id),
-    ),
-  },
-];
 
 const createdAt = computed(() => {
   const business = businessStore.business;
@@ -388,16 +194,15 @@ const createdAt = computed(() => {
 
 const hasChanges = computed(() => {
   if (!isFormReady.value) return false;
-
-  return Object.keys(formData.value).some(
-    (key) => formData.value[key] !== originalData.value[key],
-  );
+  return JSON.stringify(formData.value) !== JSON.stringify(originalData.value);
 });
 
 watch(
-  () => businessStore.business,
-  (business) => {
-    if (business) {
+  () => businessStore.business?.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      loadBusinessData();
+    } else if (newId && !isFormReady.value) {
       loadBusinessData();
     }
   },
@@ -405,38 +210,34 @@ watch(
 );
 
 function loadBusinessData() {
-  const business = businessStore.business;
-  if (business) {
-    loadBusinessProfileData(business);
+  const businessId = businessStore.business?.id || route.params.businessId;
+  if (businessId) {
+    loadBusinessProfileData(businessId);
   }
 }
 
-async function loadBusinessProfileData(business) {
+async function loadBusinessProfileData(businessId) {
   try {
     isFormReady.value = false;
 
-    const businessProfileRef = doc(
-      db,
-      "businesses",
-      business.id,
-      "settings",
-      "businessProfile",
-    );
-
+    // Load full business with settings
+    const businessWithSettings = await businessStore.loadBusinessWithSettings(businessId);
+    
+    // Perfil extendido
+    const businessProfileRef = doc(db, "businesses", businessId, "settings", "businessProfile");
     const businessProfileSnap = await getDoc(businessProfileRef);
-    const businessProfile = businessProfileSnap.exists()
-      ? businessProfileSnap.data()
-      : null;
+    const businessProfile = businessProfileSnap.exists() ? businessProfileSnap.data() : null;
 
-    const profileSource = businessProfile || business.setupInit || {};
+    const profileSource = businessProfile || businessWithSettings.setupInit || {};
+    
+    const configSettings = businessWithSettings.settings?.config || {};
+    
+    // Contact info
+    const contactInfo = businessWithSettings.contactInfo || {};
+    const address = contactInfo.address || {};
 
     formData.value = {
-      nombreNegocio:
-        profileSource.nombreNegocio ||
-        business.businessName ||
-        business.nombre ||
-        business.name ||
-        "",
+      nombreNegocio: profileSource.nombreNegocio || businessWithSettings.businessName || businessWithSettings.nombre || businessWithSettings.name || "",
       anioInicio: profileSource.anioInicio || "",
       direccionNegocio: profileSource.direccionNegocio || "",
       codigoPostal: profileSource.codigoPostal || "",
@@ -453,51 +254,39 @@ async function loadBusinessProfileData(business) {
       localizacionPermanente: profileSource.localizacionPermanente || "",
       capitalInvertido: profileSource.capitalInvertido || "",
       planesLargoPlazo: profileSource.planesLargoPlazo || "",
+      
+      industry: businessWithSettings.industry || "",
+      businessType: businessWithSettings.businessType || "",
+      
+      moneda: businessWithSettings.configuracion?.moneda || "PEN",
+      country: address.country || "PE",
+
+      workingHours: configSettings.workingHours || {
+        monday: { open: '08:00', close: '18:00', isOpen: true },
+        tuesday: { open: '08:00', close: '18:00', isOpen: true },
+        wednesday: { open: '08:00', close: '18:00', isOpen: true },
+        thursday: { open: '08:00', close: '18:00', isOpen: true },
+        friday: { open: '08:00', close: '18:00', isOpen: true },
+        saturday: { open: '09:00', close: '14:00', isOpen: true },
+        sunday: { open: '00:00', close: '00:00', isOpen: false }
+      },
+      notifications: configSettings.notifications || {
+        email: true,
+        push: true,
+        lowStock: true,
+        dailyReport: false
+      }
     };
   } catch (error) {
-    console.error(
-      "Error al cargar businessProfile, usando fallback legacy:",
-      error,
-    );
-
-    const setupInit = business.setupInit || {};
-    formData.value = {
-      nombreNegocio:
-        setupInit.nombreNegocio ||
-        business.businessName ||
-        business.nombre ||
-        business.name ||
-        "",
-      anioInicio: setupInit.anioInicio || "",
-      direccionNegocio: setupInit.direccionNegocio || "",
-      codigoPostal: setupInit.codigoPostal || "",
-      telefonoNegocio: setupInit.telefonoNegocio || "",
-      departamento: setupInit.departamento || "",
-      lineaNegocio: setupInit.lineaNegocio || "",
-      descripcionSector: setupInit.descripcionSector || "",
-      formaLegal: setupInit.formaLegal || "",
-      posicionNegocio: setupInit.posicionNegocio || "",
-      experiencia: setupInit.experiencia || "",
-      oportunidadesMercado: setupInit.oportunidadesMercado || "",
-      calidadOportunidades: setupInit.calidadOportunidades || "",
-      numTrabajadores: setupInit.numTrabajadores || "",
-      localizacionPermanente: setupInit.localizacionPermanente || "",
-      capitalInvertido: setupInit.capitalInvertido || "",
-      planesLargoPlazo: setupInit.planesLargoPlazo || "",
-    };
+    console.error("Error al cargar businessProfile y configuración:", error);
   } finally {
-    originalData.value = { ...formData.value };
+    originalData.value = JSON.parse(JSON.stringify(formData.value));
     isFormReady.value = true;
   }
 }
 
-// Función para actualizar el businessName en todas las relaciones usuarios-negocio
-const updateBusinessNameInUserRelations = async (
-  businessId,
-  newBusinessName,
-) => {
+const updateBusinessNameInUserRelations = async (businessId, newBusinessName) => {
   try {
-    // Buscar todos los usuarios que tienen este negocio
     const usersRef = collection(db, "users");
     const usersSnapshot = await getDocs(usersRef);
 
@@ -505,38 +294,24 @@ const updateBusinessNameInUserRelations = async (
 
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
-      const businessRelationRef = doc(
-        db,
-        "users",
-        userId,
-        "businesses",
-        businessId,
-      );
+      const businessRelationRef = doc(db, "users", userId, "businesses", businessId);
 
-      // Intentar actualizar la relación (si existe)
       updatePromises.push(
         updateDoc(businessRelationRef, {
           businessName: newBusinessName,
           updatedAt: new Date(),
         }).catch((error) => {
-          // Si el documento no existe, no hacemos nada (el usuario no tiene este negocio)
           if (error.code !== "not-found") {
-            console.warn(
-              `No se pudo actualizar relación para usuario ${userId}:`,
-              error,
-            );
+            console.warn(`No se pudo actualizar relación para usuario ${userId}:`, error);
           }
         }),
       );
     }
 
     await Promise.all(updatePromises);
-    console.log(
-      `✅ Nombre del negocio actualizado en todas las relaciones de usuarios`,
-    );
+    console.log(`✅ Nombre del negocio actualizado en todas las relaciones de usuarios`);
   } catch (error) {
     console.error("Error al actualizar relaciones de usuarios:", error);
-    // No lanzamos el error para no bloquear la actualización principal
   }
 };
 
@@ -544,98 +319,96 @@ const handleSave = async () => {
   isSaving.value = true;
 
   try {
-    const businessId = route.params.businessId;
-    const normalizedBusinessName = (
-      formData.value.nombreNegocio || ""
-    ).toLocaleUpperCase("es-ES");
-
-    // Reflejar en UI el mismo valor que se persiste como nombre canónico.
+    const businessId = route.params.businessId || businessStore.business?.id;
+    const normalizedBusinessName = (formData.value.nombreNegocio || "").toLocaleUpperCase("es-ES");
     formData.value.nombreNegocio = normalizedBusinessName;
 
     const businessRef = doc(db, "businesses", businessId);
-    const businessProfileRef = doc(
-      db,
-      "businesses",
-      businessId,
-      "settings",
-      "businessProfile",
-    );
+    const businessProfileRef = doc(db, "businesses", businessId, "settings", "businessProfile");
+    const configRef = doc(db, "businesses", businessId, "settings", "config");
 
-    // 1. Guardar perfil del negocio en settings/businessProfile
+    // 1. Perfil del negocio (datos overview)
     await setDoc(
       businessProfileRef,
       {
-        ...formData.value,
         nombreNegocio: normalizedBusinessName,
+        anioInicio: formData.value.anioInicio,
+        direccionNegocio: formData.value.direccionNegocio,
+        codigoPostal: formData.value.codigoPostal,
+        telefonoNegocio: formData.value.telefonoNegocio,
+        departamento: formData.value.departamento,
+        lineaNegocio: formData.value.lineaNegocio,
+        descripcionSector: formData.value.descripcionSector,
+        formaLegal: formData.value.formaLegal,
+        posicionNegocio: formData.value.posicionNegocio,
+        experiencia: formData.value.experiencia,
+        oportunidadesMercado: formData.value.oportunidadesMercado,
+        calidadOportunidades: formData.value.calidadOportunidades,
+        numTrabajadores: formData.value.numTrabajadores,
+        localizacionPermanente: formData.value.localizacionPermanente,
+        capitalInvertido: formData.value.capitalInvertido,
+        planesLargoPlazo: formData.value.planesLargoPlazo,
         updatedAt: new Date(),
       },
       { merge: true },
     );
 
-    // 2. Actualizar nombre canónico del negocio en documento raíz
+    // 2. Documento raíz (nombre, industry, businessType, moneda, country)
+    // Manteniendo la estructura actual de contactInfo si existe
+    const currentBusiness = await getDoc(businessRef);
+    let contactInfo = {};
+    if (currentBusiness.exists()) {
+      contactInfo = currentBusiness.data().contactInfo || {};
+    }
+    
+    if (!contactInfo.address) contactInfo.address = {};
+    contactInfo.address.country = formData.value.country;
+
     await updateDoc(businessRef, {
       businessName: normalizedBusinessName,
+      industry: formData.value.industry,
+      businessType: formData.value.businessType,
+      "configuracion.moneda": formData.value.moneda,
+      contactInfo: contactInfo,
       updatedAt: new Date(),
     });
 
-    // 3. Actualizar el nombre del negocio en todas las relaciones usuarios-negocio
-    // Solo actualizamos businessName, que es el campo que se replica
+    // 3. Settings Config (workingHours, notifications)
+    await setDoc(
+      configRef,
+      {
+        workingHours: formData.value.workingHours,
+        notifications: formData.value.notifications,
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    );
+
+    // 4. Actualizar relaciones
     await updateBusinessNameInUserRelations(businessId, normalizedBusinessName);
 
-    // 4. Actualizar el store local del negocio
-    await businessStore.loadBusiness(businessId);
+    // 5. Actualizar store local
+    await businessStore.loadBusinessWithSettings(businessId);
 
-    // 5. Actualizar el store local del usuario (para reflejar el cambio en currentBusiness)
+    // 6. Actualizar userStore si es el currentBusiness
     if (authStore.user?.uid) {
       await userStore.loadUserBusinesses(authStore.user.uid);
-
-      // Si el negocio actual es el que se está editando, actualizar currentBusiness
       if (userStore.currentBusiness?.businessId === businessId) {
-        const updatedBusiness = userStore.userBusinesses.find(
-          (b) => b.businessId === businessId,
-        );
+        const updatedBusiness = userStore.userBusinesses.find((b) => b.businessId === businessId);
         if (updatedBusiness) {
           userStore.currentBusiness = updatedBusiness;
-          localStorage.setItem(
-            "currentBusiness",
-            JSON.stringify(updatedBusiness),
-          );
+          localStorage.setItem("currentBusiness", JSON.stringify(updatedBusiness));
         }
       }
     }
 
-    toast.success("Los datos del negocio se han actualizado correctamente", {
-      duration: 2200,
-    });
-    originalData.value = { ...formData.value };
+    toast.success("Los datos del negocio se han actualizado correctamente", { duration: 2200 });
+    originalData.value = JSON.parse(JSON.stringify(formData.value));
   } catch (error) {
     console.error("Error al guardar:", error);
-    toast.error("Error al guardar los cambios. Inténtalo de nuevo.", {
-      duration: 2600,
-    });
+    toast.error("Error al guardar los cambios. Inténtalo de nuevo.", { duration: 2600 });
   } finally {
     isSaving.value = false;
-  }
-};
-
-const formatDate = (date) => {
-  if (!date) return "No disponible";
-  try {
-    let dateObj;
-    if (date && date.seconds) {
-      dateObj = new Date(date.seconds * 1000);
-    } else if (date) {
-      dateObj = new Date(date);
-    } else {
-      return "No disponible";
-    }
-    return dateObj.toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  } catch (error) {
-    return "Fecha inválida";
   }
 };
 </script>

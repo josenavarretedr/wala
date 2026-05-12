@@ -20,12 +20,7 @@
         :class="getButtonClasses('FOOD_PRODUCTION')"
       >
         <div :class="getIconContainerClasses('FOOD_PRODUCTION')">
-          <!-- Icono Comida (tenedor y cuchillo) -->
-          <img
-            src="/icons/cubiertos.png"
-            alt="Producción de alimentos"
-            class="w-8 h-8"
-          />
+          <PizzaSlice class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -44,8 +39,7 @@
         :class="getButtonClasses('RETAIL')"
       >
         <div :class="getIconContainerClasses('RETAIL')">
-          <!-- Icono Comercio (carrito) -->
-          <Cart class="w-8 h-8" fill="none" stroke="currentColor" />
+          <ShoppingBag class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -64,20 +58,7 @@
         :class="getButtonClasses('APPOINTMENT_SERVICES')"
       >
         <div :class="getIconContainerClasses('APPOINTMENT_SERVICES')">
-          <!-- Icono Cita (calendario) -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 002-2V7H3v12a2 2 0 002 2z"
-            />
-          </svg>
+          <Calendar class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -96,12 +77,7 @@
         :class="getButtonClasses('MACHINE_SERVICES')"
       >
         <div :class="getIconContainerClasses('MACHINE_SERVICES')">
-          <!-- Icono Máquina (engranaje) -->
-          <img
-            src="/icons/maquina2.svg"
-            alt="Producción de alimentos"
-            class="w-8 h-8"
-          />
+          <WashingMachine class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -120,14 +96,7 @@
         :class="getButtonClasses('MIXED')"
       >
         <div :class="getIconContainerClasses('MIXED')">
-          <!-- Icono Mixto (cuadrícula) -->
-          <ViewGrid
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-          </ViewGrid>
+          <ViewGrid class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block">Mixto</span>
@@ -161,7 +130,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowStore";
-import { Cart, ViewGrid } from "@iconoir/vue";
+import { PizzaSlice, ShoppingBag, Calendar, WashingMachine, ViewGrid } from "@iconoir/vue";
 
 const flowStore = useBusinessOnboardingFlowStore();
 

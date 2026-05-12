@@ -183,6 +183,14 @@ const routes = [
         meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
       },
 
+      // ✅ NUEVO: Asesoría
+      {
+        path: 'consulting',
+        name: 'ConsultingDashboard',
+        component: () => import('@/views/Consulting/ConsultingDashboard.vue'),
+        meta: { requiresAuth: true, title: 'Asesoría' }
+      },
+
       // ✅ NUEVO: Cotizaciones
       {
         path: 'quotes',

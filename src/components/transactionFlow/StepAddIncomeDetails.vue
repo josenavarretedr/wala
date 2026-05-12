@@ -151,6 +151,25 @@
             </select>
           </div>
 
+          <!-- Precio -->
+          <div class="space-y-2 col-span-2 sm:col-span-1">
+            <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
+            <div class="relative">
+              <input
+                ref="priceInput"
+                v-model="transactionStore.itemToAddInTransaction.value.price"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                @keydown.enter="handleAddProductOnEnter"
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
+              />
+              <div
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
+              ></div>
+            </div>
+          </div>
+
           <!-- Indicador de stock disponible -->
           <div class="col-span-2 sm:col-span-2 flex flex-col gap-1">
             <p class="text-xs text-gray-500">Ingresa la cantidad a vender</p>
@@ -198,25 +217,6 @@
             >
               💡 Este producto aún no tiene composición de materiales definida
             </p>
-          </div>
-
-          <!-- Precio -->
-          <div class="space-y-2 col-span-2 sm:col-span-1">
-            <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
-            <div class="relative">
-              <input
-                ref="priceInput"
-                v-model="transactionStore.itemToAddInTransaction.value.price"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                @keydown.enter="handleAddProductOnEnter"
-                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
-              />
-              <div
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
-              ></div>
-            </div>
           </div>
         </div>
 

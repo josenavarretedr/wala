@@ -317,6 +317,14 @@ const register = async () => {
         theme: "light",
         notifications: true,
       },
+      // Campo 'profile' requerido por Cloud Function joinProgramByCode (línea 322 de la CF)
+      // La CF lee userData.profile como objeto anidado y lanza failed-precondition si está vacío
+      profile: {
+        name: name.value.trim(),
+        nombre: name.value.trim().split(" ")[0] || name.value.trim(),
+        apellidos: name.value.trim().split(" ").slice(1).join(" ") || "",
+        email: userData.email,
+      },
     };
 
     await userStore.createUserProfile(userProfileData);

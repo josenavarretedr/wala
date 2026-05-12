@@ -19,20 +19,7 @@
         :class="getButtonClasses('ferreteria', 'red')"
       >
         <div :class="getIconContainerClasses('ferreteria', 'red')">
-          <!-- Icono Martillo/Herramientas -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z"
-            />
-          </svg>
+          <Wrench class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -49,20 +36,7 @@
         :class="getButtonClasses('reposteria', 'pink')"
       >
         <div :class="getIconContainerClasses('reposteria', 'pink')">
-          <!-- Icono Pastel -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z"
-            />
-          </svg>
+          <Shop class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -79,20 +53,7 @@
         :class="getButtonClasses('libreria', 'indigo')"
       >
         <div :class="getIconContainerClasses('libreria', 'indigo')">
-          <!-- Icono Libro -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
+          <Book class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block">Librería</span>
@@ -107,20 +68,7 @@
         :class="getButtonClasses('restaurante', 'yellow')"
       >
         <div :class="getIconContainerClasses('restaurante', 'yellow')">
-          <!-- Icono Restaurante -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-            />
-          </svg>
+          <PizzaSlice class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block"
@@ -137,20 +85,7 @@
         :class="getButtonClasses('farmacia', 'teal')"
       >
         <div :class="getIconContainerClasses('farmacia', 'teal')">
-          <!-- Icono Cruz Médica -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
-            />
-          </svg>
+          <HalfMoon class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block">Farmacia</span>
@@ -165,20 +100,7 @@
         :class="getButtonClasses('otro', 'purple')"
       >
         <div :class="getIconContainerClasses('otro', 'purple')">
-          <!-- Icono Estrella/Interrogación -->
-          <svg
-            class="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <Suggestion class="w-8 h-8" />
         </div>
         <div class="text-left sm:text-center flex-1 sm:flex-initial">
           <span class="text-base sm:text-lg font-semibold block">Otro</span>
@@ -224,6 +146,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowStore";
+import { Wrench, Shop, Book, PizzaSlice, HalfMoon, Suggestion } from "@iconoir/vue";
 
 const flowStore = useBusinessOnboardingFlowStore();
 

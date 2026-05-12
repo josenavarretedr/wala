@@ -251,120 +251,124 @@
       />
     </Transition>
 
-    <!-- Panel deslizante desde abajo -->
-    <Transition name="slide-up">
-      <div
-        v-if="showBottomSheet"
-        class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-2xl"
-        style="max-height: 80vh; overflow-y: auto"
-      >
-        <!-- Handle visual -->
-        <div class="flex justify-center pt-3 pb-1">
-          <div class="w-10 h-1 rounded-full bg-gray-300"></div>
-        </div>
-
-        <!-- Header -->
-        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">Todas las aplicaciones</h2>
-            <p class="text-xs text-gray-500 mt-0.5">Selecciona una aplicación</p>
+    <!-- Panel adaptable (Bottom Sheet en móvil, Modal en desktop) -->
+    <div
+      v-if="showBottomSheet"
+      class="fixed inset-0 z-50 flex items-end lg:items-center justify-center pointer-events-none p-0 lg:p-6"
+    >
+      <Transition name="modal-adaptive">
+        <div
+          v-if="showBottomSheet"
+          class="bg-white shadow-2xl pointer-events-auto overflow-y-auto w-full rounded-t-2xl max-h-[85vh] lg:rounded-2xl lg:max-w-2xl lg:max-h-[80vh]"
+        >
+          <!-- Handle visual (solo móvil) -->
+          <div class="flex justify-center pt-3 pb-1 lg:hidden">
+            <div class="w-10 h-1 rounded-full bg-gray-300"></div>
           </div>
-          <button
-            @click="showBottomSheet = false"
-            class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
 
-        <!-- Apps grid dentro del bottom sheet -->
-        <div class="px-4 py-4">
-          <div class="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-9 gap-3">
-            <div
-              v-for="item in allDisplayApps"
-              :key="'sheet-' + item.id"
-              :class="[
-                'group bg-white rounded-xl border flex flex-col items-center justify-center p-3 cursor-pointer transition-all duration-200',
-                getValue(item.available)
-                  ? [
-                      'border-gray-100 shadow-sm',
-                      item.color === 'blue' && 'hover:border-blue-300 hover:bg-blue-50 hover:shadow-md',
-                      item.color === 'red' && 'hover:border-red-300 hover:bg-red-50 hover:shadow-md',
-                      item.color === 'green' && 'hover:border-green-300 hover:bg-green-50 hover:shadow-md',
-                      item.color === 'purple' && 'hover:border-purple-300 hover:bg-purple-50 hover:shadow-md',
-                      item.color === 'indigo' && 'hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md',
-                      item.color === 'orange' && 'hover:border-orange-300 hover:bg-orange-50 hover:shadow-md',
-                      item.color === 'teal' && 'hover:border-teal-300 hover:bg-teal-50 hover:shadow-md',
-                    ]
-                  : 'border-gray-100 opacity-60 cursor-not-allowed',
-              ]"
-              @click="handleAppClick(item)"
+          <!-- Header -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Todas las aplicaciones</h2>
+              <p class="text-xs text-gray-500 mt-0.5">Selecciona una aplicación</p>
+            </div>
+            <button
+              @click="showBottomSheet = false"
+              class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <!-- Icono componente -->
-              <component
-                v-if="item.isComponent && typeof item.icon !== 'string'"
-                :is="item.icon"
-                :class="[
-                  'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
-                  getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
-                  getValue(item.available) && getIconHoverColor(item.color),
-                ]"
-              />
-              <!-- Icono SVG receipt -->
-              <svg
-                v-else-if="item.icon === 'receipt'"
-                :class="[
-                  'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
-                  getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
-                  getValue(item.available) && getIconHoverColor(item.color),
-                ]"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
-              <!-- Emoji fallback -->
-              <div v-else class="mb-2 text-2xl sm:text-3xl transition-all duration-200">
-                {{ item.icon }}
-              </div>
+            </button>
+          </div>
 
+          <!-- Apps grid dentro del bottom sheet -->
+          <div class="px-4 py-4">
+            <div class="grid grid-cols-4 gap-3 sm:gap-4">
               <div
+                v-for="item in allDisplayApps"
+                :key="'sheet-' + item.id"
                 :class="[
-                  'text-center text-xs sm:text-sm font-medium',
-                  getValue(item.available) ? 'text-gray-600' : 'text-gray-400',
+                  'group bg-white rounded-xl border flex flex-col items-center justify-center p-3 cursor-pointer transition-all duration-200',
+                  getValue(item.available)
+                    ? [
+                        'border-gray-100 shadow-sm',
+                        item.color === 'blue' && 'hover:border-blue-300 hover:bg-blue-50 hover:shadow-md',
+                        item.color === 'red' && 'hover:border-red-300 hover:bg-red-50 hover:shadow-md',
+                        item.color === 'green' && 'hover:border-green-300 hover:bg-green-50 hover:shadow-md',
+                        item.color === 'purple' && 'hover:border-purple-300 hover:bg-purple-50 hover:shadow-md',
+                        item.color === 'indigo' && 'hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md',
+                        item.color === 'orange' && 'hover:border-orange-300 hover:bg-orange-50 hover:shadow-md',
+                        item.color === 'teal' && 'hover:border-teal-300 hover:bg-teal-50 hover:shadow-md',
+                      ]
+                    : 'border-gray-100 opacity-60 cursor-not-allowed',
                 ]"
+                @click="handleAppClick(item)"
               >
-                {{ getValue(item.name) }}
-              </div>
-              <div v-if="!getValue(item.available)" class="text-xs text-gray-400 mt-0.5">
-                Próximamente
+                <!-- Icono componente -->
+                <component
+                  v-if="item.isComponent && typeof item.icon !== 'string'"
+                  :is="item.icon"
+                  :class="[
+                    'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
+                    getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
+                    getValue(item.available) && getIconHoverColor(item.color),
+                  ]"
+                />
+                <!-- Icono SVG receipt -->
+                <svg
+                  v-else-if="item.icon === 'receipt'"
+                  :class="[
+                    'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
+                    getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
+                    getValue(item.available) && getIconHoverColor(item.color),
+                  ]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <!-- Emoji fallback -->
+                <div v-else class="mb-2 text-2xl sm:text-3xl transition-all duration-200">
+                  {{ item.icon }}
+                </div>
+
+                <div
+                  :class="[
+                    'text-center text-xs sm:text-sm font-medium',
+                    getValue(item.available) ? 'text-gray-600' : 'text-gray-400',
+                  ]"
+                >
+                  {{ getValue(item.name) }}
+                </div>
+                <div v-if="!getValue(item.available)" class="text-xs text-gray-400 mt-0.5">
+                  Próximamente
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- Espacio para el safe area en iOS -->
-        <div class="pb-safe pb-4"></div>
-      </div>
-    </Transition>
+          <!-- Espacio para el safe area en iOS -->
+          <div class="pb-safe pb-4 lg:pb-0"></div>
+        </div>
+      </Transition>
+    </div>
   </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, onUnmounted, watch } from "vue";
 import StreakWidget from "./StreakWidget.vue";
 import {
   GraphUp,
@@ -375,6 +379,7 @@ import {
   Community,
   BrightCrown,
   Bookmark,
+  ChatBubble,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -491,6 +496,15 @@ const allMicroApps = ref([
     isComponent: true,
     color: "orange",
   },
+  {
+    id: 10,
+    name: "Asesoría",
+    route: "/consulting",
+    available: true,
+    icon: ChatBubble,
+    isComponent: true,
+    color: "teal",
+  },
 ]);
 
 // Función helper para obtener la clase de color del icono
@@ -564,27 +578,26 @@ const handleAppClick = (app) => {
 
 // Manejar tecla ESC para cerrar bottom sheet
 const handleEscKey = (event) => {
-  if (event.key === "Escape" && showBottomSheet.value) {
+  if (event.key === "Escape") {
     showBottomSheet.value = false;
   }
 };
 
-// Lifecycle hooks
-onMounted(() => {
-  document.addEventListener("keydown", handleEscKey);
-});
-
-onUnmounted(() => {
-  document.removeEventListener("keydown", handleEscKey);
-});
-
-// Watch para prevenir scroll cuando el bottom sheet está abierto
+// Watch para manejar eventos y estilos cuando cambia showBottomSheet
 watch(showBottomSheet, (newValue) => {
   if (newValue) {
     document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleEscKey);
   } else {
     document.body.style.overflow = "";
+    document.removeEventListener("keydown", handleEscKey);
   }
+});
+
+// Lifecycle hooks para limpieza preventiva
+onUnmounted(() => {
+  document.removeEventListener("keydown", handleEscKey);
+  document.body.style.overflow = "";
 });
 </script>
 
@@ -629,18 +642,36 @@ watch(showBottomSheet, (newValue) => {
   opacity: 0;
 }
 
-/* Transición slide-up para el panel */
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+/* Transición adaptativa: Slide en móvil, Fade/Scale en desktop */
+.modal-adaptive-enter-active,
+.modal-adaptive-leave-active {
+  transition: all 0.3s cubic-bezier(0.32, 0.72, 0, 1);
 }
-.slide-up-enter-from,
-.slide-up-leave-to {
-  transform: translateY(100%);
+
+/* Móvil: Slide up */
+@media (max-width: 1023px) {
+  .modal-adaptive-enter-from,
+  .modal-adaptive-leave-to {
+    transform: translateY(100%);
+  }
+  .modal-adaptive-enter-to,
+  .modal-adaptive-leave-from {
+    transform: translateY(0%);
+  }
 }
-.slide-up-enter-to,
-.slide-up-leave-from {
-  transform: translateY(0%);
+
+/* Desktop: Fade & Scale */
+@media (min-width: 1024px) {
+  .modal-adaptive-enter-from,
+  .modal-adaptive-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  .modal-adaptive-enter-to,
+  .modal-adaptive-leave-from {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Safe area para iOS */

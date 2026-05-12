@@ -196,7 +196,7 @@ const handleCreateBusiness = async () => {
       businessName: formData.nombre.trim(),
       industry: formData.industry,
       businessType: formData.businessType,
-      descripcion: formData.descripcion.trim(),
+      description: formData.descripcion.trim(),
       gerenteId: authStore.user.uid,
       fechaCreacion: new Date(),
       activo: true,

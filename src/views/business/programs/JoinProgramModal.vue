@@ -432,6 +432,7 @@ const joinResult = ref(null);
 
 const currentBusinessName = computed(() => {
   return (
+    userStore.currentBusiness?.businessName ||
     userStore.currentBusiness?.razonSocial ||
     userStore.currentBusiness?.businessId ||
     "Mi Negocio"

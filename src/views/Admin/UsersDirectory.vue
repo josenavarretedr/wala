@@ -147,6 +147,8 @@
           <tr>
             <th class="th-name">Negocio</th>
             <th class="th-sub">Suscripción</th>
+            <th class="th-industry">Rubro</th>
+            <th class="th-btype">Modelo</th>
             <th class="th-prog">Programas</th>
             <th class="th-date">Registro</th>
             <th class="th-actions"></th>
@@ -226,6 +228,22 @@
               <div v-if="biz.subscription.endDate" class="sub-expiry">
                 Vence: {{ formatDate(biz.subscription.endDate) }}
               </div>
+            </td>
+
+            <!-- Columna Rubro -->
+            <td class="td-industry">
+              <button @click="openClassModal(biz)" class="classification-badge"
+                :style="{ background: INDUSTRY_MAP[biz.industry]?.color || '#9ca3af' }">
+                {{ INDUSTRY_MAP[biz.industry]?.label || 'Sin clasificar' }}
+              </button>
+            </td>
+
+            <!-- Columna Modelo -->
+            <td class="td-btype">
+              <button @click="openClassModal(biz)" class="classification-badge secondary"
+                :style="{ background: BUSINESS_TYPE_MAP[biz.businessType]?.color || '#9ca3af' }">
+                {{ BUSINESS_TYPE_MAP[biz.businessType]?.label || 'Sin definir' }}
+              </button>
             </td>
 
             <!-- Programas -->
@@ -314,6 +332,15 @@
                       stroke-width="2"
                       d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
                     />
+                  </svg>
+                </button>
+                <button
+                  @click="openClassModal(biz)"
+                  class="action-btn"
+                  title="Clasificar negocio"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                   </svg>
                 </button>
               </div>
@@ -649,6 +676,110 @@
       </div>
     </Teleport>
 
+    <!-- ═══════════════════════════════════════════════════
+    MODAL: Clasificar Negocio
+    ═══════════════════════════════════════════════════ -->
+    <Teleport to="body">
+      <div
+        v-if="classModal.open"
+        class="modal-overlay"
+        @click.self="classModal.open = false"
+      >
+        <div class="modal-card">
+          <div class="modal-header">
+            <div>
+              <h2 class="modal-title">Clasificar Negocio</h2>
+              <p class="modal-subtitle">
+                {{ classModal.business?.businessName }}
+              </p>
+            </div>
+            <button @click="classModal.open = false" class="modal-close">
+              <svg
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <!-- Rubro -->
+            <label class="field-label">Rubro (Industry)</label>
+            <div class="plan-selector" style="grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 1.5rem;">
+              <button
+                v-for="(val, key) in INDUSTRY_MAP"
+                :key="key"
+                @click="classForm.industry = key"
+                class="plan-option"
+                :class="{ 'selected': classForm.industry === key }"
+                :style="classForm.industry === key ? `border-color: ${val.color}; background: #f8fafc;` : ''"
+              >
+                <span class="plan-option-name" style="font-size: 0.75rem;">{{ val.label }}</span>
+              </button>
+            </div>
+
+            <!-- Modelo -->
+            <label class="field-label">Tipo de Actividad (Business Type)</label>
+            <div class="plan-selector" style="grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+              <button
+                v-for="(val, key) in BUSINESS_TYPE_MAP"
+                :key="key"
+                @click="classForm.businessType = key"
+                class="plan-option"
+                :class="{ 'selected': classForm.businessType === key }"
+                :style="classForm.businessType === key ? `border-color: ${val.color}; background: #f8fafc;` : ''"
+              >
+                <span class="plan-option-name" style="font-size: 0.75rem;">{{ val.label }}</span>
+              </button>
+            </div>
+            <p class="field-hint mt-2">Estos campos dictan la configuración contable del negocio.</p>
+          </div>
+
+          <div class="modal-footer">
+            <button @click="classModal.open = false" class="btn-secondary">
+              Cancelar
+            </button>
+            <button
+              @click="submitClassification"
+              :disabled="classModal.saving"
+              class="btn-primary"
+            >
+              <svg
+                v-if="classModal.saving"
+                class="spin h-4 w-4 mr-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                />
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {{ classModal.saving ? "Guardando..." : "Guardar clasificación" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Toast simple -->
     <Teleport to="body">
       <div v-if="toast.show" class="toast" :class="toast.type">
@@ -671,7 +802,25 @@ const {
   loadAllPrograms,
   updateSubscription,
   enrollBusinessInProgram,
+  updateBusinessClassification,
 } = useAdmin();
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const INDUSTRY_MAP = {
+  ferreteria:  { label: 'Ferretería',  color: '#dc2626' },
+  reposteria:  { label: 'Repostería',  color: '#db2777' },
+  libreria:    { label: 'Librería',    color: '#4338ca' },
+  restaurante: { label: 'Restaurante', color: '#d97706' },
+  farmacia:    { label: 'Farmacia',    color: '#0d9488' },
+  otro:        { label: 'Otro',        color: '#7c3aed' },
+};
+const BUSINESS_TYPE_MAP = {
+  FOOD_PRODUCTION:      { label: 'Prod. Alimentos', color: '#d97706' },
+  RETAIL:               { label: 'Minorista',       color: '#ea580c' },
+  APPOINTMENT_SERVICES: { label: 'Serv. con cita',  color: '#4338ca' },
+  MACHINE_SERVICES:     { label: 'Maquinaria',      color: '#0d9488' },
+  MIXED:                { label: 'Mixto',           color: '#374151' },
+};
 
 // ─── Search & Filters ────────────────────────────────────────────────────────
 const searchQuery = ref("");
@@ -809,6 +958,33 @@ async function submitEnroll() {
     showToast(`❌ ${e.message || error.value}`, "error");
   } finally {
     progModal.saving = false;
+  }
+}
+
+// ─── Classification Modal ─────────────────────────────────────────────────────────────
+const classModal = reactive({ open: false, business: null, saving: false });
+const classForm = reactive({ industry: '', businessType: '' });
+
+function openClassModal(biz) {
+  classModal.business = biz;
+  classForm.industry = biz.industry || '';
+  classForm.businessType = biz.businessType || '';
+  classModal.open = true;
+}
+
+async function submitClassification() {
+  classModal.saving = true;
+  try {
+    await updateBusinessClassification(classModal.business.businessId, {
+      industry: classForm.industry,
+      businessType: classForm.businessType
+    });
+    showToast('✅ Clasificación actualizada', 'success');
+    classModal.open = false;
+  } catch (e) {
+    showToast(`❌ ${e.message || 'Error'}`, 'error');
+  } finally {
+    classModal.saving = false;
   }
 }
 
@@ -1124,19 +1300,23 @@ onMounted(fetchData);
   border-bottom: 1px solid #e5e7eb;
 }
 .th-name {
-  width: 30%;
+  width: 20%;
 }
 .th-sub {
-  width: 22%;
+  width: 15%;
+}
+.th-industry,
+.th-btype {
+  width: 12%;
 }
 .th-prog {
-  width: 22%;
+  width: 15%;
 }
 .th-date {
-  width: 14%;
+  width: 12%;
 }
 .th-actions {
-  width: 12%;
+  width: 14%;
 }
 
 .data-row {
@@ -1150,6 +1330,21 @@ onMounted(fetchData);
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
 }
+
+/* ── Badge Classes ───────────────────────────── */
+.classification-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.classification-badge:hover { opacity: 0.85; }
+.classification-badge.secondary { filter: brightness(0.9); }
 
 /* ── Business cell ───────────────────────────── */
 .business-info {

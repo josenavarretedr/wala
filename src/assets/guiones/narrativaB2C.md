@@ -1,214 +1,164 @@
+# Narrativa B2C para WALA
+
 Si WALA quiere ganar en B2C, no compite por funcionalidades. Compite por claridad mental y tranquilidad financiera.
 
-El emprendedor de a pie no estÃ¡ buscando â€œsoftware de gestiÃ³nâ€. EstÃ¡ buscando:
+El emprendedor de a pie no está buscando "software de gestión". Está buscando:
 
-Dejar de vivir apagando incendios.
+- Dejar de vivir apagando incendios.
+- Entender si realmente está ganando plata.
+- Sentir que su negocio no lo está controlando a él.
+- Tomar decisiones sin miedo.
 
-Entender si realmente estÃ¡ ganando plata.
+Ahí entra la narrativa.
 
-Sentir que su negocio no lo estÃ¡ controlando a Ã©l.
+## 1. El Círculo de Oro aplicado a WALA (B2C)
 
-Tomar decisiones sin miedo.
+### WHY – ¿Por qué existe WALA?
 
-AhÃ­ entra la narrativa.
+Porque miles de emprendedores trabajan duro... pero no tienen claridad.
 
-1ï¸âƒ£ El CÃ­rculo de Oro aplicado a WALA (B2C)
-ðŸŸ¡ WHY â€“ Â¿Por quÃ© existe WALA?
+Venden, compran, reponen y pagan. Pero no saben con certeza:
 
-Porque miles de emprendedores trabajan duroâ€¦ pero no tienen claridad.
-
-Venden.
-Compran.
-Reponen.
-Pagan.
-Pero no saben con certeza:
-
-Si estÃ¡n ganando.
-
-Si pueden crecer.
-
-Si pueden contratar.
-
-Si estÃ¡n a punto de quedarse sin caja.
+- Si están ganando.
+- Si pueden crecer.
+- Si pueden contratar.
+- Si están a punto de quedarse sin caja.
 
 WALA existe para devolver el control.
 
-No para enseÃ±ar teorÃ­a.
-No para complicar.
-Sino para convertir el caos diario en decisiones conscientes.
+No para enseñar teoría. No para complicar. Sino para convertir el caos diario en decisiones conscientes.
 
-ðŸ‘‰ El propÃ³sito no es â€œgestionar negociosâ€.
-ðŸ‘‰ Es empoderar decisiones.
+- El propósito no es "gestionar negocios".
+- Es empoderar decisiones.
 
-ðŸ”µ HOW â€“ Â¿CÃ³mo lo hace diferente?
+### HOW – ¿Cómo lo hace diferente?
 
-No es otra app mÃ¡s.
+No es otra app más.
 
 WALA:
 
-Centraliza lo bÃ¡sico (ingresos, gastos, inventario, clientes).
+- Centraliza lo básico (ingresos, gastos, inventario, clientes).
+- Traduce números en mensajes claros.
+- Te acompaña como copiloto.
+- Te explica qué está pasando y qué deberías revisar.
 
-Traduce nÃºmeros en mensajes claros.
+No te lanza dashboards fríos. Te habla en lenguaje humano.
 
-Te acompaÃ±a como copiloto.
+**Ejemplo narrativo:**
 
-Te explica quÃ© estÃ¡ pasando y quÃ© deberÃ­as revisar.
-
-No te lanza dashboards frÃ­os.
-Te habla en lenguaje humano.
-
-Ejemplo narrativo:
-
-â€œOjo, esta semana tus gastos crecieron mÃ¡s que tus ventas. Revisa precios o costos.â€
+> "Ojo, esta semana tus gastos crecieron más que tus ventas. Revisa precios o costos."
 
 Eso cambia todo.
 
-ðŸ”´ WHAT â€“ Â¿QuÃ© es concretamente?
+### WHAT – ¿Qué es concretamente?
 
 Una app simple que te ayuda a:
 
-Registrar ingresos y gastos.
+- Registrar ingresos y gastos.
+- Ver tu flujo de caja.
+- Controlar inventario.
+- Recordar pagos.
+- Recibir recomendaciones claras.
 
-Ver tu flujo de caja.
+_(Pero en B2C, el WHAT no lidera la comunicación; es soporte)._
 
-Controlar inventario.
+## 2. La narrativa B2C correcta
 
-Recordar pagos.
+Olvida el discurso técnico.
 
-Recibir recomendaciones claras.
+El mensaje al emprendedor debe sonar así:
 
-Pero en B2C, el WHAT no lidera la comunicaciÃ³n.
-Es soporte.
+### Dolor real
 
-2ï¸âƒ£ La narrativa B2C correcta
-
-Olvida el discurso tÃ©cnico.
-
-El mensaje al emprendedor debe sonar asÃ­:
-
-ðŸ§© Dolor real
-
-â€œTrabajas todo el dÃ­a, pero no sabes si estÃ¡s creciendo o sobreviviendo.â€
-
-â€œTu negocio depende de tu memoria, tu WhatsApp y tu intuiciÃ³n.â€
-
-â€œCuando algo falla, te das cuenta demasiado tarde.â€
+- "Trabajas todo el día, pero no sabes si estás creciendo o sobreviviendo."
+- "Tu negocio depende de tu memoria, tu WhatsApp y tu intuición."
+- "Cuando algo falla, te das cuenta demasiado tarde."
 
 Eso conecta.
 
-ðŸš€ Promesa clara
+### Promesa clara
 
-â€œWALA te ayuda a ordenar tu negocio sin que tengas que ser contador.â€
+- "WALA te ayuda a ordenar tu negocio sin que tengas que ser contador."
+- "Es tu copiloto. No te maneja el carro, pero te dice dónde estás."
 
-â€œEs tu copiloto. No te maneja el carro, pero te dice dÃ³nde estÃ¡s.â€
+### Cambio concreto
 
-ðŸ› ï¸ Cambio concreto
+**Antes:**
 
-Antes:
+- Desorden
+- Incertidumbre
+- Estrés financiero
 
-Desorden
+**Después:**
 
-Incertidumbre
+- Claridad
+- Control
+- Decisiones con datos
 
-EstrÃ©s financiero
+## 3. Posicionamiento estratégico B2C
 
-DespuÃ©s:
+**No eres:**
 
-Claridad
+- Un ERP.
+- Un software contable.
+- Una herramienta administrativa más.
 
-Control
+**Eres:**
 
-Decisiones con datos
-
-3ï¸âƒ£ Posicionamiento estratÃ©gico B2C
-
-No eres:
-
-Un ERP.
-
-Un software contable.
-
-Una herramienta administrativa mÃ¡s.
-
-Eres:
-
-ðŸ‘‰ El sistema que convierte esfuerzo en estrategia.
-ðŸ‘‰ El traductor entre trabajo y crecimiento.
-ðŸ‘‰ El copiloto del emprendedor latinoamericano.
+- El sistema que convierte esfuerzo en estrategia.
+- El traductor entre trabajo y crecimiento.
+- El copiloto del emprendedor latinoamericano.
 
 Eso es potente.
 
-4ï¸âƒ£ Narrativa tipo landing page (versiÃ³n directa)
+## 4. Narrativa tipo landing page (versión directa)
 
-Headline fuerte:
+**Headline fuerte:**
+"Tu negocio no necesita más trabajo. Necesita más claridad."
 
-â€œTu negocio no necesita mÃ¡s trabajo. Necesita mÃ¡s claridad.â€
+**Subheadline:**
+WALA organiza tus números, tu inventario y tus decisiones en un solo lugar.
 
-Subheadline:
+**Sección dolor:**
+Si no sabes cuánto ganas realmente, estás manejando a ciegas.
 
-WALA organiza tus nÃºmeros, tu inventario y tus decisiones en un solo lugar.
-
-SecciÃ³n dolor:
-
-Si no sabes cuÃ¡nto ganas realmente, estÃ¡s manejando a ciegas.
-
-SecciÃ³n soluciÃ³n:
-
+**Sección solución:**
 Registra. Mira. Decide. Crece.
 
 Simple.
 
-5ï¸âƒ£ La clave psicolÃ³gica del B2C
+## 5. La clave psicológica del B2C
 
-El emprendedor de a pie no compra eficiencia.
-Compra tranquilidad.
+El emprendedor de a pie no compra eficiencia. Compra tranquilidad.
 
 Compra:
 
-Menos estrÃ©s.
-
-MÃ¡s orden.
-
-MÃ¡s control.
-
-MÃ¡s futuro.
+- Menos estrés.
+- Más orden.
+- Más control.
+- Más futuro.
 
 Tu narrativa debe tocar eso.
 
-6ï¸âƒ£ Diferencia estratÃ©gica vs otras apps
+## 6. Diferencia estratégica vs otras apps
 
-Otras apps dicen:
-â€œControla tus finanzas.â€
+- **Otras apps dicen:** "Controla tus finanzas."
+  **WALA dice:** "Entiende tu negocio."
 
-WALA dice:
-â€œEntiende tu negocio.â€
+- **Otras apps:** Muestran números.
+  **WALA:** Explica lo que significan.
 
-Otras apps muestran nÃºmeros.
-WALA explica lo que significan.
+Ahí está tu océano azul.
 
-AhÃ­ estÃ¡ tu ocÃ©ano azul.
+## 7. Riesgo si comunicas mal
 
-7ï¸âƒ£ Riesgo si comunicas mal
+Si te vas por lo técnico (Vue, Firebase, Dashboards, Indicadores), pierdes al usuario real.
 
-Si te vas por lo tÃ©cnico:
+Eso sirve para B2B, no para el emprendedor de barrio.
 
-Vue.
+## 8. Resumen brutalmente honesto
 
-Firebase.
+WALA no es una app. Es una herramienta de autonomía.
 
-Dashboard.
-
-Indicadores.
-
-Pierdes al usuario real.
-
-Eso sirve para B2B.
-No para el emprendedor de barrio.
-
-8ï¸âƒ£ Resumen brutalmente honesto
-
-WALA no es una app.
-Es una herramienta de autonomÃ­a.
-
-Si lo comunicas como software, compites.
-Si lo comunicas como transformaciÃ³n, lideras.
+- Si lo comunicas como software, compites.
+- Si lo comunicas como transformación, lideras.

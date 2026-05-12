@@ -24,8 +24,12 @@ export const createBusiness = async (uid, businessData) => {
   const businessUuid = uuidv4();
   const businessRef = doc(db, 'businesses', businessUuid);
 
+  // Excluir 'descripcion' del spread para evitar campo duplicado en Firestore
+  const { descripcion: _legacyDesc, ...cleanBusinessData } = businessData;
+  const normalizedDescription = businessData.description || businessData.descripcion || '';
+
   const businessDocument = {
-    ...businessData,
+    ...cleanBusinessData,
     uuid: businessUuid,
     owner: uid,
     collaborators: [],
@@ -36,7 +40,7 @@ export const createBusiness = async (uid, businessData) => {
     industry: businessData.industry || 'otro',
     industryDetectedBy: businessData.industry && businessData.industry !== 'otro' ? 'manual' : 'pending',
     industryConfidence: businessData.industry && businessData.industry !== 'otro' ? 1.0 : 0.0,
-    description: businessData.descripcion || businessData.description || '',
+    description: normalizedDescription,
 
     // ===== TIPO DE ACTIVIDAD ECONÓMICA =====
     businessType: businessData.businessType || '',
@@ -181,6 +185,39 @@ export const createBusiness = async (uid, businessData) => {
       showLogo: false
     },
     updatedAt: new Date()
+  })
+
+  // 5. settings/businessProfile
+  // Requerido por la Cloud Function joinProgramByCode como prerequisito
+  const businessProfileRef = doc(db, 'businesses', businessUuid, 'settings', 'businessProfile')
+  await setDoc(businessProfileRef, {
+    // Campo crítico leído por la CF en getFirstNonEmpty()
+    businessName: cleanBusinessData.businessName || cleanBusinessData.nombre || '',
+    // Alias usados por distintas partes del sistema
+    nombreNegocio: cleanBusinessData.businessName || cleanBusinessData.nombre || '',
+    razonSocial: cleanBusinessData.businessName || cleanBusinessData.nombre || '',
+    // Descripción del negocio
+    descripcionSector: normalizedDescription,
+    // Campos del perfil extendido (vacíos, se completan en business-info)
+    lineaNegocio: '',
+    formaLegal: '',
+    posicionNegocio: '',
+    experiencia: '',
+    anioInicio: '',
+    direccionNegocio: '',
+    codigoPostal: '',
+    telefonoNegocio: '',
+    departamento: '',
+    numTrabajadores: '',
+    localizacionPermanente: '',
+    capitalInvertido: '',
+    planesLargoPlazo: '',
+    oportunidadesMercado: '',
+    calidadOportunidades: '',
+    // Metadata
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    source: 'onboarding_v1',
   })
 
   console.log('✅ Negocio y configuraciones creadas exitosamente')
