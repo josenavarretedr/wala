@@ -7,6 +7,7 @@ import StepPaymentMethod from '@/components/transactionFlow/StepPaymentMethod.vu
 import StepAttachClient from '@/components/transactionFlow/StepAttachClient.vue';
 import StepExpenseType from '@/components/transactionFlow/StepExpenseType.vue'
 import StepAddIncomeDetails from '@/components/transactionFlow/StepAddIncomeDetails.vue';
+import StepSalesChannel from '@/components/transactionFlow/StepSalesChannel.vue';
 import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDetails.vue';
 import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePreview.vue';
 import StepAddExpensePreview from '@/components/transactionFlow/StepAddExpensePreview.vue';
@@ -86,6 +87,7 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         // NUEVO FLUJO PARA INGRESOS CON PAGOS PARCIALES Y CLIENTES
         this.steps.push(
           { label: 'Detalles ingreso', component: StepAddIncomeDetails },
+          { label: 'Canal de venta', component: StepSalesChannel },
           { label: 'Método de pago', component: StepPaymentMethod },      // NUEVO
           { label: 'Adjuntar cliente', component: StepAttachClient },     // NUEVO
           { label: 'Preview ingreso', component: StepAddIncomePreview }

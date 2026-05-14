@@ -624,6 +624,68 @@ export function useInventoryStore() {
     }
   };
 
+  /**
+   * Produce un lote de producto, descontando los materiales y aumentando el producto final.
+   */
+  const produceBatch = async (productId, quantity, materials, totalCost) => {
+    const operationChain = startOperationChain('produce_batch');
+
+    try {
+      console.log(`🏭 Produciendo lote: ${quantity} unidades de producto ${productId}`);
+
+      // 1. Descontar materiales
+      for (const material of materials) {
+        if (!material.trackStock) continue;
+
+        const stockLogData = {
+          uuid: material.productId,
+          quantity: material.quantityToDeduct,
+          type: 'production_out',
+          cost: material.cost,
+          totalCost: material.cost * material.quantityToDeduct,
+          description: `Consumo para producción de lote`,
+        };
+
+        await addStockLogInInventory(stockLogData, 'production_out');
+      }
+
+      // 2. Incrementar stock del producto final
+      const producedStockLog = {
+        uuid: productId,
+        quantity: quantity,
+        type: 'production_in',
+        cost: totalCost / quantity, // Costo unitario
+        totalCost: totalCost,
+        description: `Producción de lote`,
+      };
+
+      await addStockLogInInventory(producedStockLog, 'production_in');
+
+      // 3. Finalizar cadena
+      await operationChain.finish({
+        reason: 'batch_production_completed',
+        metadata: {
+          productId,
+          quantityProduced: quantity,
+          totalCost: totalCost,
+          materialsConsumed: materials.length
+        }
+      });
+
+      console.log('✅ Producción de lote completada exitosamente');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error en producción de lote:', error);
+      await operationChain.addStep('error', 'inventory', 'production', {
+        newState: { error: error.message },
+        reason: 'batch_production_failed',
+        severity: 'high'
+      });
+      throw error;
+    }
+  };
+
   return {
     allItemsInInventory,
     itemToAddToInventory,
@@ -635,5 +697,6 @@ export function useInventoryStore() {
     saveInventoryCount,
     updateProduct: updateProductDetails,
     createNewProduct,
+    produceBatch,
   };
 }

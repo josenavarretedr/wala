@@ -18,7 +18,8 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     materials: null,      // Costos de Materiales por artículo
     mod: null,            // Costo de Mano de Obra Directa por artículo
     cif: null,            // Costos Indirectos de Fabricación por artículo
-    overhead: null        // Gastos Generales por artículo
+    overhead: null,       // Gastos Generales por artículo
+    packaging: null       // Costos de Envases/Delivery por artículo
   });
 
   // ==========================================
@@ -66,6 +67,13 @@ export const useProductCostingStore = defineStore('productCosting', () => {
   });
 
   /**
+   * Verifica si hay algún costo de envases/delivery guardado
+   */
+  const hasPackagingCost = computed(() => {
+    return costs.value.packaging !== null && costs.value.packaging !== undefined && costs.value.packaging > 0;
+  });
+
+  /**
    * Calcula el costo total sumando todos los costos disponibles
    */
   const totalCost = computed(() => {
@@ -75,6 +83,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     if (hasMODCost.value) values.push(costs.value.mod);
     if (hasCIFCost.value) values.push(costs.value.cif);
     if (hasOverheadCost.value) values.push(costs.value.overhead);
+    if (hasPackagingCost.value) values.push(costs.value.packaging);
 
     return values.length > 0 ? addMoney(...values) : null;
   });
@@ -83,7 +92,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
    * Verifica si hay al menos un costo guardado
    */
   const hasAnyCost = computed(() => {
-    return hasMaterialsCost.value || hasMODCost.value || hasCIFCost.value || hasOverheadCost.value;
+    return hasMaterialsCost.value || hasMODCost.value || hasCIFCost.value || hasOverheadCost.value || hasPackagingCost.value;
   });
 
   /**
@@ -133,17 +142,23 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     }
 
     // Si se pasó el producto, cargar costos desde costStructure
-    if (product && product.costStructure) {
-      costs.value.materials = product.costStructure.materials ?? null;
-      costs.value.mod = product.costStructure.mod ?? null;
-      costs.value.cif = product.costStructure.cif ?? null;
-      costs.value.overhead = product.costStructure.overhead ?? null;
+    if (product) {
+      if (product.costStructure) {
+        costs.value.materials = product.costStructure.materials ?? null;
+        costs.value.mod = product.costStructure.mod ?? null;
+        costs.value.cif = product.costStructure.cif ?? null;
+        costs.value.overhead = product.costStructure.overhead ?? null;
+      }
+
+      // Cargar costos de envases y empaque de delivery
+      costs.value.packaging = product.deliveryConfig?.packagingTotalCost ?? null;
 
       console.log('📦 Costos cargados desde producto:', {
         materials: costs.value.materials,
         mod: costs.value.mod,
         cif: costs.value.cif,
-        overhead: costs.value.overhead
+        overhead: costs.value.overhead,
+        packaging: costs.value.packaging
       });
     }
   }
@@ -192,7 +207,8 @@ export const useProductCostingStore = defineStore('productCosting', () => {
       materials: null,
       mod: null,
       cif: null,
-      overhead: null
+      overhead: null,
+      packaging: null
     };
     console.log('🔄 Costos reseteados');
   }
@@ -258,6 +274,11 @@ export const useProductCostingStore = defineStore('productCosting', () => {
       return { success: false, reason: 'duplicate' };
     }
 
+    const yieldRatio = material.yieldFactor ? material.yieldFactor / 100 : 1;
+    const calculatedGrossQty = round2(material.quantity / yieldRatio);
+    const calculatedAdjustedCost = material.costPerUnit ? round2(material.costPerUnit / yieldRatio) : null;
+    const subtotal = calculatedAdjustedCost ? multiplyMoney(material.quantity, calculatedAdjustedCost) : null;
+
     // Agregar el material
     materialsComposition.value.items.push({
       productId: material.productId,
@@ -265,7 +286,10 @@ export const useProductCostingStore = defineStore('productCosting', () => {
       quantity: material.quantity,
       unit: material.unit,
       costPerUnit: material.costPerUnit || null,
-      subtotal: material.costPerUnit ? multiplyMoney(material.quantity, material.costPerUnit) : null
+      yieldFactor: material.yieldFactor || null,
+      grossQuantity: calculatedGrossQty,
+      adjustedCostPerUnit: calculatedAdjustedCost,
+      subtotal: subtotal
     });
 
     materialsComposition.value.hasChanges = true;
@@ -292,8 +316,13 @@ export const useProductCostingStore = defineStore('productCosting', () => {
 
     material.quantity = parseFloat(quantity);
 
+    const yieldRatio = material.yieldFactor ? material.yieldFactor / 100 : 1;
+    material.grossQuantity = round2(material.quantity / yieldRatio);
+
     // Recalcular subtotal
-    if (material.costPerUnit && material.costPerUnit > 0) {
+    if (material.adjustedCostPerUnit && material.adjustedCostPerUnit > 0) {
+      material.subtotal = multiplyMoney(material.quantity, material.adjustedCostPerUnit);
+    } else if (material.costPerUnit && material.costPerUnit > 0) {
       material.subtotal = multiplyMoney(material.quantity, material.costPerUnit);
     }
 
@@ -301,6 +330,39 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     calculateTotalCost();
 
     console.log('📝 Cantidad actualizada:', material.description, quantity);
+  }
+
+  /**
+   * Actualiza el factor de rendimiento (merma) de un material
+   * @param {string} productId - ID del producto
+   * @param {number|null} yieldFactor - Nuevo factor de rendimiento (1-100) o null
+   */
+  function updateMaterialYield(productId, yieldFactor) {
+    const material = materialsComposition.value.items.find(
+      item => item.productId === productId
+    );
+
+    if (!material) {
+      console.warn('⚠️ Material no encontrado:', productId);
+      return;
+    }
+
+    material.yieldFactor = yieldFactor;
+    
+    const yieldRatio = material.yieldFactor ? material.yieldFactor / 100 : 1;
+    material.grossQuantity = round2(material.quantity / yieldRatio);
+    material.adjustedCostPerUnit = material.costPerUnit ? round2(material.costPerUnit / yieldRatio) : null;
+
+    if (material.adjustedCostPerUnit && material.adjustedCostPerUnit > 0) {
+      material.subtotal = multiplyMoney(material.quantity, material.adjustedCostPerUnit);
+    } else {
+      material.subtotal = null;
+    }
+
+    materialsComposition.value.hasChanges = true;
+    calculateTotalCost();
+
+    console.log('📝 Rendimiento actualizado:', material.description, yieldFactor);
   }
 
   /**
@@ -378,6 +440,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     hasMODCost,
     hasCIFCost,
     hasOverheadCost,
+    hasPackagingCost,
     totalCost,
     hasAnyCost,
     materialsWithCost,
@@ -399,6 +462,7 @@ export const useProductCostingStore = defineStore('productCosting', () => {
     loadComposition,
     addMaterialToComposition,
     updateMaterialQuantity,
+    updateMaterialYield,
     removeMaterial,
     calculateTotalCost,
     resetComposition,

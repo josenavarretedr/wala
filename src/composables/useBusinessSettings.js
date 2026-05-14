@@ -287,6 +287,53 @@ export function useBusinessSettings() {
     }
   }
 
+  /**
+   * Obtiene las plataformas de delivery configuradas para el negocio
+   * @param {string} businessId - ID del negocio
+   * @returns {Promise<Array>} Lista de plataformas configuradas
+   */
+  async function getDeliveryPlatforms(businessId) {
+    try {
+      const config = await getConfig(businessId);
+      // Si no hay plataformas configuradas o el array está vacío, devolver defaults
+      if (!config?.deliveryPlatforms || config.deliveryPlatforms.length === 0) {
+        return [
+          { id: 'rappi', name: 'Rappi', defaultCommission: 30, enabled: true },
+          { id: 'pedidosya', name: 'PedidosYa', defaultCommission: 25, enabled: true },
+          { id: 'ubereats', name: 'Uber Eats', defaultCommission: 30, enabled: true },
+          { id: 'glovo', name: 'Glovo', defaultCommission: 28, enabled: true },
+          { id: 'whatsapp', name: 'WhatsApp Directo', defaultCommission: 0, enabled: true },
+        ];
+      }
+      return config.deliveryPlatforms;
+    } catch (error) {
+      console.error('❌ Error obteniendo plataformas de delivery:', error);
+      return [
+        { id: 'rappi', name: 'Rappi', defaultCommission: 30, enabled: true },
+        { id: 'pedidosya', name: 'PedidosYa', defaultCommission: 25, enabled: true },
+        { id: 'ubereats', name: 'Uber Eats', defaultCommission: 30, enabled: true },
+        { id: 'glovo', name: 'Glovo', defaultCommission: 28, enabled: true },
+        { id: 'whatsapp', name: 'WhatsApp Directo', defaultCommission: 0, enabled: true },
+      ];
+    }
+  }
+
+  /**
+   * Actualiza las plataformas de delivery del negocio
+   * @param {string} businessId - ID del negocio
+   * @param {Array} platforms - Array de plataformas
+   * @returns {Promise<void>}
+   */
+  async function updateDeliveryPlatforms(businessId, platforms) {
+    try {
+      await updateConfig(businessId, { deliveryPlatforms: platforms });
+      console.log(`✅ Plataformas de delivery actualizadas para negocio ${businessId}`);
+    } catch (error) {
+      console.error('❌ Error actualizando plataformas de delivery:', error);
+      throw error;
+    }
+  }
+
   return {
     // Config
     getConfig,
@@ -303,6 +350,10 @@ export function useBusinessSettings() {
     updateCustomization,
     updateBranding,
     updateDocumentTemplate,
+
+    // Delivery
+    getDeliveryPlatforms,
+    updateDeliveryPlatforms,
 
     // Utilidades
     getAllSettings

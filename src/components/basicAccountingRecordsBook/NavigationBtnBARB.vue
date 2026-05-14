@@ -272,6 +272,18 @@ const isNextButtonEnabled = computed(() => {
       }
       break;
 
+    case "Canal de venta":
+      // Siempre habilitado — default LOCAL es válido
+      // Si DELIVERY, verificar que haya plataforma seleccionada
+      if (transactionData.salesChannel === 'DELIVERY') {
+        result = transactionData.deliveryPlatform !== null &&
+                 transactionData.platformCommissionPct !== null &&
+                 transactionData.platformCommissionPct >= 0;
+      } else {
+        result = true; // LOCAL y TAKEAWAY siempre válidos
+      }
+      break;
+
     case "Preview egreso":
       // Para preview de egresos, siempre permitir finalizar
       result = true;
@@ -326,6 +338,9 @@ const getValidationMessage = () => {
 
     case "Adjuntar cliente":
       return "Debes seleccionar un cliente para continuar con un pago parcial";
+
+    case "Canal de venta":
+      return "Selecciona una plataforma de delivery y configura la comisión";
 
     case "Preview transferencia":
       return "Los datos de la transferencia están incompletos";

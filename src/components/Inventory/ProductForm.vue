@@ -116,6 +116,7 @@
 
           <!-- PRODUCTO ELABORADO -->
           <button
+            v-if="capabilities.enableProduction"
             type="button"
             @click="localFormData.type = 'PRODUCT'"
             :class="[
@@ -184,6 +185,7 @@
 
           <!-- MATERIA PRIMA / INSUMO -->
           <button
+            v-if="capabilities.enableRawMaterials"
             type="button"
             @click="localFormData.type = 'RAW_MATERIAL'"
             :class="[
@@ -574,6 +576,33 @@
         </div>
       </div>
 
+      <!-- Factor de Rendimiento (Solo para RAW_MATERIAL si capabilities.enableWasteManagement) -->
+      <div v-if="localFormData.type === 'RAW_MATERIAL' && capabilities.enableWasteManagement" class="bg-amber-50 rounded-lg p-4 border border-amber-100">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-1">
+            <span class="text-amber-600 text-lg">🔄</span>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm font-medium text-amber-900 mb-1">
+              Rendimiento Promedio (%) <span class="font-normal text-amber-700">(Opcional)</span>
+            </label>
+            <div class="flex items-center gap-3">
+              <input
+                v-model.number="localFormData.defaultYieldFactor"
+                type="number"
+                min="1"
+                max="100"
+                placeholder="100"
+                class="w-24 px-3 py-2 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all font-medium text-center"
+              />
+              <p class="text-xs text-amber-800 leading-tight">
+                Ej: 50% significa que de cada 1 unidad comprada, se aprovechan 0.5 unidades.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Margen de Ganancia (Solo si tiene precio y costo) -->
       <div
         v-if="
@@ -711,6 +740,8 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
 // Props
 const props = defineProps({
@@ -742,6 +773,12 @@ const emit = defineEmits(["submit", "cancel"]);
 // Estado local
 const currentStep = ref(1);
 const localFormData = ref({ ...props.initialData });
+
+// Stores y capabilities
+const businessStore = useBusinessStore();
+const capabilities = computed(() => {
+  return getBusinessCapabilities(businessStore.business?.businessType);
+});
 
 // Watch para sincronizar con props.initialData
 watch(

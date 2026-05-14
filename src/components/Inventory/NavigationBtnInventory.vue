@@ -15,15 +15,37 @@
         <span class="font-semibold tracking-wide">AGREGAR PRODUCTO</span>
       </button>
     </div>
+
+    <!-- Botón Producir (Morado) - Solo si tiene capability de producción -->
+    <div
+      v-if="capabilities.enableProduction"
+      class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
+    >
+      <button
+        @click="handleProduce"
+        class="w-full py-2 px-3 sm:py-2.5 sm:px-4 bg-white border border-purple-600 text-purple-600 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm hover:bg-purple-600 hover:text-white hover:shadow-md hover:shadow-purple-500/20 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+      >
+        <span class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-lg flex items-center justify-center">🔄</span>
+        <span class="font-semibold tracking-wide">PRODUCIR LOTE</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { Plus, Minus, ClipboardCheck } from "@iconoir/vue";
+import { computed } from "vue";
+import { Plus } from "@iconoir/vue";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
 const route = useRoute();
 const router = useRouter();
+
+const businessStore = useBusinessStore();
+const capabilities = computed(() => {
+  return getBusinessCapabilities(businessStore.business?.businessType);
+});
 
 const handleAddProduct = () => {
   console.log("🔵Agregando producto");
@@ -31,6 +53,15 @@ const handleAddProduct = () => {
   // Navegar a AddStock con los parámetros actuales
   router.push({
     name: "InventoryAddProduct",
+    params: {
+      businessId: route.params.businessId,
+    },
+  });
+};
+
+const handleProduce = () => {
+  router.push({
+    name: "InventoryProductionWizard",
     params: {
       businessId: route.params.businessId,
     },

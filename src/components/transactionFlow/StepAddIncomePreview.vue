@@ -206,6 +206,75 @@
         </div>
       </div>
 
+      <!-- Información de canal de venta (si no es LOCAL) -->
+      <div
+        v-if="transactionStore.transactionToAdd.value.salesChannel &&
+              transactionStore.transactionToAdd.value.salesChannel !== 'LOCAL' &&
+              transactionStore.transactionToAdd.value.items.length > 0"
+        class="p-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-amber-50"
+      >
+        <!-- Canal de venta -->
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-lg">
+            {{ transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' ? '🛵' : '🥡' }}
+          </span>
+          <span class="font-semibold text-gray-800">
+            {{ transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' ? 'Delivery' : 'Para Llevar' }}
+          </span>
+          <span
+            v-if="transactionStore.transactionToAdd.value.deliveryPlatformName"
+            class="px-2 py-0.5 text-xs font-medium rounded-full bg-orange-100 text-orange-700"
+          >
+            {{ transactionStore.transactionToAdd.value.deliveryPlatformName }}
+          </span>
+        </div>
+
+        <!-- Comisión de plataforma -->
+        <div
+          v-if="transactionStore.transactionToAdd.value.platformCommissionAmount > 0"
+          class="flex justify-between text-sm mb-2"
+        >
+          <span class="text-gray-600">
+            Comisión {{ transactionStore.transactionToAdd.value.deliveryPlatformName }}
+            ({{ transactionStore.transactionToAdd.value.platformCommissionPct }}%):
+          </span>
+          <span class="font-medium text-orange-600">
+            - S/ {{ transactionStore.transactionToAdd.value.platformCommissionAmount.toFixed(2) }}
+          </span>
+        </div>
+
+        <!-- Costo de envases -->
+        <div
+          v-if="transactionStore.transactionToAdd.value.packagingCost > 0"
+          class="space-y-1"
+        >
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-600">Envases:</span>
+            <span class="font-medium text-amber-600">
+              - S/ {{ transactionStore.transactionToAdd.value.packagingCost.toFixed(2) }}
+            </span>
+          </div>
+          <!-- Detalle de envases -->
+          <div class="ml-4 space-y-0.5">
+            <div
+              v-for="pkg in transactionStore.transactionToAdd.value.packagingItems"
+              :key="pkg.productId"
+              class="text-xs text-gray-500"
+            >
+              {{ pkg.quantity }} × {{ pkg.description }} (S/ {{ (pkg.costPerUnit || 0).toFixed(2) }})
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingreso neto estimado -->
+        <div class="mt-3 pt-3 border-t border-orange-200 flex justify-between items-center">
+          <span class="text-sm font-medium text-gray-700">Ingreso neto estimado:</span>
+          <span class="text-lg font-bold text-emerald-600">
+            S/ {{ getNetIncome().toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
       <!-- Lista de productos -->
       <div
         v-if="transactionStore.transactionToAdd.value.items.length > 0"
@@ -371,6 +440,13 @@ const formatDate = (date) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+};
+
+const getNetIncome = () => {
+  const total = getTotal();
+  const commission = transactionStore.transactionToAdd.value.platformCommissionAmount || 0;
+  const packaging = transactionStore.transactionToAdd.value.packagingCost || 0;
+  return total - commission - packaging;
 };
 </script>
 

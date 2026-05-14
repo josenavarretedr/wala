@@ -115,7 +115,9 @@ export function useCompositionStockValidation() {
       for (const material of product.composition) {
         const materialProductId = material.productId;
         const quantityPerUnit = parseFloat(material.quantity) || 0;
-        const neededQuantity = quantityPerUnit * requestedQuantity;
+        const yieldRatio = material.yieldFactor ? material.yieldFactor / 100 : 1;
+        const grossQuantityPerUnit = quantityPerUnit / yieldRatio;
+        const neededQuantity = grossQuantityPerUnit * requestedQuantity;
 
         // Obtener stock del material
         const materialProduct = await getProductStock(materialProductId);

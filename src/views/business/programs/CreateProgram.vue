@@ -108,15 +108,37 @@
             </h2>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-              <ProgramFormInput
-                id="program-duration"
-                v-model="formData.duration"
-                label="Duración"
-                placeholder="Ej: 6 meses"
-                required
-                hint="Duración total del programa"
-                :error="errors.duration"
-              />
+              <div>
+                <ProgramFormInput
+                  id="program-duration"
+                  v-model="formData.duration"
+                  label="Duración (días)"
+                  type="number"
+                  placeholder="Ej: 180"
+                  required
+                  hint="Duración total en días"
+                  :error="errors.duration"
+                />
+                <p
+                  v-if="durationMonthsText"
+                  class="mt-2 text-xs font-medium text-teal-600 flex items-center gap-1.5 bg-teal-50 px-3 py-2 rounded-lg border border-teal-100 w-fit"
+                >
+                  <svg
+                    class="w-4 h-4 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Equivale a {{ durationMonthsText }}
+                </p>
+              </div>
 
               <ProgramFormDatePicker
                 id="program-start-date"
@@ -318,7 +340,10 @@
         <div class="text-sm text-blue-800 space-y-2">
           <p><strong>Programa:</strong> {{ formData.name }}</p>
           <p><strong>Organización:</strong> {{ formData.organizationName }}</p>
-          <p><strong>Duración:</strong> {{ formData.duration }}</p>
+          <p>
+            <strong>Duración:</strong> {{ formData.duration }} días
+            <span v-if="durationMonthsText">({{ durationMonthsText }})</span>
+          </p>
           <p>
             <strong>Fechas:</strong> {{ formData.startDate }} →
             {{ formData.endDate }}
@@ -388,8 +413,45 @@ const errors = ref({
 // COMPUTED
 // ═══════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════
+// HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+
+function addDaysToDate(dateString, days) {
+  if (!dateString || isNaN(days) || days === "") return "";
+  const date = new Date(dateString + "T00:00:00");
+  date.setDate(date.getDate() + parseInt(days, 10));
+  return date.toISOString().split("T")[0];
+}
+
+function diffInDays(startDateString, endDateString) {
+  if (!startDateString || !endDateString) return "";
+  const start = new Date(startDateString + "T00:00:00");
+  const end = new Date(endDateString + "T00:00:00");
+  const diffTime = end.getTime() - start.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays.toString() : "0";
+}
+
 const todayDate = computed(() => {
   return new Date().toISOString().split("T")[0];
+});
+
+const durationMonthsText = computed(() => {
+  const days = parseInt(formData.value.duration, 10);
+  if (!days || isNaN(days) || days <= 0) return "";
+
+  const months = days / 30.44; // Promedio estándar de días en un mes
+
+  if (months < 1) {
+    return `${days} ${days === 1 ? "día" : "días"}`;
+  }
+
+  const roundedMonths = Math.round(months * 10) / 10;
+  const displayMonths =
+    roundedMonths % 1 === 0 ? Math.round(roundedMonths) : roundedMonths;
+
+  return `aprox. ${displayMonths} ${displayMonths === 1 ? "mes" : "meses"}`;
 });
 
 const isFormValid = computed(() => {
@@ -438,6 +500,50 @@ watch(
   },
 );
 
+// Reactividad entre Duración y Fechas
+watch(
+  () => formData.value.duration,
+  (newVal) => {
+    if (newVal && formData.value.startDate) {
+      const calculatedEndDate = addDaysToDate(formData.value.startDate, newVal);
+      if (formData.value.endDate !== calculatedEndDate) {
+        formData.value.endDate = calculatedEndDate;
+      }
+    }
+  },
+);
+
+watch(
+  () => formData.value.startDate,
+  (newVal) => {
+    if (newVal) {
+      if (formData.value.duration) {
+        const calculatedEndDate = addDaysToDate(newVal, formData.value.duration);
+        if (formData.value.endDate !== calculatedEndDate) {
+          formData.value.endDate = calculatedEndDate;
+        }
+      } else if (formData.value.endDate) {
+        const calculatedDuration = diffInDays(newVal, formData.value.endDate);
+        if (formData.value.duration !== calculatedDuration) {
+          formData.value.duration = calculatedDuration;
+        }
+      }
+    }
+  },
+);
+
+watch(
+  () => formData.value.endDate,
+  (newVal) => {
+    if (newVal && formData.value.startDate) {
+      const calculatedDuration = diffInDays(formData.value.startDate, newVal);
+      if (formData.value.duration !== calculatedDuration) {
+        formData.value.duration = calculatedDuration;
+      }
+    }
+  },
+);
+
 // ═══════════════════════════════════════════════════════════
 // METHODS
 // ═══════════════════════════════════════════════════════════
@@ -462,12 +568,15 @@ function fillDemoData() {
   const endDate = new Date(startDate);
   endDate.setMonth(startDate.getMonth() + 6); // 6 meses después
 
+  const diffTime = endDate.getTime() - startDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
   formData.value = {
     name: "Fortalecimiento Empresarial - Demo " + today.getFullYear(),
     organizationName: "CARE Perú",
     description:
       "Programa de acompañamiento de 6 meses para fortalecer capacidades empresariales en gestión financiera, marketing y operaciones. Incluye talleres prácticos, asesorías personalizadas y networking con otros emprendedores.",
-    duration: "6 meses",
+    duration: diffDays.toString(),
     codUser: "USER2025",
     codTeam: "TEAM2025",
     startDate: startDate.toISOString().split("T")[0],
@@ -522,6 +631,9 @@ function validateForm() {
   // Validar duración
   if (!formData.value.duration.trim()) {
     errors.value.duration = "La duración es obligatoria";
+    isValid = false;
+  } else if (parseInt(formData.value.duration, 10) <= 0) {
+    errors.value.duration = "La duración debe ser mayor a 0 días";
     isValid = false;
   }
 

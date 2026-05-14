@@ -2,7 +2,7 @@
 import { collection, query, where, getDocs, setDoc, updateDoc, doc, arrayUnion, getFirestore } from "firebase/firestore";
 import appFirebase from "@/firebaseInit";
 import { v4 as uuidv4 } from 'uuid';
-
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
 const db = getFirestore(appFirebase);
 
@@ -100,7 +100,8 @@ export const createBusiness = async (uid, businessData) => {
       prioritySupport: false,
       customBranding: false,
       aiClassification: false,
-      exportData: false
+      exportData: false,
+      ...getBusinessCapabilities(businessData.businessType)
     },
     usage: {
       employeeCount: 1,
@@ -152,6 +153,14 @@ export const createBusiness = async (uid, businessData) => {
       dateFormat: 'DD/MM/YYYY',
       currencyFormat: '$1,000.00'
     },
+    // Plataformas de delivery predefinidas
+    deliveryPlatforms: [
+      { id: 'rappi', name: 'Rappi', defaultCommission: 30, enabled: true },
+      { id: 'pedidosya', name: 'PedidosYa', defaultCommission: 25, enabled: true },
+      { id: 'ubereats', name: 'Uber Eats', defaultCommission: 30, enabled: true },
+      { id: 'glovo', name: 'Glovo', defaultCommission: 28, enabled: false },
+      { id: 'whatsapp', name: 'WhatsApp Directo', defaultCommission: 0, enabled: true },
+    ],
     updatedAt: new Date()
   })
 

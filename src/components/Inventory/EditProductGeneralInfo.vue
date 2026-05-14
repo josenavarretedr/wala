@@ -115,6 +115,7 @@
 
         <!-- PRODUCTO ELABORADO -->
         <button
+          v-if="capabilities.enableProduction"
           type="button"
           @click="localFormData.type = 'PRODUCT'"
           :class="[
@@ -183,6 +184,7 @@
 
         <!-- MATERIA PRIMA / INSUMO -->
         <button
+          v-if="capabilities.enableRawMaterials"
           type="button"
           @click="localFormData.type = 'RAW_MATERIAL'"
           :class="[
@@ -350,6 +352,33 @@
             ✓ No requiere control de stock físico
           </span>
         </p>
+      </div>
+    </div>
+
+    <!-- Factor de Rendimiento (Solo para RAW_MATERIAL si capabilities.enableWasteManagement) -->
+    <div v-if="localFormData.type === 'RAW_MATERIAL' && capabilities.enableWasteManagement" class="bg-amber-50 rounded-lg p-4 border border-amber-100">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-1">
+          <span class="text-amber-600 text-lg">🔄</span>
+        </div>
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-amber-900 mb-1">
+            Rendimiento Promedio (%) <span class="font-normal text-amber-700">(Opcional)</span>
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              v-model.number="localFormData.defaultYieldFactor"
+              type="number"
+              min="1"
+              max="100"
+              placeholder="100"
+              class="w-24 px-3 py-2 border border-amber-200 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all font-medium text-center"
+            />
+            <p class="text-xs text-amber-800 leading-tight">
+              Ej: 50% significa que de cada 1 unidad comprada, se aprovechan 0.5 unidades.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -743,6 +772,68 @@
       </div>
     </div>
 
+    <!-- Delivery / Para Llevar -->
+    <div
+      class="border border-gray-200 rounded-lg p-4"
+      v-if="localFormData.type === 'PRODUCT' || localFormData.type === 'MERCH'"
+    >
+      <div class="flex items-center justify-between gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            <div class="flex items-center gap-2">
+              <svg
+                class="w-5 h-5 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"
+                ></path>
+              </svg>
+              Venta por Delivery
+            </div>
+          </label>
+          <p class="text-xs text-gray-500">
+            Activa si este producto se vende por delivery o para llevar
+          </p>
+        </div>
+
+        <button
+          type="button"
+          @click="localFormData.deliveryEnabled = !localFormData.deliveryEnabled"
+          :class="[
+            'relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2',
+            localFormData.deliveryEnabled ? 'bg-orange-600' : 'bg-gray-200',
+          ]"
+        >
+          <span
+            :class="[
+              'inline-block h-6 w-6 transform rounded-full bg-white transition-transform',
+              localFormData.deliveryEnabled ? 'translate-x-7' : 'translate-x-1',
+            ]"
+          ></span>
+        </button>
+      </div>
+
+      <div
+        v-if="localFormData.deliveryEnabled"
+        class="mt-3 p-3 bg-orange-50 rounded-lg"
+      >
+        <p class="text-xs text-orange-700">
+          ✓ Podrás configurar envases para este producto en la sección de Costos y Materiales
+        </p>
+      </div>
+      <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
+        <p class="text-xs text-gray-600">
+          Este producto no tiene configuración de delivery
+        </p>
+      </div>
+    </div>
+
     <!-- Navegación para Guardar Cambios -->
     <NavigationBtnEditProduct
       :localData="localFormData"
@@ -758,6 +849,8 @@
 import { ref, computed, watch } from "vue";
 import NavigationBtnEditProduct from "./NavigationBtnEditProduct.vue";
 import { useToast } from "@/composables/useToast";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
 const createLocalId = (prefix = "id") => {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
@@ -777,6 +870,7 @@ const getDefaultVariantSchema = () => ({
 const hydrateFormData = (data) => ({
   ...data,
   hasVariants: Boolean(data?.hasVariants),
+  deliveryEnabled: Boolean(data?.deliveryEnabled),
   variantSchema:
     data?.variantSchema && Array.isArray(data.variantSchema.attributes)
       ? {
@@ -881,6 +975,12 @@ const { error: showError } = useToast();
 const localFormData = ref(hydrateFormData(props.initialData));
 const originalData = ref(hydrateFormData(props.initialData));
 const duplicateVariantLabels = ref([]);
+
+// Stores y capabilities
+const businessStore = useBusinessStore();
+const capabilities = computed(() => {
+  return getBusinessCapabilities(businessStore.business?.businessType);
+});
 
 // Watch para sincronizar con props.initialData cuando cambie externamente
 watch(

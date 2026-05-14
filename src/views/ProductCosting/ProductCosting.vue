@@ -415,6 +415,93 @@
             </div>
           </div>
         </button>
+
+        <!-- Botón: Costos de Envase (Delivery) -->
+        <button
+          v-if="product.deliveryEnabled"
+          type="button"
+          @click="navigateToCost('costs-packaging')"
+          :class="[
+            'relative p-5 rounded-xl border-2 transition-all text-left group',
+            hasPackagingCostStructure
+              ? 'border-orange-500 bg-orange-50 shadow-md'
+              : 'border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/30 hover:shadow-sm',
+          ]"
+        >
+          <div class="flex items-start gap-4">
+            <!-- Icono -->
+            <div
+              :class="[
+                'w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0',
+                hasPackagingCostStructure
+                  ? 'bg-orange-500'
+                  : 'bg-orange-100 group-hover:bg-orange-200',
+              ]"
+            >
+              <svg
+                class="w-6 h-6"
+                :class="
+                  hasPackagingCostStructure ? 'text-white' : 'text-orange-600'
+                "
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
+                ></path>
+              </svg>
+            </div>
+
+            <!-- Contenido -->
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-gray-900 mb-1">
+                Envases y Delivery
+              </div>
+              <p class="text-xs text-gray-600">
+                Costos de empaque exclusivamente para envío
+              </p>
+            </div>
+          </div>
+
+          <!-- Check naranja cuando hay datos -->
+          <div
+            v-if="hasPackagingCostStructure"
+            class="absolute top-3 right-3 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center"
+          >
+            <svg
+              class="w-4 h-4 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+          </div>
+
+          <!-- Número del costo -->
+          <div
+            v-if="hasPackagingCostStructure"
+            class="mt-3 pt-3 border-t border-orange-200"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-medium text-orange-700"
+                >Costo configurado</span
+              >
+              <span class="text-lg font-bold text-orange-600">
+                S/ {{ formatNumber(getPackagingCost) }}
+              </span>
+            </div>
+          </div>
+        </button>
       </div>
 
       <!-- Resumen Total (si hay costos) -->
@@ -431,7 +518,7 @@
             S/ {{ formatNumber(costingStore.totalCost) }}
           </span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
           <div
             v-if="costingStore.hasMaterialsCost"
             class="bg-white rounded-lg p-3"
@@ -462,6 +549,15 @@
               S/ {{ formatNumber(costingStore.costs.overhead) }}
             </div>
           </div>
+          <div
+            v-if="costingStore.hasPackagingCost"
+            class="bg-white rounded-lg p-3"
+          >
+            <div class="text-gray-500 mb-1">Envases</div>
+            <div class="font-semibold text-orange-600">
+              S/ {{ formatNumber(costingStore.costs.packaging) }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -473,6 +569,8 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
 import { useProductCostingStore } from "@/stores/productCostingStore";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 import BackBtn from "@/components/ui/BackBtn.vue";
 
 // Router
@@ -484,6 +582,11 @@ const { getProductById } = useInventory();
 
 // Stores
 const costingStore = useProductCostingStore();
+const businessStore = useBusinessStore();
+
+const capabilities = computed(() => {
+  return getBusinessCapabilities(businessStore.business?.businessType);
+});
 
 // State
 const product = ref(null);
@@ -492,12 +595,12 @@ const error = ref(null);
 
 // Computed Properties
 const showMOD = computed(() => {
-  if (!product.value) return false;
+  if (!product.value || !capabilities.value.enableMOD) return false;
   return ["PRODUCT", "SERVICE"].includes(product.value.type);
 });
 
 const showCIF = computed(() => {
-  if (!product.value) return false;
+  if (!product.value || !capabilities.value.enableCIF) return false;
   return ["PRODUCT", "SERVICE"].includes(product.value.type);
 });
 
@@ -517,6 +620,18 @@ const hasMaterialsCostStructure = computed(() => {
 
 const getMaterialsCost = computed(() => {
   return product.value?.costStructure?.materials || 0;
+});
+
+const hasPackagingCostStructure = computed(() => {
+  return (
+    product.value?.deliveryConfig?.packagingTotalCost !== null &&
+    product.value?.deliveryConfig?.packagingTotalCost !== undefined &&
+    product.value?.deliveryConfig?.packagingTotalCost > 0
+  );
+});
+
+const getPackagingCost = computed(() => {
+  return product.value?.deliveryConfig?.packagingTotalCost || 0;
 });
 
 // Methods
@@ -573,6 +688,7 @@ const getCostRouteName = (costType) => {
     "costs-mod": "CostsMOD",
     "costs-cif": "CostsCIF",
     "costs-overhead": "CostsOverhead",
+    "costs-packaging": "CostsPackaging",
   };
   return routeMap[costType];
 };

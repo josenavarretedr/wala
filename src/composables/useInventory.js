@@ -288,6 +288,10 @@ export function useInventory() {
         createdAt: serverTimestamp(),
       };
 
+      if (productData.type === 'RAW_MATERIAL' && productData.defaultYieldFactor) {
+        productPayload.defaultYieldFactor = Number(productData.defaultYieldFactor);
+      }
+
       // 🆕 Si viene clasificación del form, incluirla
       if (productData.classification && productData.classification.category) {
         productPayload.classification = {
@@ -469,7 +473,7 @@ export function useInventory() {
         const currentVariant = currentVariants[variantIndex];
         let newVariantStock = Number(currentVariant.stock || 0);
 
-        if (stockLog.type === 'sell' || stockLog.type === 'waste') {
+        if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out') {
           const quantityToDeduct = item.quantityForStock !== undefined
             ? Number(item.quantityForStock)
             : Number(stockLog.quantity || 0);
@@ -478,7 +482,7 @@ export function useInventory() {
             : subtractStock(newVariantStock, quantityToDeduct);
         }
 
-        if (stockLog.type === 'buy' || stockLog.type === 'return') {
+        if (stockLog.type === 'buy' || stockLog.type === 'return' || stockLog.type === 'production_in') {
           newVariantStock = addStock(newVariantStock, Number(stockLog.quantity || 0));
         }
 
@@ -683,7 +687,7 @@ export function useInventory() {
       let newStock = null;
       const updateData = {};
 
-      if (stockLog.type === 'sell' || stockLog.type === 'waste') {
+      if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out') {
         // Usar quantityForStock si está disponible (venta con stock insuficiente)
         // De lo contrario, usar la cantidad del stockLog
         const quantityToDeduct = quantityForStock !== undefined ? quantityForStock : stockLog.quantity;
@@ -703,7 +707,7 @@ export function useInventory() {
         }
       }
 
-      if (stockLog.type === 'buy' || stockLog.type === 'return') {
+      if (stockLog.type === 'buy' || stockLog.type === 'return' || stockLog.type === 'production_in') {
         // ✅ Aplicar redondeo para evitar decimales excesivos
         newStock = addStock(itemData.stock, stockLog.quantity);
 
@@ -903,6 +907,13 @@ export function useInventory() {
         updatePayload.type = updatedData.type;
       }
 
+      // Actualizar defaultYieldFactor si existe
+      if (updatedData.defaultYieldFactor !== undefined) {
+        updatePayload.defaultYieldFactor = updatedData.defaultYieldFactor === null 
+          ? null 
+          : Number(updatedData.defaultYieldFactor);
+      }
+
       // Actualizar si tiene variantes
       if (updatedData.hasVariants !== undefined) {
         updatePayload.hasVariants = Boolean(updatedData.hasVariants);
@@ -949,6 +960,23 @@ export function useInventory() {
       // Actualizar fecha de vencimiento (string YYYY-MM-DD o null)
       if (updatedData.expirationDate !== undefined) {
         updatePayload.expirationDate = updatedData.expirationDate || null;
+      }
+
+      // Actualizar configuración de delivery si existe
+      if (updatedData.deliveryEnabled !== undefined) {
+        updatePayload.deliveryEnabled = Boolean(updatedData.deliveryEnabled);
+      }
+
+      if (updatedData.deliveryConfig !== undefined) {
+        updatePayload.deliveryConfig = updatedData.deliveryConfig;
+      } else {
+        // Soporte para actualizar propiedades específicas de delivery usando dot notation
+        if (updatedData['deliveryConfig.packaging'] !== undefined) {
+          updatePayload['deliveryConfig.packaging'] = updatedData['deliveryConfig.packaging'];
+        }
+        if (updatedData['deliveryConfig.packagingTotalCost'] !== undefined) {
+          updatePayload['deliveryConfig.packagingTotalCost'] = Number(updatedData['deliveryConfig.packagingTotalCost']);
+        }
       }
 
       // Actualizar costStructure si existe (completo o campos específicos)
@@ -1850,6 +1878,13 @@ export function useInventory() {
       // Validar unit
       if (!material.unit) {
         errors.push(`Material ${index + 1}: La unidad es obligatoria`);
+      }
+
+      // Validar yieldFactor si existe
+      if (material.yieldFactor !== null && material.yieldFactor !== undefined) {
+        if (material.yieldFactor < 1 || material.yieldFactor > 100) {
+          errors.push(`Material ${index + 1}: El rendimiento debe estar entre 1% y 100%`);
+        }
       }
     });
 

@@ -351,8 +351,12 @@ const routes = [
         path: 'inventory/product/new',
         name: 'InventoryAddProduct',
         component: () => import('@/views/Inventory/AddProduct.vue')
-      }
-      ,
+      },
+      {
+        path: 'inventory/production',
+        name: 'InventoryProductionWizard',
+        component: () => import('@/views/Inventory/ProductionWizard.vue')
+      },
       {
         path: 'inventory/product/:productId',
         name: 'InventoryProductDetails',
@@ -397,6 +401,11 @@ const routes = [
         path: 'inventory/product/:productId/costing/costs-overhead',
         name: 'CostsOverhead',
         component: () => import('@/views/ProductCosting/CostsOverhead.vue')
+      },
+      {
+        path: 'inventory/product/:productId/costing/costs-packaging',
+        name: 'CostsPackaging',
+        component: () => import('@/views/ProductCosting/CostsPackaging.vue')
       },
       {
         path: 'inventory/product/:productId/add-stock',

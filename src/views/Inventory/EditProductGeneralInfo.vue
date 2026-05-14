@@ -87,6 +87,7 @@ const productData = ref({
   hasVariants: false,
   variantSchema: { attributes: [] },
   variantCombos: [],
+  defaultYieldFactor: null,
 });
 
 // Cargar datos — desde state de ruta o fallback a BD
@@ -109,6 +110,8 @@ const loadProductData = async () => {
       variantCombos: Array.isArray(state.variantCombos)
         ? state.variantCombos
         : [],
+      defaultYieldFactor: state.defaultYieldFactor ? Number(state.defaultYieldFactor) : null,
+      deliveryEnabled: Boolean(state.deliveryEnabled),
     };
     console.log(
       "⚡ Datos de info general cargados desde route state:",
@@ -140,6 +143,8 @@ const loadProductData = async () => {
       variantCombos: Array.isArray(product.variantCombos)
         ? product.variantCombos
         : [],
+      defaultYieldFactor: product.defaultYieldFactor ? Number(product.defaultYieldFactor) : null,
+      deliveryEnabled: Boolean(product.deliveryEnabled),
     };
     console.log("✅ Información general cargada desde BD:", productData.value);
   } catch (err) {

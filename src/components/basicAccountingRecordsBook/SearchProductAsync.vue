@@ -1,11 +1,12 @@
 <template>
   <div>
     <!-- Contenedor para el componente de autocompletado -->
-    <div id="autocomplete" class="my-5"></div>
+    <div ref="autocompleteContainer" class="my-5"></div>
   </div>
 </template>
 
 <script setup>
+import { ref, onMounted, watch } from "vue";
 import { autocomplete } from "@algolia/autocomplete-js";
 import "@algolia/autocomplete-theme-classic";
 
@@ -13,8 +14,8 @@ import "@algolia/autocomplete-theme-classic";
 const props = defineProps({
   mode: {
     type: String,
-    default: "transaction", // 'transaction' o 'materials'
-    validator: (value) => ["transaction", "materials"].includes(value),
+    default: "transaction", // 'transaction', 'materials', 'production'
+    validator: (value) => ["transaction", "materials", "production"].includes(value),
   },
   excludeProductId: {
     type: String,
@@ -23,9 +24,10 @@ const props = defineProps({
 });
 
 // Emits
-const emit = defineEmits(["update:productToAdd", "material-selected"]);
+const emit = defineEmits(["update:productToAdd", "material-selected", "product-selected"]);
 
-import { ref, onMounted, watch } from "vue";
+// Contenedor ref para evitar colisiones de IDs
+const autocompleteContainer = ref(null);
 
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
@@ -61,6 +63,9 @@ function buildIndex(items) {
   } else if (props.mode === "materials") {
     // Modo materiales: solo productos con trackStock = true
     filteredItems = items.filter((p) => p.trackStock === true);
+  } else if (props.mode === "production") {
+    // Modo producción: productos que tienen composición (receta)
+    filteredItems = items.filter((p) => p.composition && p.composition.length > 0);
   }
 
   // Excluir el producto específico si se proporciona
@@ -93,7 +98,7 @@ function buildIndex(items) {
       : [];
 
     if (
-      props.mode === "transaction" &&
+      (props.mode === "transaction" || props.mode === "production") &&
       baseItem.hasVariants &&
       variants.length
     ) {
@@ -209,8 +214,8 @@ function getItemsDebounced(query) {
             })
         : index.value;
 
-      // En modo materials, no mostrar opción de "nuevo producto"
-      if (props.mode === "materials") {
+      // En modo materials o production, no mostrar opción de "nuevo producto"
+      if (props.mode === "materials" || props.mode === "production") {
         resolve(dataFiltered.length ? dataFiltered.slice(0, 8) : []);
       } else {
         resolve(
@@ -230,7 +235,7 @@ function getItemsDebounced(query) {
 
 // Función helper para limpiar el input del autocomplete
 function clearAutocompleteInput() {
-  const autocompleteInput = document.querySelector("#autocomplete input");
+  const autocompleteInput = autocompleteContainer.value?.querySelector("input");
   if (autocompleteInput) {
     autocompleteInput.value = "";
     autocompleteInput.dispatchEvent(new Event("input"));
@@ -239,10 +244,13 @@ function clearAutocompleteInput() {
 
 // ===== TAREA 2: INICIALIZAR ALGOLIA CON onSelect Y SIN MODO DETACHED =====
 onMounted(() => {
+  if (!autocompleteContainer.value) return;
+
   autocomplete({
-    container: "#autocomplete",
+    container: autocompleteContainer.value,
     placeholder:
-      props.mode === "materials" ? "Buscar material..." : "Buscar producto...",
+      props.mode === "materials" ? "Buscar material..." : 
+      props.mode === "production" ? "Buscar producto a preparar..." : "Buscar producto...",
     detachedMediaQuery: "none", // 👈 Fuerza inline en móviles
     getSources({ query }) {
       return [
@@ -286,6 +294,10 @@ onMounted(() => {
               if (props.mode === "materials") {
                 // Emit para modo materiales
                 emit("material-selected", selected);
+                clearAutocompleteInput();
+              } else if (props.mode === "production") {
+                // Emit para modo producción
+                emit("product-selected", selected);
                 clearAutocompleteInput();
               } else {
                 // Emit para modo transacción (legacy)
@@ -410,7 +422,7 @@ onMounted(() => {
 
   // ===== TAREA 4: ENDURECER INPUT MÓVIL =====
   // Ajustes del input de Algolia para mejorar UX móvil
-  const autocompleteInput = document.querySelector("#autocomplete input");
+  const autocompleteInput = autocompleteContainer.value?.querySelector("input");
   if (autocompleteInput) {
     autocompleteInput.setAttribute("inputmode", "search");
     autocompleteInput.setAttribute("autocomplete", "off");

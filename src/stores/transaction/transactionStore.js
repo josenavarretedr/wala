@@ -80,6 +80,15 @@ const transactionToAdd = ref({
   // Campos para transfers:
   fromAccount: null,
   toAccount: null,
+  // Campos para canal de venta y delivery:
+  salesChannel: 'LOCAL',              // 'LOCAL' | 'TAKEAWAY' | 'DELIVERY'
+  deliveryPlatform: null,             // 'rappi' | 'pedidosya' | 'ubereats' | etc.
+  deliveryPlatformName: null,         // Nombre display (para customs)
+  platformCommissionPct: null,        // % de comisión (ej: 30)
+  platformCommissionAmount: 0,        // Monto calculado (metadata, no reduce amount)
+  packagingItems: [],                 // Items de envase aplicados [{productId, description, quantity, unit, costPerUnit, subtotal}]
+  packagingCost: 0,                   // Costo total de envases
+  packagingStockLogs: [],             // StockLogs generados para envases
 });
 
 const itemToAddInTransaction = ref({
@@ -397,6 +406,73 @@ export function useTransactionStore() {
           // Ejecutar todos los items en paralelo
           transactionSnapshot.itemsAndStockLogs = await Promise.all(itemsPromises);
           console.log(`✅ ${transactionSnapshot.items.length} items procesados exitosamente`);
+
+          // === PROCESAMIENTO DE ENVASES PARA DELIVERY/TAKEAWAY ===
+          if (
+            (transactionSnapshot.salesChannel === 'DELIVERY' || transactionSnapshot.salesChannel === 'TAKEAWAY') &&
+            transactionSnapshot.packagingItems &&
+            transactionSnapshot.packagingItems.length > 0
+          ) {
+            console.log('📦 [PACKAGING] Procesando stock de envases...');
+
+            const packagingPromises = transactionSnapshot.packagingItems.map(async (pkg) => {
+              try {
+                const packagingProduct = await getProductById(pkg.productId);
+
+                if (!packagingProduct || !packagingProduct.trackStock) {
+                  console.log(`ℹ️ [PACKAGING] Envase sin trackStock, saltando: ${pkg.description}`);
+                  return null;
+                }
+
+                const packagingItem = {
+                  uuid: pkg.productId,
+                  quantity: roundStock(pkg.quantity),
+                  transactionId: transactionId,
+                  oldOrNewProduct: 'old',
+                  description: pkg.description,
+                  unit: pkg.unit || 'uni',
+                  trackStock: true,
+                };
+
+                const stockLogUuid = await createStockLog(packagingItem, 'sell');
+
+                console.log(`  ✅ StockLog envase creado: ${pkg.description} x${pkg.quantity}`);
+
+                return {
+                  materialId: pkg.productId,
+                  stockLogUuid,
+                  quantityUsed: pkg.quantity,
+                  description: pkg.description
+                };
+              } catch (error) {
+                console.error(`❌ [PACKAGING] Error procesando envase ${pkg.description}:`, error);
+                return null;
+              }
+            });
+
+            const packagingResults = await Promise.all(packagingPromises);
+            transactionSnapshot.packagingStockLogs = packagingResults.filter(r => r !== null);
+
+            console.log(`✅ [PACKAGING] ${transactionSnapshot.packagingStockLogs.length} envases procesados`);
+          }
+
+          // === CALCULAR COMISIÓN DE PLATAFORMA (METADATA) ===
+          if (
+            transactionSnapshot.salesChannel === 'DELIVERY' &&
+            transactionSnapshot.platformCommissionPct > 0
+          ) {
+            transactionSnapshot.platformCommissionAmount = round2(
+              transactionSnapshot.amount * transactionSnapshot.platformCommissionPct / 100
+            );
+
+            console.log('💰 [COMMISSION] Comisión calculada:', {
+              platform: transactionSnapshot.deliveryPlatformName || transactionSnapshot.deliveryPlatform,
+              percentage: transactionSnapshot.platformCommissionPct,
+              amount: transactionSnapshot.platformCommissionAmount,
+              totalSale: transactionSnapshot.amount
+            });
+          }
+
         } else if (transactionSnapshot.type === 'expense') {
           // Importar funciones de useExpenses para gestionar expenses
           const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata, getExpenseById } = useExpenses();
@@ -688,6 +764,12 @@ export function useTransactionStore() {
         }
         if (transactionSnapshot.splits) {
           cleanTransaction.splits = [...transactionSnapshot.splits];
+        }
+        if (transactionSnapshot.packagingItems) {
+          cleanTransaction.packagingItems = [...transactionSnapshot.packagingItems];
+        }
+        if (transactionSnapshot.packagingStockLogs) {
+          cleanTransaction.packagingStockLogs = [...transactionSnapshot.packagingStockLogs];
         }
 
         // ✅ DEBUG PASO 1: Verificar datos DESPUÉS de limpiar
@@ -1107,7 +1189,15 @@ export function useTransactionStore() {
       splits: null,
       fromAccount: null,
       toAccount: null,
-
+      // Campos para canal de venta y delivery:
+      salesChannel: 'LOCAL',
+      deliveryPlatform: null,
+      deliveryPlatformName: null,
+      platformCommissionPct: null,
+      platformCommissionAmount: 0,
+      packagingItems: [],
+      packagingCost: 0,
+      packagingStockLogs: [],
     };
 
     currentStepOfAddTransaction.value = getSteps()[0] === "CajaDiaria" ? 0 : 1;

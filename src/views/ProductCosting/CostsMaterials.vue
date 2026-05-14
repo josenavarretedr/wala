@@ -343,6 +343,47 @@
                 </div>
               </div>
 
+              <!-- NUEVO: Factor de Rendimiento (Merma) -->
+              <div v-if="showWasteManagement" class="bg-white rounded-xl p-4 mb-4 border border-amber-100 shadow-sm">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 class="text-sm font-semibold text-gray-800">Merma y Rendimiento</h4>
+                    <p class="text-xs text-gray-500">¿Hay pérdida al procesar este material?</p>
+                  </div>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" v-model="materialHasWaste" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                  </label>
+                </div>
+                
+                <Transition name="slide-down">
+                  <div v-if="materialHasWaste" class="space-y-3 pt-2 border-t border-gray-100">
+                    <div>
+                      <label class="text-sm font-medium text-gray-700">Rendimiento (%)</label>
+                      <div class="flex items-center gap-2 mt-1">
+                        <input
+                          v-model.number="materialYieldFactor"
+                          type="number"
+                          min="1"
+                          max="100"
+                          class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-center font-medium focus:border-amber-500 focus:ring-1 focus:ring-amber-200"
+                        />
+                        <span class="text-sm text-gray-600">% de aprovechamiento</span>
+                      </div>
+                    </div>
+                    
+                    <div class="bg-amber-50 rounded-lg p-3 text-sm text-amber-800 border border-amber-100" v-if="materialQuantity && materialQuantity > 0 && materialYieldFactor > 0">
+                      <p class="font-medium mb-1">📊 Para obtener {{ materialQuantity }} {{ selectedMaterial.unit }} netos:</p>
+                      <ul class="list-disc list-inside space-y-1 text-xs opacity-90 ml-1">
+                        <li>Necesitas <strong>{{ (materialQuantity / (materialYieldFactor / 100)).toFixed(2) }} {{ selectedMaterial.unit }} brutos</strong></li>
+                        <li v-if="selectedMaterial.cost">Costo bruto: S/ {{ formatNumber(selectedMaterial.cost) }} / {{ selectedMaterial.unit }}</li>
+                        <li v-if="selectedMaterial.cost">Costo efectivo: <strong>S/ {{ formatNumber(selectedMaterial.cost / (materialYieldFactor / 100)) }} / {{ selectedMaterial.unit }}</strong></li>
+                      </ul>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+
               <!-- Información de costo -->
               <div class="bg-white rounded-xl p-4 mb-4">
                 <div class="flex items-center justify-between mb-2">
@@ -375,17 +416,20 @@
                 v-if="materialQuantity && materialQuantity > 0"
                 class="bg-emerald-100 rounded-xl p-4"
               >
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between mb-1">
                   <span class="text-sm font-medium text-gray-700"
                     >Subtotal:</span
                   >
                   <span class="text-2xl font-bold text-emerald-600">
                     {{
                       selectedMaterial.cost && selectedMaterial.cost > 0
-                        ? `S/ ${formatNumber(materialQuantity * selectedMaterial.cost)}`
+                        ? `S/ ${formatNumber(materialQuantity * (selectedMaterial.cost / (materialHasWaste && materialYieldFactor ? (materialYieldFactor / 100) : 1)))}`
                         : "S/ --"
                     }}
                   </span>
+                </div>
+                <div v-if="materialHasWaste && selectedMaterial.cost > 0" class="text-xs text-emerald-800 text-right opacity-80">
+                  (Incluye costo por merma)
                 </div>
               </div>
 
@@ -457,35 +501,65 @@
 
                   <!-- Fila 1: Cantidad editable inline + Unidad -->
                   <div
-                    class="flex items-center gap-2 text-sm text-gray-600 mb-1"
+                    class="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-600 mb-1"
                   >
-                    <input
-                      :value="item.quantity"
-                      @input="
-                        (e) =>
-                          handleUpdateQuantity(item.productId, e.target.value)
-                      "
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      class="w-20 px-2 py-1 border border-gray-300 rounded text-center font-medium focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
-                    />
-                    <span>{{ item.unit }}</span>
-                    <span class="text-gray-400">×</span>
-                    <span class="font-medium">
-                      {{
-                        item.costPerUnit && item.costPerUnit > 0
-                          ? `S/ ${formatNumber(item.costPerUnit)}`
-                          : "S/ --"
-                      }}
-                    </span>
-                    <span class="text-gray-400">=</span>
-                    <span class="font-bold text-emerald-600">
+                    <div class="flex items-center gap-2">
+                      <input
+                        :value="item.quantity"
+                        @input="
+                          (e) =>
+                            handleUpdateQuantity(item.productId, e.target.value)
+                        "
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        class="w-20 px-2 py-1 border border-gray-300 rounded text-center font-medium focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+                      />
+                      <span>{{ item.unit }} netos</span>
+                      <span class="text-gray-400 mx-1">×</span>
+                      <span class="font-medium" :class="{'line-through text-gray-400': item.yieldFactor, 'text-gray-800': !item.yieldFactor}">
+                        {{
+                          item.costPerUnit && item.costPerUnit > 0
+                            ? `S/ ${formatNumber(item.costPerUnit)}`
+                            : "S/ --"
+                        }}
+                      </span>
+                    </div>
+
+                    <!-- Fila 2: Rendimiento inline si aplica -->
+                    <div v-if="showWasteManagement" class="flex items-center gap-2 ml-0 sm:ml-2">
+                      <span class="text-amber-600 font-medium whitespace-nowrap">🔄</span>
+                      <input
+                        :value="item.yieldFactor || ''"
+                        @input="
+                          (e) =>
+                            handleUpdateYield(item.productId, e.target.value)
+                        "
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="100"
+                        class="w-16 px-1 py-1 border border-amber-300 bg-amber-50 rounded text-center font-medium text-amber-700 focus:border-amber-500 focus:ring-1 focus:ring-amber-200 text-xs"
+                      />
+                      <span class="text-amber-700 text-xs font-medium">% rto.</span>
+                      
+                      <span v-if="item.yieldFactor" class="text-xs text-gray-500 ml-1">
+                        → S/ {{ formatNumber(item.adjustedCostPerUnit) }} / {{ item.unit }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="flex items-center text-sm font-medium">
+                    <span class="text-gray-400 mr-2">=</span>
+                    <span class="font-bold text-emerald-600 text-base">
                       {{
                         item.subtotal && item.subtotal > 0
                           ? `S/ ${formatNumber(item.subtotal)}`
                           : "S/ --"
                       }}
+                    </span>
+                    <span v-if="item.grossQuantity" class="text-xs text-gray-500 ml-3 font-normal">
+                      ({{ item.grossQuantity }} {{ item.unit }} brutos)
                     </span>
                   </div>
                 </div>
@@ -573,6 +647,8 @@
       </div>
     </div>
     <!-- Fin modo composición -->
+
+
 
     <!-- Navegación fija (NavigationBtn pattern) -->
     <div
@@ -673,6 +749,8 @@ import { Timestamp } from "firebase/firestore";
 import { useProductCostingStore } from "@/stores/productCostingStore";
 import { useInventory } from "@/composables/useInventory";
 import { useToast } from "@/composables/useToast";
+import { useBusinessStore } from "@/stores/businessStore";
+import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 import BackBtn from "@/components/ui/BackBtn.vue";
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
@@ -682,19 +760,25 @@ const route = useRoute();
 const router = useRouter();
 
 // Composables
-const { getProductById, saveProductComposition, validateComposition } =
+const { getProductById, saveProductComposition, validateComposition, updateProduct } =
   useInventory();
 
 // Stores
 const costingStore = useProductCostingStore();
+const businessStore = useBusinessStore();
 const toast = useToast();
 
 // State
+const businessCapabilities = ref({});
+const materialHasWaste = ref(false);
+const materialYieldFactor = ref(100);
 const productName = ref("Producto");
 const productData = ref(null);
 const loading = ref(true);
 const saving = ref(false);
 const showCostingDetails = ref(false);
+
+
 
 // Configuración para CloseBtn
 const closeBtnConfig = {
@@ -712,6 +796,10 @@ const quantityInput = ref(null);
 const simpleCost = ref(null);
 
 // Computed
+const showWasteManagement = computed(() => {
+  return businessCapabilities.value.enableWasteManagement === true;
+});
+
 const materialsCostProgress = computed(() => {
   return costingStore.materialsCostProgress || 0;
 });
@@ -821,6 +909,14 @@ const handleMaterialSelected = async (material) => {
     stock: material.stock || 0,
   };
 
+  if (material.defaultYieldFactor) {
+    materialHasWaste.value = true;
+    materialYieldFactor.value = material.defaultYieldFactor;
+  } else {
+    materialHasWaste.value = false;
+    materialYieldFactor.value = 100;
+  }
+
   // Focus en el input de cantidad
   await nextTick();
   if (quantityInput.value) {
@@ -837,6 +933,7 @@ const handleAddMaterial = () => {
     quantity: parseFloat(materialQuantity.value),
     unit: selectedMaterial.value.unit,
     costPerUnit: selectedMaterial.value.cost,
+    yieldFactor: materialHasWaste.value ? materialYieldFactor.value : null,
   };
 
   const result = costingStore.addMaterialToComposition(material);
@@ -855,6 +952,8 @@ const handleAddMaterial = () => {
 const handleCancelSelection = () => {
   selectedMaterial.value = null;
   materialQuantity.value = null;
+  materialHasWaste.value = false;
+  materialYieldFactor.value = 100;
 };
 
 const handleUpdateQuantity = (productId, value) => {
@@ -873,6 +972,21 @@ const handleUpdateQuantity = (productId, value) => {
   }
 
   costingStore.updateMaterialQuantity(productId, quantity);
+};
+
+const handleUpdateYield = (productId, value) => {
+  if (value === "" || value === null || value === undefined) {
+    costingStore.updateMaterialYield(productId, null);
+    return;
+  }
+
+  const yieldValue = parseFloat(value);
+  if (isNaN(yieldValue) || yieldValue < 1 || yieldValue > 100) {
+    toast.warning("El rendimiento debe estar entre 1 y 100");
+    return;
+  }
+
+  costingStore.updateMaterialYield(productId, yieldValue);
 };
 
 const handleRemoveMaterial = (productId) => {
@@ -1017,6 +1131,8 @@ const handleSaveSimpleCost = async () => {
   }
 };
 
+
+
 const handleGoBack = () => {
   if (hasUnsavedChanges.value) {
     const confirmed = confirm(
@@ -1071,6 +1187,10 @@ onBeforeRouteLeave((to, from, next) => {
 
 // Lifecycle
 onMounted(async () => {
+  businessCapabilities.value = getBusinessCapabilities(
+    businessStore.business?.businessType
+  );
+
   await loadProduct();
 
   // Inicializar store con el producto ya cargado
