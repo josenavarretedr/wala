@@ -94,7 +94,8 @@ docs/
 | [DELETE_TRANSACTION_MODAL_IMPLEMENTATION.md](transactions/DELETE_TRANSACTION_MODAL_IMPLEMENTATION.md) | Modal de eliminación | ✅ Activo |
 | [SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md](transactions/SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md) | Pagos parciales en transacciones | ✅ Activo |
 | [ACCOUNTS_BALANCE_STORE_USAGE.md](transactions/ACCOUNTS_BALANCE_STORE_USAGE.md) | Guía de uso del balance | ✅ Activo |
-| [LAZY_CLOSE_INTEGRATION.md](transactions/LAZY_CLOSE_INTEGRATION.md) | Cierre automático (Cloud Function) | ✅ Activo |
+| [LAZY_CLOSE_INTEGRATION.md](transactions/LAZY_CLOSE_INTEGRATION.md) | Cierre automático multi-día (Cloud Function) | ✅ Activo |
+| [OPTIMIZED_AUTOMATED_CLOSURES.md](transactions/OPTIMIZED_AUTOMATED_CLOSURES.md) | Cierre diario automático programado optimizado | ✅ Activo |
 | [REALTIME_DAILYSUMMARY_LISTENER.md](transactions/REALTIME_DAILYSUMMARY_LISTENER.md) | Listener en tiempo real del resumen diario | ✅ Activo |
 
 ---

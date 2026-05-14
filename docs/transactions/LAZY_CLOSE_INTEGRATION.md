@@ -1,229 +1,79 @@
 # Integración de Lazy Close - Documentación Completa
 
-**Fecha:** 19 de octubre de 2025  
-**Estado:** ✅ Configuración completa - Debugging en progreso
+**Fecha:** Mayo 2026 (Actualización Multi-Día)  
+**Estado:** ✅ Implementado y Optimizado
 
 ---
 
 ## 🎯 Objetivo
 
-Llamar automáticamente a la Cloud Function `lazyCloseIfNeeded` cuando el usuario entra a `AccountBalanceAppWrapper` para verificar si el día anterior quedó sin cerrar y cerrarlo automáticamente.
+Garantizar la continuidad financiera del negocio cerrando automáticamente TODOS los días que hayan quedado abiertos sin cierre manual. Esta operación se conoce como "Lazy Close" y se dispara bajo demanda cuando el usuario interactúa con la pantalla de apertura de caja.
 
 ---
 
-## ✅ Cambios Implementados
+## 🔄 Flujo Multi-Día en Cadena
 
-### 1. **firebaseInit.js** - Configuración de Functions
-
-```javascript
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
-
-const functions = getFunctions(appFirebase, "us-central1");
-
-if (window.location.hostname === "localhost") {
-  connectFirestoreEmulator(db, "localhost", 8080);
-  connectAuthEmulator(auth, "http://localhost:9099");
-  connectStorageEmulator(storage, "localhost", 9199);
-  connectFunctionsEmulator(functions, "localhost", 5001); // ⭐ Nuevo
-  console.log("🔌 Emuladores conectados: Firestore, Auth, Storage, Functions");
-}
-
-export { db, auth, storage, functions }; // ⭐ functions exportado
-```
-
-### 2. **AccountBalanceAppWrapper.vue** - Llamada a la Función
-
-```javascript
-import { httpsCallable } from "firebase/functions";
-import { auth, functions } from "@/firebaseInit";
-import { useAuth } from "@/composables/useAuth";
-
-const { getCurrentUser } = useAuth();
-
-onMounted(async () => {
-  // 1. Esperar autenticación
-  const user = await getCurrentUser();
-  if (!user) return;
-
-  // 2. Delay para token
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  // 3. Llamar a lazyCloseIfNeeded
-  await checkLazyClose();
-
-  // 4. Cargar transacciones
-  await transactionStore.getTransactionsToday();
-
-  // 5. Verificar apertura
-  hasOpeningTransaction.value = transactionStore.transactionsInStore.value.some(
-    (tx) => tx.type === "opening"
-  );
-});
-
-const checkLazyClose = async () => {
-  const businessId = ensureBusinessId();
-  const currentUser = auth.currentUser;
-
-  if (!currentUser) return;
-
-  // Refresh del token
-  await currentUser.getIdToken(true);
-
-  // Llamar función callable
-  const lazyCloseIfNeeded = httpsCallable(functions, "lazyCloseIfNeeded");
-  const result = await lazyCloseIfNeeded({ businessId });
-
-  const { data } = result;
-
-  if (data.closed) {
-    console.log("🤖 Cierre automático ejecutado:", data);
-    await transactionStore.getTransactionsToday(); // Recargar
-  } else {
-    console.log("ℹ️ No se requiere cierre automático:", data);
-  }
-};
-```
-
----
-
-## 🔄 Flujo Completo
+A diferencia del diseño inicial que solo revisaba el día inmediatamente anterior (ayer), la versión actual implementa un sistema de **cierre en cadena** que puede procesar brechas de múltiples días consecutivos de inactividad.
 
 ```
-Usuario entra a /accounts-balance-app
+Usuario interactúa con App de Balances
          ↓
-AccountBalanceAppWrapper.vue monta
+checkLazyClose() en AccountBalanceAppWrapper
+    ├─ ensureBusinessId()
+    ├─ httpsCallable(functions, "lazyCloseIfNeeded")
+    └─ Llama a Cloud Function
          ↓
-onMounted se ejecuta
-         ↓
-1. getCurrentUser() → Espera autenticación
-         ↓
-2. Delay 100ms → Asegura token disponible
-         ↓
-3. checkLazyClose()
-   ├─ ensureBusinessId()
-   ├─ auth.currentUser verificado
-   ├─ getIdToken(true) → Refresh forzado
-   ├─ httpsCallable(functions, "lazyCloseIfNeeded")
-   └─ Llama a Cloud Function
-         ↓
-Cloud Function lazyCloseIfNeeded
-   ├─ Valida autenticación (context.auth)
-   ├─ Valida businessId
-   ├─ Obtiene timezone del negocio
-   ├─ Calcula día anterior
-   ├─ Obtiene agregados del día (getDayAggregates)
-   ├─ Verifica: ¿hasOpening && !hasClosure?
-   │
-   ├─ SÍ → Crear cierre automático
-   │   ├─ Genera UUID
-   │   ├─ Calcula timestamp del final del día anterior
-   │   ├─ Crea transacción de cierre
-   │   ├─ Actualiza dailySummary
-   │   ├─ Rompe racha (breakStreak)
-   │   └─ Retorna { closed: true, mode: 'lazyOpen', ... }
-   │
-   └─ NO → Retorna { closed: false, reason: 'no_missing_closure' }
-         ↓
-Frontend procesa respuesta
-   ├─ Si closed: true → Recarga transacciones
-   └─ Continúa con flujo normal
+Cloud Function lazyCloseIfNeeded (Multi-Día)
+    ├─ Valida autenticación y businessId
+    ├─ Obtiene timezone del negocio
+    ├─ Bucle hacia atrás (hasta 30 días de lookback):
+    │    ├─ Lee dailySummary de cada día
+    │    ├─ Si !summary -> Skip (sin actividad)
+    │    ├─ Si hasOpening && !hasClosure -> Añadir a pendingDays
+    │    └─ Si hasClosure -> BREAK (cadena interrumpida por un día cerrado)
+    │
+    ├─ Invertir orden cronológico (más antiguo primero) 🔄
+    │
+    ├─ Para cada día pendiente:
+    │    ├─ Obtener agregados finales del día (getDayAggregates)
+    │    ├─ Crear transacción de cierre (UUID coincidente con ID)
+    │    │  └─ Asigna balances y totales acumulados por onTransactionWrite
+    │    ├─ Actualizar dailySummary con completedAt y closureId
+    │    └─ Actualizar Racha con streakManager (autoClosePolicy: lenient)
+    │
+    └─ Retorna resumen de días cerrados:
+         └─ { closed: true, mode: 'lazyOpen', daysCount, closedDays[] }
 ```
 
----
-
-## 🐛 Debugging Actual
-
-### Error 500 - Internal Server Error
-
-**Estado:** La función se llama correctamente pero falla internamente.
-
-**URL:** `http://localhost:5001/wala-lat/us-central1/lazyCloseIfNeeded`
-
-**Logs de consola:**
-
-```
-✅ auth.currentUser existe: josenavarretedr@gmail.com
-🔑 Token ID refrescado exitosamente
-🔧 Usando instancia de functions desde firebaseInit
-🔐 Llamando a lazyCloseIfNeeded...
-❌ POST http://localhost:5001/.../lazyCloseIfNeeded 500 (Internal Server Error)
-❌ Error en lazy close: FirebaseError: INTERNAL
-   Código: functions/internal
-   Mensaje: INTERNAL
-```
-
-### Posibles Causas
-
-1. **Error en luxon/time.js**
-
-   - `yesterdayStr(tz)` puede estar fallando
-   - `endOfDay(day, tz)` puede estar fallando
-
-2. **Error en Firestore**
-
-   - No está usando el emulador de Firestore
-   - Error al obtener el documento del negocio
-
-3. **Error en getDayAggregates**
-   - Falla al calcular agregados
-   - Error en queries de Firestore
-
-### Próximos Pasos
-
-1. ✅ Verificar que el emulador de Firestore esté corriendo
-2. ✅ Ver logs del emulador de Functions (en la terminal)
-3. ⏳ Agregar más logging a la función si es necesario
-4. ⏳ Verificar que el negocio `FARMACIA-4b8cf708` existe en Firestore emulador
+### 💡 ¿Por qué cierre cronológico invertido?
+Los saldos iniciales de cada día dependen matemáticamente del saldo final del día anterior. Al cerrar en orden cronológico (lunes → martes → miércoles), aseguramos que el saldo acumulado fluye correctamente a través de la historia del negocio hasta el día actual.
 
 ---
 
-## 📝 Notas Importantes
+## 🛠️ Implementación Técnica
 
-- **Emuladores:** Asegúrate de que todos los emuladores estén corriendo:
+### Cloud Function (`lazyCloseIfNeeded.js`)
 
-  ```bash
-  firebase emulators:start
-  ```
+La función principal ahora itera sobre un `MAX_LOOKBACK_DAYS = 30` y delega el guardado del cierre a una subfunción optimizada `createClosureForDay`.
 
-- **Puertos:**
-
-  - Functions: `localhost:5001`
-  - Firestore: `localhost:8080`
-  - Auth: `localhost:9099`
-  - Storage: `localhost:9199`
-
-- **Debugging:**
-  - Los logs de Functions aparecen en la terminal donde corren los emuladores
-  - Busca líneas que empiecen con el emoji del log de la función
+#### Estructura del Cierre Creado:
+*   **UUID**: Identificador único persistido tanto en la colección `transactions` como en el campo `closureId` del resumen diario.
+*   **Tipo**: `closure`
+*   **Source / Mode**: `copilot` / `lazyOpen`
+*   **createdAt**: Se establece forzadamente al final del día correspondiente (23:59:59) para que el orden de transacciones dentro de Firestore se mantenga consistente con la fecha lógica del negocio, no con la ejecución real de la cloud function.
+*   **Ajustes**: Se asume `0` de diferencia dado que no hubo conteo de efectivo real por parte del usuario.
 
 ---
 
-## ✅ Checklist
+## 📈 Manejo de Racha (Streak)
 
-- [x] Import de Functions en firebaseInit.js
-- [x] Configuración de emulador de Functions
-- [x] Export de functions desde firebaseInit.js
-- [x] Import de functions en AccountBalanceAppWrapper.vue
-- [x] Implementación de checkLazyClose()
-- [x] Manejo de autenticación con useAuth
-- [x] Refresh de token antes de llamar
-- [x] Logs detallados para debugging
-- [x] La función se llama correctamente
-- [ ] La función se ejecuta sin errores 500
-- [ ] El cierre automático funciona correctamente
-- [ ] Las transacciones se recargan después del cierre
+La integración con el módulo de gamificación utiliza el `streakManager` invocando `updateStreakContextualizada`.
+Se utiliza la política `autoClosePolicy: 'lenient'`. El sistema no castiga la racha por el mero hecho de que el cierre se haya automatizado, siempre y cuando el usuario haya registrado ventas o movimientos durante el día activo (independiente del cierre).
 
 ---
 
-**Estado Final:** Configuración correcta, esperando fix del error 500 en la Cloud Function.
+## ✅ Reglas de Integridad
 
-
----
-
-## Changelog
-
-### [Auditoría - Marzo 2026]
-- Revisado: Funcionalidad verificada como activa en código fuente.
-- Sin cambios de contenido en esta auditoría.
-- Documentación movida al estado vigente confirmado.
-
+1.  **Skip por Inactividad**: Si no existe un `dailySummary` para una fecha en el bucle de búsqueda, significa que el negocio no tuvo apertura ni transacciones ese día. El algoritmo pasa de largo sin crear aperturas ni cierres innecesarios.
+2.  **Cortafuegos de Búsqueda**: Tan pronto como la búsqueda encuentra un día que ya cuenta con un cierre formal (`hasClosure: true`), el ciclo se detiene inmediatamente para evitar consumir recursos de lectura en la historia antigua del negocio que ya está consolidada.
+3.  **Persistencia en Auditoría**: Cada cierre automatizado se registra en `traceability_logs` bajo el tipo de operación `auto_close` con toda la data financiera congelada del momento para auditorías posteriores.

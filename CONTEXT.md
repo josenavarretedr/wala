@@ -327,6 +327,7 @@ onMounted(() => { /* ... */ })
 
 | Fecha | Sesión | Cambios clave |
 |-------|--------|---------------|
+| 13 May | Auto-Close Ops | Reescritura `scheduledAutoClose` (query `collectionGroup` de activos, paginación, elimina auto-opening/sleep). `lazyCloseIfNeeded` multi-día en cadena (30 días lookback). Refactor `StepLastReference` para usar `dailySummaries` mitigando brechas de saldo. Índice compuesto de grupo implementado. |
 | 6 May | Auditoría docs | Clasificación 76 docs, auditoría veracidad suscripciones (9 discrepancias corregidas), creación docs CRM + Consulting, checklist mantenimiento, movimiento de 12 MDs huérfanos |
 | 5 May | Simplificar QuickEntry | "Visita en frío" como default, eliminar Campaña/Cohorte del modal, input telefónico internacional (+51 Peru default) |
 | 4 May | Recoloring Logo | Asset "Wala BLANCO.png" → "Wala Origin.png" con color #E35336 |
