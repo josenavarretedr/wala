@@ -2,6 +2,24 @@
   "indexes": [
     {
       "collectionGroup": "dailySummaries",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "day",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "hasOpening",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "hasClosure",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dailySummaries",
       "queryScope": "COLLECTION",
       "fields": [
         {

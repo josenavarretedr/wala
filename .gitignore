@@ -33,3 +33,6 @@ functions/.env.*.local
 
 # Archivos sensibles
 **/wala-lat-firebase-adminsdk.json
+
+# Firebase Emulator Data
+emulator-data/

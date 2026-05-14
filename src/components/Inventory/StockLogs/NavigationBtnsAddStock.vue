@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { NavArrowLeft, NavArrowRight, Check } from "@iconoir/vue";
 import { useAddStockFlowStore } from "@/stores/Inventory/AddStockFlow.js";
 
@@ -93,4 +93,27 @@ const handleNext = () => {
     flow.nextStep();
   }
 };
+
+// Manejar tecla Enter y Backspace
+const handleKeydown = (event) => {
+  const isInputTarget = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
+
+  if (event.key === "Enter" && canProceed.value) {
+    if (event.target.tagName === "TEXTAREA") return;
+    event.preventDefault();
+    handleNext();
+  } else if (event.key === "Backspace" && flow.currentStep > 0) {
+    if (isInputTarget) return;
+    event.preventDefault();
+    handleBack();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
 </script>

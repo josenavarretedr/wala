@@ -97,7 +97,7 @@ import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBal
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { generateUUID } from "@/utils/generateUUID";
 import { useDailySummary } from "@/composables/useDailySummary";
 import { useTransaccion } from "@/composables/useTransaction";
@@ -229,6 +229,8 @@ const finalizarRegistro = async () => {
         ? stepsData.expectedBankBalance
         : stepsData.realBankBalance;
 
+    let createdTransactionUuid = null;
+
     if (isOpeningMode.value) {
       // ========== MODO APERTURA ==========
       console.log("📂 Modo: APERTURA");
@@ -242,6 +244,8 @@ const finalizarRegistro = async () => {
         lastClosureUuid: stepsData.lastClosureData?.uuid || null,
         generateUUID,
       });
+
+      createdTransactionUuid = openingTransaction.uuid;
 
       // ✅ DEBUG DETALLADO: Validar estructura ANTES de guardar
       console.log("=== 🔍 APERTURA CONSTRUIDA (ANTES DE GUARDAR) ===");
@@ -401,6 +405,8 @@ const finalizarRegistro = async () => {
         generateUUID,
       });
 
+      createdTransactionUuid = closureTransaction.uuid;
+
       // ✅ DEBUG DETALLADO: Validar estructura ANTES de guardar
       console.log("=== 🔍 CIERRE CONSTRUIDO (ANTES DE GUARDAR) ===");
       console.log("📋 Campos Básicos:");
@@ -505,10 +511,6 @@ const finalizarRegistro = async () => {
       console.log("✅ Cierre completado exitosamente");
     }
 
-    // Resetear el flujo y limpiar datos
-    flow.resetFlow();
-    transactionStore.resetTransactionToAdd();
-    accountsBalanceStore.reset();
 
     // Mostrar toast de éxito
     const message = isOpeningMode.value
@@ -516,16 +518,28 @@ const finalizarRegistro = async () => {
       : "El cierre se realizó correctamente";
     success(message);
 
-    // Redirigir al dashboard después de un breve delay para que se vea el toast
+    // Redirigir al detalle después de un breve delay para que se vea el toast
     const businessId = businessStore.getBusinessId;
     flow.accountBalanceLoading = false;
     isFinalizando.value = false;
 
     setTimeout(() => {
-      router.push({
-        name: "BusinessDashboard",
-        params: { businessId },
-      });
+      // Resetear el flujo y limpiar datos
+      flow.resetFlow();
+      transactionStore.resetTransactionToAdd();
+      accountsBalanceStore.reset();
+
+      if (createdTransactionUuid) {
+        router.replace({
+          name: "DetailsRecords",
+          params: { businessId, registerId: createdTransactionUuid },
+        });
+      } else {
+        router.replace({
+          name: "BusinessDashboard",
+          params: { businessId },
+        });
+      }
     }, 1500);
   } catch (error) {
     console.error("❌ Error en finalizarRegistro:", error);
@@ -538,4 +552,31 @@ const finalizarRegistro = async () => {
     isFinalizando.value = false;
   }
 };
+
+// Manejar tecla Enter y Backspace
+const handleKeydown = (event) => {
+  const isInputTarget = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
+
+  if (event.key === "Enter" && isNextButtonEnabled.value && !flow.transactionLoading && !isFinalizando.value) {
+    if (event.target.tagName === "TEXTAREA") return;
+    event.preventDefault();
+    if (flow.isLastStep) {
+      finalizarRegistro();
+    } else {
+      flow.nextStep();
+    }
+  } else if (event.key === "Backspace" && !flow.isFirstStep && !flow.transactionLoading && !isFinalizando.value) {
+    if (isInputTarget) return;
+    event.preventDefault();
+    flow.prevStep();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
 </script>

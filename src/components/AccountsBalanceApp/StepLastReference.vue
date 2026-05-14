@@ -26,10 +26,23 @@
       </div>
 
       <div v-if="lastClosureData" class="space-y-2">
+        <!-- Alert for unclosed day reference -->
+        <div
+          v-if="lastClosureData.isUnclosed"
+          class="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-2"
+        >
+          <p class="text-xs text-amber-700">
+            <span class="font-semibold">⚠️ Día sin cerrar:</span>
+            Los saldos mostrados incluyen todas las transacciones del
+            <span class="font-bold">{{ lastClosureData.day }}</span>
+            pero no se realizó cierre formal.
+          </p>
+        </div>
+
         <div class="text-sm text-gray-600">
-          <span class="font-medium">Último cierre:</span>
+          <span class="font-medium">{{ lastClosureData.isUnclosed ? 'Última referencia:' : 'Último cierre:' }}</span>
           <span class="text-blue-700 font-semibold ml-1">{{
-            formatDate(lastClosureData.createdAt)
+            lastClosureData.day || formatDate(lastClosureData.createdAt)
           }}</span>
         </div>
 
@@ -161,7 +174,7 @@ const props = defineProps({
 
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
-const { getTodayDailySummary } = useDailySummary();
+const { getTodayDailySummary, getDailySummary } = useDailySummary();
 const { getTransactionByID } = useTransaccion();
 const flowStore = useAccountsBalanceFlowStore();
 
@@ -200,29 +213,89 @@ const formatDate = (timestamp) => {
   });
 };
 
-// Buscar el último cierre
+/**
+ * Busca la referencia financiera más reciente para la apertura.
+ * OPTIMIZADO: Busca primero en dailySummaries (más eficiente y preciso)
+ * para resolver el problema de saldos desactualizados cuando hay
+ * días sin cierre manual.
+ * 
+ * Estrategia:
+ * 1. Buscar dailySummaries recientes (hasta 7 días atrás)
+ * 2. Si encuentra un día cerrado → usar sus saldos finales ✅
+ * 3. Si encuentra un día SIN cerrar → usar balances.actual (ya incluye txns) ✅
+ * 4. Fallback: query directa de closure transactions
+ */
 const findLastClosure = async () => {
   try {
-    // Usar la nueva función para obtener las últimas transacciones de cierre
-    const closureTransactions = await transactionStore.getLastClosures(5);
+    const MAX_LOOKBACK = 7;
 
-    if (closureTransactions && closureTransactions.length > 0) {
-      // Tomar el primer elemento (el más reciente)
-      lastClosureData.value = closureTransactions[0];
-      // ⚡ Persistir en flowStore para que StepCash/StepBank lo reutilicen
+    for (let i = 1; i <= MAX_LOOKBACK; i++) {
+      const checkDate = new Date();
+      checkDate.setDate(checkDate.getDate() - i);
+      const year = checkDate.getFullYear();
+      const month = String(checkDate.getMonth() + 1).padStart(2, '0');
+      const dayNum = String(checkDate.getDate()).padStart(2, '0');
+      const dayStr = `${year}-${month}-${dayNum}`;
+
+      const summary = await getDailySummary(dayStr);
+
+      if (!summary) {
+        // No hay dailySummary = no hubo actividad = seguir buscando
+        continue;
+      }
+
+      if (summary.hasClosure) {
+        // Día cerrado → saldos finales confiables
+        lastClosureData.value = {
+          cashAmount: summary.balances?.actual?.cash || 0,
+          bankAmount: summary.balances?.actual?.bank || 0,
+          createdAt: summary.completedAt || summary.lastUpdated,
+          uuid: summary.closureId || null,
+          source: 'dailySummary',
+          day: dayStr,
+        };
+        console.log(`✅ Cierre encontrado en dailySummary (${dayStr}):`, lastClosureData.value);
+        break;
+      }
+
+      if (summary.hasOpening && !summary.hasClosure) {
+        // Día con apertura pero SIN cierre → usar balances.actual
+        // (ya incluye todas las transacciones del día vía onTransactionWrite)
+        lastClosureData.value = {
+          cashAmount: summary.balances?.actual?.cash || 0,
+          bankAmount: summary.balances?.actual?.bank || 0,
+          createdAt: summary.lastUpdated,
+          uuid: null,
+          source: 'unclosed_day',
+          day: dayStr,
+          isUnclosed: true,
+        };
+        console.log(`⚠️ Día sin cerrar encontrado (${dayStr}) - usando saldos actuales:`, lastClosureData.value);
+        break;
+      }
+    }
+
+    // Fallback: si no se encontró nada en dailySummaries, usar query clásica
+    if (!lastClosureData.value) {
+      console.log("🔄 Fallback: buscando en transacciones de cierre...");
+      const closureTransactions = await transactionStore.getLastClosures(5);
+      if (closureTransactions && closureTransactions.length > 0) {
+        lastClosureData.value = closureTransactions[0];
+        console.log("Último cierre encontrado (fallback):", lastClosureData.value);
+      } else {
+        console.log("No se encontraron referencias anteriores.");
+        lastClosureData.value = null;
+      }
+    }
+
+    // Persistir en flowStore para que StepCash/StepBank lo reutilicen
+    if (lastClosureData.value) {
       flowStore.updateStepData("Last Reference", {
         lastClosureData: lastClosureData.value,
       });
-      console.log("Último cierre encontrado:", lastClosureData.value);
-      console.log(
-        `Total de cierres encontrados: ${closureTransactions.length}`,
-      );
-    } else {
-      console.log("No se encontraron transacciones de cierre.");
-      lastClosureData.value = null;
     }
   } catch (error) {
-    console.error("Error buscando último cierre:", error);
+    console.error("Error buscando referencia anterior:", error);
     lastClosureData.value = null;
   }
 };

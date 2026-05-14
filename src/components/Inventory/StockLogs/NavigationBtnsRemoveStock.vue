@@ -50,7 +50,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { NavArrowLeft, NavArrowRight, Check } from "@iconoir/vue";
 import { useRemoveStockFlowStore } from "@/stores/Inventory/RemoveStockFlow.js";
 
@@ -111,6 +111,29 @@ const handleNext = async () => {
     isLoading.value = false;
   }
 };
+
+// Manejar tecla Enter y Backspace
+const handleKeydown = (event) => {
+  const isInputTarget = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName);
+
+  if (event.key === "Enter" && canProceed.value && !isLoading.value) {
+    if (event.target.tagName === "TEXTAREA") return;
+    event.preventDefault();
+    handleNext();
+  } else if (event.key === "Backspace" && !flow.isFirstStep && !isLoading.value) {
+    if (isInputTarget) return;
+    event.preventDefault();
+    handleBack();
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeydown);
+});
 </script>
 
 <style scoped>

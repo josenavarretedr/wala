@@ -2,8 +2,11 @@
 
 /**
  * @file lazyCloseIfNeeded.js
- * @description Función callable que cierra automáticamente el día anterior si quedó abierto.
- * Se ejecuta al momento de hacer una apertura nueva (lazy-open).
+ * @description Función callable que cierra automáticamente TODOS los días pendientes
+ * cuando el usuario abre la app. Versión mejorada: cierre en cadena multi-día.
+ * 
+ * Si el usuario no cerró manualmente durante 3 días, esta función cierra
+ * todos esos días en orden cronológico para mantener la continuidad de saldos.
  * 
  * Infraestructura consistente con:
  * - useTransaction.js (manejo de transacciones)
@@ -25,27 +28,199 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-const { yesterdayStr, endOfDay } = require('../Helpers/time');
+const { todayStr, dayMinus, endOfDay } = require('../Helpers/time');
 const { getDayAggregates, upsertDailySummary } = require('./sharedComputed');
 const { updateStreakContextualizada } = require('../Streak/streakManager');
 
 const DEFAULT_TZ = 'America/Lima';
 
 /**
- * Cierra automáticamente el día anterior si quedó abierto sin cierre manual.
- * Esto permite mantener la integridad de los datos cuando el usuario olvida cerrar.
+ * Máximo de días hacia atrás a buscar para cierre en cadena.
+ * 30 días es un balance entre cobertura y rendimiento.
+ */
+const MAX_LOOKBACK_DAYS = 30;
+
+/**
+ * Crea una transacción de cierre automático para un día específico.
  * 
- * Flujo (similar a useCashClosure.createClosure):
- * 1. Verifica autenticación y businessId
- * 2. Calcula el día anterior según timezone
- * 3. Verifica si tiene apertura pero no cierre
- * 4. Crea transacción de cierre automático con UUID
- * 5. Actualiza dailySummary
- * 6. Rompe la racha de días consecutivos
- * 
- * @param {Object} data - { businessId: string }
- * @param {Object} context - Firebase auth context
- * @returns {Object} { closed: boolean, mode?: string, day?: string, reason?: string }
+ * @param {Object} params
+ * @param {string} params.businessId
+ * @param {string} params.day - Día a cerrar (yyyy-LL-dd)
+ * @param {Object} params.agg - Agregados del día (de getDayAggregates)
+ * @param {string} params.tz - Timezone del negocio
+ * @returns {Object} { closureUuid, closureTransaction }
+ */
+async function createClosureForDay({ businessId, day, agg, tz }) {
+  const closureUuid = uuidv4();
+  const closureRef = db.collection(`businesses/${businessId}/transactions`).doc(closureUuid);
+
+  // Acceso seguro a propiedades anidadas
+  const openingData = agg.openingData || {};
+  const { byAccount, balances, totals, transfers, adjustments, operational } = agg;
+
+  // Timestamp del final del día (23:59:59.999) para que el cierre pertenezca al día correcto
+  const closureTimestamp = admin.firestore.Timestamp.fromDate(endOfDay(day, tz));
+
+  // Estructura completa de cierre (consistente con buildClosureTransaction)
+  const closureTransaction = {
+    // === IDENTIFICACIÓN ===
+    uuid: closureUuid,
+    id: closureUuid,
+    type: 'closure',
+    description: 'Cierre automático (lazy-open)',
+    source: 'copilot',
+    copilotMode: 'lazyOpen',
+    openingReference: openingData.uuid || openingData.id,
+
+    // === SALDOS INICIALES (de apertura) ===
+    initialCashBalance: openingData.realCashBalance || 0,
+    initialBankBalance: openingData.realBankBalance || 0,
+
+    // === TOTALES GENERALES (sin ajustes) ===
+    totalIngresos: totals?.income || 0,
+    totalEgresos: totals?.expense || 0,
+    ingresosCash: byAccount?.cash?.income || 0,
+    ingresosBank: byAccount?.bank?.income || 0,
+    egresosCash: byAccount?.cash?.expense || 0,
+    egresosBank: byAccount?.bank?.expense || 0,
+
+    // === TRANSFERENCIAS ===
+    totalTransferencias: transfers?.total || 0,
+    transferencias: {
+      cash: {
+        in: transfers?.cash?.in || 0,
+        out: transfers?.cash?.out || 0,
+        net: transfers?.cash?.net || 0
+      },
+      bank: {
+        in: transfers?.bank?.in || 0,
+        out: transfers?.bank?.out || 0,
+        net: transfers?.bank?.net || 0
+      }
+    },
+
+    // === AJUSTES ===
+    ajustesApertura: {
+      cash: adjustments?.opening?.cash || 0,
+      bank: adjustments?.opening?.bank || 0,
+      total: adjustments?.opening?.total || 0
+    },
+    ajustesCierre: {
+      cash: 0,
+      bank: 0,
+      total: 0
+    },
+
+    // === BALANCES ESPERADOS ===
+    expectedCashBalance: balances?.expected?.cash || 0,
+    expectedBankBalance: balances?.expected?.bank || 0,
+
+    // === BALANCES REALES (igual a esperados en cierre automático) ===
+    realCashBalance: balances?.actual?.cash || 0,
+    realBankBalance: balances?.actual?.bank || 0,
+
+    // === DIFERENCIAS (0 en cierre automático sin conteo real) ===
+    cashDifference: 0,
+    bankDifference: 0,
+
+    // === RESULTADOS OPERACIONALES ===
+    resultadoOperacional: operational?.result || 0,
+    resultadoOperacionalCash: operational?.resultCash || 0,
+    resultadoOperacionalBank: operational?.resultBank || 0,
+    flujoNetoCash: operational?.flowCash || 0,
+    flujoNetoBank: operational?.flowBank || 0,
+
+    // === CAMPOS COMPATIBLES (legacy) ===
+    totalCash: balances?.actual?.cash || 0,
+    totalBank: balances?.actual?.bank || 0,
+    cashAmount: balances?.actual?.cash || 0,
+    bankAmount: balances?.actual?.bank || 0,
+
+    // === ESTRUCTURA ESTÁNDAR ===
+    items: [],
+    itemsAndStockLogs: [],
+    amount: 0,
+
+    // === METADATA ===
+    metadata: {
+      closedDay: day,
+      triggerType: 'lazy_open',
+      autoGenerated: true,
+      actualExecutionTime: new Date().toISOString(),
+      closureTimestamp: closureTimestamp.toDate().toISOString()
+    },
+    // IMPORTANTE: createdAt debe ser el final del día anterior (23:59:59.999)
+    createdAt: closureTimestamp
+  };
+
+  // Crear transacción de cierre
+  await closureRef.set(closureTransaction);
+  console.log(`  ✅ Closure created for ${day}: ${closureUuid}`);
+
+  // Recalcular agregados después del cierre
+  const updatedAgg = await getDayAggregates(db, businessId, day, tz);
+
+  // Actualizar resumen diario
+  await upsertDailySummary(db, businessId, day, {
+    ...updatedAgg,
+    hasClosure: true,
+    isAutoClosed: true,
+    closureId: closureUuid,
+    autoCloseReason: 'lazyOpen',
+    completedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  // Actualizar racha
+  const streakResult = await updateStreakContextualizada({
+    db,
+    businessId,
+    day,
+    summary: {
+      ...updatedAgg,
+      hasClosure: true,
+      isAutoClosed: true,
+      closureId: closureUuid,
+      autoCloseReason: 'lazyOpen'
+    },
+    tz,
+    autoClosePolicy: 'lenient'
+  });
+
+  console.log(`  🔥 Streak for ${day}:`, {
+    updated: streakResult.updated,
+    current: streakResult.streak?.current,
+    reason: streakResult.reason
+  });
+
+  // Traceability log
+  await db.collection(`businesses/${businessId}/traceability_logs`).add({
+    operationType: 'auto_close',
+    entityType: 'transaction',
+    entityId: closureUuid,
+    operation: 'lazy_open_closure',
+    day,
+    closureTransactionId: closureUuid,
+    triggerType: 'lazy_open',
+    autoGenerated: true,
+    financialData: {
+      totalIngresos: closureTransaction.totalIngresos,
+      totalEgresos: closureTransaction.totalEgresos,
+      expectedCashBalance: closureTransaction.expectedCashBalance,
+      expectedBankBalance: closureTransaction.expectedBankBalance,
+      realCashBalance: closureTransaction.realCashBalance,
+      realBankBalance: closureTransaction.realBankBalance
+    },
+    closureTimestamp: closureTimestamp,
+    executedAt: admin.firestore.FieldValue.serverTimestamp(),
+    timestamp: admin.firestore.FieldValue.serverTimestamp()
+  });
+
+  return { closureUuid, closureTransaction };
+}
+
+/**
+ * Cierra automáticamente TODOS los días pendientes (multi-día).
+ * Busca hasta MAX_LOOKBACK_DAYS hacia atrás y cierra en orden cronológico.
  */
 module.exports = functions.https.onCall(async (data, context) => {
   // === VALIDACIÓN DE AUTENTICACIÓN ===
@@ -59,7 +234,7 @@ module.exports = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('invalid-argument', 'businessId es requerido');
   }
 
-  console.log(`🔍 Lazy close check for business: ${businessId}`);
+  console.log(`🔍 Lazy close check (multi-day) for business: ${businessId}`);
 
   // === OBTENER TIMEZONE DEL NEGOCIO ===
   const businessDoc = await db.doc(`businesses/${businessId}`).get();
@@ -71,206 +246,106 @@ module.exports = functions.https.onCall(async (data, context) => {
   const businessData = businessDoc.data();
   const tz = (businessData && businessData.timezone) || DEFAULT_TZ;
 
-  // === CALCULAR DÍA ANTERIOR ===
-  const day = yesterdayStr(tz);
-  console.log(`📅 Checking day: ${day} (tz: ${tz})`);
+  // === BUSCAR TODOS LOS DÍAS SIN CIERRE (hasta MAX_LOOKBACK_DAYS atrás) ===
+  const today = todayStr(tz);
+  const pendingDays = []; // Días que necesitan cierre
 
-  // === OBTENER AGREGADOS DEL DÍA ===
-  const agg = await getDayAggregates(db, businessId, day, tz);
+  console.log(`📅 Searching for unclosed days from today: ${today} (tz: ${tz})`);
 
-  console.log(`📊 Day status:`, {
-    hasOpening: agg.hasOpening,
-    hasClosure: agg.hasClosure,
-    hasTxn: agg.hasTxn
-  });
+  for (let i = 1; i <= MAX_LOOKBACK_DAYS; i++) {
+    const checkDay = dayMinus(today, i, tz);
 
-  // === VERIFICAR SI NECESITA CIERRE AUTOMÁTICO ===
-  if (agg.hasOpening && !agg.hasClosure) {
-    console.log(`🔒 Creating automatic closure for ${day}`);
+    // Leer dailySummary para este día
+    const summaryRef = db.doc(`businesses/${businessId}/dailySummaries/${checkDay}`);
+    const summarySnap = await summaryRef.get();
 
-    // Generar UUID para la transacción (consistente con useTransaction)
-    const closureUuid = uuidv4();
-    const closureRef = db.collection(`businesses/${businessId}/transactions`).doc(closureUuid);
+    if (!summarySnap.exists) {
+      // No hay dailySummary = no hubo actividad = no necesita cierre
+      // Seguir buscando más atrás por si hay días anteriores con apertura
+      console.log(`  📅 ${checkDay}: No dailySummary (no activity) - continuing search`);
+      continue;
+    }
 
-    // Acceso seguro a propiedades anidadas (estructura de getDayAggregates)
-    const openingData = agg.openingData || {};
-    const { byAccount, balances, totals, transfers, adjustments, operational } = agg;
+    const summary = summarySnap.data();
 
-    // Calcular el timestamp del final del día anterior (23:59:59.999)
-    // Esto es importante porque el cierre pertenece al día anterior, no al momento actual
-    const closureTimestamp = admin.firestore.Timestamp.fromDate(endOfDay(day, tz));
+    if (summary.hasOpening && !summary.hasClosure) {
+      // Día con apertura pero sin cierre → necesita cierre
+      console.log(`  ⚠️  ${checkDay}: NEEDS CLOSURE (hasOpening=true, hasClosure=false)`);
+      pendingDays.push(checkDay);
+    } else if (summary.hasClosure) {
+      // Encontramos un día cerrado → ya no necesitamos buscar más atrás
+      console.log(`  ✅ ${checkDay}: Already closed - stopping search`);
+      break;
+    } else {
+      // Tiene dailySummary pero no tiene opening (raro, pero posible)
+      console.log(`  ℹ️  ${checkDay}: No opening - skipping`);
+    }
+  }
 
-    // Estructura completa de cierre (consistente con buildClosureTransaction)
-    const closureTransaction = {
-      // === IDENTIFICACIÓN ===
-      uuid: closureUuid,              // ✅ UUID principal
-      id: closureUuid,                // ✅ id = uuid para consistencia
-      type: 'closure',
-      description: 'Cierre automático (lazy-open)',
-      source: 'copilot',
-      copilotMode: 'lazyOpen',
-      openingReference: openingData.uuid || openingData.id,  // ✅ Usar uuid de apertura
-
-      // === SALDOS INICIALES (de apertura) ===
-      initialCashBalance: openingData.realCashBalance || 0,
-      initialBankBalance: openingData.realBankBalance || 0,
-
-      // === TOTALES GENERALES (sin ajustes) ===
-      totalIngresos: totals?.income || 0,
-      totalEgresos: totals?.expense || 0,
-      ingresosCash: byAccount?.cash?.income || 0,
-      ingresosBank: byAccount?.bank?.income || 0,
-      egresosCash: byAccount?.cash?.expense || 0,
-      egresosBank: byAccount?.bank?.expense || 0,
-
-      // === TRANSFERENCIAS ===
-      totalTransferencias: transfers?.total || 0,
-      transferencias: {
-        cash: {
-          in: transfers?.cash?.in || 0,
-          out: transfers?.cash?.out || 0,
-          net: transfers?.cash?.net || 0
-        },
-        bank: {
-          in: transfers?.bank?.in || 0,
-          out: transfers?.bank?.out || 0,
-          net: transfers?.bank?.net || 0
-        }
-      },
-
-      // === AJUSTES ===
-      ajustesApertura: {
-        cash: adjustments?.opening?.cash || 0,
-        bank: adjustments?.opening?.bank || 0,
-        total: adjustments?.opening?.total || 0
-      },
-      ajustesCierre: {
-        cash: 0, // No hay ajustes de cierre en auto-close
-        bank: 0,
-        total: 0
-      },
-
-      // === BALANCES ESPERADOS (sin ajustes cierre) ===
-      expectedCashBalance: balances?.expected?.cash || 0,
-      expectedBankBalance: balances?.expected?.bank || 0,
-
-      // === BALANCES REALES (igual a esperados en cierre automático) ===
-      realCashBalance: balances?.actual?.cash || 0,
-      realBankBalance: balances?.actual?.bank || 0,
-
-      // === DIFERENCIAS (0 en cierre automático sin conteo real) ===
-      cashDifference: 0,
-      bankDifference: 0,
-
-      // === RESULTADOS OPERACIONALES ===
-      resultadoOperacional: operational?.result || 0,
-      resultadoOperacionalCash: operational?.resultCash || 0,
-      resultadoOperacionalBank: operational?.resultBank || 0,
-      flujoNetoCash: operational?.flowCash || 0,
-      flujoNetoBank: operational?.flowBank || 0,
-
-      // === CAMPOS COMPATIBLES (legacy) ===
-      totalCash: balances?.actual?.cash || 0,
-      totalBank: balances?.actual?.bank || 0,
-      cashAmount: balances?.actual?.cash || 0,
-      bankAmount: balances?.actual?.bank || 0,
-
-      // === ESTRUCTURA ESTÁNDAR ===
-      items: [],
-      itemsAndStockLogs: [],
-      amount: 0,
-
-      // === METADATA ===
-      metadata: {
-        closedDay: day, // El día que se está cerrando (día anterior)
-        triggerType: 'lazy_open',
-        autoGenerated: true,
-        actualExecutionTime: new Date().toISOString(), // Cuándo se ejecutó realmente
-        closureTimestamp: closureTimestamp.toDate().toISOString() // Timestamp lógico del cierre
-      },
-      // IMPORTANTE: createdAt debe ser el final del día anterior (23:59:59.999)
-      // para que el cierre pertenezca cronológicamente al día correcto
-      createdAt: closureTimestamp
-    };
-
-    // Crear transacción de cierre
-    await closureRef.set(closureTransaction);
-    console.log(`✅ Closure transaction created xd: ${closureUuid}`);
-    // Recalcular agregados después del cierre
-    const updatedAgg = await getDayAggregates(db, businessId, day, tz);
-
-    // Actualizar resumen diario con estructura completa + flags de cierre automático
-    await upsertDailySummary(db, businessId, day, {
-      ...updatedAgg, // Toda la estructura completa de accountsBalanceStore
-      hasClosure: true,
-      isAutoClosed: true,
-      closureId: closureUuid,  // ✅ Guardar UUID
-      autoCloseReason: 'lazyOpen',
-      completedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    console.log(`✅ Daily summary updated with complete financial data`);
-
-    // ✅ ACTUALIZAR RACHA usando streakManager
-    console.log(`🔥 Updating streak with contextual system...`);
-    const streakResult = await updateStreakContextualizada({
-      db,
-      businessId,
-      day,
-      summary: {
-        ...updatedAgg,
-        hasClosure: true,
-        isAutoClosed: true,
-        closureId: closureUuid,
-        autoCloseReason: 'lazyOpen'
-      },
-      tz,
-      autoClosePolicy: 'lenient' // Valorar esfuerzo aunque sea cierre automático
-    });
-
-    console.log(`✅ Streak updated:`, {
-      updated: streakResult.updated,
-      current: streakResult.streak?.current,
-      reason: streakResult.reason
-    });
-
-    // Registrar en traceability_logs para trazabilidad completa
-    await db.collection(`businesses/${businessId}/traceability_logs`).add({
-      operationType: 'auto_close',
-      entityType: 'transaction',
-      entityId: closureUuid,  // ✅ Usar uuid
-      operation: 'lazy_open_closure',
-      day, // Día que se cerró (día anterior)
-      closureTransactionId: closureUuid,  // ✅ Usar uuid
-      triggerType: 'lazy_open',
-      autoGenerated: true,
-      financialData: {
-        totalIngresos: closureTransaction.totalIngresos,
-        totalEgresos: closureTransaction.totalEgresos,
-        expectedCashBalance: closureTransaction.expectedCashBalance,
-        expectedBankBalance: closureTransaction.expectedBankBalance,
-        realCashBalance: closureTransaction.realCashBalance,
-        realBankBalance: closureTransaction.realBankBalance
-      },
-      // Timestamps explicativos
-      closureTimestamp: closureTimestamp, // Timestamp lógico del cierre (23:59:59 del día anterior)
-      executedAt: admin.firestore.FieldValue.serverTimestamp(), // Cuándo se ejecutó realmente
-      timestamp: admin.firestore.FieldValue.serverTimestamp() // Timestamp del log
-    });
-    console.log(`✅ Traceability log created`);
-
+  // === SI NO HAY DÍAS PENDIENTES ===
+  if (pendingDays.length === 0) {
+    console.log(`ℹ️  No automatic closure needed`);
     return {
-      closed: true,
-      mode: 'lazyOpen',
-      day,
-      closureId: closureUuid
+      closed: false,
+      reason: 'no_missing_closure',
+      today
     };
   }
 
-  // No necesita cierre automático
-  console.log(`ℹ️  No automatic closure needed`);
+  // === CERRAR EN ORDEN CRONOLÓGICO (más antiguo primero) ===
+  // Esto es crucial: cada cierre alimenta los saldos del día siguiente.
+  pendingDays.reverse();
+  console.log(`\n🔒 Closing ${pendingDays.length} pending day(s) in order: ${pendingDays.join(', ')}`);
+
+  const closedDays = [];
+
+  for (const day of pendingDays) {
+    console.log(`\n📅 Closing day: ${day}`);
+
+    try {
+      // Obtener agregados del día
+      const agg = await getDayAggregates(db, businessId, day, tz);
+
+      if (!agg.hasOpening) {
+        console.log(`  ⚠️  ${day}: Opening disappeared - skipping`);
+        continue;
+      }
+
+      const { closureUuid } = await createClosureForDay({
+        businessId,
+        day,
+        agg,
+        tz
+      });
+
+      closedDays.push({
+        day,
+        closureId: closureUuid
+      });
+
+    } catch (dayError) {
+      console.error(`  ❌ Error closing day ${day}:`, dayError.message);
+      // Continuar con el siguiente día
+    }
+  }
+
+  // === RESULTADO ===
+  if (closedDays.length > 0) {
+    console.log(`\n✅ Closed ${closedDays.length} day(s) successfully`);
+    return {
+      closed: true,
+      mode: 'lazyOpen',
+      daysCount: closedDays.length,
+      closedDays,
+      // Retrocompatibilidad: devolver el último día cerrado
+      day: closedDays[closedDays.length - 1].day,
+      closureId: closedDays[closedDays.length - 1].closureId
+    };
+  }
+
   return {
     closed: false,
-    reason: 'no_missing_closure',
-    day
+    reason: 'no_valid_days_to_close',
+    today
   };
 });

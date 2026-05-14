@@ -7,10 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "emulators:start": "firebase emulators:start",
+    "emulators:start": "firebase emulators:start --import=./emulator-data --export-on-exit",
     "initServer": "vite firebase emulators:start",
     "deploy": "npm run build && firebase deploy --only hosting",
-    "deploy:functions": "cd functions && firebase deploy --only functions:payments",
+    "deploy:functions": "cd functions && firebase deploy --only functions",
     "deploy:full": "npm run build && firebase deploy",
     "migrate:guiones": "node scripts/migrateGuiones.js"
   },

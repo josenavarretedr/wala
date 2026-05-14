@@ -182,9 +182,12 @@ const componentMap = {
 };
 
 // Configuración del botón cerrar
-const closeBtnConfig = computed(() => ({
-  // Agregar configuración si es necesaria
-}));
+const closeBtnConfig = computed(() => {
+  if (transactionData.value?.type === "opening" || transactionData.value?.type === "closure") {
+    return { navigationType: "dashboard" };
+  }
+  return { navigationType: "back" };
+});
 
 // Función para cargar la transacción
 async function loadTransaction(transactionId) {

@@ -218,6 +218,33 @@ export function useOnboarding() {
     // Track inicio del tour
     await trackTourStart(config.id);
 
+    // ✅ Resolver elementos visibles para evitar conflictos en layouts responsivos (móvil/desktop duplicados)
+    const resolvedSteps = config.steps.map((step) => {
+      if (step.element && typeof step.element === 'string') {
+        try {
+          const elements = document.querySelectorAll(step.element);
+          if (elements.length > 1) {
+            const visibleElement = Array.from(elements).find((el) => {
+              const style = window.getComputedStyle(el);
+              return (
+                el.offsetWidth > 0 &&
+                el.offsetHeight > 0 &&
+                style.display !== 'none' &&
+                style.visibility !== 'hidden'
+              );
+            });
+            if (visibleElement) {
+              console.log(`🎯 Elemento onboarding "${step.element}" resuelto al visible en pantalla.`);
+              return { ...step, element: visibleElement };
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Error al resolver elemento para el onboarding:', e);
+        }
+      }
+      return step;
+    });
+
     // Crear instancia de Driver.js
     driverInstance.value = driver({
       showProgress: true,
@@ -233,7 +260,7 @@ export function useOnboarding() {
 
       // ✅ Callback cuando se hace clic en "Siguiente" o "Finalizar"
       onNextClick: (element, step, { config: driverConfig, state, driver }) => {
-        const isLastStep = state?.activeIndex === config.steps.length - 1;
+        const isLastStep = state?.activeIndex === resolvedSteps.length - 1;
 
         if (isLastStep) {
           // Es el último paso, marcar como completado y cerrar
@@ -267,7 +294,7 @@ export function useOnboarding() {
       },
 
       onPopoverRender: (popover, { config: driverConfig, state }) => {
-        const totalSteps = config.steps?.length || 0;
+        const totalSteps = resolvedSteps?.length || 0;
         const currentStep = (state?.activeIndex ?? -1) + 1;
 
         if (totalSteps > 0 && currentStep > 0) {
@@ -275,7 +302,7 @@ export function useOnboarding() {
         }
 
         // ✅ RENDERIZAR ÍCONO DINÁMICO DE ICONOIR O IMAGEN
-        const currentStepData = config.steps?.[state?.activeIndex];
+        const currentStepData = resolvedSteps?.[state?.activeIndex];
 
         if (currentStepData?.iconName && popover?.title) {
           const titleElement = popover.title;
@@ -369,7 +396,7 @@ export function useOnboarding() {
 
       // Aplicar configuración específica del tour
       ...config.driverConfig,
-      steps: config.steps,
+      steps: resolvedSteps,
     });
 
     currentTourData.value = config;

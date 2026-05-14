@@ -1,6 +1,6 @@
 // src/composables/useTransaction.js
 
-import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc } from 'firebase/firestore';
+import { getFirestore, collection, setDoc, doc, updateDoc, serverTimestamp, getDocs, getDoc, query, where, deleteDoc, orderBy, limit as firestoreLimit } from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
@@ -225,37 +225,28 @@ export function useTransaccion() {
       const businessId = ensureBusinessId();
       console.log('Buscando últimas transacciones de cierre para el negocio:', businessId);
 
-      // Obtener todas las transacciones
-      const transactionsSnapshot = await getDocs(
-        collection(db, 'businesses', businessId, 'transactions')
+      // OPTIMIZADO: Query directa con filtro + ordenamiento en Firestore
+      // En vez de leer TODAS las transacciones y filtrar en memoria
+      const q = query(
+        collection(db, 'businesses', businessId, 'transactions'),
+        where('type', '==', 'closure'),
+        orderBy('createdAt', 'desc'),
+        firestoreLimit(limit)
       );
 
+      const closureSnap = await getDocs(q);
       const closureTransactions = [];
 
-      // Filtrar solo las transacciones de tipo "closure"
-      transactionsSnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.type === 'closure') {
-          closureTransactions.push({
-            id: doc.id,
-            ...data,
-          });
-        }
+      closureSnap.forEach(doc => {
+        closureTransactions.push({
+          id: doc.id,
+          ...doc.data(),
+        });
       });
 
-      // Ordenar por fecha de creación (más reciente primero)
-      closureTransactions.sort((a, b) => {
-        const dateA = a.createdAt?.seconds || 0;
-        const dateB = b.createdAt?.seconds || 0;
-        return dateB - dateA;
-      });
+      console.log(`Se encontraron ${closureTransactions.length} transacciones de cierre`);
 
-      // Limitar el número de resultados
-      const limitedResults = closureTransactions.slice(0, limit);
-
-      console.log(`Se encontraron ${closureTransactions.length} transacciones de cierre, retornando las últimas ${limitedResults.length}`);
-
-      return limitedResults;
+      return closureTransactions;
     } catch (error) {
       console.error('Error obteniendo transacciones de cierre: ', error);
       throw error;

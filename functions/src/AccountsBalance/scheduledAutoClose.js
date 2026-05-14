@@ -1,5 +1,7 @@
 /* eslint-disable */
 // scheduledAutoClose.js
+// OPTIMIZED: Queries only active businesses via collectionGroup instead of scanning all.
+// Eliminates auto-opening and sleep(2000) that were the main scalability bottlenecks.
 
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
@@ -12,43 +14,23 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-const { yesterdayStr, todayStr, dayFromDate } = require('../Helpers/time');
+const { todayStr, dayFromDate } = require('../Helpers/time');
 const { upsertDailySummary } = require('./sharedComputed');
-const { executeAutoOpening } = require('./autoOpening');
 const { trackAutoDayClosed, getNetResult } = require('../Helpers/analyticsHelper');
 const { DateTime } = require('luxon');
 
 const DEFAULT_TZ = 'America/Lima';
 
 /**
- * Obtiene el dailySummary directamente de Firestore.
- * Más eficiente que recalcular con getDayAggregates.
+ * Extrae el businessId desde la ruta del documento dailySummary.
+ * Ruta esperada: businesses/{businessId}/dailySummaries/{day}
+ * @param {FirebaseFirestore.DocumentReference} ref
+ * @returns {string} businessId
  */
-async function getDailySummary(db, businessId, day) {
-  const summaryRef = db.doc(`businesses/${businessId}/dailySummaries/${day}`);
-  const summarySnap = await summaryRef.get();
-
-  if (!summarySnap.exists) {
-    return {
-      hasOpening: false,
-      hasClosure: false,
-      hasTxn: false,
-      opening: null,
-      closure: null,
-      totals: {
-        expectedFinalCash: 0,
-        expectedFinalBank: 0,
-        totalIngresos: 0,
-        totalEgresos: 0,
-        ingresosCash: 0,
-        ingresosBank: 0,
-        egresosCash: 0,
-        egresosBank: 0
-      }
-    };
-  }
-
-  return summarySnap.data();
+function extractBusinessId(ref) {
+  // ref.path = "businesses/ABC123/dailySummaries/2026-05-13"
+  const segments = ref.path.split('/');
+  return segments[1]; // "ABC123"
 }
 
 module.exports = functions
@@ -66,146 +48,104 @@ module.exports = functions
     const scheduledTime = new Date(context.timestamp);
 
     console.log('🤖 ========================================');
-    console.log('🤖 SCHEDULED AUTO-CLOSE START');
+    console.log('🤖 SCHEDULED AUTO-CLOSE START (OPTIMIZED)');
     console.log('🤖 ========================================');
     console.log(`🕐 Execution time: ${new Date().toISOString()}`);
     console.log(`📅 Schedule event: ${context.eventId || 'N/A'}`);
     console.log(`⏰ Scheduled timestamp: ${context.timestamp || 'N/A'}`);
-    console.log(`⏰ Scheduled time (parsed): ${scheduledTime.toISOString()}`);
-
-    // Crear helper para obtener el día basado en el timestamp del scheduler
-    const getDayFromScheduledTime = (tz) => {
-      return DateTime.fromJSDate(scheduledTime).setZone(tz).toFormat('yyyy-LL-dd');
-    };
-
 
     try {
-      const businessesSnapshot = await db.collection('businesses').get();
-      console.log(`\n📊 Found ${businessesSnapshot.size} businesses to process`);
+      // === OPTIMIZACIÓN PRINCIPAL: Solo consultar negocios que necesitan cierre ===
+      // En vez de db.collection('businesses').get() (lee TODOS),
+      // usamos collectionGroup para filtrar directamente en Firestore.
+      const day = dayFromDate(scheduledTime, DEFAULT_TZ);
+      console.log(`📅 Processing day: ${day}`);
+
+      // Query: dailySummaries donde hay apertura pero NO hay cierre para HOY
+      const PAGE_SIZE = 100;
+      let lastDoc = null;
+      let totalFound = 0;
 
       const results = {
-        total: businessesSnapshot.size,
+        total: 0,
         processed: 0,
         autoClosed: 0,
-        autoOpened: 0,
-        streakIncreased: 0,
+        alreadyClosed: 0,
         noAction: 0,
         errors: 0,
         details: []
       };
 
-      for (const businessDoc of businessesSnapshot.docs) {
-        const businessId = businessDoc.id;
-        const businessData = businessDoc.data();
+      // === PROCESAMIENTO PAGINADO ===
+      let hasMore = true;
 
-        try {
-          console.log(`\n${'='.repeat(60)}`);
-          console.log(`🏪 Processing business: ${businessId}`);
-          console.log(`   Name: ${businessData.nombre || 'N/A'}`);
+      while (hasMore) {
+        let summariesQuery = db.collectionGroup('dailySummaries')
+          .where('day', '==', day)
+          .where('hasOpening', '==', true)
+          .where('hasClosure', '==', false)
+          .limit(PAGE_SIZE);
 
-          const tz = businessData.timezone || DEFAULT_TZ;
-          console.log(`🌍 Timezone: ${tz}`);
+        if (lastDoc) {
+          summariesQuery = summariesQuery.startAfter(lastDoc);
+        }
 
-          // === FIX PRINCIPAL: Usar timestamp del scheduler ===
-          const day = dayFromDate(scheduledTime, tz);
-          console.log(`📅 Processing day (from scheduled time): ${day}`);
+        const summariesSnapshot = await summariesQuery.get();
+        const pageSize = summariesSnapshot.size;
+        totalFound += pageSize;
 
-          // Debug adicional
-          const currentDay = todayStr(tz);
-          console.log(`📅 Current server day (for comparison): ${currentDay}`);
+        console.log(`\n📦 Page: ${pageSize} businesses to process (total so far: ${totalFound})`);
 
-          if (day !== currentDay) {
-            console.log(`⚠️  Note: Processing scheduled day ${day}, current is ${currentDay}`);
-          }
+        if (pageSize === 0) {
+          hasMore = false;
+          break;
+        }
 
-          // === PASO 1: Leer dailySummary (más eficiente) ===
-          console.log(`\n📋 STEP 1: Reading daily summary from Firestore...`);
-          let summary = await getDailySummary(db, businessId, day);
+        // === PROCESAR CADA NEGOCIO DE ESTA PÁGINA ===
+        for (const summaryDoc of summariesSnapshot.docs) {
+          const summaryData = summaryDoc.data();
+          const businessId = extractBusinessId(summaryDoc.ref);
 
-          console.log(`📊 Initial day status:`, {
-            hasOpening: summary.hasOpening,
-            hasClosure: summary.hasClosure,
-            hasTxn: summary.hasTxn
-          });
+          try {
+            console.log(`\n${'─'.repeat(50)}`);
+            console.log(`🏪 Processing business: ${businessId}`);
 
-          let action = 'none';
-          let transactionId = null;
+            // El summary ya tiene toda la data que necesitamos
+            // (calculada previamente por onTransactionWrite)
+            const { openingData, byAccount, balances, totals, transfers, adjustments, operational } = summaryData;
 
-          // === PASO 2: Auto-apertura si es necesaria ===
-          if (!summary.hasOpening) {
-            console.log(`\n🔍 STEP 2: No opening found - Attempting auto-opening...`);
-
-            try {
-              const autoOpenResult = await executeAutoOpening({
-                businessId,
-                day,
-                timezone: tz
-              });
-
-              if (autoOpenResult.success) {
-                console.log(`✅ Auto-opening created: ${autoOpenResult.openingId}`);
-                results.autoOpened++;
-
-                // Esperar a que onTransactionsWrite actualice el summary
-                console.log(`⏳ Waiting for trigger to update summary...`);
-                await new Promise(resolve => setTimeout(resolve, 2000));
-
-                // Re-leer summary actualizado por el trigger
-                summary = await getDailySummary(db, businessId, day);
-                console.log(`📊 Updated status: hasOpening=${summary.hasOpening}`);
-
-              } else if (autoOpenResult.data?.noPreviousClosure) {
-                console.log(`⚠️  No previous closure found - skipping business`);
-                results.noAction++;
-                results.processed++;
-                results.details.push({
-                  businessId,
-                  businessName: businessData.nombre || businessId,
-                  day,
-                  action: 'no-action-no-baseline',
-                  reason: 'No previous closure found'
-                });
-                continue;
-              }
-            } catch (autoOpenError) {
-              console.error(`❌ Error in auto-opening:`, autoOpenError.message);
-              console.log(`   Continuing with closure check anyway...`);
+            if (!openingData) {
+              console.log(`⚠️  No opening data in summary - skipping`);
+              results.noAction++;
+              results.processed++;
+              continue;
             }
-          } else {
-            console.log(`\n✅ STEP 2: Opening already exists - skipping auto-opening`);
-          }
 
-          // === PASO 3: Auto-cierre si es necesario ===
-          if (summary.hasOpening && !summary.hasClosure) {
-            console.log(`\n⚠️  STEP 3: Day is OPEN without closure - Creating automatic closure`);
-
+            // === CREAR TRANSACCIÓN DE CIERRE ===
             const closureUuid = uuidv4();
             const closureRef = db.collection(`businesses/${businessId}/transactions`).doc(closureUuid);
-
-            const openingData = summary.openingData || {};
-            const { byAccount, balances, totals, transfers, adjustments, operational } = summary;
 
             const closureTransaction = {
               // === IDENTIFICACIÓN ===
               uuid: closureUuid,
-              id: closureUuid,                // ✅ id = uuid para consistencia
+              id: closureUuid,
               type: 'closure',
               description: 'Cierre automático programado',
               source: 'copilot',
               copilotMode: 'scheduled',
-              openingReference: openingData.uuid || openingData.id,  // ✅ Usar uuid de apertura
+              openingReference: openingData.uuid || openingData.id,
 
               // === SALDOS INICIALES (de apertura) ===
               initialCashBalance: openingData.realCashBalance || 0,
               initialBankBalance: openingData.realBankBalance || 0,
 
               // === TOTALES GENERALES (sin ajustes) ===
-              totalIngresos: totals.income || 0,
-              totalEgresos: totals.expense || 0,
-              ingresosCash: byAccount.cash.income || 0,
-              ingresosBank: byAccount.bank.income || 0,
-              egresosCash: byAccount.cash.expense || 0,
-              egresosBank: byAccount.bank.expense || 0,
+              totalIngresos: totals?.income || 0,
+              totalEgresos: totals?.expense || 0,
+              ingresosCash: byAccount?.cash?.income || 0,
+              ingresosBank: byAccount?.bank?.income || 0,
+              egresosCash: byAccount?.cash?.expense || 0,
+              egresosBank: byAccount?.bank?.expense || 0,
 
               // === TRANSFERENCIAS ===
               totalTransferencias: transfers?.total || 0,
@@ -229,18 +169,18 @@ module.exports = functions
                 total: adjustments?.opening?.total || 0
               },
               ajustesCierre: {
-                cash: 0, // No hay ajustes de cierre en auto-close
+                cash: 0,
                 bank: 0,
                 total: 0
               },
 
-              // === BALANCES ESPERADOS (sin ajustes cierre) ===
-              expectedCashBalance: balances.expected.cash || 0,
-              expectedBankBalance: balances.expected.bank || 0,
+              // === BALANCES ESPERADOS ===
+              expectedCashBalance: balances?.expected?.cash || 0,
+              expectedBankBalance: balances?.expected?.bank || 0,
 
               // === BALANCES REALES (igual a esperados en cierre automático) ===
-              realCashBalance: balances.actual.cash || 0,
-              realBankBalance: balances.actual.bank || 0,
+              realCashBalance: balances?.actual?.cash || 0,
+              realBankBalance: balances?.actual?.bank || 0,
 
               // === DIFERENCIAS (0 en cierre automático) ===
               cashDifference: 0,
@@ -254,10 +194,10 @@ module.exports = functions
               flujoNetoBank: operational?.flowBank || 0,
 
               // === CAMPOS COMPATIBLES (legacy) ===
-              totalCash: balances.actual.cash || 0,
-              totalBank: balances.actual.bank || 0,
-              cashAmount: balances.actual.cash || 0,
-              bankAmount: balances.actual.bank || 0,
+              totalCash: balances?.actual?.cash || 0,
+              totalBank: balances?.actual?.bank || 0,
+              cashAmount: balances?.actual?.cash || 0,
+              bankAmount: balances?.actual?.bank || 0,
 
               // === ESTRUCTURA ESTÁNDAR ===
               items: [],
@@ -270,7 +210,7 @@ module.exports = functions
                 triggerType: 'scheduled_auto_close',
                 autoGenerated: true,
                 executionTime: new Date().toISOString(),
-                hasTransactions: summary.hasTxn || false
+                hasTransactions: summaryData.hasTxn || false
               },
               createdAt: FieldValue.serverTimestamp()
             };
@@ -278,9 +218,8 @@ module.exports = functions
             // Crear cierre (onTransactionsWrite lo procesará automáticamente)
             await closureRef.set(closureTransaction);
             console.log(`✅ Closure created: ${closureUuid}`);
-            console.log(`   onTransactionsWrite will update dailySummary automatically`);
 
-            // Registrar metadata adicional
+            // Registrar metadata adicional en dailySummary
             await upsertDailySummary(db, businessId, day, {
               isAutoClosed: true,
               autoCloseReason: 'scheduled',
@@ -289,8 +228,7 @@ module.exports = functions
 
             // === ANALYTICS: Trackear cierre automático ===
             try {
-              // Contar transacciones válidas (income/expense)
-              const transactionsCount = (summary.totals?.incomeCount || 0) + (summary.totals?.expenseCount || 0);
+              const transactionsCount = (totals?.incomeCount || 0) + (totals?.expenseCount || 0);
               const netTotal = operational?.result || 0;
               const netResult = getNetResult(netTotal);
 
@@ -302,8 +240,7 @@ module.exports = functions
               });
               console.log(`✅ [ANALYTICS] Auto closure tracked`);
             } catch (analyticsError) {
-              console.warn(`⚠️ [ANALYTICS] Error al trackear auto-closure:`, analyticsError.message);
-              // No lanzar error, el cierre se creó correctamente
+              console.warn(`⚠️ [ANALYTICS] Error:`, analyticsError.message);
             }
 
             // Traceability log
@@ -329,95 +266,61 @@ module.exports = functions
             });
 
             results.autoClosed++;
-            action = 'auto-closed';
-            transactionId = closureUuid;
-          }
-          // === CASO: Día completo ===
-          else if (summary.hasOpening && summary.hasTxn && summary.hasClosure) {
-            console.log(`\n✨ STEP 3: Complete day - onTransactionWrite already updated streak`);
-            results.streakIncreased++;
-            action = 'streak-increased';
-          }
-          // === CASO: Sin acción necesaria ===
-          else {
-            console.log(`\nℹ️  STEP 3: No action needed`);
-            if (!summary.hasOpening) console.log(`   - No opening found`);
-            if (!summary.hasTxn) console.log(`   - No transactions found`);
-            if (summary.hasClosure) console.log(`   - Already closed`);
-            results.noAction++;
-            action = 'no-action';
+            results.details.push({
+              businessId,
+              day,
+              action: 'auto-closed',
+              transactionId: closureUuid
+            });
+
+          } catch (businessError) {
+            console.error(`❌ Error processing business ${businessId}:`, businessError);
+            results.errors++;
+            results.details.push({
+              businessId,
+              action: 'error',
+              error: businessError.message
+            });
+
+            await db.collection('systemLogs').add({
+              type: 'scheduled_auto_close_error',
+              businessId,
+              error: businessError.message,
+              stack: businessError.stack,
+              timestamp: FieldValue.serverTimestamp()
+            });
           }
 
           results.processed++;
-          results.details.push({
-            businessId,
-            businessName: businessData.nombre || businessId,
-            day,
-            action,
-            transactionId
-          });
-
-        } catch (businessError) {
-          console.error(`❌ Error processing business ${businessId}:`, businessError);
-          console.error(`   Stack: ${businessError.stack}`);
-          results.errors++;
-          results.details.push({
-            businessId,
-            businessName: businessData.nombre || businessId,
-            action: 'error',
-            error: businessError.message
-          });
-
-          await db.collection('systemLogs').add({
-            type: 'scheduled_auto_close_error',
-            businessId,
-            error: businessError.message,
-            stack: businessError.stack,
-            timestamp: FieldValue.serverTimestamp()
-          });
         }
+
+        // Preparar paginación
+        lastDoc = summariesSnapshot.docs[summariesSnapshot.docs.length - 1];
+        hasMore = pageSize === PAGE_SIZE;
       }
+
+      results.total = totalFound;
 
       // === RESUMEN FINAL ===
       const duration = Date.now() - startTime;
       console.log(`\n${'='.repeat(60)}`);
-      console.log('✅ SCHEDULED AUTO-CLOSE COMPLETED');
+      console.log('✅ SCHEDULED AUTO-CLOSE COMPLETED (OPTIMIZED)');
       console.log('🤖 ========================================');
       console.log(`⏱️  Duration: ${duration}ms (${(duration / 1000).toFixed(2)}s)`);
       console.log(`📊 Summary:`);
-      console.log(`   - Total businesses: ${results.total}`);
+      console.log(`   - Businesses needing closure: ${results.total}`);
       console.log(`   - Processed: ${results.processed}`);
-      console.log(`   - Auto-opened: ${results.autoOpened} 🚪`);
       console.log(`   - Auto-closed: ${results.autoClosed} 🤖`);
-      console.log(`   - Streak increased: ${results.streakIncreased} 📈`);
       console.log(`   - No action: ${results.noAction} ✓`);
       console.log(`   - Errors: ${results.errors} ❌`);
       console.log(`🕐 Finished at: ${new Date().toISOString()}`);
-
-      if (results.autoOpened > 0) {
-        console.log(`\n🚪 Auto-opened businesses:`);
-        results.details
-          .filter(d => d.action === 'auto-opened')
-          .forEach(d => {
-            console.log(`   - ${d.businessName} (${d.day}): ${d.transactionId}`);
-          });
-      }
 
       if (results.autoClosed > 0) {
         console.log(`\n🤖 Auto-closed businesses:`);
         results.details
           .filter(d => d.action === 'auto-closed')
           .forEach(d => {
-            console.log(`   - ${d.businessName} (${d.day}): ${d.transactionId}`);
-          });
-      }
-
-      if (results.streakIncreased > 0) {
-        console.log(`\n📈 Streak increased:`);
-        results.details
-          .filter(d => d.action === 'streak-increased')
-          .forEach(d => {
-            console.log(`   - ${d.businessName} (${d.day})`);
+            console.log(`   - ${d.businessId} (${d.day}): ${d.transactionId}`);
           });
       }
 
@@ -426,18 +329,17 @@ module.exports = functions
         results.details
           .filter(d => d.action === 'error')
           .forEach(d => {
-            console.log(`   - ${d.businessName}: ${d.error}`);
+            console.log(`   - ${d.businessId}: ${d.error}`);
           });
       }
 
       await db.collection('scheduledExecutions').add({
         type: 'auto_close',
+        version: 'v2_optimized',
         results: {
           total: results.total,
           processed: results.processed,
-          autoOpened: results.autoOpened,
           autoClosed: results.autoClosed,
-          streakIncreased: results.streakIncreased,
           noAction: results.noAction,
           errors: results.errors
         },
@@ -462,6 +364,7 @@ module.exports = functions
 
       await db.collection('scheduledExecutions').add({
         type: 'auto_close',
+        version: 'v2_optimized',
         error: error.message,
         stack: error.stack,
         duration,
