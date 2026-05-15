@@ -64,8 +64,8 @@ function buildIndex(items) {
     // Modo materiales: solo productos con trackStock = true
     filteredItems = items.filter((p) => p.trackStock === true);
   } else if (props.mode === "production") {
-    // Modo producción: productos que tienen composición (receta)
-    filteredItems = items.filter((p) => p.composition && p.composition.length > 0);
+    // Modo producción: productos con composición (receta) y control de stock activo
+    filteredItems = items.filter((p) => p.composition && p.composition.length > 0 && p.trackStock === true);
   }
 
   // Excluir el producto específico si se proporciona

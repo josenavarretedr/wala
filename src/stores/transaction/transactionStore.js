@@ -317,9 +317,11 @@ export function useTransactionStore() {
         if (transactionSnapshot.type === 'income') {
           // Procesar transacción de ingreso:
           // 🔒 Calcular amount desde el snapshot
-          transactionSnapshot.amount = transactionSnapshot.items.reduce((sum, item) => {
+          const itemsTotal = transactionSnapshot.items.reduce((sum, item) => {
             return addMoney(sum, multiplyMoney(item.price, item.quantity));
           }, 0);
+          const packagingTotal = transactionSnapshot.packagingCost || 0;
+          transactionSnapshot.amount = addMoney(itemsTotal, packagingTotal);
 
           // === TRAZABILIDAD: Log de items relacionados ===
           for (const item of transactionSnapshot.items) {
@@ -419,10 +421,12 @@ export function useTransactionStore() {
               try {
                 const packagingProduct = await getProductById(pkg.productId);
 
-                if (!packagingProduct || !packagingProduct.trackStock) {
-                  console.log(`ℹ️ [PACKAGING] Envase sin trackStock, saltando: ${pkg.description}`);
+                if (!packagingProduct) {
+                  console.log(`ℹ️ [PACKAGING] Envase no encontrado en el inventario, saltando: ${pkg.description}`);
                   return null;
                 }
+
+                console.log(`📦 [PACKAGING] Deduciendo stock para envase: ${pkg.description} (trackStock original: ${packagingProduct.trackStock})`);
 
                 const packagingItem = {
                   uuid: pkg.productId,
@@ -461,8 +465,9 @@ export function useTransactionStore() {
             transactionSnapshot.salesChannel === 'DELIVERY' &&
             transactionSnapshot.platformCommissionPct > 0
           ) {
+            // Calcular la comisión basada solo en la venta de productos (itemsTotal)
             transactionSnapshot.platformCommissionAmount = round2(
-              transactionSnapshot.amount * transactionSnapshot.platformCommissionPct / 100
+              itemsTotal * transactionSnapshot.platformCommissionPct / 100
             );
 
             console.log('💰 [COMMISSION] Comisión calculada:', {
@@ -637,9 +642,12 @@ export function useTransactionStore() {
         // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
         if (transactionSnapshot.type === 'income') {
           // 🔒 Calcular el total desde el snapshot (no usar transactionToAdd.value)
-          const totalAmount = transactionSnapshot.items.reduce((sum, item) => {
+          // 🔒 Calcular el total incluyendo envases desde el snapshot (no usar transactionToAdd.value)
+          const itemsTotalForPayment = transactionSnapshot.items.reduce((sum, item) => {
             return addMoney(sum, multiplyMoney(item.price, item.quantity));
           }, 0);
+          const packagingTotalForPayment = transactionSnapshot.packagingCost || 0;
+          const totalAmount = addMoney(itemsTotalForPayment, packagingTotalForPayment);
 
           // Si payments está vacío, crear payment inicial con el monto total
           if (!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) {

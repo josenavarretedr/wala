@@ -215,9 +215,8 @@
       >
         <!-- Canal de venta -->
         <div class="flex items-center gap-2 mb-3">
-          <span class="text-lg">
-            {{ transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' ? '🛵' : '🥡' }}
-          </span>
+          <Motorcycle v-if="transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY'" class="w-5 h-5 text-orange-600 shrink-0" />
+          <ShoppingBag v-else class="w-5 h-5 text-amber-600 shrink-0" />
           <span class="font-semibold text-gray-800">
             {{ transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' ? 'Delivery' : 'Para Llevar' }}
           </span>
@@ -251,7 +250,7 @@
           <div class="flex justify-between text-sm">
             <span class="text-gray-600">Envases:</span>
             <span class="font-medium text-amber-600">
-              - S/ {{ transactionStore.transactionToAdd.value.packagingCost.toFixed(2) }}
+              + S/ {{ transactionStore.transactionToAdd.value.packagingCost.toFixed(2) }}
             </span>
           </div>
           <!-- Detalle de envases -->
@@ -381,15 +380,19 @@ import {
   ShieldQuestion,
   Coins,
   SmartphoneDevice,
+  Motorcycle,
+  ShoppingBag,
 } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const transactionStore = useTransactionStore();
 
 const getTotal = () => {
-  return transactionStore.transactionToAdd.value.items.reduce((sum, item) => {
+  const itemsTotal = transactionStore.transactionToAdd.value.items.reduce((sum, item) => {
     return sum + item.price * item.quantity;
   }, 0);
+  const packagingCost = transactionStore.transactionToAdd.value.packagingCost || 0;
+  return itemsTotal + packagingCost;
 };
 
 const getTypeLabel = computed(() => {
@@ -445,8 +448,7 @@ const formatDate = (date) => {
 const getNetIncome = () => {
   const total = getTotal();
   const commission = transactionStore.transactionToAdd.value.platformCommissionAmount || 0;
-  const packaging = transactionStore.transactionToAdd.value.packagingCost || 0;
-  return total - commission - packaging;
+  return total - commission;
 };
 </script>
 

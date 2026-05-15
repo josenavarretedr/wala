@@ -25,7 +25,9 @@
         @click="handleProduce"
         class="w-full py-2 px-3 sm:py-2.5 sm:px-4 bg-white border border-purple-600 text-purple-600 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm hover:bg-purple-600 hover:text-white hover:shadow-md hover:shadow-purple-500/20 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
       >
-        <span class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-lg flex items-center justify-center">🔄</span>
+        <BounceRight
+          class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 text-lg flex items-center justify-center"
+        ></BounceRight>
         <span class="font-semibold tracking-wide">PRODUCIR LOTE</span>
       </button>
     </div>
@@ -35,7 +37,7 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
-import { Plus } from "@iconoir/vue";
+import { BounceRight, Plus } from "@iconoir/vue";
 import { useBusinessStore } from "@/stores/businessStore";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
@@ -86,7 +88,9 @@ button::before {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 button:active::before {

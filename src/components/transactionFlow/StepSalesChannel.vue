@@ -21,7 +21,10 @@
             : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/30',
         ]"
       >
-        <span class="text-2xl">🏪</span>
+        <Shop
+          class="w-8 h-8"
+          :class="salesChannel === 'LOCAL' ? 'text-blue-600' : 'text-gray-400'"
+        />
         <span
           class="text-sm font-semibold"
           :class="salesChannel === 'LOCAL' ? 'text-blue-700' : 'text-gray-700'"
@@ -47,7 +50,10 @@
             : 'border-gray-200 bg-white hover:border-amber-200 hover:bg-amber-50/30',
         ]"
       >
-        <span class="text-2xl">🥡</span>
+        <ShoppingBag
+          class="w-8 h-8"
+          :class="salesChannel === 'TAKEAWAY' ? 'text-amber-600' : 'text-gray-400'"
+        />
         <span
           class="text-sm font-semibold"
           :class="salesChannel === 'TAKEAWAY' ? 'text-amber-700' : 'text-gray-700'"
@@ -73,7 +79,10 @@
             : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/30',
         ]"
       >
-        <span class="text-2xl">🛵</span>
+        <Motorcycle
+          class="w-8 h-8"
+          :class="salesChannel === 'DELIVERY' ? 'text-orange-600' : 'text-gray-400'"
+        />
         <span
           class="text-sm font-semibold"
           :class="salesChannel === 'DELIVERY' ? 'text-orange-700' : 'text-gray-700'"
@@ -178,7 +187,7 @@
         class="bg-white rounded-2xl border-2 border-amber-200 p-5 space-y-3"
       >
         <div class="flex items-center gap-2">
-          <span class="text-lg">📦</span>
+          <Package class="w-6 h-6 text-amber-600" />
           <h3 class="text-lg font-semibold text-gray-800">Envases Necesarios</h3>
         </div>
 
@@ -214,8 +223,9 @@
       v-if="(salesChannel === 'DELIVERY' || salesChannel === 'TAKEAWAY') && packagingItems.length === 0 && !loadingPackaging"
       class="bg-gray-50 rounded-2xl border border-gray-200 p-4 text-center"
     >
-      <p class="text-sm text-gray-500">
-        📦 Ningún producto de esta venta tiene envases de delivery configurados.
+      <p class="text-sm text-gray-500 flex items-center justify-center gap-2">
+        <Package class="w-5 h-5 text-gray-400 shrink-0" />
+        Ningún producto de esta venta tiene envases de delivery configurados.
       </p>
       <p class="text-xs text-gray-400 mt-1">
         Puedes configurar envases desde la sección de costos de cada producto.
@@ -239,8 +249,9 @@
         v-if="hasFinancialImpact"
         class="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border border-gray-200 p-5 space-y-3"
       >
-        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide">
-          📊 Desglose de la venta
+        <h3 class="text-sm font-semibold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+          <Reports class="w-5 h-5 text-gray-500" />
+          Desglose de la venta
         </h3>
 
         <div class="space-y-2">
@@ -264,7 +275,7 @@
             class="flex justify-between text-sm"
           >
             <span class="text-gray-600">Envases:</span>
-            <span class="font-semibold text-amber-600">- S/ {{ packagingCostTotal.toFixed(2) }}</span>
+            <span class="font-semibold text-amber-600">+ S/ {{ packagingCostTotal.toFixed(2) }}</span>
           </div>
 
           <div class="flex justify-between items-center pt-3 border-t border-gray-200">
@@ -276,7 +287,7 @@
         </div>
 
         <p class="text-xs text-gray-400 mt-2">
-          * El monto registrado será la venta bruta. La comisión y envases son datos de referencia para análisis de rentabilidad.
+          * El monto registrado será el total cobrado (venta bruta + envases). La comisión es un dato de referencia para análisis de rentabilidad.
         </p>
       </div>
     </Transition>
@@ -290,6 +301,7 @@ import { useBusinessStore } from '@/stores/businessStore';
 import { useBusinessSettings } from '@/composables/useBusinessSettings';
 import { useInventory } from '@/composables/useInventory';
 import { round2 } from '@/utils/mathUtils';
+import { Shop, ShoppingBag, Motorcycle, Package, Reports } from '@iconoir/vue';
 
 const transactionStore = useTransactionStore();
 const businessStore = useBusinessStore();
@@ -329,7 +341,7 @@ const platformDisplayName = computed(() => {
 });
 
 const netIncome = computed(() => {
-  return round2(saleTotal.value - commissionAmount.value - packagingCostTotal.value);
+  return round2(saleTotal.value - commissionAmount.value + packagingCostTotal.value);
 });
 
 const hasFinancialImpact = computed(() => {
