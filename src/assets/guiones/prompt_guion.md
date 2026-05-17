@@ -476,16 +476,14 @@ Los siguientes errores hacen que un guion sea rechazado automáticamente.
 
 [78s]    MICRO-HOOK #3 (Anticipación)
 
-[80-85s] CTA MOMENTO 1 — WALA Pro
-         "Si todavía no usás WALA Pro, empezá por ahí.
-         Link en mi perfil. 7 días gratis."
-
-[85-90s] CTA MOMENTO 2 — Programa + Urgencia
-         "Y si ya usás WALA y sentís que tu negocio necesita más que una herramienta —
-         eso es exactamente para lo que existe mi programa.
-         2 meses. Metodología real. Acompañamiento cercano.
-         Los cupos son limitados. Si sentís que es tu momento, escribime hoy.
-         El link está en mi perfil."
+[80-90s] CTA PRINCIPAL — Diagnóstico gratuito + Urgencia
+         "Si esto resuena con lo que estás viviendo,
+         agendá tu diagnóstico gratuito.
+         30 minutos. Revisamos tu negocio en las 7 áreas.
+         Al final sabés exactamente dónde estás y qué sigue.
+         Los cupos son limitados. El link está en mi perfil.
+         Y si todavía no usás WALA, también está el link
+         para probarlo gratis 7 días."
 ```
 
 **Regla crítica de voz:** MOFU-A se narra exclusivamente en **Voz A (José)**.
