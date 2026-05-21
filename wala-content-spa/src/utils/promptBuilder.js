@@ -28,6 +28,27 @@ export function buildPrompt(config) {
   };
   const ctaInstruccion = ctaInstructionsMap[selectedFunnel] || '';
 
+  const overDeliveryInstruction = hormozi.over_delivery ? `
+### INSTRUCCIÓN DE OVER-DELIVERY:
+El campo over_delivery.texto es la versión de referencia — 
+la idea central, el dato o la revelación que debe impactar.
+
+Dentro del campo guion, en el timestamp indicado, escribe 
+una PARÁFRASIS de esa misma idea: misma revelación, 
+lenguaje adaptado al flujo narrativo del guion para que 
+suene natural en ese momento específico.
+
+Reglas de la paráfrasis:
+- Misma revelación o consecuencia central
+- Mismo sector y elemento concreto (no generalizar)
+- Puede cambiar la estructura de la frase
+- No puede diluir el impacto ni hacerla más técnica
+- No puede agregar información nueva que no esté en over_delivery.texto
+
+El resultado: dos versiones del mismo golpe. 
+Una para el JSON (referencia), una en el guion (producción).
+` : '';
+
   // Construye el contexto del indicador+nivel para el LLM
   const contextoMetodologico = `
 ## DATOS DEL INDICADOR SELECCIONADO
@@ -53,10 +74,12 @@ Genera un guion para:
 - **Sector**: ${sector}
 
 ### Elementos obligatorios para ${selectedFunnel}:
-- Over-delivery: ${hormozi.over_delivery ? 'OBLIGATORIO — regla de oro en el desarrollo' : 'No requerido'}
+- Over-delivery: ${hormozi.over_delivery ? 'OBLIGATORIO — regla de oro en el desarrollo. Revisa la instrucción específica abajo.' : 'No requerido'}
 - Costo de inacción: ${hormozi.costo_inaccion ? 'OBLIGATORIO — bloque propio de costo' : 'No requerido'}
-- Garantía: ${hormozi.garantia ? 'OBLIGATORIO — una frase al final del CTA ("Y si en 2 meses no tenés más claridad sobre tu negocio que hoy, no te cobro. Así de simple.")' : 'NO incluir'}
-- Urgencia: ${hormozi.urgencia ? 'OBLIGATORIO — una frase ("Los cupos para este mes son limitados. Si esto resuena con lo que estás viviendo, escribime hoy."), después del CTA' : 'NO incluir'}
+- Garantía: ${hormozi.garantia ? 'OBLIGATORIO — una frase al final del CTA ("Y si en 2 meses no tienes más claridad sobre tu negocio que hoy, no te cobro. Así de simple.")' : 'NO incluir'}
+- Urgencia: ${hormozi.urgencia ? 'OBLIGATORIO — una frase ("Los cupos para este mes son limitados. Si esto resuena con lo que estás viviendo, escríbeme hoy."), después del CTA' : 'NO incluir'}
+
+${overDeliveryInstruction}
 
 ### CTA para esta etapa:
 ${ctaInstruccion}

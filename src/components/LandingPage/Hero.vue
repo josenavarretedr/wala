@@ -1,11 +1,11 @@
 <template>
   <section
-    class="min-h-screen bg-white flex items-center justify-center px-4 py-16 md:py-24 relative overflow-hidden"
+    class="min-h-screen bg-transparent flex items-center justify-center px-4 py-16 md:py-24 relative overflow-hidden"
   >
     <div class="max-w-7xl mx-auto w-full">
       <div class="flex justify-center mb-10 md:mb-14">
         <img
-          src="@/assets/logoWala2.png"
+          :src="logoWalaOrigin"
           alt="WALA"
           class="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 animate-fadeInScale"
         />
@@ -18,15 +18,14 @@
           <h1
             class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight"
           >
-            ¿Sabes realmente cuánto gana tu negocio?
+            ¿Sabes realmente <span class="text-[#E35336]">cuánto gana</span> tu negocio?
           </h1>
 
           <p
             class="text-lg sm:text-xl md:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto md:mx-0"
           >
             La mayoría de emprendedores trabajan duro pero no saben en qué área
-            está el freno. WALA te ayuda a descubrirlo — y a ordenar todo desde
-            hoy.
+            está el <span class="text-[#E35336] font-semibold">freno</span>. WALA te ayuda a descubrirlo — y a <span class="text-[#E35336] font-semibold">ordenar todo</span> desde hoy.
           </p>
 
           <div
@@ -54,16 +53,16 @@
           </div>
         </div>
 
-        <div class="hidden md:block">
+        <div class="hidden md:block scroll-fade-up">
           <div
-            class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
+            class="rounded-2xl shadow-premium shadow-premium-hover p-8"
           >
             <div class="space-y-5">
               <div class="flex items-start gap-3">
                 <div
                   class="w-10 h-10 rounded-lg bg-[#E35336]/10 flex items-center justify-center"
                 >
-                  <Cash class="w-5 h-5 text-[#E35336]" />
+                  <GraphUp class="w-5 h-5 text-[#E35336]" />
                 </div>
                 <div>
                   <p class="text-sm text-gray-500">Resultado del día</p>
@@ -119,7 +118,8 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import { ArrowRight, Cash, Check, Rocket } from "@iconoir/vue";
+import { ArrowRight, Cash, Check, Rocket, GraphUp } from "@iconoir/vue";
+import logoWalaOrigin from "@/assets/Wala Origin.png";
 
 const router = useRouter();
 const whatsappLink =
@@ -191,22 +191,6 @@ button:active {
 
   h2 {
     line-height: 1.5;
-  }
-}
-
-/* Hover effects para las cards del visual */
-@media (min-width: 768px) {
-  .hidden.md\:block > div > div {
-    transition:
-      transform 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
-  .hidden.md\:block > div > div:hover {
-    transform: translateY(-2px);
-    box-shadow:
-      0 20px 25px -5px rgba(0, 0, 0, 0.1),
-      0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 }
 </style>

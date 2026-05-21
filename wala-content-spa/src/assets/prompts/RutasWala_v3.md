@@ -132,7 +132,7 @@ Identificación emocional. El espectador siente alivio porque alguien logró nom
 
 ### Tipo de hook ideal
 
-- "Si tu negocio vive en tu cabeza, esto es para vos."
+- "Si tu negocio vive en tu cabeza, esto es para ti."
 - "Si haces esto todos los días, hay algo de tu negocio que no estás viendo."
 - "No es que no sabes emprender. Es que estás operando desde el caos."
 

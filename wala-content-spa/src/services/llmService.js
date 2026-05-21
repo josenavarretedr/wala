@@ -1,47 +1,62 @@
 export async function generateScript(promptData) {
   const { system, context, user } = promptData;
-  const apiKey = import.meta.env.VITE_XAI_API_KEY;
-  const model = import.meta.env.VITE_GROK_MODEL || 'grok-3-mini';
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
 
   if (!apiKey) {
-    throw new Error('No se encontró la clave de API VITE_XAI_API_KEY en las variables de entorno.');
+    throw new Error('No se encontró la clave de API VITE_GEMINI_API_KEY en las variables de entorno.');
   }
 
-  const response = await fetch('https://api.x.ai/v1/chat/completions', {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+  const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: model,
-      response_format: { type: 'json_object' },  // fuerza JSON válido
-      messages: [
-        {
-          role: 'system',
-          content: system + '\n\n---\n\n## RUTAS MAESTRAS (referencia):\n' + context
-        },
+      contents: [
         {
           role: 'user',
-          content: user
+          parts: [
+            {
+              text: user
+            }
+          ]
         }
       ],
-      temperature: 0.7,
-      max_tokens: 3000
+      systemInstruction: {
+        parts: [
+          {
+            text: system + '\n\n---\n\n## RUTAS MAESTRAS (referencia):\n' + context
+          }
+        ]
+      },
+      generationConfig: {
+        responseMimeType: 'application/json',
+        temperature: 0.7,
+        maxOutputTokens: 8000
+      }
     })
   });
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`Error en API de xAI (Grok): ${response.status} ${response.statusText} - ${errorBody}`);
+    throw new Error(`Error en API de Gemini: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 
   const data = await response.json();
-  const raw = data.choices[0].message.content;
+  
+  if (!data.candidates || data.candidates.length === 0 || !data.candidates[0].content || !data.candidates[0].content.parts || data.candidates[0].content.parts.length === 0) {
+    throw new Error('La API de Gemini no devolvió ningún candidato de respuesta válido.');
+  }
+  
+  const raw = data.candidates[0].content.parts[0].text;
 
   try {
     return JSON.parse(raw);
   } catch (e) {
-    throw new Error('El modelo Grok no devolvió un JSON válido. Respuesta cruda: ' + raw);
+    throw new Error('El modelo Gemini no devolvió un JSON válido. Respuesta cruda: ' + raw);
   }
 }
+

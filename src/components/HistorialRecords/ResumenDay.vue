@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6"
+    class="w-full bg-white/80 rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6"
     ref="resumenDayRef"
   >
     <!-- Toggle section -->

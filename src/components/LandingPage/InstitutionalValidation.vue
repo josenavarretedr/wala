@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-white relative overflow-hidden">
+  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
     <!-- Elementos de fondo sutiles para diseño premium -->
     <div
       class="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E35336]/5 rounded-full filter blur-3xl opacity-60 -z-10 translate-x-1/2 -translate-y-1/4"
@@ -18,10 +18,10 @@
         <h2
           class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight mb-5 max-w-3xl mx-auto"
         >
-          Una metodología que ya funciona en programas reales
+          Una metodología que <span class="text-[#E35336]">ya funciona</span> en programas reales
         </h2>
         <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          El Método WALA no es teoría. Es el mismo sistema utilizado en
+          El Método WALA <span class="text-[#E35336] font-semibold">no es teoría</span>. Es el mismo sistema utilizado en
           programas de emprendimiento con respaldo de cooperación internacional.
         </p>
       </div>
@@ -46,18 +46,14 @@
                 />
               </div>
 
-              <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 leading-snug">
-                {{ cards[currentIndex].title }}
-              </h3>
+              <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 leading-snug" v-html="cards[currentIndex].title"></h3>
 
               <p v-if="cards[currentIndex].subtitle" class="text-emerald-700 font-semibold text-sm sm:text-base mb-3 flex items-center gap-2">
                 <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 {{ cards[currentIndex].subtitle }}
               </p>
 
-              <p class="text-gray-600 text-base sm:text-lg leading-relaxed">
-                {{ cards[currentIndex].description }}
-              </p>
+              <p class="text-gray-600 text-base sm:text-lg leading-relaxed" v-html="cards[currentIndex].description"></p>
             </div>
           </transition>
         </div>
@@ -110,17 +106,17 @@ let autoplayInterval = null;
 
 const cards = ref([
   {
-    title: "Fortalecemos el ecosistema emprendedor",
-    description: "Construimos bases sólidas conectando a dueños de negocios con herramientas digitales que facilitan una gestión profesional y sostenible.",
+    title: "Fortalecemos el <span class='text-[#E35336]'>ecosistema emprendedor</span>",
+    description: "Construimos <span class='text-[#E35336] font-semibold'>bases sólidas</span> conectando a dueños de negocios con herramientas digitales que facilitan una gestión profesional y sostenible.",
   },
   {
-    title: "Metodología alineada con MESUN · OIT",
+    title: "Metodología alineada con <span class='text-emerald-600'>MESUN · OIT</span>",
     subtitle: "Mejore su negocio — Organización Internacional del Trabajo",
-    description: "Aplicamos el mismo estándar técnico internacional utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
+    description: "Aplicamos el mismo <span class='text-emerald-600 font-semibold'>estándar técnico internacional</span> utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
   },
   {
-    title: "Programas municipales de fortalecimiento empresarial",
-    description: "Trabajamos de la mano con gobiernos locales para impulsar el desarrollo económico local. Trabajamos en comunidad para los negocios de todos.",
+    title: "Programas municipales de <span class='text-blue-600'>fortalecimiento empresarial</span>",
+    description: "Trabajamos de la mano con gobiernos locales para impulsar el <span class='text-blue-600 font-semibold'>desarrollo económico local</span>. Trabajamos en comunidad para los negocios de todos.",
   },
 ]);
 

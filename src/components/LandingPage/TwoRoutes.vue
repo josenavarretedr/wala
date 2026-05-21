@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-white">
+  <section class="py-20 md:py-28 px-4 bg-transparent">
     <div class="max-w-6xl mx-auto">
       <h2
         class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight text-center mb-12"
@@ -8,12 +8,12 @@
       </h2>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div class="flex items-center gap-3 mb-4">
+        <div class="rounded-2xl shadow-premium p-6 scroll-fade-up">
+          <div class="flex items-center gap-4 mb-4">
             <div
-              class="w-10 h-10 rounded-lg bg-[#E35336]/10 flex items-center justify-center"
+              class="w-12 h-12 rounded-xl bg-[#E35336]/10 flex items-center justify-center shrink-0"
             >
-              <Cash class="w-5 h-5 text-[#E35336]" />
+              <Binocular class="w-6 h-6 text-[#E35336]" />
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900">
@@ -24,7 +24,7 @@
           </div>
 
           <p class="text-sm text-gray-700 mb-5">
-            Diagnóstico gratuito de 20 min con José — metodólogo WALA
+            <span class="text-[#E35336] font-semibold">Diagnóstico gratuito</span> de 20 min con José — metodólogo WALA
           </p>
 
           <div class="space-y-3 mb-6">
@@ -62,16 +62,16 @@
 
           <p class="text-xs text-gray-500 mt-3">
             Si en 2 meses de acompañamiento no tienes más claridad sobre tu
-            negocio, no te cobro nada.
+            negocio, no te cobramos nada.
           </p>
         </div>
 
-        <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-          <div class="flex items-center gap-3 mb-4">
+        <div class="rounded-2xl shadow-premium p-6 scroll-fade-up delay-150">
+          <div class="flex items-center gap-4 mb-4">
             <div
-              class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"
+              class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center shrink-0"
             >
-              <Wrench class="w-5 h-5 text-blue-600" />
+              <Sort class="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-900">
@@ -84,7 +84,7 @@
           <p class="text-sm text-gray-700 mb-5">Accede a WALA gratis hoy</p>
 
           <p class="text-sm text-gray-700 mb-5">
-            Registra ingresos, gastos, inventario y flujo de caja
+            Registra <span class="text-[#E35336] font-semibold">ingresos, gastos, inventario</span> y flujo de caja
           </p>
 
           <div class="space-y-3 mb-6">
@@ -121,7 +121,7 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import { ArrowRight, Cash, Check, Wrench } from "@iconoir/vue";
+import { ArrowRight, Binocular, Check, Sort } from "@iconoir/vue";
 
 const router = useRouter();
 const whatsappLink =

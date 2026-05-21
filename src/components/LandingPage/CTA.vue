@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-white relative overflow-hidden">
+  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
@@ -15,7 +15,7 @@
       <h2
         class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight mb-10"
       >
-        Tu negocio ya tiene suficiente trabajo encima. WALA pone la claridad.
+        Tu negocio ya tiene suficiente trabajo encima. <span class="text-[#E35336]">WALA pone la claridad</span>.
       </h2>
 
       <div class="flex flex-col sm:flex-row gap-4 justify-center">

@@ -29,7 +29,6 @@ import NavigationBtnInventory from "@/components/Inventory/NavigationBtnInventor
 <style scoped>
 .inventory-dashboard-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
 }
 
 .loading-state {

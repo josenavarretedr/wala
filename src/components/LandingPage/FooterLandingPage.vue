@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="bg-slate-50 border-t border-slate-200 py-12 lg:py-16 px-4 sm:px-6 lg:px-8"
+    class="bg-transparent border-t border-slate-200 py-12 lg:py-16 px-4 sm:px-6 lg:px-8"
   >
     <div class="max-w-6xl mx-auto">
       <!-- Grid principal: 5 bloques -->

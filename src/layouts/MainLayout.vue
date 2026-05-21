@@ -1,5 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen relative overflow-x-hidden">
+    <!-- Capa de fondo fija de alta resolución para coherencia visual en dashboard -->
+    <div class="dashboard-bg" :style="{ backgroundImage: `url(${bgWall})` }"></div>
+
     <!-- Overlay para todos los tamaños de pantalla -->
     <div
       v-if="sidebarOpen"
@@ -62,6 +65,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useProgramStore } from "@/stores/programStore";
+import bgWall from "@/assets/bg_wall.png";
 
 // Imports de componentes
 import SidebarSection from "@/components/layout/SidebarSection.vue";
@@ -258,3 +262,23 @@ const hasAccess = (item) => {
   return true;
 };
 </script>
+
+<style scoped>
+.dashboard-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -10;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  /* GPU-accelerated layer for smooth scrolling performance on mobile */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+</style>

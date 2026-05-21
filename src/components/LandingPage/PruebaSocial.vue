@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-white relative overflow-hidden">
+  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
@@ -15,7 +15,7 @@
       <h2
         class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight mb-10"
       >
-        Lo que dicen los emprendedores que ya pasaron por esto
+        Lo que dicen los emprendedores que <span class="text-[#E35336]">ya pasaron por esto</span>
       </h2>
 
       <!-- Carrusel de Testimonios -->
@@ -32,9 +32,7 @@
               >
                 <User class="w-6 h-6 text-[#E35336]" />
               </div>
-              <p class="text-lg sm:text-xl text-gray-800 leading-relaxed mb-6">
-                "{{ testimonials[currentIndex].quote }}"
-              </p>
+              <p class="text-lg sm:text-xl text-gray-800 leading-relaxed mb-6" v-html="`“${testimonials[currentIndex].quote}”`"></p>
               <p class="text-sm font-semibold text-gray-900">
                 — {{ testimonials[currentIndex].author }}
               </p>
@@ -94,7 +92,7 @@ const currentIndex = ref(0);
 const testimonials = ref([
   {
     quote:
-      "Pensé que mi problema era que vendía poco. En 20 minutos me mostró que el freno era el costeo — llevaba meses vendiendo sin cubrir mis costos reales.",
+      "Pensé que mi problema era que vendía poco. En <span class='text-[#E35336] font-semibold'>20 minutos</span> me mostró que el freno era el costeo — llevaba meses vendiendo <span class='text-[#E35336] font-semibold'>sin cubrir mis costos reales</span>.",
     author: "[Nombre], salón de belleza, Chiclayo",
   },
   // Agregar más testimonios aquí cuando estén disponibles

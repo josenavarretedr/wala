@@ -10,6 +10,40 @@ export function validateScript(scriptJson, config) {
   if (reqs.over_delivery && !scriptJson.over_delivery?.presente) {
     errors.push('Over-delivery obligatorio no detectado en el guion');
   }
+
+  if (scriptJson.over_delivery?.presente && scriptJson.over_delivery?.texto) {
+    const guion = (scriptJson.guion || '').toLowerCase();
+    
+    // Toma las primeras palabras clave de la revelación central
+    // (no el texto completo — el LLM parafrasea, eso es esperado)
+    const overDeliveryTexto = scriptJson.over_delivery.texto.toLowerCase();
+    
+    // Extrae 3-4 palabras únicas y concretas del over-delivery
+    // que sea improbable que aparezcan por casualidad
+    const palabrasClave = overDeliveryTexto
+      .replace(/[^a-záéíóúñü\s]/gi, '')
+      .split(/\s+/)
+      .filter(p => p.length > 5)  // ignora artículos y conectores
+      .slice(0, 4);
+    
+    // El guion pasa si al menos 2 de esas palabras clave aparecen
+    const coincidencias = palabrasClave.filter(p => guion.includes(p));
+    
+    if (coincidencias.length < 2) {
+      errors.push(
+        'El over-delivery no parece estar reflejado en el guion. ' +
+        'Debe aparecer como paráfrasis en el desarrollo del video.'
+      );
+    }
+    // Si hay 1 coincidencia, warning suave — no bloquea
+    else if (coincidencias.length < 3) {
+      warnings.push(
+        'El over-delivery está presente pero con poca densidad ' +
+        'en el guion. Verificar que la revelación tenga suficiente impacto.'
+      );
+    }
+    // Si hay 3+ coincidencias → pasa sin comentarios
+  }
   
   if (reqs.costo_inaccion && !scriptJson.costo_inaccion?.presente) {
     errors.push('Bloque de costo de inacción obligatorio no detectado');

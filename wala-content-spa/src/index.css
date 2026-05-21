@@ -43,3 +43,211 @@
 .animate-slide-in {
   animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* --- Butter-Smooth Transitions --- */
+body,
+.min-h-screen,
+.bg-slate-900\/60,
+.bg-slate-900,
+.bg-slate-950,
+.bg-slate-950\/60,
+.bg-slate-950\/90,
+.border-slate-800,
+.border-slate-850,
+.text-slate-100,
+.text-slate-200,
+.text-slate-400,
+.text-slate-500,
+select,
+input {
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- Light Mode CSS Variables & Overrides --- */
+html.light {
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-nested: #f1f5f9;
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --border-color: #e2e8f0;
+  --shadow-color: rgba(148, 163, 184, 0.08);
+}
+
+/* Global Light mode overrides */
+html.light body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-main) !important;
+}
+
+html.light .min-h-screen {
+  background-color: var(--bg-main) !important;
+}
+
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900,
+html.light .bg-slate-950,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/80 {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 10px 15px -3px var(--shadow-color), 0 4px 6px -4px var(--shadow-color) !important;
+}
+
+html.light .bg-slate-950\/40,
+html.light .bg-slate-950\/90 {
+  background-color: var(--bg-nested) !important;
+  border-color: var(--border-color) !important;
+}
+
+html.light .bg-slate-900\/20 {
+  background-color: var(--bg-nested) !important;
+}
+
+html.light .border-slate-800,
+html.light .border-slate-800\/60,
+html.light .border-slate-800\/80,
+html.light .border-slate-850,
+html.light .border-slate-900 {
+  border-color: var(--border-color) !important;
+}
+
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: var(--text-main) !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: var(--text-muted) !important;
+}
+
+html.light select,
+html.light input,
+html.light textarea {
+  background-color: var(--bg-nested) !important;
+  color: var(--text-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+html.light select:focus,
+html.light input:focus,
+html.light textarea:focus {
+  border-color: #22c55e !important;
+}
+
+html.light .text-slate-300 {
+  color: #334155 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Gradients text overrides */
+html.light .bg-clip-text {
+  background-image: linear-gradient(to right, #0f172a, #334155, #15803d) !important;
+}
+
+/* Background blurs adjustments for light mode */
+html.light .blur-\[120px\],
+html.light .blur-\[160px\] {
+  opacity: 0.12 !important;
+}
+
+/* Scrollbar adjustment for light mode */
+html.light ::-webkit-scrollbar-track {
+  background: var(--bg-main) !important;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.25) !important;
+}
+
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.45) !important;
+}
+
+/* --- Unselected Card Styling in Light Mode --- */
+html.light .bg-slate-50\/40 {
+  background-color: var(--bg-nested) !important; /* Slate-100 (#f1f5f9) background for clear bounds */
+}
+
+html.light .border-slate-200\/70 {
+  border-color: #cbd5e1 !important; /* Solid Slate-300 border */
+}
+
+/* Responsive hover overrides for cards */
+html.light .hover\:bg-slate-100\/50:hover,
+html.light .hover\:bg-slate-800\/40:hover,
+html.light .hover\:bg-slate-800\/20:hover {
+  background-color: #e2e8f0 !important; /* Solid Slate-200 */
+  border-color: #94a3b8 !important;     /* Solid Slate-400 */
+}
+
+html.light .hover\:border-slate-300:hover,
+html.light .hover\:border-slate-700\/60:hover {
+  border-color: #94a3b8 !important;     /* Solid Slate-400 */
+}
+
+/* --- Disabled/Placeholder Card Contrast Enhancements --- */
+html.light .opacity-60 {
+  opacity: 0.9 !important; /* Faded but perfectly legible in light mode */
+}
+
+html.light .bg-slate-50\/50 {
+  background-color: var(--bg-nested) !important; /* Muted but solid light grey card background */
+}
+
+html.light .border-slate-200\/80 {
+  border-color: var(--border-color) !important;
+}
+
+/* --- Robust Disabled Button and Form State Overrides --- */
+html.light button:disabled,
+html.light button[disabled] {
+  color: #94a3b8 !important; /* Slate-400 */
+  background-color: #f1f5f9 !important; /* Slate-100 */
+  border-color: #e2e8f0 !important; /* Slate-200 */
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 0.65 !important;
+}
+
+html.light button:disabled *,
+html.light button[disabled] * {
+  color: #94a3b8 !important;
+}
+
+html.light select:disabled,
+html.light input:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+/* --- Custom Accent / Border Mappings --- */
+html.light .border-emerald-250 {
+  border-color: #a7f3d0 !important; /* emerald-200 */
+}
+
+html.light .border-rose-250 {
+  border-color: #fecdd3 !important; /* rose-200 */
+}
+
+html.light .text-wala-400 {
+  color: #16a34a !important; /* green-600 */
+}
+
+html.light .bg-emerald-950\/20 {
+  background-color: #ecfdf5 !important; /* Emerald-50 */
+  border-color: #a7f3d0 !important;     /* Emerald-200 */
+  color: #065f46 !important;            /* Emerald-800 */
+}
+
+html.light .bg-emerald-950\/20 .text-emerald-400 {
+  color: #059669 !important;            /* Emerald-600 */
+}

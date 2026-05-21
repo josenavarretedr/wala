@@ -1,5 +1,6 @@
 import React from 'react';
 import { useConfiguratorStore } from '../../store/configuratorStore';
+import { useLibraryStore } from '../../store/libraryStore';
 import { Target, Users, Flame, Award } from 'lucide-react';
 
 const FUNNELS = [
@@ -8,49 +9,50 @@ const FUNNELS = [
     name: 'TOFU (Atracción)', 
     icon: Users,
     desc: 'Atraer público frío. Resuelve dolor específico con un tip concreto. Promueve WALA freemium.',
-    color: 'from-blue-500/10 to-cyan-500/10 border-blue-500/30 text-blue-400'
+    color: 'from-blue-500/10 to-cyan-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400'
   },
   { 
     id: 'MOFU-A', 
     name: 'MOFU-A (Consideración)', 
     icon: Target,
     desc: 'Llevar al diagnóstico gratuito. Muestra que la herramienta sola no alcanza. Voz exclusiva de José.',
-    color: 'from-amber-500/10 to-orange-500/10 border-amber-500/30 text-amber-400'
+    color: 'from-amber-500/10 to-orange-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
   },
   { 
     id: 'MOFU-B', 
     name: 'MOFU-B (Activación)', 
     icon: Flame,
     desc: 'Convertir freemium a WALA Pro (7 días gratis). Muestra diferencia entre tener datos y claridad real.',
-    color: 'from-purple-500/10 to-pink-500/10 border-purple-500/30 text-purple-400'
+    color: 'from-purple-500/10 to-pink-500/10 border-purple-500/20 text-purple-600 dark:text-purple-400'
   },
   { 
     id: 'BOFU', 
     name: 'BOFU (Conversión)', 
     icon: Award,
     desc: 'Diagnóstico gratuito a cierre de programa. Transformación identitaria completa. Garantía + Urgencia.',
-    color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/30 text-emerald-400'
+    color: 'from-emerald-500/10 to-teal-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
   }
 ];
 
 export default function StepFunnel() {
   const { selectedNivel, selectedFunnel, setFunnel } = useConfiguratorStore();
+  const { scripts } = useLibraryStore();
 
   if (!selectedNivel) {
     return (
-      <div className="bg-slate-900/40 opacity-50 rounded-2xl p-5 border border-slate-800/80 shadow-md">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-xs font-bold text-slate-500">4</span>
+      <div className="bg-slate-50/50 border border-slate-200/80 dark:bg-slate-900/40 dark:border-slate-800/80 rounded-2xl p-5 shadow-sm opacity-60 transition-all duration-300">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-200 dark:bg-slate-800 text-xs font-bold text-slate-400 dark:text-slate-500">4</span>
           Selecciona la Etapa de Funnel
         </h3>
-        <p className="text-sm text-slate-500 mt-3 italic">Selecciona un nivel primero para habilitar las etapas de funnel.</p>
+        <p className="text-sm text-slate-400 dark:text-slate-500 mt-3 italic">Selecciona un nivel primero para habilitar las etapas de funnel.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-900/60 backdrop-blur-md rounded-2xl p-5 border border-slate-800/80 shadow-xl">
-      <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+    <div className="bg-white border border-slate-200 dark:bg-slate-900/60 dark:border-slate-800/80 backdrop-blur-md rounded-2xl p-5 shadow-sm dark:shadow-xl transition-all duration-300">
+      <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4 flex items-center gap-2">
         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-wala-600 text-xs font-bold text-white">4</span>
         Selecciona la Etapa de Funnel
       </h3>
@@ -59,23 +61,32 @@ export default function StepFunnel() {
         {FUNNELS.map((f) => {
           const Icon = f.icon;
           const isSelected = selectedFunnel === f.id;
+          const count = scripts.filter((s) => s.config.funnel === f.id).length;
+
           return (
             <button
               key={f.id}
               onClick={() => setFunnel(f.id)}
-              className={`p-4 rounded-xl border text-left transition-all duration-300 flex flex-col justify-between ${
+              className={`p-4 rounded-xl border text-left transition-all duration-300 flex flex-col justify-between cursor-pointer ${
                 isSelected 
-                  ? 'bg-slate-800/90 border-wala-500 ring-2 ring-wala-500/20 shadow-lg scale-[1.01]' 
-                  : 'bg-slate-950/40 border-slate-800/50 hover:bg-slate-800/40 hover:border-slate-700/60'
+                  ? 'bg-emerald-50/80 border-wala-500 text-emerald-900 ring-2 ring-wala-500/20 shadow-lg scale-[1.01] dark:bg-slate-800/90 dark:border-wala-500 dark:text-slate-100' 
+                  : 'bg-slate-50/40 border-slate-200/70 hover:bg-slate-100/50 hover:border-slate-300 dark:bg-slate-950/40 dark:border-slate-800/50 dark:hover:bg-slate-800/40 dark:hover:border-slate-700/60'
               }`}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <div className={`p-1.5 rounded bg-gradient-to-br ${f.color} border border-slate-800/60`}>
-                  <Icon size={16} />
+              <div className="flex items-center justify-between gap-2 w-full mb-2">
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 rounded bg-gradient-to-br ${f.color} border border-slate-200/60 dark:border-slate-800/60`}>
+                    <Icon size={16} />
+                  </div>
+                  <div className={`text-sm font-bold ${isSelected ? 'text-emerald-950 dark:text-slate-100' : 'text-slate-700 dark:text-slate-200'}`}>{f.name}</div>
                 </div>
-                <div className="text-sm font-bold text-slate-200">{f.name}</div>
+                {count > 0 && (
+                  <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-wala-500/10 dark:bg-wala-500/20 text-wala-600 dark:text-wala-400 border border-wala-500/10 dark:border-wala-500/25 flex items-center gap-0.5" title={`${count} guiones guardados`}>
+                    📂 {count}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1">
+              <p className={`text-xs leading-relaxed mt-1 ${isSelected ? 'text-emerald-800 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400'}`}>
                 {f.desc}
               </p>
             </button>

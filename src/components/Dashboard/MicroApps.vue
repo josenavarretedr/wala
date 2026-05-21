@@ -5,7 +5,7 @@
     <div class="lg:hidden">
       <!-- Widget de racha -->
       <div
-        class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-2 max-w-md mx-auto"
+        class="bg-white/80 rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-2 max-w-md mx-auto"
       >
         <StreakWidget :compact="true" />
       </div>
@@ -17,7 +17,7 @@
             v-for="item in mainApps"
             :key="item.id"
             :class="[
-              'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+              'group bg-white/80 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
               'col-span-1 p-2 sm:p-3',
               item.color === 'blue' &&
                 'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
@@ -72,7 +72,10 @@
             </svg>
             <div
               v-else
-              :class="['mb-1 transition-all duration-200', 'text-xl sm:text-2xl']"
+              :class="[
+                'mb-1 transition-all duration-200',
+                'text-xl sm:text-2xl',
+              ]"
             >
               {{ item.icon }}
             </div>
@@ -91,10 +94,12 @@
 
           <!-- Botón "Más Apps" -->
           <div
-            class="group col-span-1 p-2 sm:p-3 bg-white rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
+            class="group col-span-1 p-2 sm:p-3 bg-white/80 rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
             @click="showBottomSheet = true"
           >
-            <div class="mb-1 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
+            <div
+              class="mb-1 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
+            >
               <svg
                 class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 transition-all duration-200 group-hover:text-orange-700"
                 fill="none"
@@ -109,7 +114,9 @@
                 />
               </svg>
             </div>
-            <div class="text-xs text-orange-600 font-medium text-center px-1 group-hover:text-orange-700">
+            <div
+              class="text-xs text-orange-600 font-medium text-center px-1 group-hover:text-orange-700"
+            >
               Más Apps
             </div>
           </div>
@@ -125,7 +132,7 @@
       <div class="grid grid-cols-6 gap-4 xl:gap-5 items-stretch">
         <!-- Widget de racha (2 columnas) -->
         <div
-          class="col-span-2 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
+          class="col-span-2 bg-white/80 rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
         >
           <StreakWidget :compact="true" />
         </div>
@@ -135,7 +142,7 @@
           v-for="item in mainApps"
           :key="'desktop-' + item.id"
           :class="[
-            'group bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+            'group bg-white/80 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
             'col-span-1',
             'p-4 min-h-[140px]',
             item.color === 'blue' &&
@@ -214,10 +221,12 @@
 
         <!-- Botón "Más Apps" desktop -->
         <div
-          class="group col-span-1 p-4 min-h-[140px] bg-white rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
+          class="group col-span-1 p-4 min-h-[140px] bg-white/80 rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
           @click="showBottomSheet = true"
         >
-          <div class="mb-2 w-12 h-12 xl:w-14 xl:h-14 flex items-center justify-center">
+          <div
+            class="mb-2 w-12 h-12 xl:w-14 xl:h-14 flex items-center justify-center"
+          >
             <svg
               class="w-8 h-8 xl:w-10 xl:h-10 text-orange-600 transition-all duration-200 group-hover:text-orange-700"
               fill="none"
@@ -232,7 +241,9 @@
               />
             </svg>
           </div>
-          <div class="text-sm xl:text-base text-orange-600 font-medium text-center px-1 group-hover:text-orange-700">
+          <div
+            class="text-sm xl:text-base text-orange-600 font-medium text-center px-1 group-hover:text-orange-700"
+          >
             Más Apps
           </div>
         </div>
@@ -259,7 +270,7 @@
       <Transition name="modal-adaptive">
         <div
           v-if="showBottomSheet"
-          class="bg-white shadow-2xl pointer-events-auto overflow-y-auto w-full rounded-t-2xl max-h-[85vh] lg:rounded-2xl lg:max-w-2xl lg:max-h-[80vh]"
+          class="bg-white/90 backdrop-blur-xl shadow-2xl pointer-events-auto overflow-y-auto w-full rounded-t-2xl max-h-[85vh] lg:rounded-2xl lg:max-w-2xl lg:max-h-[80vh]"
         >
           <!-- Handle visual (solo móvil) -->
           <div class="flex justify-center pt-3 pb-1 lg:hidden">
@@ -267,16 +278,27 @@
           </div>
 
           <!-- Header -->
-          <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
+          <div
+            class="flex items-center justify-between px-5 py-3 border-b border-gray-100"
+          >
             <div>
-              <h2 class="text-lg font-bold text-gray-900">Todas las aplicaciones</h2>
-              <p class="text-xs text-gray-500 mt-0.5">Selecciona una aplicación</p>
+              <h2 class="text-lg font-bold text-gray-900">
+                Todas las aplicaciones
+              </h2>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Selecciona una aplicación
+              </p>
             </div>
             <button
               @click="showBottomSheet = false"
               class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -294,17 +316,24 @@
                 v-for="item in allDisplayApps"
                 :key="'sheet-' + item.id"
                 :class="[
-                  'group bg-white rounded-xl border flex flex-col items-center justify-center p-3 cursor-pointer transition-all duration-200',
+                  'group bg-white/80 rounded-xl border flex flex-col items-center justify-center p-3 cursor-pointer transition-all duration-200',
                   getValue(item.available)
                     ? [
                         'border-gray-100 shadow-sm',
-                        item.color === 'blue' && 'hover:border-blue-300 hover:bg-blue-50 hover:shadow-md',
-                        item.color === 'red' && 'hover:border-red-300 hover:bg-red-50 hover:shadow-md',
-                        item.color === 'green' && 'hover:border-green-300 hover:bg-green-50 hover:shadow-md',
-                        item.color === 'purple' && 'hover:border-purple-300 hover:bg-purple-50 hover:shadow-md',
-                        item.color === 'indigo' && 'hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md',
-                        item.color === 'orange' && 'hover:border-orange-300 hover:bg-orange-50 hover:shadow-md',
-                        item.color === 'teal' && 'hover:border-teal-300 hover:bg-teal-50 hover:shadow-md',
+                        item.color === 'blue' &&
+                          'hover:border-blue-300 hover:bg-blue-50 hover:shadow-md',
+                        item.color === 'red' &&
+                          'hover:border-red-300 hover:bg-red-50 hover:shadow-md',
+                        item.color === 'green' &&
+                          'hover:border-green-300 hover:bg-green-50 hover:shadow-md',
+                        item.color === 'purple' &&
+                          'hover:border-purple-300 hover:bg-purple-50 hover:shadow-md',
+                        item.color === 'indigo' &&
+                          'hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md',
+                        item.color === 'orange' &&
+                          'hover:border-orange-300 hover:bg-orange-50 hover:shadow-md',
+                        item.color === 'teal' &&
+                          'hover:border-teal-300 hover:bg-teal-50 hover:shadow-md',
                       ]
                     : 'border-gray-100 opacity-60 cursor-not-allowed',
                 ]"
@@ -316,7 +345,9 @@
                   :is="item.icon"
                   :class="[
                     'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
-                    getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
+                    getValue(item.available)
+                      ? getIconColor(item.color)
+                      : 'text-gray-400',
                     getValue(item.available) && getIconHoverColor(item.color),
                   ]"
                 />
@@ -325,7 +356,9 @@
                   v-else-if="item.icon === 'receipt'"
                   :class="[
                     'mb-2 transition-all duration-200 w-8 h-8 sm:w-10 sm:h-10',
-                    getValue(item.available) ? getIconColor(item.color) : 'text-gray-400',
+                    getValue(item.available)
+                      ? getIconColor(item.color)
+                      : 'text-gray-400',
                     getValue(item.available) && getIconHoverColor(item.color),
                   ]"
                   fill="none"
@@ -340,19 +373,27 @@
                   />
                 </svg>
                 <!-- Emoji fallback -->
-                <div v-else class="mb-2 text-2xl sm:text-3xl transition-all duration-200">
+                <div
+                  v-else
+                  class="mb-2 text-2xl sm:text-3xl transition-all duration-200"
+                >
                   {{ item.icon }}
                 </div>
 
                 <div
                   :class="[
                     'text-center text-xs sm:text-sm font-medium',
-                    getValue(item.available) ? 'text-gray-600' : 'text-gray-400',
+                    getValue(item.available)
+                      ? 'text-gray-600'
+                      : 'text-gray-400',
                   ]"
                 >
                   {{ getValue(item.name) }}
                 </div>
-                <div v-if="!getValue(item.available)" class="text-xs text-gray-400 mt-0.5">
+                <div
+                  v-if="!getValue(item.available)"
+                  class="text-xs text-gray-400 mt-0.5"
+                >
                   Próximamente
                 </div>
               </div>
@@ -380,6 +421,7 @@ import {
   BrightCrown,
   Bookmark,
   ChatBubble,
+  SoilAlt,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -501,7 +543,7 @@ const allMicroApps = ref([
     name: "Asesoría",
     route: "/consulting",
     available: true,
-    icon: ChatBubble,
+    icon: SoilAlt,
     isComponent: true,
     color: "teal",
   },
@@ -549,7 +591,7 @@ const mainApps = computed(() => {
 
 // Todas las apps para mostrar en el bottom sheet
 const allDisplayApps = computed(() => {
-  const apps = allMicroApps.value.slice(0, 9);
+  const apps = allMicroApps.value;
   if (isPremium.value) {
     return apps.filter((app) => app.id !== 9);
   }

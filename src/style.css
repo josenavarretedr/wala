@@ -1,3 +1,55 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Sombras de caja Premium ultra notorias */
+.shadow-premium {
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.16),
+              0 15px 30px -10px rgba(0, 0, 0, 0.10),
+              0 0 0 1px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+.shadow-premium-hover {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.4s ease;
+}
+
+.shadow-premium-hover:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 35px 70px -15px rgba(0, 0, 0, 0.22),
+              0 20px 40px -10px rgba(0, 0, 0, 0.15),
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+  border-color: rgba(227, 83, 54, 0.25);
+}
+
+/* Efecto de revelado de abajo a arriba (Scroll Reveal) */
+.scroll-fade-up {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, opacity;
+}
+
+.scroll-fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Clases de retardo de transición (Transition Delays) */
+.delay-100 {
+  transition-delay: 100ms;
+}
+.delay-150 {
+  transition-delay: 150ms;
+}
+.delay-200 {
+  transition-delay: 200ms;
+}
+.delay-300 {
+  transition-delay: 300ms;
+}

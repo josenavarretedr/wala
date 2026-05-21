@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-white relative overflow-hidden">
+  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
@@ -16,33 +16,32 @@
         <h2
           class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight"
         >
-          Trabajas todos los días. Pero algo no cuadra.
+          Trabajas todos los días. Pero <span class="text-[#E35336]">algo no cuadra</span>.
         </h2>
 
         <div class="max-w-3xl mx-auto space-y-4">
           <div class="flex items-start gap-3 text-left">
             <Check class="w-5 h-5 text-[#E35336] mt-1" />
             <p class="text-base sm:text-lg text-gray-600">
-              Vendes, pero al final del mes no sabes si ganaste o solo
-              sobreviviste
+              Vendes, pero al final del mes <span class="text-[#E35336] font-semibold">no sabes si ganaste</span> o solo sobreviviste
             </p>
           </div>
           <div class="flex items-start gap-3 text-left">
             <Check class="w-5 h-5 text-[#E35336] mt-1" />
             <p class="text-base sm:text-lg text-gray-600">
-              Mezclas el dinero del negocio con el de tu casa sin querer
+              <span class="text-[#E35336] font-semibold">Mezclas el dinero</span> del negocio con el de tu casa sin querer
             </p>
           </div>
           <div class="flex items-start gap-3 text-left">
             <Check class="w-5 h-5 text-[#E35336] mt-1" />
             <p class="text-base sm:text-lg text-gray-600">
-              Fijas precios a ojo porque calcular costos te parece complicado
+              Fijas precios a ojo porque <span class="text-[#E35336] font-semibold">calcular costos</span> te parece complicado
             </p>
           </div>
         </div>
 
         <p class="text-lg sm:text-xl text-gray-700 font-medium">
-          Eso no es falta de esfuerzo. Es falta de claridad. Y tiene solución.
+          Eso no es falta de esfuerzo. Es <span class="text-[#E35336] font-semibold">falta de claridad</span>. Y tiene <span class="text-[#E35336] font-semibold">solución</span>.
         </p>
       </div>
     </div>
