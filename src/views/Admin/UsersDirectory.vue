@@ -180,9 +180,10 @@
             v-for="biz in filteredBusinesses"
             :key="biz.businessId"
             class="data-row"
+            :class="{ 'is-expanded': expandedBusinesses[biz.businessId] }"
           >
             <!-- Nombre -->
-            <td class="td-name">
+            <td class="td-name" @click="toggleExpand(biz.businessId)">
               <div class="business-info">
                 <div
                   class="business-avatar"
@@ -190,17 +191,27 @@
                 >
                   {{ biz.businessName.charAt(0).toUpperCase() }}
                 </div>
-                <div>
+                <div class="business-details-cell">
                   <div class="business-name">{{ biz.businessName }}</div>
                   <div class="business-id">
                     {{ biz.businessId.slice(0, 8) }}...
                   </div>
                 </div>
+                <button
+                  class="expand-btn"
+                  :class="{ 'is-active': expandedBusinesses[biz.businessId] }"
+                  @click.stop="toggleExpand(biz.businessId)"
+                  aria-label="Expandir detalles"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="chevron-icon" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
               </div>
             </td>
 
             <!-- Suscripción -->
-            <td class="td-sub">
+            <td class="td-sub" data-label="Suscripción">
               <button
                 @click="openSubscriptionModal(biz)"
                 class="plan-badge-btn"
@@ -233,7 +244,7 @@
             </td>
 
             <!-- Columna Rubro -->
-            <td class="td-industry">
+            <td class="td-industry" data-label="Rubro">
               <button @click="openClassModal(biz)" class="classification-badge"
                 :style="{ background: INDUSTRY_MAP[biz.industry]?.color || '#9ca3af' }">
                 {{ INDUSTRY_MAP[biz.industry]?.label || 'Sin clasificar' }}
@@ -241,7 +252,7 @@
             </td>
 
             <!-- Columna Modelo -->
-            <td class="td-btype">
+            <td class="td-btype" data-label="Modelo">
               <button @click="openClassModal(biz)" class="classification-badge secondary"
                 :style="{ background: BUSINESS_TYPE_MAP[biz.businessType]?.color || '#9ca3af' }">
                 {{ BUSINESS_TYPE_MAP[biz.businessType]?.label || 'Sin definir' }}
@@ -249,7 +260,7 @@
             </td>
 
             <!-- Programas -->
-            <td class="td-prog">
+            <td class="td-prog" data-label="Programas">
               <div class="programs-cell">
                 <div v-if="biz.programs.length === 0" class="no-programs">
                   Sin programas
@@ -291,7 +302,7 @@
             </td>
 
             <!-- Asesoría -->
-            <td class="td-consulting">
+            <td class="td-consulting" data-label="Asesoría">
               <button
                 v-if="biz.hasConsulting"
                 @click="openConsulting(biz)"
@@ -317,10 +328,10 @@
             </td>
 
             <!-- Fecha -->
-            <td class="td-date">{{ formatDate(biz.createdAt) }}</td>
+            <td class="td-date" data-label="Registro">{{ formatDate(biz.createdAt) }}</td>
 
             <!-- Acciones -->
-            <td class="td-actions">
+            <td class="td-actions" data-label="Acciones">
               <div class="action-buttons">
                 <button
                   @click="openSubscriptionModal(biz)"
@@ -860,6 +871,12 @@ const BUSINESS_TYPE_MAP = {
   APPOINTMENT_SERVICES: { label: 'Serv. con cita',  color: '#4338ca' },
   MACHINE_SERVICES:     { label: 'Maquinaria',      color: '#0d9488' },
   MIXED:                { label: 'Mixto',           color: '#374151' },
+};
+
+// ─── Mobile Responsiveness State ──────────────────────────────────────────────
+const expandedBusinesses = ref({});
+const toggleExpand = (businessId) => {
+  expandedBusinesses.value[businessId] = !expandedBusinesses.value[businessId];
 };
 
 // ─── Search & Filters ────────────────────────────────────────────────────────
@@ -1956,6 +1973,208 @@ onMounted(fetchData);
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ── Mobile Responsive Overrides ──────────────── */
+@media (max-width: 768px) {
+  /* Hide the headers */
+  .data-table thead {
+    display: none;
+  }
+  
+  /* Make table layout block-based */
+  .table-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    overflow: visible;
+  }
+  
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+  
+  /* Style each row as an individual card */
+  .data-row {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  
+  .data-row:hover {
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  }
+  
+  /* The business name header of each card */
+  .data-row td.td-name {
+    padding: 1rem 1.25rem;
+    background: #fafafa;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    display: block;
+    transition: background 0.2s;
+  }
+  
+  .data-row td.td-name:hover {
+    background: #f5f3ff;
+  }
+  
+  .business-info {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  
+  .business-details-cell {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  /* Expand button styled as a stylish round button */
+  .expand-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: none;
+    background: #fff;
+    color: #4f46e5;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
+  }
+  
+  .expand-btn:hover {
+    background: #4f46e5;
+    color: #fff;
+  }
+  
+  .chevron-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    transition: transform 0.2s ease;
+  }
+  
+  .expand-btn.is-active .chevron-icon {
+    transform: rotate(180deg);
+  }
+  
+  /* Collapsible content (other columns) */
+  .data-row td:not(.td-name) {
+    display: none; /* Hidden by default */
+  }
+  
+  /* Visible only when expanded */
+  .data-row.is-expanded td:not(.td-name) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid #f3f4f6;
+    text-align: right;
+  }
+  
+  /* Action buttons row specific styling to align properly */
+  .data-row.is-expanded td.td-actions {
+    border-bottom: none;
+    justify-content: space-between;
+  }
+  
+  /* Labels prepended before cell values */
+  .data-row td:not(.td-name)::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    text-align: left;
+    margin-right: 1.5rem;
+  }
+  
+  /* Specific styling adjustments for badges inside flex layout */
+  .plan-badge-btn,
+  .classification-badge,
+  .consulting-badge {
+    margin: 0;
+  }
+  
+  .sub-expiry {
+    margin-top: 0.2rem;
+    text-align: right;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-users-page {
+    padding: 1rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  
+  .header-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .stats-chips {
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
+  
+  .btn-refresh {
+    justify-content: center;
+    width: 100%;
+    padding: 0.65rem 1rem;
+  }
+  
+  .search-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .search-box {
+    flex: 1;
+    width: 100%;
+  }
+  
+  .filter-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.4rem;
+    gap: 0.35rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+  }
+  
+  .filter-tabs::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari/Opera */
+  }
+  
+  .filter-tab {
+    flex-shrink: 0;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
   }
 }
 </style>
