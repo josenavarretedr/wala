@@ -129,6 +129,11 @@
         :businessId="businessId"
         @close="showCriticalAreasWizard = false; loadConsultingData()"
       />
+      <ActionPlanCreate
+        v-else-if="showActionPlanWizard"
+        :businessId="businessId"
+        @close="showActionPlanWizard = false; loadConsultingData()"
+      />
       <template v-else>
         <!-- Barra de Navegación por Pestañas (ItemsConsulting) -->
         <div class="max-w-7xl w-full mx-auto mt-4 px-4 sm:px-6 lg:px-8">
@@ -488,20 +493,32 @@
                     </h2>
                   </div>
 
-                  <!-- Botón de guardar si es admin -->
-                  <button
-                    v-if="isAdminMode"
-                    @click="saveConsultingData"
-                    :disabled="savingData"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <SoilAlt class="w-3.5 h-3.5" />
-                    {{ savingData ? "Guardando..." : "Guardar Cambios" }}
-                  </button>
+                  <!-- Botones de administración -->
+                  <div class="flex gap-2">
+                    <button
+                      v-if="isAdminMode"
+                      @click="showActionPlanWizard = true"
+                      class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-750 transition-all cursor-pointer"
+                    >
+                      <SoilAlt class="w-3.5 h-3.5" />
+                      Crear Plan de Acción
+                    </button>
+                    
+                    <button
+                      v-if="isAdminMode"
+                      @click="saveConsultingData"
+                      :disabled="savingData"
+                      class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <SoilAlt class="w-3.5 h-3.5" />
+                      {{ savingData ? "Guardando..." : "Guardar Estrategia" }}
+                    </button>
+                  </div>
                 </div>
 
+                <!-- Estrategia de Crecimiento -->
                 <div
-                  class="bg-indigo-50/20 rounded-2xl border border-indigo-100/50 p-6 sm:p-8"
+                  class="bg-indigo-50/20 rounded-2xl border border-indigo-100/50 p-6"
                 >
                   <div class="flex items-start gap-4">
                     <div
@@ -520,25 +537,34 @@
                       <div v-if="isAdminMode" class="mt-2">
                         <textarea
                           v-model="planAccionText"
-                          rows="4"
+                          rows="3"
                           class="w-full rounded-2xl border-indigo-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 text-sm p-4 font-semibold text-indigo-700 bg-white"
                           placeholder="Escribe la estrategia de crecimiento..."
                         ></textarea>
                       </div>
                       <p
                         v-else
-                        class="text-lg font-semibold text-indigo-700 leading-relaxed"
+                        class="text-base font-semibold text-indigo-700 leading-relaxed"
                       >
                         {{ planAccionText }}
                       </p>
 
-                      <p class="text-sm text-indigo-600/80">
+                      <p class="text-xs text-indigo-600/80">
                         Tu ruta personalizada con metas concretas, compromisos y
                         plazos establecidos junto a tu asesor técnico para
                         transformar la gestión de tu negocio.
                       </p>
                     </div>
                   </div>
+                </div>
+
+                <!-- Lista de acciones del plan -->
+                <div class="mt-6 pt-6 border-t border-gray-150">
+                  <ActionPlanView
+                    :businessId="businessId"
+                    :isAdminMode="isAdminMode"
+                    @create-plan="showActionPlanWizard = true"
+                  />
                 </div>
               </div>
             </Transition>
@@ -560,6 +586,8 @@ import PerformanceMatrix from "@/components/consulting/PerformanceMatrix.vue";
 import ResumenPerformanceMatriz from "@/components/consulting/ResumenPerformanceMatriz.vue";
 import CriticalAreasSelect from "@/components/consulting/CriticalAreasSelect.vue";
 import CriticalAreasSelected from "@/components/consulting/CriticalAreasSelected.vue";
+import ActionPlanCreate from "@/components/consulting/ActionPlanCreate.vue";
+import ActionPlanView from "@/components/consulting/ActionPlanView.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { usePerformanceStore, AREAS_CONFIG } from "@/stores/performanceStore";
@@ -574,6 +602,7 @@ const toast = useToast();
 
 const showWizard = ref(false);
 const showCriticalAreasWizard = ref(false);
+const showActionPlanWizard = ref(false);
 const dossierCriticalAreas = ref([]);
 
 const activeTab = computed(() => route.query.tab || "resumen");
