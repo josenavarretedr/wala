@@ -12,9 +12,9 @@
         >
           {{ getMomentLabel(momentId) }}
         </span>
-        <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">
+        <!-- <h3 class="text-xl font-extrabold text-gray-900 tracking-tight">
           Resumen de Desempeño
-        </h3>
+        </h3> -->
       </div>
 
       <!-- Average score badge -->
@@ -212,9 +212,11 @@
           <div class="space-y-1">
             <span
               class="text-[10px] font-black uppercase tracking-widest text-slate-400 font-mono"
-              >Área {{ String(hoveredArea.area.id).padStart(2, '0') }}</span
+              >Área {{ String(hoveredArea.area.id).padStart(2, "0") }}</span
             >
-            <h5 class="text-sm font-black truncate text-slate-800 leading-tight">
+            <h5
+              class="text-sm font-black truncate text-slate-800 leading-tight"
+            >
               {{ hoveredArea.area.name }}
             </h5>
           </div>
@@ -222,33 +224,50 @@
           <div class="h-px bg-slate-100"></div>
 
           <!-- Maturity Level Pill & Score Display -->
-          <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-3">
+          <div
+            class="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-3"
+          >
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-slate-400">Nivel de Madurez:</span>
-              
+              <span class="text-[11px] font-bold text-slate-400"
+                >Nivel de Madurez:</span
+              >
+
               <div
                 :class="[
                   'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-xl border text-[10px] font-black uppercase tracking-wider',
-                  getMaturityLevelDetails(hoveredArea.score).badgeColorClass
+                  getMaturityLevelDetails(hoveredArea.score).badgeColorClass,
                 ]"
               >
-                <component :is="getMaturityLevelDetails(hoveredArea.score).icon" class="w-3.5 h-3.5 stroke-[2.5]" />
+                <component
+                  :is="getMaturityLevelDetails(hoveredArea.score).icon"
+                  class="w-3.5 h-3.5 stroke-[2.5]"
+                />
                 {{ getMaturityLevelDetails(hoveredArea.score).level }}
               </div>
             </div>
 
             <div class="flex items-center justify-between">
-              <span class="text-[11px] font-bold text-slate-400">Promedio de Área:</span>
+              <span class="text-[11px] font-bold text-slate-400"
+                >Promedio de Área:</span
+              >
               <div class="flex items-baseline gap-0.5">
                 <span class="text-base font-black font-mono text-slate-800">
-                  {{ hoveredArea.score !== null ? hoveredArea.score.toFixed(1) : '---' }}
+                  {{
+                    hoveredArea.score !== null
+                      ? hoveredArea.score.toFixed(1)
+                      : "---"
+                  }}
                 </span>
-                <span class="text-[10px] font-bold text-slate-400 font-mono">/ 3.0</span>
+                <span class="text-[10px] font-bold text-slate-400 font-mono"
+                  >/ 3.0</span
+                >
               </div>
             </div>
           </div>
-          
-          <p class="text-[10.5px] font-medium text-slate-500 leading-relaxed italic">
+
+          <p
+            class="text-[10.5px] font-medium text-slate-500 leading-relaxed italic"
+          >
             {{ getMaturityLevelDetails(hoveredArea.score).description }}
           </p>
         </div>
@@ -319,7 +338,14 @@
 
 <script setup>
 import { ref, computed } from "vue";
-import { GraphUp, Reports, Leaf, Rocket, Group, BrightCrown } from "@iconoir/vue";
+import {
+  GraphUp,
+  Reports,
+  Leaf,
+  Rocket,
+  Group,
+  BrightCrown,
+} from "@iconoir/vue";
 import { AREAS_CONFIG } from "@/stores/performanceStore";
 
 const props = defineProps({
@@ -432,7 +458,7 @@ const getMaturityLevelDetails = (score) => {
       level: "Sin evaluar",
       icon: Leaf,
       badgeColorClass: "bg-slate-50 border-slate-100 text-slate-400",
-      description: "Esta área aún no cuenta con evaluaciones registradas."
+      description: "Esta área aún no cuenta con evaluaciones registradas.",
     };
   }
   if (score <= 0.4) {
@@ -440,28 +466,32 @@ const getMaturityLevelDetails = (score) => {
       level: "Aprendiz",
       icon: Leaf,
       badgeColorClass: "bg-rose-50 border-rose-100 text-rose-600",
-      description: "Fase inicial: Prácticas comerciales e individuales altamente informales y reactivas."
+      description:
+        "Fase inicial: Prácticas comerciales e individuales altamente informales y reactivas.",
     };
   } else if (score <= 1.4) {
     return {
       level: "Emprendedor",
       icon: Rocket,
       badgeColorClass: "bg-amber-50 border-amber-100 text-amber-700",
-      description: "Fase de tracción: Estructuras comerciales básicas en desarrollo bajo esfuerzo individual."
+      description:
+        "Fase de tracción: Estructuras comerciales básicas en desarrollo bajo esfuerzo individual.",
     };
   } else if (score <= 2.4) {
     return {
       level: "Gerente",
       icon: Group,
       badgeColorClass: "bg-emerald-50 border-emerald-100 text-emerald-700",
-      description: "Fase de control: Delegación funcional, registros estables y control operativo regular."
+      description:
+        "Fase de control: Delegación funcional, registros estables y control operativo regular.",
     };
   } else {
     return {
       level: "Empresario",
       icon: BrightCrown,
       badgeColorClass: "bg-indigo-50 border-indigo-100 text-indigo-700",
-      description: "Fase estratégica: Toma de decisiones basada en datos integrados y visión de escalabilidad."
+      description:
+        "Fase estratégica: Toma de decisiones basada en datos integrados y visión de escalabilidad.",
     };
   }
 };

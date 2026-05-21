@@ -689,6 +689,10 @@ export const usePerformanceStore = defineStore("performance", () => {
     try {
       const docRef = doc(db, "businesses", businessId, "consulting", "dossier");
       
+      if (evaluations.value[activeMoment.value]) {
+        evaluations.value[activeMoment.value].savedAt = new Date().toISOString();
+      }
+
       const payload = {
         evaluations: evaluations.value,
         updatedAt: new Date(),

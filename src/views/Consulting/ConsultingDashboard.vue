@@ -124,6 +124,11 @@
         :businessId="businessId"
         @close="showWizard = false"
       />
+      <CriticalAreasSelect
+        v-else-if="showCriticalAreasWizard"
+        :businessId="businessId"
+        @close="showCriticalAreasWizard = false; loadConsultingData()"
+      />
       <template v-else>
         <!-- Barra de Navegación por Pestañas (ItemsConsulting) -->
         <div class="max-w-7xl w-full mx-auto mt-4 px-4 sm:px-6 lg:px-8">
@@ -401,57 +406,67 @@
                     </h2>
                   </div>
 
-                  <!-- Botón de guardar si es admin -->
+                  <!-- Botón "Definir Áreas Críticas" si es admin y hay evaluaciones -->
                   <button
-                    v-if="isAdminMode"
-                    @click="saveConsultingData"
-                    :disabled="savingData"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer disabled:opacity-50"
+                    v-if="isAdminMode && registeredMoments.length > 0"
+                    @click="showCriticalAreasWizard = true"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer"
                   >
-                    <SoilAlt class="w-3.5 h-3.5" />
-                    {{ savingData ? "Guardando..." : "Guardar Cambios" }}
+                    <WarningTriangle class="w-3.5 h-3.5" />
+                    Definir Áreas Críticas
                   </button>
                 </div>
 
+                <!-- 1. BLOQUEO: Si no hay ninguna evaluación completa registrada -->
                 <div
-                  class="bg-amber-50/20 rounded-2xl border border-amber-100/50 p-6 sm:p-8"
+                  v-if="registeredMoments.length === 0"
+                  class="bg-amber-50/40 border border-amber-250/70 rounded-[24px] p-6 sm:p-8 text-center space-y-4 max-w-md mx-auto"
                 >
-                  <div class="flex items-start gap-4">
-                    <div
-                      class="p-3 bg-amber-50 text-amber-600 rounded-xl flex-shrink-0"
-                    >
-                      <WarningTriangle class="w-7 h-7" />
-                    </div>
-                    <div class="space-y-3 w-full">
-                      <h3
-                        class="text-base font-bold text-amber-950 uppercase tracking-wide"
-                      >
-                        Oportunidades de Mejora
-                      </h3>
-
-                      <!-- Textarea para admin, texto normal para cliente -->
-                      <div v-if="isAdminMode" class="mt-2">
-                        <textarea
-                          v-model="areasCriticasText"
-                          rows="4"
-                          class="w-full rounded-2xl border-amber-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 text-sm p-4 font-semibold text-amber-700 bg-white"
-                          placeholder="Escribe las oportunidades de mejora..."
-                        ></textarea>
-                      </div>
-                      <p
-                        v-else
-                        class="text-lg font-semibold text-amber-700 leading-relaxed"
-                      >
-                        {{ areasCriticasText }}
-                      </p>
-
-                      <p class="text-sm text-amber-600/80">
-                        A través de nuestro diagnóstico, aislamos los puntos
-                        clave donde tu negocio experimenta fugas de capital o
-                        ineficiencias de procesos para enfocarnos en ellos.
-                      </p>
-                    </div>
+                  <div class="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-inner">
+                    <WarningTriangle class="w-6 h-6 stroke-[2.2]" />
                   </div>
+                  <div class="space-y-1.5">
+                    <h4 class="text-sm font-black text-amber-950 uppercase tracking-wider">Requiere Evaluación Completa</h4>
+                    <p class="text-xs text-amber-700 font-semibold leading-relaxed">
+                      Debes completar el diagnóstico de madurez (los 21 indicadores) en la pestaña "Niveles de Madurez" antes de poder definir las áreas críticas prioritarias de este negocio.
+                    </p>
+                  </div>
+                  <button
+                    v-if="isAdminMode"
+                    @click="showWizard = true"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-amber-600 hover:bg-amber-700 px-5 py-3 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+                  >
+                    <GraphUp class="w-4 h-4" />
+                    Ir a Niveles de Madurez
+                  </button>
+                </div>
+
+                <!-- 2. VISTA: Si hay evaluaciones y las áreas críticas ya están definidas -->
+                <div v-else-if="dossierCriticalAreas && dossierCriticalAreas.length === 3">
+                  <CriticalAreasSelected :criticalAreas="dossierCriticalAreas" />
+                </div>
+
+                <!-- 3. EMPTY STATE: Si hay evaluaciones pero aún no se han definido las áreas críticas -->
+                <div
+                  v-else
+                  class="bg-gray-50/50 border border-dashed border-gray-200 rounded-[32px] p-8 text-center space-y-4"
+                >
+                  <div class="mx-auto w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center shadow-inner">
+                    <WarningTriangle class="w-6 h-6" />
+                  </div>
+                  <div class="space-y-1">
+                    <h4 class="text-sm font-black text-gray-700 uppercase tracking-wider">Sin Áreas Críticas Definidas</h4>
+                    <p class="text-xs text-gray-400 font-semibold leading-relaxed max-w-sm mx-auto">
+                      Aún no se han seleccionado ni documentado las 3 áreas críticas priorizadas para el negocio.
+                    </p>
+                  </div>
+                  <button
+                    v-if="isAdminMode"
+                    @click="showCriticalAreasWizard = true"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 text-xs font-bold shadow-md cursor-pointer transition-all duration-200"
+                  >
+                    Definir Áreas Críticas
+                  </button>
                 </div>
               </div>
 
@@ -543,9 +558,11 @@ import { db } from "@/firebaseInit";
 import ItemsConsulting from "@/components/consulting/ItemsConsulting.vue";
 import PerformanceMatrix from "@/components/consulting/PerformanceMatrix.vue";
 import ResumenPerformanceMatriz from "@/components/consulting/ResumenPerformanceMatriz.vue";
+import CriticalAreasSelect from "@/components/consulting/CriticalAreasSelect.vue";
+import CriticalAreasSelected from "@/components/consulting/CriticalAreasSelected.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
-import { usePerformanceStore } from "@/stores/performanceStore";
+import { usePerformanceStore, AREAS_CONFIG } from "@/stores/performanceStore";
 import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
@@ -556,6 +573,8 @@ const performanceStore = usePerformanceStore();
 const toast = useToast();
 
 const showWizard = ref(false);
+const showCriticalAreasWizard = ref(false);
+const dossierCriticalAreas = ref([]);
 
 const activeTab = computed(() => route.query.tab || "resumen");
 
@@ -568,14 +587,20 @@ const isAdminMode = computed(() => {
   );
 });
 
-// Cycles registered dynamically with scores
+// Cycles fully completed with all 21 indicators
 const registeredMoments = computed(() => {
   const moments = ["inicial", "ciclo1", "ciclo2", "final"];
+  
+  // Extract all 21 indicator keys from AREAS_CONFIG
+  const allIndicatorKeys = AREAS_CONFIG.flatMap((area) =>
+    area.indicators.map((ind) => ind.key)
+  );
+
   return moments.filter((m) => {
     const scores = performanceStore.evaluations[m]?.scores;
     if (!scores) return false;
-    return Object.keys(scores).some(
-      (key) => scores[key] !== undefined && scores[key] !== null,
+    return allIndicatorKeys.every(
+      (key) => scores[key] !== undefined && scores[key] !== null && scores[key] !== ""
     );
   });
 });
@@ -625,6 +650,9 @@ const loadConsultingData = async () => {
       areasCriticasText.value =
         data.areasCriticasText || "Aquí tus tres áreas identificadas.";
       planAccionText.value = data.planAccionText || "Tu plan de acción Wala";
+      dossierCriticalAreas.value = data.criticalAreas || [];
+    } else {
+      dossierCriticalAreas.value = [];
     }
 
     // 2. Cargar datos del negocio principal (nombre y gerente)
