@@ -31,6 +31,7 @@
             >
             <span class="chip chip-pro">{{ proCount }} Pro/Max</span>
             <span class="chip chip-free">{{ freeCount }} Free</span>
+            <span class="chip chip-consulting">{{ consultingCount }} Con asesoría</span>
           </div>
           <button @click="fetchData" :disabled="loading" class="btn-refresh">
             <svg
@@ -150,6 +151,7 @@
             <th class="th-industry">Rubro</th>
             <th class="th-btype">Modelo</th>
             <th class="th-prog">Programas</th>
+            <th class="th-consulting">Asesoría</th>
             <th class="th-date">Registro</th>
             <th class="th-actions"></th>
           </tr>
@@ -288,6 +290,32 @@
               </div>
             </td>
 
+            <!-- Asesoría -->
+            <td class="td-consulting">
+              <button
+                v-if="biz.hasConsulting"
+                @click="openConsulting(biz)"
+                class="consulting-badge has-consulting"
+                title="Ver asesoría"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Activa
+              </button>
+              <button
+                v-else
+                @click="openConsulting(biz)"
+                class="consulting-badge no-consulting"
+                title="Agregar asesoría"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Agregar
+              </button>
+            </td>
+
             <!-- Fecha -->
             <td class="td-date">{{ formatDate(biz.createdAt) }}</td>
 
@@ -341,6 +369,15 @@
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </button>
+                <button
+                  @click="openConsulting(biz)"
+                  class="action-btn action-btn-consulting"
+                  :title="biz.hasConsulting ? 'Ver asesoría' : 'Agregar asesoría'"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                 </button>
               </div>
@@ -791,7 +828,10 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from "vue";
+import { useRouter } from "vue-router";
 import { useAdmin } from "@/composables/useAdmin";
+
+const router = useRouter();
 
 const {
   loading,
@@ -832,6 +872,8 @@ const filters = [
   { key: "pro", label: "Pro" },
   { key: "max", label: "Max" },
   { key: "programs", label: "Con programa" },
+  { key: "consulting", label: "Con asesoría" },
+  { key: "no-consulting", label: "Sin asesoría" },
 ];
 
 const filteredBusinesses = computed(() => {
@@ -853,6 +895,10 @@ const filteredBusinesses = computed(() => {
     );
   else if (activeFilter.value === "programs")
     list = list.filter((b) => b.programs.length > 0);
+  else if (activeFilter.value === "consulting")
+    list = list.filter((b) => b.hasConsulting === true);
+  else if (activeFilter.value === "no-consulting")
+    list = list.filter((b) => !b.hasConsulting);
   return list;
 });
 
@@ -867,6 +913,9 @@ const freeCount = computed(
     businessList.value.filter(
       (b) => b.subscription?.plan === "free" || !b.subscription?.plan,
     ).length,
+);
+const consultingCount = computed(
+  () => businessList.value.filter((b) => b.hasConsulting === true).length,
 );
 
 // ─── Plans config ────────────────────────────────────────────────────────────
@@ -986,6 +1035,11 @@ async function submitClassification() {
   } finally {
     classModal.saving = false;
   }
+}
+
+// ─── Consulting navigation ────────────────────────────────────────────────────
+function openConsulting(biz) {
+  router.push(`/admin/users/${biz.businessId}/consulting`);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1117,6 +1171,10 @@ onMounted(fetchData);
 .chip-free {
   background: #f3f4f6;
   color: #374151;
+}
+.chip-consulting {
+  background: #ecfdf5;
+  color: #065f46;
 }
 
 .btn-refresh {
@@ -1310,13 +1368,16 @@ onMounted(fetchData);
   width: 12%;
 }
 .th-prog {
-  width: 15%;
+  width: 13%;
+}
+.th-consulting {
+  width: 9%;
 }
 .th-date {
-  width: 12%;
+  width: 10%;
 }
 .th-actions {
-  width: 14%;
+  width: 12%;
 }
 
 .data-row {
@@ -1492,6 +1553,44 @@ onMounted(fetchData);
 .action-btn:hover {
   background: #e0e7ff;
   color: #4f46e5;
+}
+.action-btn-consulting:hover {
+  background: #d1fae5 !important;
+  color: #059669 !important;
+}
+
+/* ── Consulting badge (table cell) ───────────── */
+.td-consulting {
+  white-space: nowrap;
+}
+.consulting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+.consulting-badge.has-consulting {
+  background: #d1fae5;
+  color: #065f46;
+}
+.consulting-badge.has-consulting:hover {
+  background: #a7f3d0;
+}
+.consulting-badge.no-consulting {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1.5px dashed #d1d5db;
+}
+.consulting-badge.no-consulting:hover {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #bae6fd;
 }
 
 /* ── Empty state ─────────────────────────────── */

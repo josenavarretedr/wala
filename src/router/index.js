@@ -699,6 +699,12 @@ const routes = [
         name: 'AdminUsers',
         component: () => import('@/views/Admin/UsersDirectory.vue'),
         meta: { requiresAdminRole: true, title: 'Directorio de Usuarios' }
+      },
+      {
+        path: 'users/:businessId/consulting',
+        name: 'AdminBusinessConsulting',
+        component: () => import('@/views/Consulting/ConsultingDashboard.vue'),
+        meta: { requiresAdminRole: true, title: 'Asesoría de Negocio', adminMode: true }
       }
     ]
   },
@@ -826,6 +832,8 @@ router.beforeEach(async (to, from, next) => {
   // Si está accediendo a una ruta de negocio específico
   if (to.params.businessId && authStore.user) {
     const businessId = to.params.businessId
+    const ADMIN_EMAILS = ["josenavarretedr@gmail.com", "admin@wala.lat"]
+    const isAdminUser = ADMIN_EMAILS.includes(authStore.user.email)
 
     // Cargar negocios del usuario si no están cargados
     if (!userStore.userBusinesses || userStore.userBusinesses.length === 0) {
@@ -835,7 +843,7 @@ router.beforeEach(async (to, from, next) => {
     // Verificar que el usuario tiene acceso a este negocio
     const userBusiness = userStore.userBusinesses.find(b => b.businessId === businessId)
 
-    if (!userBusiness) {
+    if (!userBusiness && !isAdminUser) {
       console.log('❌ Usuario no tiene acceso al negocio:', businessId)
       return next('/select-business')
     }
@@ -863,7 +871,20 @@ router.beforeEach(async (to, from, next) => {
     // Establecer el negocio activo en UserStore si no lo está
     if (needsToSetBusiness) {
       console.log('🔄 Estableciendo negocio activo en UserStore:', businessId)
-      await userStore.setCurrentBusiness(businessId)
+      if (isAdminUser) {
+        // En modo admin, simulamos el currentBusiness con permisos de gerente
+        userStore.currentBusiness = {
+          businessId: businessId,
+          businessName: businessStore.business?.nombre || 'Negocio Admin',
+          rol: 'gerente',
+          permissions: {
+            admin: true
+          },
+          activo: true
+        }
+      } else {
+        await userStore.setCurrentBusiness(businessId)
+      }
       console.log('✅ Negocio activo establecido')
     }
 
@@ -871,7 +892,14 @@ router.beforeEach(async (to, from, next) => {
     if (needsToLoadBusiness) {
       console.log('🔄 Cargando datos completos del negocio en BusinessStore:', businessId)
 
-      await businessStore.loadBusiness(businessId, userBusiness)
+      const fallbackBusiness = isAdminUser ? {
+        businessId: businessId,
+        businessName: 'Negocio Admin',
+        rol: 'gerente',
+        permissions: { admin: true }
+      } : null
+
+      await businessStore.loadBusiness(businessId, userBusiness || fallbackBusiness)
       console.log('✅ Datos del negocio cargados')
 
       // Ocultar loader con animación (garantiza tiempo mínimo)

@@ -153,6 +153,7 @@ docs/
 
 | Archivo | Descripción | Estado |
 |---------|-------------|--------|
+| [BUSINESS_CONSULTING_MODULE.md](features/BUSINESS_CONSULTING_MODULE.md) | Módulo de Asesoría de Negocios | ✅ Activo |
 | [SISTEMA_CLIENTES.md](features/SISTEMA_CLIENTES.md) | Gestión de clientes | ✅ Activo |
 | [SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md](features/SISTEMA_TRAZABILIDAD_IMPLEMENTADO.md) | Sistema de trazabilidad | ✅ Activo |
 | [STREAK_SYSTEM_IMPLEMENTATION.md](features/STREAK_SYSTEM_IMPLEMENTATION.md) | Sistema de racha (streak) | ✅ Activo |
