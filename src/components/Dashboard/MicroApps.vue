@@ -513,22 +513,23 @@ const allMicroApps = ref([
     isComponent: true,
     color: "purple",
   },
-  {
-    id: 8,
-    name: computed(() => userStore.currentBusinessProgramName),
-    route: computed(() => {
-      const programs = userStore.currentBusiness?.programs || [];
-      if (programs.length > 0) {
-        const latestProgram = programs[programs.length - 1];
-        return `/programs/${latestProgram.id}`;
-      }
-      return "/programs";
-    }),
-    available: computed(() => true),
-    icon: Community,
-    isComponent: true,
-    color: "teal",
-  },
+  //
+  // {
+  //   id: 8,
+  //   name: computed(() => userStore.currentBusinessProgramName),
+  //   route: computed(() => {
+  //     const programs = userStore.currentBusiness?.programs || [];
+  //     if (programs.length > 0) {
+  //       const latestProgram = programs[programs.length - 1];
+  //       return `/programs/${latestProgram.id}`;
+  //     }
+  //     return "/programs";
+  //   }),
+  //   available: computed(() => true),
+  //   icon: Community,
+  //   isComponent: true,
+  //   color: "teal",
+  // },
   {
     id: 9,
     name: "Pro",

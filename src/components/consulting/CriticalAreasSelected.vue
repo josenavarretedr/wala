@@ -18,58 +18,57 @@
       <div
         v-for="(area, index) in criticalAreas"
         :key="area.areaKey"
-        class="bg-white border border-gray-150/70 rounded-[30px] p-6 shadow-xl shadow-gray-100/30 flex flex-col justify-between hover:shadow-2xl hover:shadow-gray-200/40 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group"
+        class="bg-white border border-gray-150/70 rounded-2xl sm:rounded-[30px] p-4 sm:p-6 shadow-xl shadow-gray-100/30 flex flex-row sm:flex-col items-start sm:items-stretch justify-between hover:shadow-2xl hover:shadow-gray-200/40 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group gap-4"
       >
+        <!-- Icono con fondo decorativo (Left on mobile, Top on desktop) -->
+        <div class="p-2.5 sm:p-3 bg-[#E35336]/10 text-[#E35336] rounded-xl sm:rounded-2xl border border-[#E35336]/20 group-hover:bg-[#E35336] group-hover:text-white transition-all duration-300 shrink-0 sm:self-start">
+          <component :is="getAreaIcon(getIconName(area.areaKey))" class="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
+        </div>
 
+        <!-- Contenido principal -->
+        <div class="flex-1 min-w-0 flex flex-col justify-between">
+          <div>
+            <!-- Título del área -->
+            <h4 class="text-sm sm:text-base font-extrabold text-gray-800 tracking-tight leading-snug group-hover:text-[#E35336] transition-colors duration-300 truncate sm:whitespace-normal">
+              {{ area.resumenArea }}
+            </h4>
 
-        <div>
-          <!-- Header de tarjeta -->
-          <div class="flex items-start justify-between gap-3 mb-5">
-            <!-- Icono con fondo decorativo -->
-            <div class="p-3 bg-[#E35336]/10 text-[#E35336] rounded-2xl border border-[#E35336]/20 group-hover:bg-[#E35336] group-hover:text-white transition-all duration-300 shrink-0">
-              <component :is="getAreaIcon(getIconName(area.areaKey))" class="w-6 h-6 stroke-[2.2]" />
+            <!-- Badges de Puntaje y Madurez -->
+            <div class="flex items-center gap-1.5 sm:gap-2 mt-1.5 sm:mt-3 mb-2.5 sm:mb-5 flex-wrap">
+              <span class="text-[9px] sm:text-[10px] font-bold font-mono bg-gray-50 border border-gray-250/70 text-gray-550 px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md">
+                Score: {{ area.score !== undefined ? area.score.toFixed(1) : '0.0' }} <span class="hidden sm:inline">/ 3.0</span>
+              </span>
+
+              <span
+                :class="[
+                  'inline-flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2.5 py-0.5 rounded sm:rounded-md text-[8px] sm:text-[9px] font-black uppercase tracking-wider border',
+                  getMaturityDetails(area.score).badgeClass
+                ]"
+              >
+                <component :is="getMaturityDetails(area.score).icon" class="w-2.5 h-2.5 sm:w-3 sm:h-3 stroke-[2.5]" />
+                {{ getMaturityDetails(area.score).level }}
+              </span>
             </div>
 
-            <!-- Indicador numérico -->
-            <span class="text-3xl font-black font-mono text-gray-100 select-none group-hover:text-gray-150 transition-colors duration-300">
-              0{{ index + 1 }}
-            </span>
-          </div>
+            <!-- Divisor decorativo (solo visible en desktop) -->
+            <div class="hidden sm:block h-px bg-gray-100 my-4"></div>
 
-          <!-- Información del Área -->
-          <h4 class="text-base font-extrabold text-gray-800 tracking-tight leading-snug group-hover:text-[#E35336] transition-colors duration-300">
-            {{ area.resumenArea }}
-          </h4>
-
-          <!-- Badge de Puntaje y Madurez -->
-          <div class="flex items-center gap-2 mt-3 mb-5 flex-wrap">
-            <span class="text-[10px] font-bold font-mono bg-gray-50 border border-gray-250/70 text-gray-550 px-2 py-0.5 rounded-md">
-              Score: {{ area.score !== undefined ? area.score.toFixed(1) : '0.0' }} / 3.0
-            </span>
-
-            <span
-              :class="[
-                'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border',
-                getMaturityDetails(area.score).badgeClass
-              ]"
-            >
-              <component :is="getMaturityDetails(area.score).icon" class="w-3 h-3 stroke-[2.5]" />
-              {{ getMaturityDetails(area.score).level }}
-            </span>
-          </div>
-
-          <div class="h-px bg-gray-100 my-4"></div>
-
-          <!-- Justificación del Asesor -->
-          <div class="space-y-2">
-            <span class="text-[9px] font-black uppercase tracking-wider text-gray-400 block">
-              Diagnóstico & Respaldo:
-            </span>
-            <p class="text-xs sm:text-[13px] text-gray-600 leading-relaxed font-medium italic relative pl-4 before:content-['“'] before:absolute before:left-0 before:top-0 before:text-2xl before:leading-none before:text-[#E35336] before:font-serif">
-              {{ area.justification }}
-            </p>
+            <!-- Justificación del Asesor -->
+            <div class="space-y-1 sm:space-y-2 mt-2 sm:mt-0">
+              <span class="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-gray-400 block">
+                Diagnóstico & Respaldo:
+              </span>
+              <p class="text-[11px] sm:text-[13px] text-gray-600 leading-relaxed font-medium italic relative pl-3 sm:pl-4 before:content-['“'] before:absolute before:left-0 before:top-0 before:text-lg sm:before:text-2xl before:leading-none before:text-[#E35336] before:font-serif">
+                {{ area.justification }}
+              </p>
+            </div>
           </div>
         </div>
+
+        <!-- Indicador numérico (Right on mobile, Top-Right absolute on desktop) -->
+        <span class="text-2xl sm:text-3xl font-black font-mono text-gray-100 select-none group-hover:text-gray-150 transition-colors duration-300 shrink-0 sm:absolute sm:right-6 sm:top-5">
+          0{{ index + 1 }}
+        </span>
       </div>
     </div>
 

@@ -10,7 +10,7 @@
           :class="[
             'group bg-white rounded-xl shadow-sm border flex flex-col items-center justify-center transition-all duration-200 cursor-pointer p-2.5 sm:p-3',
             isActive(item.id)
-              ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/10'
+              ? 'border-[#E35336] ring-2 ring-[#E35336]/20 bg-[#E35336]/10'
               : 'border-gray-100 hover:border-gray-300 hover:bg-gray-50',
           ]"
           @click="handleClick(item.id)"
@@ -19,13 +19,13 @@
             :is="item.icon"
             :class="[
               'mb-1.5 transition-all duration-200 w-6 h-6 sm:w-7 sm:h-7',
-              isActive(item.id) ? 'text-teal-600' : 'text-gray-400 group-hover:text-gray-600',
+              isActive(item.id) ? 'text-[#E35336]' : 'text-gray-400 group-hover:text-gray-600',
             ]"
           />
           <div
             :class="[
               'text-center px-0.5 text-xs font-semibold leading-tight line-clamp-2',
-              isActive(item.id) ? 'text-teal-700 font-bold' : 'text-gray-500 group-hover:text-gray-700',
+              isActive(item.id) ? 'text-[#c2412b] font-bold' : 'text-gray-500 group-hover:text-gray-700',
             ]"
           >
             {{ item.shortName }}
@@ -41,15 +41,15 @@
           :class="[
             'group bg-white rounded-2xl shadow-sm border flex flex-col items-center justify-center transition-all duration-200 cursor-pointer p-5 min-h-[130px]',
             isActive(item.id)
-              ? 'border-teal-500 ring-4 ring-teal-500/10 bg-teal-50/10 scale-[1.02]'
-              : 'border-gray-100 hover:border-teal-200 hover:bg-teal-50/5 hover:shadow-md hover:-translate-y-0.5',
+              ? 'border-[#E35336] ring-4 ring-[#E35336]/10 bg-[#E35336]/10 scale-[1.02]'
+              : 'border-gray-100 hover:border-[#E35336]/20 hover:bg-[#E35336]/5 hover:shadow-md hover:-translate-y-0.5',
           ]"
           @click="handleClick(item.id)"
         >
           <div
             :class="[
               'mb-3 p-3 rounded-xl transition-all duration-200',
-              isActive(item.id) ? 'bg-teal-50 text-teal-600' : 'bg-gray-50 text-gray-400 group-hover:bg-teal-50 group-hover:text-teal-500',
+              isActive(item.id) ? 'bg-[#E35336]/10 text-[#E35336]' : 'bg-gray-50 text-gray-400 group-hover:bg-[#E35336]/10 group-hover:text-[#E35336]',
             ]"
           >
             <component
@@ -60,7 +60,7 @@
           <div
             :class="[
               'text-center px-1 text-sm font-semibold tracking-wide uppercase',
-              isActive(item.id) ? 'text-teal-900 font-bold' : 'text-gray-500 group-hover:text-teal-800',
+              isActive(item.id) ? 'text-[#8b2413] font-bold' : 'text-gray-500 group-hover:text-[#c2412b]',
             ]"
           >
             {{ item.name }}

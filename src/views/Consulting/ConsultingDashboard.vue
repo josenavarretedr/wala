@@ -1,13 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gray-50/50 flex flex-col pb-24">
+  <div class="min-h-screen flex flex-col pb-24">
     <!-- Header principal -->
     <header
-      class="bg-white border-b border-gray-100 px-4 py-5 sm:px-6 lg:px-8 shadow-sm"
+      class="bg-white border-b border-gray-100 rounded-xl px-4 py-5 sm:px-6 lg:px-8 shadow-sm"
     >
       <div class="flex items-center justify-between max-w-7xl mx-auto">
         <div class="flex items-center gap-4">
           <div
-            class="p-3 bg-teal-50 text-teal-600 rounded-2xl shadow-inner transition-transform duration-300 hover:scale-105"
+            class="p-3 bg-[#E35336]/10 text-[#E35336] rounded-2xl shadow-inner transition-transform duration-300 hover:scale-105"
           >
             <SoilAlt class="w-7 h-7 sm:w-8 sm:h-8" />
           </div>
@@ -92,7 +92,7 @@
     >
       <div class="flex flex-col items-center gap-3">
         <svg
-          class="animate-spin h-10 w-10 text-teal-600"
+          class="animate-spin h-10 w-10 text-[#E35336]"
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
@@ -127,12 +127,18 @@
       <CriticalAreasSelect
         v-else-if="showCriticalAreasWizard"
         :businessId="businessId"
-        @close="showCriticalAreasWizard = false; loadConsultingData()"
+        @close="
+          showCriticalAreasWizard = false;
+          loadConsultingData();
+        "
       />
       <ActionPlanCreate
         v-else-if="showActionPlanWizard"
         :businessId="businessId"
-        @close="showActionPlanWizard = false; loadConsultingData()"
+        @close="
+          showActionPlanWizard = false;
+          loadConsultingData();
+        "
       />
       <template v-else>
         <!-- Barra de Navegación por Pestañas (ItemsConsulting) -->
@@ -150,69 +156,127 @@
               <div
                 v-if="activeTab === 'resumen'"
                 key="resumen"
-                class="space-y-6"
+                class="space-y-10"
               >
-                <div
-                  class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4"
-                >
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-gray-50 text-gray-700 rounded-xl">
-                      <Reports class="w-6 h-6" />
-                    </div>
-                    <h2 class="text-lg font-bold text-gray-800">
-                      Resumen de Asesoría
-                    </h2>
-                  </div>
-
-                  <!-- Botón de guardar si es admin -->
-                  <button
-                    v-if="isAdminMode"
-                    @click="saveConsultingData"
-                    :disabled="savingData"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer disabled:opacity-50"
+                <!-- 1. Nivel de Madurez Actual (ActualLevelCard) -->
+                <div class="space-y-4">
+                  <div
+                    class="flex items-center justify-between border-b border-gray-100 pb-3"
                   >
-                    <SoilAlt class="w-3.5 h-3.5" />
-                    {{ savingData ? "Guardando..." : "Guardar Cambios" }}
-                  </button>
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl"
+                      >
+                        <GraphUp class="w-5 h-5" />
+                      </div>
+                      <h3
+                        class="text-base font-extrabold text-gray-800 uppercase tracking-wider"
+                      >
+                        Nivel de Madurez Actual
+                      </h3>
+                    </div>
+                  </div>
+                  <ActualLevelCard
+                    :businessName="businessName || 'Tu Negocio'"
+                    :registeredMoments="registeredMoments"
+                    :evaluations="performanceStore.evaluations"
+                  />
                 </div>
 
-                <div
-                  class="flex flex-col items-stretch py-8 px-6 bg-gray-50/50 rounded-2xl border border-gray-200/50"
-                >
+                <!-- 2. Áreas Críticas Priorizadas (CriticalAreasSelected / Select Wizard button) -->
+                <div class="space-y-4">
                   <div
-                    class="mx-auto w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mb-4 shadow-inner"
+                    class="flex items-center justify-between border-b border-gray-100 pb-3"
                   >
-                    <Reports class="w-8 h-8" />
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl"
+                      >
+                        <WarningTriangle class="w-5 h-5" />
+                      </div>
+                      <h3
+                        class="text-base font-extrabold text-gray-800 uppercase tracking-wider"
+                      >
+                        Áreas Críticas Priorizadas
+                      </h3>
+                    </div>
+                    <button
+                      v-if="isAdminMode && registeredMoments.length > 0"
+                      @click="showCriticalAreasWizard = true"
+                      class="inline-flex items-center gap-1.5 rounded-xl bg-[#E35336] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#c2412b] transition-all cursor-pointer"
+                    >
+                      <WarningTriangle class="w-3.5 h-3.5" />
+                      Definir Áreas
+                    </button>
                   </div>
-                  <h3
-                    class="text-center text-xs font-bold text-gray-700 uppercase tracking-wider mb-2"
-                  >
-                    Estado del Expediente
-                  </h3>
 
-                  <!-- Si es admin, textarea, si no, texto normal -->
-                  <div v-if="isAdminMode" class="mt-2">
-                    <textarea
-                      v-model="resumenText"
-                      rows="4"
-                      class="w-full rounded-2xl border-gray-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 text-sm p-4 text-center font-semibold text-gray-700 bg-white"
-                      placeholder="Escribe el estado del expediente..."
-                    ></textarea>
+                  <div
+                    v-if="
+                      dossierCriticalAreas && dossierCriticalAreas.length === 3
+                    "
+                  >
+                    <CriticalAreasSelected
+                      :criticalAreas="dossierCriticalAreas"
+                    />
                   </div>
-                  <p
+
+                  <!-- Empty state when no critical areas are defined yet -->
+                  <div
                     v-else
-                    class="text-center text-lg font-semibold text-gray-500 max-w-md mx-auto leading-relaxed uppercase tracking-wider"
+                    class="bg-gray-50/50 border border-dashed border-gray-200 rounded-[32px] p-8 text-center space-y-4"
                   >
-                    {{ resumenText }}
-                  </p>
+                    <div
+                      class="mx-auto w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center shadow-inner"
+                    >
+                      <WarningTriangle class="w-6 h-6" />
+                    </div>
+                    <div class="space-y-1">
+                      <h4
+                        class="text-sm font-black text-gray-700 uppercase tracking-wider"
+                      >
+                        Sin Áreas Críticas Definidas
+                      </h4>
+                      <p
+                        class="text-xs text-gray-450 font-semibold leading-relaxed max-w-sm mx-auto"
+                      >
+                        Aún no se han seleccionado ni documentado las 3 áreas
+                        críticas priorizadas para el negocio.
+                      </p>
+                    </div>
+                    <button
+                      v-if="isAdminMode"
+                      @click="showCriticalAreasWizard = true"
+                      class="inline-flex items-center gap-2 rounded-2xl bg-[#E35336] hover:bg-[#c2412b] text-white px-5 py-3 text-xs font-bold shadow-md cursor-pointer transition-all duration-200"
+                    >
+                      Definir Áreas Críticas
+                    </button>
+                  </div>
+                </div>
 
-                  <p
-                    class="text-center text-xs text-gray-400 mt-4 max-w-xs mx-auto"
+                <!-- 3. Plan de Acción (Acciones pendientes solamente) -->
+                <div class="space-y-4">
+                  <div
+                    class="flex items-center justify-between border-b border-gray-100 pb-3"
                   >
-                    Cuando tu asesor o facilitador registre nuevos avances en tu
-                    expediente, podrás visualizarlos de forma estructurada en
-                    esta sección.
-                  </p>
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl"
+                      >
+                        <Calendar class="w-5 h-5" />
+                      </div>
+                      <h3
+                        class="text-base font-extrabold text-gray-800 uppercase tracking-wider"
+                      >
+                        Plan de Acción (Pendientes)
+                      </h3>
+                    </div>
+                  </div>
+                  <ActionPlanView
+                    :businessId="businessId"
+                    :isAdminMode="isAdminMode"
+                    :onlyPending="true"
+                    @create-plan="showActionPlanWizard = true"
+                  />
                 </div>
               </div>
 
@@ -227,7 +291,7 @@
                   class="flex items-center justify-between border-b border-gray-100 pb-4 mb-2"
                 >
                   <div class="flex items-center gap-3">
-                    <div class="p-2 bg-teal-50 text-teal-600 rounded-xl">
+                    <div class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl">
                       <GraphUp class="w-6 h-6" />
                     </div>
                     <h2 class="text-lg font-bold text-gray-800">
@@ -239,126 +303,24 @@
                   <button
                     v-if="isAdminMode"
                     @click="showWizard = true"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-[#E35336] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#c2412b] transition-all cursor-pointer"
                   >
                     <GraphUp class="w-3.5 h-3.5" />
                     Agregar o Guardar Desempeño
                   </button>
                 </div>
 
-                <!-- Guía de Niveles de Madurez (Mockup Legend) -->
-                <div
-                  class="bg-white border border-gray-150 rounded-[32px] p-6 shadow-sm space-y-4"
-                >
-                  <div
-                    class="flex items-center justify-between gap-4 border-b border-gray-100 pb-3"
-                  >
-                    <div class="flex items-center gap-2">
-                      <GraphUp class="w-5 h-5 text-gray-500" />
-                      <h4 class="text-sm font-extrabold text-gray-800">
-                        Guía de Niveles de Madurez
-                      </h4>
-                    </div>
-                    <span class="text-[11px] font-bold text-gray-400">
-                      Color de barra = nivel alcanzado
-                    </span>
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Aprendiz -->
-                    <div
-                      class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      <div
-                        class="p-2 rounded-xl bg-rose-50 text-rose-600 border border-rose-100/50 shrink-0"
-                      >
-                        <Leaf class="w-5 h-5" />
-                      </div>
-                      <div class="flex-1">
-                        <p class="text-xs font-black text-gray-800">
-                          Aprendiz
-                        </p>
-                        <p
-                          class="text-[10px] font-bold text-gray-400 font-mono mt-0.5"
-                        >
-                          0.0 – 0.4
-                        </p>
-                      </div>
-                      <div class="w-1.5 h-8 rounded-full bg-rose-500 shrink-0"></div>
-                    </div>
-
-                    <!-- Emprendedor -->
-                    <div
-                      class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      <div
-                        class="p-2 rounded-xl bg-amber-50 text-amber-600 border border-amber-100/50 shrink-0"
-                      >
-                        <Rocket class="w-5 h-5" />
-                      </div>
-                      <div class="flex-1">
-                        <p class="text-xs font-black text-gray-800">
-                          Emprendedor
-                        </p>
-                        <p
-                          class="text-[10px] font-bold text-gray-400 font-mono mt-0.5"
-                        >
-                          0.5 – 1.4
-                        </p>
-                      </div>
-                      <div class="w-1.5 h-8 rounded-full bg-amber-500 shrink-0"></div>
-                    </div>
-
-                    <!-- Gerente -->
-                    <div
-                      class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      <div
-                        class="p-2 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100/50 shrink-0"
-                      >
-                        <Group class="w-5 h-5" />
-                      </div>
-                      <div class="flex-1">
-                        <p class="text-xs font-black text-gray-800">
-                          Gerente
-                        </p>
-                        <p
-                          class="text-[10px] font-bold text-gray-400 font-mono mt-0.5"
-                        >
-                          1.5 – 2.4
-                        </p>
-                      </div>
-                      <div class="w-1.5 h-8 rounded-full bg-emerald-500 shrink-0"></div>
-                    </div>
-
-                    <!-- Empresario -->
-                    <div
-                      class="flex items-center gap-3.5 p-3.5 rounded-2xl bg-white border border-gray-150 shadow-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      <div
-                        class="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100/50 shrink-0"
-                      >
-                        <BrightCrown class="w-5 h-5" />
-                      </div>
-                      <div class="flex-1">
-                        <p class="text-xs font-black text-gray-800">
-                          Empresario
-                        </p>
-                        <p
-                          class="text-[10px] font-bold text-gray-400 font-mono mt-0.5"
-                        >
-                          2.5 – 3.0
-                        </p>
-                      </div>
-                      <div class="w-1.5 h-8 rounded-full bg-indigo-500 shrink-0"></div>
-                    </div>
-                  </div>
-                </div>
+                <!-- Maturity Level Assessment Card (Dynamic Component) -->
+                <ActualLevelCard
+                  :businessName="businessName || 'Tu Negocio'"
+                  :registeredMoments="registeredMoments"
+                  :evaluations="performanceStore.evaluations"
+                />
 
                 <!-- Cycle summaries list (dynamic components) -->
                 <div v-if="registeredMoments.length > 0" class="space-y-8">
                   <ResumenPerformanceMatriz
-                    v-for="momentId in registeredMoments"
+                    v-for="momentId in reversedRegisteredMoments"
                     :key="momentId"
                     :momentId="momentId"
                     :scores="performanceStore.evaluations[momentId].scores"
@@ -386,7 +348,7 @@
                   <button
                     v-if="isAdminMode"
                     @click="showWizard = true"
-                    class="mt-4 inline-flex items-center gap-2 rounded-2xl bg-teal-600 px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-teal-700 transition-all cursor-pointer"
+                    class="mt-4 inline-flex items-center gap-2 rounded-2xl bg-[#E35336] px-5 py-3 text-xs font-bold text-white shadow-md hover:bg-[#c2412b] transition-all cursor-pointer"
                   >
                     Comenzar Evaluación
                   </button>
@@ -415,7 +377,7 @@
                   <button
                     v-if="isAdminMode && registeredMoments.length > 0"
                     @click="showCriticalAreasWizard = true"
-                    class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer"
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-[#E35336] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#c2412b] transition-all cursor-pointer"
                   >
                     <WarningTriangle class="w-3.5 h-3.5" />
                     Definir Áreas Críticas
@@ -427,13 +389,24 @@
                   v-if="registeredMoments.length === 0"
                   class="bg-amber-50/40 border border-amber-250/70 rounded-[24px] p-6 sm:p-8 text-center space-y-4 max-w-md mx-auto"
                 >
-                  <div class="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-inner">
+                  <div
+                    class="mx-auto w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shadow-inner"
+                  >
                     <WarningTriangle class="w-6 h-6 stroke-[2.2]" />
                   </div>
                   <div class="space-y-1.5">
-                    <h4 class="text-sm font-black text-amber-950 uppercase tracking-wider">Requiere Evaluación Completa</h4>
-                    <p class="text-xs text-amber-700 font-semibold leading-relaxed">
-                      Debes completar el diagnóstico de madurez (los 21 indicadores) en la pestaña "Niveles de Madurez" antes de poder definir las áreas críticas prioritarias de este negocio.
+                    <h4
+                      class="text-sm font-black text-amber-950 uppercase tracking-wider"
+                    >
+                      Requiere Evaluación Completa
+                    </h4>
+                    <p
+                      class="text-xs text-amber-700 font-semibold leading-relaxed"
+                    >
+                      Debes completar el diagnóstico de madurez (los 21
+                      indicadores) en la pestaña "Niveles de Madurez" antes de
+                      poder definir las áreas críticas prioritarias de este
+                      negocio.
                     </p>
                   </div>
                   <button
@@ -447,8 +420,14 @@
                 </div>
 
                 <!-- 2. VISTA: Si hay evaluaciones y las áreas críticas ya están definidas -->
-                <div v-else-if="dossierCriticalAreas && dossierCriticalAreas.length === 3">
-                  <CriticalAreasSelected :criticalAreas="dossierCriticalAreas" />
+                <div
+                  v-else-if="
+                    dossierCriticalAreas && dossierCriticalAreas.length === 3
+                  "
+                >
+                  <CriticalAreasSelected
+                    :criticalAreas="dossierCriticalAreas"
+                  />
                 </div>
 
                 <!-- 3. EMPTY STATE: Si hay evaluaciones pero aún no se han definido las áreas críticas -->
@@ -456,19 +435,28 @@
                   v-else
                   class="bg-gray-50/50 border border-dashed border-gray-200 rounded-[32px] p-8 text-center space-y-4"
                 >
-                  <div class="mx-auto w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center shadow-inner">
+                  <div
+                    class="mx-auto w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center shadow-inner"
+                  >
                     <WarningTriangle class="w-6 h-6" />
                   </div>
                   <div class="space-y-1">
-                    <h4 class="text-sm font-black text-gray-700 uppercase tracking-wider">Sin Áreas Críticas Definidas</h4>
-                    <p class="text-xs text-gray-400 font-semibold leading-relaxed max-w-sm mx-auto">
-                      Aún no se han seleccionado ni documentado las 3 áreas críticas priorizadas para el negocio.
+                    <h4
+                      class="text-sm font-black text-gray-700 uppercase tracking-wider"
+                    >
+                      Sin Áreas Críticas Definidas
+                    </h4>
+                    <p
+                      class="text-xs text-gray-400 font-semibold leading-relaxed max-w-sm mx-auto"
+                    >
+                      Aún no se han seleccionado ni documentado las 3 áreas
+                      críticas priorizadas para el negocio.
                     </p>
                   </div>
                   <button
                     v-if="isAdminMode"
                     @click="showCriticalAreasWizard = true"
-                    class="inline-flex items-center gap-2 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 text-xs font-bold shadow-md cursor-pointer transition-all duration-200"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-[#E35336] hover:bg-[#c2412b] text-white px-5 py-3 text-xs font-bold shadow-md cursor-pointer transition-all duration-200"
                   >
                     Definir Áreas Críticas
                   </button>
@@ -485,7 +473,7 @@
                   class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4"
                 >
                   <div class="flex items-center gap-3">
-                    <div class="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <div class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl">
                       <SoilAlt class="w-6 h-6" />
                     </div>
                     <h2 class="text-lg font-bold text-gray-800">
@@ -498,63 +486,11 @@
                     <button
                       v-if="isAdminMode"
                       @click="showActionPlanWizard = true"
-                      class="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-750 transition-all cursor-pointer"
+                      class="inline-flex items-center gap-1.5 rounded-xl bg-[#E35336] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-indigo-750 transition-all cursor-pointer"
                     >
                       <SoilAlt class="w-3.5 h-3.5" />
                       Crear Plan de Acción
                     </button>
-                    
-                    <button
-                      v-if="isAdminMode"
-                      @click="saveConsultingData"
-                      :disabled="savingData"
-                      class="inline-flex items-center gap-1.5 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-teal-700 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      <SoilAlt class="w-3.5 h-3.5" />
-                      {{ savingData ? "Guardando..." : "Guardar Estrategia" }}
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Estrategia de Crecimiento -->
-                <div
-                  class="bg-indigo-50/20 rounded-2xl border border-indigo-100/50 p-6"
-                >
-                  <div class="flex items-start gap-4">
-                    <div
-                      class="p-3 bg-indigo-50 text-indigo-600 rounded-xl flex-shrink-0"
-                    >
-                      <SoilAlt class="w-7 h-7" />
-                    </div>
-                    <div class="space-y-3 w-full">
-                      <h3
-                        class="text-base font-bold text-indigo-950 uppercase tracking-wide"
-                      >
-                        Estrategia de Crecimiento
-                      </h3>
-
-                      <!-- Textarea para admin, texto normal para cliente -->
-                      <div v-if="isAdminMode" class="mt-2">
-                        <textarea
-                          v-model="planAccionText"
-                          rows="3"
-                          class="w-full rounded-2xl border-indigo-200 shadow-sm focus:border-teal-500 focus:ring-teal-500 text-sm p-4 font-semibold text-indigo-700 bg-white"
-                          placeholder="Escribe la estrategia de crecimiento..."
-                        ></textarea>
-                      </div>
-                      <p
-                        v-else
-                        class="text-base font-semibold text-indigo-700 leading-relaxed"
-                      >
-                        {{ planAccionText }}
-                      </p>
-
-                      <p class="text-xs text-indigo-600/80">
-                        Tu ruta personalizada con metas concretas, compromisos y
-                        plazos establecidos junto a tu asesor técnico para
-                        transformar la gestión de tu negocio.
-                      </p>
-                    </div>
                   </div>
                 </div>
 
@@ -578,7 +514,17 @@
 <script setup>
 import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { SoilAlt, Reports, GraphUp, WarningTriangle, Leaf, Rocket, Group, BrightCrown } from "@iconoir/vue";
+import {
+  SoilAlt,
+  Reports,
+  GraphUp,
+  WarningTriangle,
+  Leaf,
+  Rocket,
+  Group,
+  BrightCrown,
+  Calendar,
+} from "@iconoir/vue";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import ItemsConsulting from "@/components/consulting/ItemsConsulting.vue";
@@ -588,6 +534,7 @@ import CriticalAreasSelect from "@/components/consulting/CriticalAreasSelect.vue
 import CriticalAreasSelected from "@/components/consulting/CriticalAreasSelected.vue";
 import ActionPlanCreate from "@/components/consulting/ActionPlanCreate.vue";
 import ActionPlanView from "@/components/consulting/ActionPlanView.vue";
+import ActualLevelCard from "@/components/consulting/ActualLevelCard.vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { usePerformanceStore, AREAS_CONFIG } from "@/stores/performanceStore";
@@ -619,19 +566,24 @@ const isAdminMode = computed(() => {
 // Cycles fully completed with all 21 indicators
 const registeredMoments = computed(() => {
   const moments = ["inicial", "ciclo1", "ciclo2", "final"];
-  
+
   // Extract all 21 indicator keys from AREAS_CONFIG
   const allIndicatorKeys = AREAS_CONFIG.flatMap((area) =>
-    area.indicators.map((ind) => ind.key)
+    area.indicators.map((ind) => ind.key),
   );
-
   return moments.filter((m) => {
     const scores = performanceStore.evaluations[m]?.scores;
     if (!scores) return false;
     return allIndicatorKeys.every(
-      (key) => scores[key] !== undefined && scores[key] !== null && scores[key] !== ""
+      (key) =>
+        scores[key] !== undefined && scores[key] !== null && scores[key] !== "",
     );
   });
+});
+
+// Moments in reverse chronological order (newest first) for rendering summaries
+const reversedRegisteredMoments = computed(() => {
+  return [...registeredMoments.value].reverse();
 });
 
 // ID del negocio activo (ruta para admin, Pinia para cliente)

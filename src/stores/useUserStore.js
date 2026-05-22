@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore'
-import { db } from '@/firebaseInit'
+import { db, auth } from '@/firebaseInit'
 
 // Claves de localStorage
 const STORAGE_KEYS = {
@@ -107,19 +107,30 @@ export const useUserStore = defineStore('user', {
           // Usuario no existe en Firestore - crear perfil básico
           console.log('⚠️ Usuario no encontrado en Firestore, creando perfil básico')
 
+          const currentUser = auth?.currentUser;
+
           const basicProfile = {
             uid: uid,
-            email: null, // Se llenará desde Firebase Auth
-            nombre: '',
-            apellidos: '',
+            email: currentUser?.email || null,
+            nombre: currentUser?.displayName?.split(' ')[0] || '',
+            apellidos: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
             rol: 'business_owner', // ← AGREGADO: Rol por defecto
             fechaRegistro: new Date(),
             activo: true,
             configuracion: {
               theme: 'light',
               notifications: true
+            },
+            profile: {
+              name: currentUser?.displayName || '',
+              nombre: currentUser?.displayName?.split(' ')[0] || '',
+              apellidos: currentUser?.displayName?.split(' ').slice(1).join(' ') || '',
+              email: currentUser?.email || null
             }
           }
+
+          // Guardar perfil en Firestore
+          await setDoc(userDocRef, basicProfile)
 
           this.userProfile = basicProfile
           localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.userProfile))
