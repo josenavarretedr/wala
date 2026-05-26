@@ -1,7 +1,10 @@
 <template>
   <div class="min-h-screen relative overflow-x-hidden">
     <!-- Capa de fondo fija de alta resolución para coherencia visual en dashboard -->
-    <div class="dashboard-bg" :style="{ backgroundImage: `url(${bgWall})` }"></div>
+    <div
+      class="dashboard-bg"
+      :style="{ backgroundImage: `url(${bgWall})` }"
+    ></div>
 
     <!-- Overlay para todos los tamaños de pantalla -->
     <div
@@ -165,14 +168,14 @@ const mainItems = computed(() => {
       to: `/business/${businessId}/dashboard`,
       permission: null,
     },
-    {
-      icon: "groups",
-      label: "Juntos",
-      to: `/business/${businessId}/programs`,
-      badge: programStore.hasActiveProgram ? "●" : null,
-      badgeColor: "text-green-500",
-      permission: null,
-    },
+    // {
+    //   icon: "groups",
+    //   label: "Juntos",
+    //   to: `/business/${businessId}/programs`,
+    //   badge: programStore.hasActiveProgram ? "●" : null,
+    //   badgeColor: "text-green-500",
+    //   permission: null,
+    // },
     {
       icon: "BrightCrown",
       label: "Premium",
@@ -192,6 +195,13 @@ const adminItems = computed(() => {
       icon: "business",
       label: "Datos del negocio",
       to: `/business/${businessId}/business-info`,
+      permission: null,
+      role: "gerente",
+    },
+    {
+      icon: "people",
+      label: "Equipo",
+      to: `/business/${businessId}/employees`,
       permission: null,
       role: "gerente",
     },

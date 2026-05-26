@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
+  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden font-display">
     <!-- Elementos de fondo sutiles para diseño premium -->
     <div
       class="absolute top-0 right-0 w-[500px] h-[500px] bg-[#E35336]/5 rounded-full filter blur-3xl opacity-60 -z-10 translate-x-1/2 -translate-y-1/4"
@@ -9,9 +9,9 @@
     ></div>
 
     <div class="max-w-6xl mx-auto">
-      <div class="text-center mb-16">
+      <div class="text-center mb-16 space-y-4">
         <span
-          class="inline-block px-4 py-1.5 mb-4 bg-[#E35336]/10 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full"
+          class="inline-block px-4 py-1.5 bg-orange-50 border border-orange-100 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full animate-none"
         >
           Aval Institucional
         </span>
@@ -20,8 +20,8 @@
         >
           Una metodología que <span class="text-[#E35336]">ya funciona</span> en programas reales
         </h2>
-        <p class="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          El Método WALA <span class="text-[#E35336] font-semibold">no es teoría</span>. Es el mismo sistema utilizado en
+        <p class="text-base sm:text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed font-semibold">
+          El Método WALA <span class="text-[#E35336] font-extrabold">no es teoría</span>. Es el mismo sistema utilizado en
           programas de emprendimiento con respaldo de cooperación internacional.
         </p>
       </div>
@@ -33,27 +33,27 @@
           <transition name="card-fade" mode="out-in">
             <div
               :key="currentIndex"
-              class="w-full bg-white rounded-2xl border border-gray-100 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] p-8 md:p-10 flex flex-col items-start hover:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.08)] transition-shadow duration-300"
+              class="w-full bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-8 md:p-10 flex flex-col items-start hover:shadow-xl transition-shadow duration-300"
             >
               <div
-                class="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center shadow-sm"
+                class="w-14 h-14 rounded-2xl mb-6 flex items-center justify-center shadow-inner"
                 :class="getCardStyles(currentIndex).iconBg"
               >
                 <component
                   :is="getCardStyles(currentIndex).icon"
-                  class="w-7 h-7"
+                  class="w-7 h-7 stroke-[2.2]"
                   :class="getCardStyles(currentIndex).iconColor"
                 />
               </div>
 
               <h3 class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-3 leading-snug" v-html="cards[currentIndex].title"></h3>
 
-              <p v-if="cards[currentIndex].subtitle" class="text-emerald-700 font-semibold text-sm sm:text-base mb-3 flex items-center gap-2">
-                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <p v-if="cards[currentIndex].subtitle" class="text-emerald-700 font-extrabold text-sm sm:text-base mb-3 flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-lg">
+                <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 {{ cards[currentIndex].subtitle }}
               </p>
 
-              <p class="text-gray-600 text-base sm:text-lg leading-relaxed" v-html="cards[currentIndex].description"></p>
+              <p class="text-gray-500 text-base sm:text-lg leading-relaxed font-medium" v-html="cards[currentIndex].description"></p>
             </div>
           </transition>
         </div>
@@ -61,19 +61,19 @@
         <!-- Controles Flotantes Ultra Finos -->
         <div class="absolute inset-y-0 -left-4 -right-4 sm:-left-8 sm:-right-8 flex items-center justify-between pointer-events-none">
           <button
-            class="pointer-events-auto w-12 h-12 rounded-full bg-white border border-gray-100 shadow-md text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:shadow-lg active:scale-95 transition-all duration-200"
+            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-150 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
             @click="prevCard"
             aria-label="Tarjeta anterior"
           >
-            <NavArrowLeft class="w-6 h-6" />
+            <NavArrowLeft class="w-5 h-5 stroke-[2.2]" />
           </button>
 
           <button
-            class="pointer-events-auto w-12 h-12 rounded-full bg-white border border-gray-100 shadow-md text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:shadow-lg active:scale-95 transition-all duration-200"
+            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-150 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
             @click="nextCard"
             aria-label="Siguiente tarjeta"
           >
-            <NavArrowRight class="w-6 h-6" />
+            <NavArrowRight class="w-5 h-5 stroke-[2.2]" />
           </button>
         </div>
 
@@ -82,11 +82,11 @@
           <button
             v-for="(card, index) in cards"
             :key="index"
-            class="h-2 rounded-full transition-all duration-300 focus:outline-none"
+            class="h-2.5 rounded-full transition-all duration-300 focus:outline-none cursor-pointer"
             :class="
               currentIndex === index
-                ? 'bg-[#E35336] w-10'
-                : 'bg-gray-200 hover:bg-gray-300 w-2.5'
+                ? 'bg-[#E35336] w-8'
+                : 'bg-gray-250 hover:bg-gray-300 w-2.5'
             "
             @click="currentIndex = index"
             :aria-label="`Ir a tarjeta ${index + 1}`"
@@ -107,16 +107,16 @@ let autoplayInterval = null;
 const cards = ref([
   {
     title: "Fortalecemos el <span class='text-[#E35336]'>ecosistema emprendedor</span>",
-    description: "Construimos <span class='text-[#E35336] font-semibold'>bases sólidas</span> conectando a dueños de negocios con herramientas digitales que facilitan una gestión profesional y sostenible.",
+    description: "Construimos <span class='text-gray-900 font-extrabold'>bases sólidas</span> conectando a dueños de negocios con herramientas digitales que facilitan una gestión profesional y sostenible.",
   },
   {
     title: "Metodología alineada con <span class='text-emerald-600'>MESUN · OIT</span>",
     subtitle: "Mejore su negocio — Organización Internacional del Trabajo",
-    description: "Aplicamos el mismo <span class='text-emerald-600 font-semibold'>estándar técnico internacional</span> utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
+    description: "Aplicamos el mismo <span class='text-emerald-650 font-extrabold'>estándar técnico internacional</span> utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
   },
   {
     title: "Programas municipales de <span class='text-blue-600'>fortalecimiento empresarial</span>",
-    description: "Trabajamos de la mano con gobiernos locales para impulsar el <span class='text-blue-600 font-semibold'>desarrollo económico local</span>. Trabajamos en comunidad para los negocios de todos.",
+    description: "Trabajamos de la mano con gobiernos locales para impulsar el <span class='text-blue-600 font-extrabold'>desarrollo económico local</span>. Trabajamos en comunidad para los negocios de todos.",
   },
 ]);
 
@@ -174,6 +174,10 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.font-display {
+  font-family: "Outfit", "Inter", sans-serif;
+}
+
 /* Transición premium y fluida para las tarjetas */
 .card-fade-enter-active,
 .card-fade-leave-active {

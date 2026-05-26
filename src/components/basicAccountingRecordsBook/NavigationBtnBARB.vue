@@ -96,6 +96,7 @@ import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowSto
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useRouter } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
+import { ANONYMOUS_CLIENT_ID } from "@/types/client";
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import { useToast } from "@/composables/useToast";
@@ -256,12 +257,23 @@ const isNextButtonEnabled = computed(() => {
 
     case "Adjuntar cliente":
       // Verificar si hay cliente seleccionado
+      const hasRealClient =
+        transactionData.clientId &&
+        transactionData.clientId !== null &&
+        transactionData.clientId !== ANONYMOUS_CLIENT_ID;
       const hasClient =
         transactionData.clientId && transactionData.clientId !== null;
       const clientPaymentStatus = transactionData.paymentStatus;
 
+      // Si es delivery, requiere cliente registrado (no anónimo) y dirección
+      if (transactionData.salesChannel === 'DELIVERY') {
+        const hasAddress =
+          transactionData.deliveryAddress &&
+          transactionData.deliveryAddress.trim() !== "";
+        result = hasRealClient && hasAddress;
+      }
       // Si es pago parcial, DEBE tener un cliente
-      if (
+      else if (
         clientPaymentStatus === "pending" ||
         clientPaymentStatus === "partial"
       ) {
@@ -337,6 +349,21 @@ const getValidationMessage = () => {
       return "Selecciona un método de pago y tipo válido";
 
     case "Adjuntar cliente":
+      if (transactionData.salesChannel === 'DELIVERY') {
+        const hasRealClient =
+          transactionData.clientId &&
+          transactionData.clientId !== null &&
+          transactionData.clientId !== ANONYMOUS_CLIENT_ID;
+        const hasAddress =
+          transactionData.deliveryAddress &&
+          transactionData.deliveryAddress.trim() !== "";
+        if (!hasRealClient) {
+          return "Para delivery debes seleccionar un cliente registrado (no anónimo)";
+        }
+        if (!hasAddress) {
+          return "Para delivery debes ingresar una dirección de envío";
+        }
+      }
       return "Debes seleccionar un cliente para continuar con un pago parcial";
 
     case "Canal de venta":

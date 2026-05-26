@@ -112,7 +112,7 @@ import SparkLineChart from "@/components/Sales/SparkLineChart.vue";
 import SalesAccountsWidget from "@/components/Sales/SalesAccountsWidget.vue";
 import TopProductsByUnits from "@/components/Sales/TopProductsByUnits.vue";
 import TopProductsByRevenue from "@/components/Sales/TopProductsByRevenue.vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { ref, onMounted, watch, computed } from "vue";
 import { useTransaccion } from "@/composables/useTransaction";
@@ -120,9 +120,10 @@ import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
 
 const route = useRoute();
+const router = useRouter();
 const { getTransactionsTodayCmps, getTransactionsRange } = useTransaccion();
 const { isPremium } = useSubscription();
-const { premium } = useToast();
+const { premium, warning } = useToast();
 
 const selectedTimeRange = ref("today");
 
@@ -355,7 +356,20 @@ const fetchTransactions = async () => {
 
 const goToProduct = (productId) => {
   console.log("Navigate to product:", productId);
-  // TODO: Implementar navegación al detalle del producto
-  // router.push({ name: 'ProductDetail', params: { productId } });
+  if (!productId) return;
+
+  // Si no parece un UUID válido (ej. contiene espacios, no tiene longitud suficiente o termina en '*')
+  if (productId.includes(" ") || productId.length < 10 || productId.endsWith("*")) {
+    warning("Este producto se registró de forma manual y no está en el inventario.");
+    return;
+  }
+
+  router.push({
+    name: 'InventoryProductDetails',
+    params: {
+      businessId: route.params.businessId,
+      productId: productId
+    }
+  });
 };
 </script>

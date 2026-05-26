@@ -3,12 +3,12 @@
     <!-- Header con botón de volver -->
     <div class="flex items-center gap-3 mb-6">
       <BackBtn
-        :route-name="'InventoryProductCosting'"
+        :route-name="'InventoryEditProductEconomicInfo'"
         :route-params="{
           businessId: route.params.businessId,
           productId: route.params.productId,
         }"
-        tooltip-text="Volver al costeo"
+        tooltip-text="Volver al producto"
       />
     </div>
 
@@ -258,7 +258,7 @@ const formatNumber = (value) => {
 
 const goBack = () => {
   router.push({
-    name: "InventoryProductCosting",
+    name: "InventoryEditProductEconomicInfo",
     params: {
       businessId: route.params.businessId,
       productId: route.params.productId,

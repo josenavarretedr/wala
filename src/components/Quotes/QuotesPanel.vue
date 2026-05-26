@@ -124,7 +124,7 @@
     <!-- Sin cotizaciones -->
     <div v-else-if="filteredQuotes.length === 0" class="text-center py-12">
       <svg
-        class="w-16 h-16 mx-auto text-gray-300"
+        class="w-16 h-16 mx-auto text-gray-500"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

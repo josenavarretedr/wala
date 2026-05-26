@@ -11,12 +11,12 @@
       <!-- Sub Header Navigation -->
       <div class="flex items-center justify-between mb-4">
         <BackBtn
-          :route-name="'InventoryProductCosting'"
+          :route-name="'InventoryEditProductEconomicInfo'"
           :route-params="{
             businessId: route.params.businessId,
             productId: route.params.productId,
           }"
-          tooltip-text="Volver a costeo"
+          tooltip-text="Volver a info económica"
         />
         <CloseBtn :custom-config="closeBtnConfig" @navigate="handleGoBack" />
       </div>
@@ -436,7 +436,7 @@ const handleSavePackaging = async () => {
 
 const handleGoBack = () => {
   router.push({
-    name: "InventoryProductCosting",
+    name: "InventoryEditProductEconomicInfo",
     params: {
       businessId: route.params.businessId,
       productId: route.params.productId,

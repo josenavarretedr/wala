@@ -1,6 +1,6 @@
 <template>
   <footer
-    class="bg-transparent border-t border-slate-200 py-12 lg:py-16 px-4 sm:px-6 lg:px-8"
+    class="bg-transparent border-t border-gray-100 py-12 lg:py-16 px-4 sm:px-6 lg:px-8 font-display"
   >
     <div class="max-w-6xl mx-auto">
       <!-- Grid principal: 5 bloques -->
@@ -25,115 +25,106 @@
           </p>
         </div>
 
-        <!-- 2️⃣ BLOQUE PRODUCTO -->
+        <!-- 2️⃣ BLOQUE SECCIONES -->
         <div>
-          <h4 class="text-sm font-semibold text-gray-900 mb-4">Producto</h4>
+          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Secciones</h4>
           <nav class="space-y-2.5">
+            <a
+              href="#hero-section"
+              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            >
+              Inicio
+            </a>
+            <a
+              href="#pain-section"
+              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            >
+              Síntomas de caos
+            </a>
+            <a
+              href="#testimonials-section"
+              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            >
+              Testimonios
+            </a>
+            <a
+              href="#routes-section"
+              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            >
+              Elige tu camino
+            </a>
             <a
               href="#how-section"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Cómo funciona
             </a>
-            <a
-              href="#planes-section"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Planes y precios
-            </a>
-            <a
-              href="#features-section"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Funciones
-            </a>
-            <a
-              href="#faq-section"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Preguntas frecuentes
-            </a>
           </nav>
         </div>
 
-        <!-- 3️⃣ BLOQUE COMPAÑÍA (INSTITUCIONAL) -->
+        <!-- 3️⃣ BLOQUE SOPORTE Y CONTACTO -->
         <div>
-          <h4 class="text-sm font-semibold text-gray-900 mb-4">Compañía</h4>
+          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Contacto</h4>
           <nav class="space-y-2.5">
             <a
-              href="#"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              href="mailto:hola@wala.lat"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
-              Sobre nosotros
+              Escríbenos por correo
             </a>
             <a
-              href="mailto:hola@wala.pe"
+              href="https://api.whatsapp.com/send?phone=51921492993&text=Hola%20Jos%C3%A9%2C%20vi%20la%20p%C3%A1gina%20de%20WALA%20y%20tengo%20una%20consulta."
+              target="_blank"
+              rel="noopener noreferrer"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
-              Contacto
+              Soporte por WhatsApp
             </a>
-            <a
-              href="#prueba-social-section"
+            <router-link
+              to="/auth/login"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
-              Alianzas
-            </a>
-            <a
-              href="#"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Impacto social
-            </a>
+              Iniciar sesión
+            </router-link>
           </nav>
         </div>
 
         <!-- 4️⃣ BLOQUE LEGAL -->
         <div>
-          <h4 class="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
+          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Legal</h4>
           <nav class="space-y-2.5">
-            <a
-              href="#"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            <router-link
+              to="/legal/politica-privacidad"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Política de privacidad
-            </a>
-            <a
-              href="#"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            </router-link>
+            <router-link
+              to="/legal/terminos-condiciones"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Términos de servicio
-            </a>
-            <a
-              href="#"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            </router-link>
+            <router-link
+              to="/legal/politica-privacidad"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Uso responsable de datos
-            </a>
+            </router-link>
           </nav>
         </div>
       </div>
 
       <!-- BLOQUE SOPORTE (ANCHO COMPLETO) -->
-      <div class="bg-white rounded-xl border border-slate-200 p-6 mb-8">
-        <h4 class="text-sm font-semibold text-gray-900 mb-4">Soporte</h4>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span class="text-gray-500">Email:</span>
-            <a
-              href="mailto:hola@wala.pe"
-              class="text-orange-600 hover:text-orange-700 ml-1 font-medium"
-            >
-              hola@wala.pe
-            </a>
-          </div>
-          <div>
-            <span class="text-gray-500">WhatsApp:</span>
-            <span class="text-gray-700 ml-1 font-medium">+51 999 888 777</span>
-          </div>
-          <div>
-            <span class="text-gray-500">Horario:</span>
-            <span class="text-gray-700 ml-1">Lun–Vie · 9am–6pm (GMT-5)</span>
-          </div>
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-6 mb-8 text-center relative overflow-hidden">
+        <div class="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm">
+          <span class="text-gray-500 font-semibold">¿Necesitas soporte técnico o estratégico? Escríbenos a:</span>
+          <a
+            href="mailto:hola@wala.lat"
+            class="text-[#E35336] hover:text-[#c2412b] font-black tracking-wide transition-colors duration-200"
+          >
+            hola@wala.lat
+          </a>
         </div>
       </div>
 
@@ -156,10 +147,12 @@
 </script>
 
 <style scoped>
-/* Estilos coherentes con el resto de la landing */
+.font-display {
+  font-family: "Outfit", "Inter", sans-serif;
+}
 
 /* Transiciones suaves */
-a {
-  transition: color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+a, router-link {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

@@ -131,16 +131,22 @@ service cloud.firestore {
 
     // NEGOCIOS DEL USUARIO (relación usuario-business)
     match /users/{uid}/businesses/{businessId} {
-      // Usuario puede leer sus propias relaciones
-      allow read: if request.auth.uid == uid;
+      // Usuario puede leer sus propias relaciones o el gerente del negocio
+      allow read: if request.auth.uid == uid
+        || (exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.rol == 'gerente');
       
-      // Usuario puede actualizar solo ciertos campos
-      allow update: if request.auth.uid == uid
+      // Usuario puede actualizar o el gerente del negocio
+      allow update: if (request.auth.uid == uid
         && request.resource.data.businessId == resource.data.businessId
-        && request.resource.data.rol == resource.data.rol;
+        && request.resource.data.rol == resource.data.rol)
+        || (exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.rol == 'gerente');
       
-      // Creación/Eliminación: Solo backend o gerentes
-      allow create, delete: if request.auth.uid == uid;
+      // Creación/Eliminación: el propio usuario (al unirse) o el gerente
+      allow create, delete: if request.auth.uid == uid
+        || (exists(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId))
+            && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.rol == 'gerente');
     }
 
     // ÍNDICE DE PROGRAMAS EN USERS (para queries eficientes)
@@ -177,6 +183,16 @@ service cloud.firestore {
         && hasBusinessAccess(businessId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['programs'])
         && request.resource.data.programs is list;
+
+      // Invitaciones a colaborar en este negocio
+      match /invitations/{invitationId} {
+        // Lectura: Cualquier usuario (público) para poder verificar enlace
+        allow read: if true;
+        
+        // Escritura: Solo gerentes activos
+        allow write: if hasBusinessAccess(businessId)
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)/businesses/$(businessId)).data.rol == 'gerente';
+      }
     }
 
     // ═════════════════════════════════════════════════════════════

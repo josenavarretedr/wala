@@ -30,7 +30,7 @@
               item.color === 'indigo' &&
                 'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
               item.color === 'orange' &&
-                'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+                'hover:shadow-lg hover:border-[#E35336]/30 hover:bg-[#E35336]/5',
               item.color === 'teal' &&
                 'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
               !getValue(item.available) && 'opacity-60 hover:shadow-sm',
@@ -94,14 +94,14 @@
 
           <!-- Botón "Más Apps" -->
           <div
-            class="group col-span-1 p-2 sm:p-3 bg-white/80 rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
+            class="group col-span-1 p-2 sm:p-3 bg-white/80 rounded-lg shadow-sm border border-[#E35336]/20 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#E35336]/5 hover:shadow-lg hover:border-[#E35336]/40"
             @click="showBottomSheet = true"
           >
             <div
               class="mb-1 w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
             >
               <svg
-                class="w-5 h-5 sm:w-6 sm:h-6 text-orange-600 transition-all duration-200 group-hover:text-orange-700"
+                class="w-5 h-5 sm:w-6 sm:h-6 text-[#E35336] transition-all duration-200 group-hover:text-[#c2412b]"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -115,7 +115,7 @@
               </svg>
             </div>
             <div
-              class="text-xs text-orange-600 font-medium text-center px-1 group-hover:text-orange-700"
+              class="text-xs text-[#E35336] font-medium text-center px-1 group-hover:text-[#c2412b]"
             >
               Más Apps
             </div>
@@ -156,7 +156,7 @@
             item.color === 'indigo' &&
               'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
             item.color === 'orange' &&
-              'hover:shadow-lg hover:border-orange-300 hover:bg-orange-50',
+              'hover:shadow-lg hover:border-[#E35336]/30 hover:bg-[#E35336]/5',
             item.color === 'teal' &&
               'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
             !getValue(item.available) && 'opacity-60 hover:shadow-sm',
@@ -221,14 +221,14 @@
 
         <!-- Botón "Más Apps" desktop -->
         <div
-          class="group col-span-1 p-4 min-h-[140px] bg-white/80 rounded-lg shadow-sm border border-orange-200 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-orange-50 hover:shadow-lg hover:border-orange-400"
+          class="group col-span-1 p-4 min-h-[140px] bg-white/80 rounded-lg shadow-sm border border-[#E35336]/20 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#E35336]/5 hover:shadow-lg hover:border-[#E35336]/40"
           @click="showBottomSheet = true"
         >
           <div
             class="mb-2 w-12 h-12 xl:w-14 xl:h-14 flex items-center justify-center"
           >
             <svg
-              class="w-8 h-8 xl:w-10 xl:h-10 text-orange-600 transition-all duration-200 group-hover:text-orange-700"
+              class="w-8 h-8 xl:w-10 xl:h-10 text-[#E35336] transition-all duration-200 group-hover:text-[#c2412b]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -242,7 +242,7 @@
             </svg>
           </div>
           <div
-            class="text-sm xl:text-base text-orange-600 font-medium text-center px-1 group-hover:text-orange-700"
+            class="text-sm xl:text-base text-[#E35336] font-medium text-center px-1 group-hover:text-[#c2412b]"
           >
             Más Apps
           </div>
@@ -331,7 +331,7 @@
                         item.color === 'indigo' &&
                           'hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md',
                         item.color === 'orange' &&
-                          'hover:border-orange-300 hover:bg-orange-50 hover:shadow-md',
+                          'hover:border-[#E35336]/30 hover:bg-[#E35336]/5 hover:shadow-md',
                         item.color === 'teal' &&
                           'hover:border-teal-300 hover:bg-teal-50 hover:shadow-md',
                       ]
@@ -458,6 +458,7 @@ const allMicroApps = ref([
     icon: GraphUp,
     isComponent: true,
     color: "blue",
+    moduleKey: "sales",
   },
   {
     id: 2,
@@ -467,6 +468,7 @@ const allMicroApps = ref([
     icon: GraphDown,
     isComponent: true,
     color: "red",
+    moduleKey: "expenses",
   },
   {
     id: 3,
@@ -476,6 +478,7 @@ const allMicroApps = ref([
     icon: BoxIso,
     isComponent: true,
     color: "purple",
+    moduleKey: "inventory",
   },
   {
     id: 4,
@@ -485,15 +488,17 @@ const allMicroApps = ref([
     icon: Group,
     isComponent: true,
     color: "indigo",
+    moduleKey: "clients",
   },
   {
     id: 5,
-    name: "Reportes",
-    route: "/reports",
+    name: "Resultados",
+    route: "/income-statement",
     available: true,
     icon: Reports,
     isComponent: true,
     color: "green",
+    moduleKey: "incomeStatement",
   },
   {
     id: 6,
@@ -503,6 +508,7 @@ const allMicroApps = ref([
     icon: "receipt",
     isComponent: true,
     color: "orange",
+    moduleKey: "accountsReceivable",
   },
   {
     id: 7,
@@ -512,24 +518,8 @@ const allMicroApps = ref([
     icon: Bookmark,
     isComponent: true,
     color: "purple",
+    moduleKey: "quotes",
   },
-  //
-  // {
-  //   id: 8,
-  //   name: computed(() => userStore.currentBusinessProgramName),
-  //   route: computed(() => {
-  //     const programs = userStore.currentBusiness?.programs || [];
-  //     if (programs.length > 0) {
-  //       const latestProgram = programs[programs.length - 1];
-  //       return `/programs/${latestProgram.id}`;
-  //     }
-  //     return "/programs";
-  //   }),
-  //   available: computed(() => true),
-  //   icon: Community,
-  //   isComponent: true,
-  //   color: "teal",
-  // },
   {
     id: 9,
     name: "Pro",
@@ -538,6 +528,7 @@ const allMicroApps = ref([
     icon: BrightCrown,
     isComponent: true,
     color: "orange",
+    role: "gerente",
   },
   {
     id: 10,
@@ -547,6 +538,17 @@ const allMicroApps = ref([
     icon: SoilAlt,
     isComponent: true,
     color: "teal",
+    moduleKey: "consulting",
+  },
+  {
+    id: 11,
+    name: "Equipo",
+    route: "/employees",
+    available: true,
+    icon: Community,
+    isComponent: true,
+    color: "orange",
+    role: "gerente",
   },
 ]);
 
@@ -557,7 +559,7 @@ const getIconColor = (color) => {
     red: "text-red-300",
     green: "text-green-300",
     purple: "text-purple-300",
-    orange: "text-orange-300",
+    orange: "text-[#E35336]/60",
     indigo: "text-indigo-300",
     teal: "text-teal-300",
     gray: "text-gray-300",
@@ -572,7 +574,7 @@ const getIconHoverColor = (color) => {
     red: "group-hover:text-red-500",
     green: "group-hover:text-green-500",
     purple: "group-hover:text-purple-500",
-    orange: "group-hover:text-orange-500",
+    orange: "group-hover:text-[#E35336]",
     indigo: "group-hover:text-indigo-500",
     teal: "group-hover:text-teal-500",
     gray: "group-hover:text-gray-500",
@@ -585,14 +587,29 @@ const getValue = (value) => {
   return typeof value === "function" ? value.value : value;
 };
 
-// Solo las 3 primeras apps para el grid principal
-const mainApps = computed(() => {
-  return allMicroApps.value.slice(0, 3);
+// Filtrar aplicaciones según permisos y rol del usuario
+const allowedMicroApps = computed(() => {
+  return allMicroApps.value.filter((app) => {
+    // 1. Verificar restricción de rol
+    if (app.role && userStore.getCurrentBusinessRole !== app.role) {
+      return false;
+    }
+    // 2. Verificar restricción de moduloKey
+    if (app.moduleKey && !userStore.hasModuleAccess(app.moduleKey)) {
+      return false;
+    }
+    return true;
+  });
 });
 
-// Todas las apps para mostrar en el bottom sheet
+// Solo las 3 primeras apps permitidas para el grid principal
+const mainApps = computed(() => {
+  return allowedMicroApps.value.slice(0, 3);
+});
+
+// Todas las apps permitidas para mostrar en el bottom sheet
 const allDisplayApps = computed(() => {
-  const apps = allMicroApps.value;
+  const apps = allowedMicroApps.value;
   if (isPremium.value) {
     return apps.filter((app) => app.id !== 9);
   }

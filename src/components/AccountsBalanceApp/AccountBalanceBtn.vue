@@ -8,8 +8,8 @@
           ? 'transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer'
           : 'cursor-not-allowed opacity-60',
         !hasOpeningToday
-          ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white shadow-orange-500/25 hover:from-orange-700 hover:to-orange-800 hover:shadow-orange-500/35'
-          : 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-purple-500/25 hover:from-purple-700 hover:to-purple-800 hover:shadow-purple-500/35',
+          ? 'bg-[#E35336] text-white shadow-orange-500/25 hover:bg-[#cb4429] hover:shadow-orange-500/35'
+          : 'bg-purple-700 text-white shadow-purple-500/25 hover:bg-purple-800 hover:shadow-purple-500/35',
       ]"
     >
       <component

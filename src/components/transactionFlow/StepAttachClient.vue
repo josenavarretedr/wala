@@ -3,19 +3,21 @@
     <!-- Título -->
     <div class="text-center space-y-2">
       <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
-        {{ isPartialPayment ? "Asignar Cliente" : "Cliente (Opcional)" }}
+        {{ isClientRequired ? "Asignar Cliente" : "Cliente (Opcional)" }}
       </h1>
       <p class="text-sm text-gray-500 max-w-md mx-auto">
         {{
-          isPartialPayment
-            ? "Para pagos parciales es necesario registrar el cliente"
+          isClientRequired
+            ? (transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY'
+                ? "Para ventas con delivery es necesario registrar un cliente y dirección de entrega"
+                : "Para pagos parciales es necesario registrar el cliente")
             : "Puedes vincular esta venta a un cliente específico"
         }}
       </p>
     </div>
 
-    <!-- Cliente Anónimo (solo si no es pago parcial) -->
-    <div v-if="!isPartialPayment" class="max-w-lg mx-auto">
+    <!-- Cliente Anónimo (solo si no es requerido) -->
+    <div v-if="!isClientRequired" class="max-w-lg mx-auto">
       <button
         @click="selectAnonymousClient"
         :class="[
@@ -282,8 +284,27 @@
       </div>
     </div>
 
-    <!-- Validación para pago parcial -->
-    <div v-if="isPartialPayment && !selectedClient" class="max-w-lg mx-auto">
+    <!-- Dirección de Envío (solo si es DELIVERY y se seleccionó un cliente no anónimo) -->
+    <div v-if="transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' && selectedClient && !isAnonymousSelected" class="max-w-lg mx-auto space-y-2 mt-4">
+      <label class="block text-sm font-semibold text-gray-700">
+        Dirección de Envío / Ubicación de Entrega <span class="text-red-500">*</span>
+      </label>
+      <div class="relative">
+        <textarea
+          v-model="deliveryAddress"
+          rows="3"
+          placeholder="Ingresa la dirección detallada o indicaciones de entrega para el motorizado..."
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all font-medium text-gray-800 shadow-sm"
+          @input="syncDeliveryAddress"
+        ></textarea>
+      </div>
+      <p class="text-xs text-gray-500">
+        Esta dirección será compartida con la información del servicio de entrega.
+      </p>
+    </div>
+
+    <!-- Validación para cliente requerido -->
+    <div v-if="isClientRequired && !selectedClient" class="max-w-lg mx-auto">
       <div class="bg-orange-50 border-l-4 border-orange-400 p-4 rounded">
         <div class="flex items-center gap-3">
           <svg
@@ -300,8 +321,12 @@
             />
           </svg>
           <p class="text-sm text-orange-700">
-            <span class="font-medium">Atención:</span> Debes seleccionar un
-            cliente para continuar con un pago parcial.
+            <span class="font-medium">Atención:</span>
+            {{
+              transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY'
+                ? "Debes seleccionar un cliente para continuar con una venta de delivery."
+                : "Debes seleccionar un cliente para continuar con un pago parcial."
+            }}
           </p>
         </div>
       </div>
@@ -420,6 +445,7 @@ const loading = ref(false);
 const showCreateModal = ref(false);
 const creatingClient = ref(false);
 const createError = ref("");
+const deliveryAddress = ref(transactionStore.transactionToAdd.value.deliveryAddress || "");
 
 const newClient = ref({
   name: "",
@@ -433,16 +459,11 @@ const phoneInputRef = ref(null);
 const isPartialPayment = computed(() => {
   const status = transactionStore.transactionToAdd.value.paymentStatus;
   const isPartial = status !== "completed";
-
-  console.log("🔍 Debug isPartialPayment:", {
-    paymentStatus: status,
-    isPartial,
-    payments: transactionStore.transactionToAdd.value.payments,
-    balance: transactionStore.transactionToAdd.value.balance,
-    totalPaid: transactionStore.transactionToAdd.value.totalPaid,
-  });
-
   return isPartial;
+});
+
+const isClientRequired = computed(() => {
+  return isPartialPayment.value || transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY';
 });
 
 const isAnonymousSelected = computed(() => {
@@ -461,7 +482,6 @@ const filteredClients = computed(() => {
 // Functions
 async function handleSearch() {
   loading.value = true;
-  // Debounce implementado en el store
   await new Promise((resolve) => setTimeout(resolve, 300));
   loading.value = false;
 }
@@ -483,18 +503,19 @@ function selectClient(client) {
 
 function clearSelectedClient() {
   selectedClient.value = null;
+  transactionStore.setClientInfo(null, null);
 
-  if (isPartialPayment.value) {
-    // Si es pago parcial, limpiar el cliente del store para forzar selección
-    transactionStore.setClientInfo(null, null);
-  } else {
-    // Si es pago completo, volver a cliente anónimo
+  if (!isClientRequired.value) {
     selectAnonymousClient();
   }
 }
 
 function clearSearch() {
   searchQuery.value = "";
+}
+
+function syncDeliveryAddress() {
+  transactionStore.transactionToAdd.value.deliveryAddress = deliveryAddress.value;
 }
 
 function openCreateClientModal() {
@@ -510,19 +531,16 @@ function openCreateClientModal() {
 
   showCreateModal.value = true;
   createError.value = "";
-  // Autofocus en el siguiente tick
   setTimeout(() => {
     nameInputRef.value?.focus();
   }, 100);
 }
 
 function handleEnterInName() {
-  // Mover al campo de teléfono
   phoneInputRef.value?.focus();
 }
 
 function handleEnterInPhone() {
-  // Crear cliente si el nombre no está vacío
   if (newClient.value.name && !creatingClient.value) {
     createNewClient();
   }
@@ -544,17 +562,8 @@ async function createNewClient() {
   createError.value = "";
 
   try {
-    console.log("🔍 Debug antes de crear cliente:", {
-      hasBusinessStore: !!businessStore,
-      business: businessStore.business,
-      businessId: businessStore.getBusinessId,
-    });
-
     const client = await clientStore.createClient(newClient.value);
-
-    // Seleccionar automáticamente el cliente recién creado
     selectClient(client);
-
     closeCreateClientModal();
   } catch (error) {
     console.error("Error creando cliente:", error);
@@ -574,18 +583,42 @@ onMounted(async () => {
     await clientStore.fetchClients(businessId);
   }
 
-  // Si no es pago parcial, seleccionar anónimo por defecto
-  if (!isPartialPayment.value) {
-    selectAnonymousClient();
+  // Si es requerido, validar o limpiar
+  if (isClientRequired.value) {
+    if (isAnonymousSelected.value) {
+      selectedClient.value = null;
+      transactionStore.setClientInfo(null, null);
+    } else {
+      const tx = transactionStore.transactionToAdd.value;
+      if (tx.clientId) {
+        const storedClient = clientStore.activeClients.find(c => c.uuid === tx.clientId);
+        if (storedClient) {
+          selectedClient.value = storedClient;
+        }
+      }
+    }
+  } else {
+    // Si ya hay un cliente seleccionado en el store, restaurarlo en selectedClient
+    const tx = transactionStore.transactionToAdd.value;
+    if (tx.clientId && tx.clientId !== ANONYMOUS_CLIENT_ID) {
+      const storedClient = clientStore.activeClients.find(c => c.uuid === tx.clientId);
+      if (storedClient) {
+        selectedClient.value = storedClient;
+      }
+    } else {
+      selectAnonymousClient();
+    }
   }
 
+  deliveryAddress.value = transactionStore.transactionToAdd.value.deliveryAddress || "";
   loading.value = false;
 });
 
-// Validar que si es pago parcial, DEBE tener un cliente
-watch(isPartialPayment, (isPartial) => {
-  if (isPartial && isAnonymousSelected.value) {
+// Validar que si es requerido, DEBE tener un cliente real
+watch(isClientRequired, (isRequired) => {
+  if (isRequired && isAnonymousSelected.value) {
     selectedClient.value = null;
+    transactionStore.setClientInfo(null, null);
   }
 });
 </script>

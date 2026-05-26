@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
+  <div class="min-h-screen p-4 sm:p-6 md:p-8">
     <!-- Header con navegación -->
-    <div class="max-w-4xl mx-auto mb-6">
-      <div class="flex items-center gap-3 mb-4">
+    <div class="max-w-6xl mx-auto mb-8">
+      <div class="flex items-center gap-3">
         <button
           @click="goBack"
           class="w-10 h-10 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -22,10 +22,14 @@
           </svg>
         </button>
         <div>
-          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h1
+            class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight"
+          >
             Editar Información Económica
           </h1>
-          <p class="text-sm text-gray-600 mt-1">
+          <p
+            class="text-sm text-gray-500 mt-1 uppercase font-semibold tracking-wider"
+          >
             {{ productData.description || "Cargando..." }}
           </p>
         </div>
@@ -33,23 +37,20 @@
     </div>
 
     <!-- Contenido -->
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
       <!-- Loading (solo en fallback a BD) -->
       <div
         v-if="loading"
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center"
+        class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center"
       >
         <div
           class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"
         ></div>
-        <p class="text-gray-600 mt-4">Cargando producto...</p>
+        <p class="text-gray-600 mt-4 font-medium">Cargando producto...</p>
       </div>
 
-      <!-- Componente de Edición -->
-      <div
-        v-else
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-      >
+      <!-- Componente de Edición (renderizado directo sobre bg-gray-50) -->
+      <div v-else class="w-full">
         <EditProductEconomicInfoComponent
           :initialData="productData"
           :saving="saving"
@@ -82,24 +83,8 @@ const productData = ref({
   cost: null,
 });
 
-// Cargar datos — desde state de ruta o fallback a BD
 const loadProductData = async () => {
-  const state = history.state;
-
-  // Si venimos de ProductDetails vía router-link con state, usarlo directamente
-  if (state?.description !== undefined) {
-    productData.value = {
-      description: state.description || "",
-      type: state.type || "MERCH",
-      price: state.price ?? 0,
-      cost: state.cost ?? null,
-    };
-    console.log("⚡ Datos económicos cargados desde route state:", productData.value);
-    return;
-  }
-
-  // Fallback: navegación directa por URL → fetch de BD
-  console.log("🔄 Sin state, cargando desde BD...");
+  // Cargar siempre desde la BD para garantizar datos frescos de costeo tras volver de sub-vistas
   try {
     loading.value = true;
     const productId = route.params.productId;
@@ -112,8 +97,14 @@ const loadProductData = async () => {
       type: product.type || "MERCH",
       price: product.price || 0,
       cost: product.cost || null,
+      costStructure: product.costStructure ?? null,
+      deliveryConfig: product.deliveryConfig ?? null,
+      deliveryEnabled: product.deliveryEnabled ?? false,
     };
-    console.log("✅ Información económica cargada desde BD:", productData.value);
+    console.log(
+      "✅ Información económica cargada desde BD:",
+      productData.value,
+    );
   } catch (err) {
     console.error("❌ Error cargando producto:", err);
     showError("Error al cargar el producto");

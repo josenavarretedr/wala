@@ -95,8 +95,24 @@
 
       <!-- Formulario de Registro (se muestra después de seleccionar rol) -->
       <div v-else class="space-y-6">
+        <!-- Banner de Invitación -->
+        <div v-if="inviteDetails" class="bg-gradient-to-r from-purple-500 to-indigo-600 rounded-2xl p-4 text-white shadow-md mb-4">
+          <div class="flex items-center gap-3">
+            <div class="p-2 bg-white/20 rounded-xl">
+              <span class="text-xl">🎟️</span>
+            </div>
+            <div class="flex-1">
+              <h4 class="font-bold text-sm">Invitación Activa</h4>
+              <p class="text-xs text-white/80">
+                Te registrarás y unirás a <strong>{{ inviteDetails.businessName }}</strong> como <strong>{{ inviteDetails.rolNombre }}</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Indicador de rol seleccionado -->
         <div
+          v-if="!inviteDetails"
           class="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-4"
         >
           <div class="flex items-center justify-between">
@@ -298,10 +314,11 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
-import { useRouter } from "vue-router";
+import { useInvitationStore } from "@/stores/invitationStore";
+import { useRouter, useRoute } from "vue-router";
 import { Mail, Lock, UserPlus, ProfileCircle } from "@iconoir/vue";
 
 // Estado local del componente
@@ -313,6 +330,32 @@ const isLoading = ref(false);
 const roleSelected = ref(false);
 const userRole = ref(""); // "business_owner" o "facilitator"
 const termsAccepted = ref(false);
+
+// Invitación
+const route = useRoute();
+const invitationStore = useInvitationStore();
+const inviteToken = ref(route.query.invite || null);
+const inviteDetails = ref(null);
+
+onMounted(async () => {
+  if (inviteToken.value) {
+    try {
+      const inv = await invitationStore.getInvitationByToken(inviteToken.value);
+      if (inv) {
+        inviteDetails.value = inv;
+        userRole.value = "business_owner";
+        roleSelected.value = true;
+        console.log("🎟️ Registro por invitación del negocio:", inv.businessName);
+      } else {
+        console.warn("⚠️ Token de invitación inválido o expirado");
+        inviteToken.value = null;
+      }
+    } catch (err) {
+      console.error("Error al verificar invitación en registro:", err);
+      inviteToken.value = null;
+    }
+  }
+});
 
 // 🏪 Stores (solo estado reactivo)
 const authStore = useAuthStore();
@@ -370,6 +413,15 @@ const register = async () => {
       "✅ Perfil de usuario creado en Firestore con rol:",
       userRole.value,
     );
+
+    // Si tiene invitación, auto-vincular al negocio
+    if (inviteToken.value) {
+      console.log("🔗 Vinculando a negocio por invitación...");
+      await invitationStore.useInvitation(inviteToken.value, userProfileData);
+      console.log("✅ Vinculación completada");
+      router.push(`/business/${inviteDetails.value.businessId}/dashboard`);
+      return;
+    }
 
     // 3. Redirigir según el rol
     if (userRole.value === "facilitator") {
@@ -431,6 +483,15 @@ const handleGoogleRegister = async () => {
       "✅ Perfil de usuario creado en Firestore con rol:",
       userRole.value,
     );
+
+    // Si tiene invitación, auto-vincular al negocio
+    if (inviteToken.value) {
+      console.log("🔗 Vinculando a negocio por invitación (Google)...");
+      await invitationStore.useInvitation(inviteToken.value, userProfileData);
+      console.log("✅ Vinculación completada");
+      router.push(`/business/${inviteDetails.value.businessId}/dashboard`);
+      return;
+    }
 
     // 3. Redirigir según el rol
     if (userRole.value === "facilitator") {

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="product-details-wrapper space-y-4 max-w-2xl mx-auto bg-white shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
+    class="product-details-wrapper space-y-4 max-w-2xl mx-auto bg-white/80 shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
   >
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">

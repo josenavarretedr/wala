@@ -31,7 +31,7 @@
     <div
       class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
     >
-      <!-- Total destacado con estado de pago -->
+      <!-- Total destacado con estado de pago y canal de venta -->
       <div
         v-if="transactionData.items && transactionData.items.length > 0"
         :class="[
@@ -54,26 +54,49 @@
         >
           Total de la venta
         </div>
-        <!-- Badge de estado de pago -->
-        <div v-if="getPaymentStatus() !== 'completed'" class="mt-3">
+        
+        <!-- Badges Row (Payment Status + Sales Channel) -->
+        <div class="flex flex-wrap items-center justify-center gap-2 mt-4">
+          <!-- Badge de Estado de Pago -->
           <span
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-sm"
+            :class="[
+              'inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md text-white border border-white/10',
+            ]"
           >
-            <svg
-              class="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" v-if="getPaymentStatus() === 'completed'"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-yellow-300" v-else></span>
             {{
-              getPaymentStatus() === "partial" ? "Pago Parcial" : "Sin Pagar"
+              getPaymentStatus() === "completed"
+                ? "Pagado"
+                : getPaymentStatus() === "partial"
+                ? "Pago Parcial"
+                : "Sin Pagar"
+            }}
+          </span>
+
+          <!-- Badge de Canal de Venta -->
+          <span
+            class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md text-white border border-white/10"
+          >
+            <!-- Icono Local -->
+            <svg v-if="transactionData.salesChannel === 'LOCAL'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+            <!-- Icono Takeaway -->
+            <svg v-else-if="transactionData.salesChannel === 'TAKEAWAY'" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <!-- Icono Delivery -->
+            <svg v-else class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+            
+            {{
+              transactionData.salesChannel === "LOCAL" || !transactionData.salesChannel
+                ? "En Local"
+                : transactionData.salesChannel === "TAKEAWAY"
+                ? "Para Llevar"
+                : `Delivery - ${transactionData.deliveryPlatformName || transactionData.deliveryPlatform || 'Plataforma'}`
             }}
           </span>
         </div>
@@ -180,17 +203,84 @@
           </div>
         </div>
 
-        <!-- Resumen final -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
-          <div class="flex justify-between items-center">
-            <div class="text-gray-600">
-              {{ transactionData.items.length }}
-              producto{{ transactionData.items.length !== 1 ? "s" : "" }}
+        <!-- Resumen final y Desglose Financiero Premium -->
+        <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
+          <!-- Si no hay costos extra, mostrar solo el total simple de siempre -->
+          <template v-if="!transactionData.packagingCost && !transactionData.platformCommissionAmount && !transactionData.deliveryCost">
+            <div class="flex justify-between items-center">
+              <div class="text-gray-600 font-medium">
+                {{ transactionData.items.length }}
+                producto{{ transactionData.items.length !== 1 ? "s" : "" }}
+              </div>
+              <div class="text-xl font-bold text-blue-600">
+                S/ {{ getTotal().toFixed(2) }}
+              </div>
             </div>
-            <div class="text-xl font-bold text-blue-600">
-              S/ {{ getTotal().toFixed(2) }}
+          </template>
+          
+          <!-- Si hay envases, comisión o delivery, mostrar desglose premium -->
+          <template v-else>
+            <div class="space-y-2.5 text-sm text-gray-600">
+              <div class="flex justify-between items-center">
+                <span>Subtotal Productos ({{ transactionData.items.length }} und)</span>
+                <span class="font-medium text-gray-800">S/ {{ getItemsSubtotal().toFixed(2) }}</span>
+              </div>
+              
+              <div v-if="getPackagingCost() > 0" class="flex justify-between items-center text-gray-600">
+                <span class="flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                  Costo de Envases
+                </span>
+                <span class="font-medium text-orange-600">+ S/ {{ getPackagingCost().toFixed(2) }}</span>
+              </div>
+              
+              <div v-if="getDeliveryCost() > 0" class="flex justify-between items-center text-gray-600">
+                <span class="flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                  Costo de Envío (WhatsApp Directo)
+                </span>
+                <span :class="['font-medium', transactionData.isDeliveryFree ? 'text-gray-400 line-through' : 'text-blue-600']">
+                  + S/ {{ getDeliveryCost().toFixed(2) }}
+                </span>
+              </div>
+
+              <!-- Delivery Gratis (Descuento) -->
+              <div
+                v-if="getDeliveryCost() > 0 && transactionData.isDeliveryFree"
+                class="flex justify-between items-center text-orange-600 font-medium"
+              >
+                <span class="flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                  Descuento Delivery Gratis
+                </span>
+                <span>- S/ {{ getDeliveryCost().toFixed(2) }}</span>
+              </div>
+              
+              <div class="border-t border-dashed border-gray-200 my-2 pt-2 flex justify-between items-center text-base font-semibold text-gray-800">
+                <span>Total Bruto Cobrado</span>
+                <span class="text-gray-900">S/ {{ getTotal().toFixed(2) }}</span>
+              </div>
+
+              <div v-if="getPlatformCommission() > 0" class="flex justify-between items-center text-gray-600">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                  Comisión de {{ transactionData.deliveryPlatformName || 'Plataforma' }}
+                  <span class="text-[10px] text-gray-400" v-if="transactionData.platformCommissionPct">({{ transactionData.platformCommissionPct }}%)</span>
+                </span>
+                <span class="font-medium text-red-600">- S/ {{ getPlatformCommission().toFixed(2) }}</span>
+              </div>
+
+              <div class="border-t-2 border-double border-gray-200 pt-2.5 mt-2 flex justify-between items-center">
+                <div class="font-bold text-gray-900 flex flex-col">
+                  <span>Ingreso Neto Estimado</span>
+                  <span class="text-[10px] text-gray-400 font-normal">Monto neto real tras deducir la comisión</span>
+                </div>
+                <div class="text-xl font-black text-emerald-600">
+                  S/ {{ getNetIncome().toFixed(2) }}
+                </div>
+              </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
 
@@ -343,6 +433,9 @@ const props = defineProps({
 });
 
 const getTotal = () => {
+  if (props.transactionData.amount !== undefined && props.transactionData.amount !== null) {
+    return props.transactionData.amount;
+  }
   if (
     !props.transactionData.items ||
     !Array.isArray(props.transactionData.items)
@@ -352,6 +445,34 @@ const getTotal = () => {
   return props.transactionData.items.reduce((sum, item) => {
     return sum + (item.price || 0) * (item.quantity || 0);
   }, 0);
+};
+
+const getItemsSubtotal = () => {
+  if (
+    !props.transactionData.items ||
+    !Array.isArray(props.transactionData.items)
+  ) {
+    return 0;
+  }
+  return props.transactionData.items.reduce((sum, item) => {
+    return sum + (item.price || 0) * (item.quantity || 0);
+  }, 0);
+};
+
+const getPackagingCost = () => {
+  return props.transactionData.packagingCost || 0;
+};
+
+const getPlatformCommission = () => {
+  return props.transactionData.platformCommissionAmount || 0;
+};
+
+const getDeliveryCost = () => {
+  return props.transactionData.deliveryCost || 0;
+};
+
+const getNetIncome = () => {
+  return getTotal() - getPlatformCommission();
 };
 
 const getTypeLabel = computed(() => {

@@ -6,27 +6,30 @@
   >
     <template #content="{ contentClasses }">
       <div
-        class="w-full h-full bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm flex flex-col"
+        class="w-full h-full bg-white rounded-2xl border border-gray-200 p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-sm flex flex-col"
       >
         <!-- Header (sin blur) -->
-        <div class="flex items-center justify-between mb-3">
-          <div class="flex items-center gap-2">
+        <div class="flex items-center justify-between mb-3 border-b border-gray-50 pb-2 shrink-0">
+          <div class="flex flex-col gap-0.5">
             <span
-              class="text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+              class="text-[10px] text-gray-400 uppercase tracking-wider font-bold"
             >
-              {{ title }}
+              Flujo de Ingresos
             </span>
+            <h2 class="text-sm font-bold text-gray-800">{{ title }}</h2>
+          </div>
+          <div v-if="hasData && !isLoading" class="bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+            <span class="text-[9px] text-gray-400 uppercase tracking-wider font-bold mr-1">Total Analizado</span>
+            <span class="text-xs font-extrabold text-gray-900 block sm:inline-block tabular-nums">{{ formatCurrency(totalAmount) }}</span>
           </div>
         </div>
 
-        <!-- Gráfico (con blur cuando locked) -->
+        <!-- Contenido principal (con blur cuando locked) -->
         <div class="relative flex-1 min-h-0" :class="contentClasses">
-          <canvas ref="chartCanvas"></canvas>
-
           <!-- Loading State -->
           <div
             v-if="isLoading"
-            class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90"
+            class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 z-20"
           >
             <SpinnerIcon size="md" class="text-blue-500" />
           </div>
@@ -34,9 +37,54 @@
           <!-- Estado vacío -->
           <div
             v-else-if="!hasData"
-            class="absolute inset-0 flex items-center justify-center text-xs text-gray-400"
+            class="absolute inset-0 flex items-center justify-center text-xs text-gray-400 z-10"
           >
-            Sin datos en el periodo
+            Sin ingresos en el periodo
+          </div>
+
+          <!-- Cards View -->
+          <div v-else class="w-full max-h-[320px] overflow-y-auto pr-1 space-y-2.5">
+            <div
+              v-for="item in paymentMethodsData"
+              :key="item.method"
+              class="p-3 bg-white rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-xs transition-all duration-200 flex flex-col gap-2"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <div
+                    class="p-2 rounded-full flex items-center justify-center"
+                    :style="{ backgroundColor: item.color + '15' }"
+                  >
+                    <component
+                      :is="getPaymentMethodIcon(item.method)"
+                      class="w-4 h-4"
+                      :style="{ color: item.color }"
+                    />
+                  </div>
+                  <div>
+                    <span class="text-xs font-bold text-gray-800 block leading-tight">
+                      {{ item.name }}
+                    </span>
+                    <span class="text-[10px] text-gray-400 font-semibold">
+                      {{ item.percentage.toFixed(1) }}% del total
+                    </span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-sm font-extrabold text-gray-900 block leading-tight tabular-nums">
+                    {{ formatCurrency(item.amount) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  class="h-full rounded-full transition-all duration-500"
+                  :style="{ width: `${item.percentage}%`, backgroundColor: item.color }"
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -50,21 +98,18 @@ import {
   defineEmits,
   ref,
   onMounted,
-  onBeforeUnmount,
   watch,
   computed,
-  nextTick,
 } from "vue";
-import Chart from "chart.js/auto";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
+import { Coins, SmartphoneDevice, CreditCard, HelpCircle } from "@iconoir/vue";
 
 // ---------- Props ----------
 const props = defineProps({
-  transactions: { type: Array, required: true }, // Array de tx (ideal: solo incomes)
+  transactions: { type: Array, required: true },
   title: { type: String, default: "Mix por método de pago" },
-  // Si quieres filtrar aquí por tipo:
-  filterType: { type: String, default: "income" }, // null para no filtrar
+  filterType: { type: String, default: "income" },
   isPremium: { type: Boolean, default: true },
   isLocked: { type: Boolean, default: false },
 });
@@ -72,8 +117,6 @@ const props = defineProps({
 defineEmits(["locked-click"]);
 
 // ---------- Refs / estado ----------
-const chartCanvas = ref(null);
-let chartInstance = null;
 const isLoading = ref(true);
 
 // ---------- Utils ----------
@@ -140,7 +183,7 @@ const buildPie = (txs) => {
   return {
     labels: entries.map((e) => getFriendlyName(e[0])),
     data: entries.map((e) => e[1]),
-    methods: entries.map((e) => e[0]), // Guardar métodos originales para el mapeo de colores
+    methods: entries.map((e) => e[0]),
   };
 };
 
@@ -148,85 +191,75 @@ const buildPie = (txs) => {
 const hasData = computed(
   () => Array.isArray(props.transactions) && props.transactions.length > 0
 );
+
 const totalAmount = computed(() => {
   const { data } = buildPie(props.transactions || []);
   return data.reduce((acc, n) => acc + n, 0);
 });
 
-// ---------- Chart render ----------
-const renderChart = async () => {
-  isLoading.value = true;
-  await nextTick();
-  const el = chartCanvas.value;
-  if (!el) {
-    isLoading.value = false;
-    return;
-  }
-
+const paymentMethodsData = computed(() => {
   const { labels, data, methods } = buildPie(props.transactions || []);
-
-  // Limpiar instancia previa
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
-
-  const ctx = el.getContext("2d");
-
-  // Asignar colores fijos basados en el método original
-  const colors = methods.map((method) => getColorForMethod(method));
-
-  chartInstance = new Chart(ctx, {
-    type: "pie",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Ventas",
-          data,
-          backgroundColor: colors,
-          borderWidth: 1,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {},
-        tooltip: {
-          callbacks: {
-            label: (ctx) => {
-              const label = ctx.label || "";
-              const value = ctx.parsed || 0;
-              // porcentaje
-              const total =
-                ctx.chart._metasets[0].total ?? data.reduce((a, b) => a + b, 0);
-              const pct = total ? ((value / total) * 100).toFixed(1) : 0;
-              return ` ${label}: ${formatCurrency(value)} (${pct}%)`;
-            },
-          },
-        },
-      },
-    },
+  const total = totalAmount.value || 1;
+  return methods.map((method, index) => {
+    const name = labels[index];
+    const amount = data[index];
+    const percentage = total ? (amount / total) * 100 : 0;
+    const color = getColorForMethod(method);
+    return {
+      method,
+      name,
+      amount,
+      percentage,
+      color,
+    };
   });
-
-  isLoading.value = false;
-};
-
-onMounted(renderChart);
-
-onBeforeUnmount(() => {
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
 });
 
-// Redibujar al cambiar props
+const getPaymentMethodIcon = (method) => {
+  const methodLower = method.toLowerCase();
+  if (methodLower === "cash") return Coins;
+  if (methodLower === "bank") return SmartphoneDevice;
+  if (methodLower === "card" || methodLower.includes("tarjeta")) return CreditCard;
+  return HelpCircle;
+};
+
+// ---------- Ciclo de vida y watch ----------
+onMounted(() => {
+  isLoading.value = false;
+});
+
 watch(
   () => [props.transactions, props.filterType],
-  () => renderChart(),
+  () => {
+    isLoading.value = false;
+  },
   { deep: true }
 );
 </script>
+
+<style scoped>
+/* Scrollbar personalizado para la lista */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 2px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+/* Números tabulares para mejor alineación numérica */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+</style>
+

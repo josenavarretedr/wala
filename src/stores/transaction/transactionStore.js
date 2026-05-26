@@ -7,7 +7,7 @@ import { useInventory } from '@/composables/useInventory';
 import { useTraceability } from '@/composables/useTraceability';
 import { useExpenses } from '@/composables/useExpenses';
 import { round2, multiplyMoney, addMoney, parseMoneyFloat, roundStock } from '@/utils/mathUtils';
-import { serverTimestamp, Timestamp, getFirestore, doc, writeBatch } from 'firebase/firestore';
+import { serverTimestamp, Timestamp, getFirestore, doc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
 import { calculatePaymentStatus, validateNewPayment } from '@/utils/paymentCalculator';
 import { ANONYMOUS_CLIENT_ID } from '@/types/client';
 import { trackTransactionCreated, isValidTransactionForStreak } from '@/analytics';
@@ -21,6 +21,7 @@ import { v4 as uuidv4 } from "uuid";
 
 import { useExpensesStore } from "@/stores/expensesStore"; // Importa el store de expenses
 import { useInventoryStore } from "@/stores/inventoryStore"; // Importa el store de inventario
+import { classifyStatementLine } from '@/utils/statementLineClassifier';
 import { fromJSON } from 'postcss';
 const expensesStore = useExpensesStore(); // Usa el store
 
@@ -86,6 +87,9 @@ const transactionToAdd = ref({
   deliveryPlatformName: null,         // Nombre display (para customs)
   platformCommissionPct: null,        // % de comisión (ej: 30)
   platformCommissionAmount: 0,        // Monto calculado (metadata, no reduce amount)
+  deliveryCost: 0,                    // Costo de envío cobrado al cliente (WhatsApp Directo)
+  deliveryAddress: '',                // Dirección de envío / entrega
+  isDeliveryFree: false,              // Toggle si el delivery es gratis para el cliente
   packagingItems: [],                 // Items de envase aplicados [{productId, description, quantity, unit, costPerUnit, subtotal}]
   packagingCost: 0,                   // Costo total de envases
   packagingStockLogs: [],             // StockLogs generados para envases
@@ -269,6 +273,20 @@ export function useTransactionStore() {
   };
 
   const addTransaction = async () => {
+    const { useAuthStore } = await import('@/stores/authStore');
+    const { useUserStore } = await import('@/stores/useUserStore');
+    const authStore = useAuthStore();
+    const userStore = useUserStore();
+    const currentUser = authStore.user;
+
+    // Stamp creator and user details
+    transactionToAdd.value.userId = currentUser?.uid || 'unknown';
+    transactionToAdd.value.registeredBy = {
+      uid: currentUser?.uid || 'unknown',
+      displayName: currentUser?.displayName || userStore.userProfile?.nombre || 'Desconocido',
+      rol: userStore.currentRolNombre || 'Gerente'
+    };
+
     // ⚡ FASE 3: OPTIMISTIC UI - Asignar UUID antes de optimistic update
     const transactionId = uuidv4();
     transactionToAdd.value.uuid = transactionId;
@@ -321,7 +339,9 @@ export function useTransactionStore() {
             return addMoney(sum, multiplyMoney(item.price, item.quantity));
           }, 0);
           const packagingTotal = transactionSnapshot.packagingCost || 0;
-          transactionSnapshot.amount = addMoney(itemsTotal, packagingTotal);
+          const isFree = transactionSnapshot.isDeliveryFree === true;
+          const deliveryTotal = (transactionSnapshot.salesChannel === 'DELIVERY' && transactionSnapshot.deliveryPlatform === 'whatsapp' && !isFree) ? (transactionSnapshot.deliveryCost || 0) : 0;
+          transactionSnapshot.amount = addMoney(addMoney(itemsTotal, packagingTotal), deliveryTotal);
 
           // === TRAZABILIDAD: Log de items relacionados ===
           for (const item of transactionSnapshot.items) {
@@ -595,13 +615,39 @@ export function useTransactionStore() {
               await addLogToExpense(expenseId, logData);
               await updateExpenseMetadata(expenseId);
 
+              // 🌟 TRAZABILIDAD: Obtener subcategoría y subsubcategoría del expense existente
+              try {
+                const expenseDocData = await getExpenseById(expenseId);
+                if (expenseDocData) {
+                  transactionSnapshot.subcategory = expenseDocData.subcategory || null;
+                  transactionSnapshot.subsubcategory = expenseDocData.subsubcategory || null;
+                }
+              } catch (e) {
+                console.warn('⚠️ Error al copiar subcategoría del expense existente:', e);
+              }
+
               console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
             } else {
+              // Si es un nuevo expense de tipo overhead, pre-clasificar localmente
+              if (transactionSnapshot.category === 'overhead') {
+                try {
+                  const { classifyOverhead } = await import('@/utils/overheadClassifier');
+                  const classification = classifyOverhead(transactionSnapshot.description);
+                  if (classification) {
+                    transactionSnapshot.subcategory = classification.subcategory;
+                    transactionSnapshot.subsubcategory = classification.subsubcategory || null;
+                  }
+                } catch (e) {
+                  console.warn('⚠️ Error al pre-clasificar nuevo expense overhead:', e);
+                }
+              }
+
               // Expense nuevo: crear con primer log
               const expenseData = {
                 description: transactionSnapshot.description,
                 category: transactionSnapshot.category,
                 subcategory: transactionSnapshot.subcategory || null,
+                subsubcategory: transactionSnapshot.subsubcategory || null,
                 // Campos de clasificación contable
                 bucket: transactionSnapshot.bucket || null,
                 paylabor: transactionSnapshot.paylabor || null,
@@ -642,12 +688,14 @@ export function useTransactionStore() {
         // === PROCESAMIENTO DE PAGOS PARA INGRESOS ===
         if (transactionSnapshot.type === 'income') {
           // 🔒 Calcular el total desde el snapshot (no usar transactionToAdd.value)
-          // 🔒 Calcular el total incluyendo envases desde el snapshot (no usar transactionToAdd.value)
+          // 🔒 Calcular el total incluyendo envases y delivery propio desde el snapshot
           const itemsTotalForPayment = transactionSnapshot.items.reduce((sum, item) => {
             return addMoney(sum, multiplyMoney(item.price, item.quantity));
           }, 0);
           const packagingTotalForPayment = transactionSnapshot.packagingCost || 0;
-          const totalAmount = addMoney(itemsTotalForPayment, packagingTotalForPayment);
+          const isFreeForPayment = transactionSnapshot.isDeliveryFree === true;
+          const deliveryTotalForPayment = (transactionSnapshot.salesChannel === 'DELIVERY' && transactionSnapshot.deliveryPlatform === 'whatsapp' && !isFreeForPayment) ? (transactionSnapshot.deliveryCost || 0) : 0;
+          const totalAmount = addMoney(addMoney(itemsTotalForPayment, packagingTotalForPayment), deliveryTotalForPayment);
 
           // Si payments está vacío, crear payment inicial con el monto total
           if (!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) {
@@ -812,6 +860,9 @@ export function useTransactionStore() {
         // ☁️ FASE 2: Agregar estado de procesamiento para Cloud Function
         cleanTransaction.processingStatus = 'pending';
 
+        // 📈 Clasificar automáticamente la línea del Estado de Resultados (P&L)
+        cleanTransaction.statementLine = classifyStatementLine(cleanTransaction);
+
         // Crear la transacción en Firestore (OPERACIÓN CRÍTICA)
         await createTransaction(cleanTransaction);
         console.log('✅ Transaction added successfully to Firestore');
@@ -824,6 +875,162 @@ export function useTransactionStore() {
           clientName: cleanTransaction.clientName,
           paymentStatus: cleanTransaction.paymentStatus
         });
+
+        // === CREACIÓN DEL GASTO ENLAZADO DE COMISIÓN POR DELIVERY ===
+        if (
+          cleanTransaction.type === 'income' &&
+          cleanTransaction.salesChannel === 'DELIVERY' &&
+          cleanTransaction.platformCommissionAmount > 0
+        ) {
+          console.log('💰 [COMMISSION] Iniciando creación/reutilización de gasto enlazado para comisión por delivery');
+          const commissionExpenseUuid = uuidv4();
+          const businessId = ensureBusinessId();
+          const db = getFirestore();
+
+          // 1. Obtener funciones de useExpenses
+          const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata } = useExpenses();
+          
+          const commissionDescription = `Comisión ${cleanTransaction.deliveryPlatformName || 'Plataforma'}`;
+          
+          // Buscar si ya existe un expense con esta descripción
+          const q = query(
+            collection(db, `businesses/${businessId}/expenses`),
+            where("description", "==", commissionDescription)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          let expenseId;
+          const logData = {
+            amount: cleanTransaction.platformCommissionAmount,
+            date: cleanTransaction.createdAt || new Date(),
+            transactionRef: commissionExpenseUuid,
+            account: cleanTransaction.account || 'bank',
+            notes: `Comisión asociada a la venta ${cleanTransaction.uuid}`
+          };
+
+          if (!querySnapshot.empty) {
+            // Ya existe: reutilizar
+            expenseId = querySnapshot.docs[0].id;
+            console.log('📊 Reutilizando expense de comisión existente:', expenseId);
+            await addLogToExpense(expenseId, logData);
+            await updateExpenseMetadata(expenseId);
+          } else {
+            // No existe: crear uno nuevo
+            const expenseData = {
+              description: commissionDescription,
+              category: 'overhead',
+              subcategory: 'platform_commission',
+              bucket: 'OVERHEAD',
+              overheadUsage: 'ADMIN'
+            };
+            expenseId = await createExpenseWithLog(expenseData, logData);
+            console.log('✅ Expense de comisión creado en colección expenses:', expenseId);
+          }
+
+          // 2. Construir la transacción de egreso
+          const commissionTransaction = {
+            uuid: commissionExpenseUuid,
+            type: 'expense',
+            category: 'overhead',
+            subcategory: 'platform_commission',
+            bucket: 'OVERHEAD',
+            amount: cleanTransaction.platformCommissionAmount,
+            account: cleanTransaction.account || 'bank',
+            description: commissionDescription,
+            notes: `Comisión asociada a la venta ${cleanTransaction.uuid}`,
+            relatedTransactionId: cleanTransaction.uuid,
+            isDeliveryCommission: true,
+            createdAt: cleanTransaction.createdAt || new Date(),
+            userId: cleanTransaction.userId || null,
+            businessId: businessId,
+            expenseId: expenseId,
+            statementLine: 'opex_sales',
+            processingStatus: 'pending'
+          };
+
+          // 3. Escribir la transacción en Firestore
+          await createTransaction(commissionTransaction);
+          console.log('✅ Transacción de comisión enlazada creada con éxito:', commissionExpenseUuid);
+        }
+
+        // === CREACIÓN DEL GASTO ENLAZADO DE DELIVERY PROPIO (LOGÍSTICA - WHATSAPP DIRECTO) ===
+        if (
+          cleanTransaction.type === 'income' &&
+          cleanTransaction.salesChannel === 'DELIVERY' &&
+          cleanTransaction.deliveryPlatform === 'whatsapp' &&
+          cleanTransaction.deliveryCost > 0
+        ) {
+          console.log('🛵 [LOGISTICS] Iniciando creación/reutilización de gasto enlazado para delivery propio (WhatsApp Directo)');
+          const deliveryExpenseUuid = uuidv4();
+          const businessId = ensureBusinessId();
+          const db = getFirestore();
+
+          // 1. Obtener funciones de useExpenses
+          const { createExpenseWithLog, addLogToExpense, updateExpenseMetadata } = useExpenses();
+          
+          const deliveryDescription = `Pago de Delivery (Logística)`;
+          
+          // Buscar si ya existe un expense con esta descripción
+          const q = query(
+            collection(db, `businesses/${businessId}/expenses`),
+            where("description", "==", deliveryDescription)
+          );
+          const querySnapshot = await getDocs(q);
+          
+          let expenseId;
+          const logData = {
+            amount: cleanTransaction.deliveryCost,
+            date: cleanTransaction.createdAt || new Date(),
+            transactionRef: deliveryExpenseUuid,
+            account: cleanTransaction.account || 'cash',
+            notes: `Pago de delivery asociado a la venta ${cleanTransaction.uuid}`
+          };
+
+          if (!querySnapshot.empty) {
+            // Ya existe: reutilizar
+            expenseId = querySnapshot.docs[0].id;
+            console.log('🛵 Reutilizando expense de delivery propio existente:', expenseId);
+            await addLogToExpense(expenseId, logData);
+            await updateExpenseMetadata(expenseId);
+          } else {
+            // No existe: crear uno nuevo
+            const expenseData = {
+              description: deliveryDescription,
+              category: 'overhead',
+              subcategory: 'delivery_cost',
+              bucket: 'OVERHEAD',
+              overheadUsage: 'LOGISTICS'
+            };
+            expenseId = await createExpenseWithLog(expenseData, logData);
+            console.log('✅ Expense de delivery propio creado en colección expenses:', expenseId);
+          }
+
+          // 2. Construir la transacción de egreso
+          const deliveryExpenseTransaction = {
+            uuid: deliveryExpenseUuid,
+            type: 'expense',
+            category: 'overhead',
+            subcategory: 'delivery_cost',
+            bucket: 'OVERHEAD',
+            overheadUsage: 'LOGISTICS',
+            amount: cleanTransaction.deliveryCost,
+            account: cleanTransaction.account || 'cash',
+            description: deliveryDescription,
+            notes: `Pago de delivery asociado a la venta ${cleanTransaction.uuid}`,
+            relatedTransactionId: cleanTransaction.uuid,
+            isDeliveryCostExpense: true,
+            createdAt: cleanTransaction.createdAt || new Date(),
+            userId: cleanTransaction.userId || null,
+            businessId: businessId,
+            expenseId: expenseId,
+            statementLine: 'opex_sales',
+            processingStatus: 'pending'
+          };
+
+          // 3. Escribir la transacción en Firestore
+          await createTransaction(deliveryExpenseTransaction);
+          console.log('✅ Transacción de egreso de delivery propio enlazada creada con éxito:', deliveryExpenseUuid);
+        }
 
         // ⚡ Actualizar transacción optimista a confirmada
         const index = transactionsInStore.value.findIndex(t => t.uuid === transactionId);
@@ -1203,6 +1410,9 @@ export function useTransactionStore() {
       deliveryPlatformName: null,
       platformCommissionPct: null,
       platformCommissionAmount: 0,
+      deliveryCost: 0,
+      deliveryAddress: '',
+      isDeliveryFree: false,
       packagingItems: [],
       packagingCost: 0,
       packagingStockLogs: [],
@@ -1815,6 +2025,54 @@ export function useTransactionStore() {
       );
 
       await Promise.allSettled(paymentPromises);
+    }
+
+    // 2.5. 🗑️ ELIMINACIÓN EN CASCADA: Gastos de comisión por delivery o costos de envío asociados
+    const relatedExpenses = transactionsInStore.value.filter(
+      t => t.type === 'expense' &&
+           t.relatedTransactionId === transactionToDelete.uuid &&
+           (t.isDeliveryCommission === true || t.isDeliveryCostExpense === true)
+    );
+
+    if (relatedExpenses.length > 0) {
+      console.log(`  🔗 Eliminando ${relatedExpenses.length} egresos enlazados (comisión/delivery) asociados en cascada`);
+      const { useExpenses } = await import('@/composables/useExpenses');
+      const { getExpenseById, updateExpenseMetadata } = useExpenses();
+
+      const expensePromises = relatedExpenses.map(async (linkedExpense) => {
+        try {
+          const expenseId = linkedExpense.expenseId;
+          if (expenseId) {
+            console.log(`    📊 Eliminando log del expense enlazado ${expenseId}`);
+            const expense = await getExpenseById(expenseId);
+            if (expense && expense.logs) {
+              const updatedLogs = expense.logs.filter(
+                log => log.transactionRef !== linkedExpense.uuid
+              );
+
+              const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+
+              if (updatedLogs.length === 0) {
+                console.log(`    🗑️ No quedan logs de este gasto enlazado, eliminando expense completo`);
+                const { deleteDoc } = await import('firebase/firestore');
+                await deleteDoc(expenseRef);
+              } else {
+                await updateDoc(expenseRef, { logs: updatedLogs });
+                await updateExpenseMetadata(expenseId);
+              }
+            }
+          }
+          // Eliminar la transacción de egreso de Firestore
+          await deleteTransactionByID(linkedExpense.uuid);
+          console.log(`    ✅ Transacción enlazada ${linkedExpense.uuid} eliminada`);
+          return { success: true, expenseId: linkedExpense.uuid };
+        } catch (err) {
+          console.error(`    ❌ Error eliminando transacción enlazada ${linkedExpense.uuid}:`, err);
+          return { success: false, expenseId: linkedExpense.uuid, error: err.message };
+        }
+      });
+
+      await Promise.allSettled(expensePromises);
     }
 
     // 3. ELIMINAR LA TRANSACCIÓN (OPERACIÓN CRÍTICA)

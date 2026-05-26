@@ -155,8 +155,53 @@
           />
         </div>
 
-        <!-- Input comisión -->
-        <div v-if="selectedPlatform" class="space-y-2">
+        <!-- Input Costo de Envío (solo WhatsApp Directo) -->
+        <div v-if="selectedPlatform === 'whatsapp'" class="space-y-2">
+          <label class="text-sm font-medium text-gray-700">
+            Costo de Envío / Delivery (S/)
+          </label>
+          <div class="relative">
+            <input
+              v-model.number="deliveryCost"
+              type="number"
+              min="0"
+              step="0.5"
+              placeholder="0.00"
+              class="w-full px-4 py-3 pr-12 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all text-lg font-semibold"
+              @input="updateDeliveryCost"
+            />
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold">S/</span>
+          </div>
+          <p class="text-xs text-gray-500">
+            Este monto se sumará al total cobrado al cliente. Se registrará automáticamente una salida de dinero en la misma cuenta por el mismo valor para pagar el delivery.
+          </p>
+        </div>
+
+        <!-- Delivery Gratis (solo WhatsApp Directo) -->
+        <div v-if="selectedPlatform === 'whatsapp'" class="flex items-center justify-between p-3 bg-orange-50/50 rounded-xl border border-orange-100 mt-2">
+          <div class="space-y-0.5">
+            <span class="text-sm font-semibold text-orange-950">¿Delivery Gratis?</span>
+            <p class="text-xs text-orange-700/80">No cobrar el costo de envío al cliente (el negocio lo absorbe)</p>
+          </div>
+          <button
+            type="button"
+            @click="toggleDeliveryFree"
+            :class="[
+              'relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2',
+              isDeliveryFree ? 'bg-orange-500' : 'bg-gray-200'
+            ]"
+          >
+            <span
+              :class="[
+                'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                isDeliveryFree ? 'translate-x-5' : 'translate-x-0'
+              ]"
+            />
+          </button>
+        </div>
+
+        <!-- Input comisión (otras plataformas) -->
+        <div v-if="selectedPlatform && selectedPlatform !== 'whatsapp'" class="space-y-2">
           <label class="text-sm font-medium text-gray-700">
             Comisión de la plataforma (%)
           </label>
@@ -256,8 +301,26 @@
 
         <div class="space-y-2">
           <div class="flex justify-between text-sm">
-            <span class="text-gray-600">Venta bruta:</span>
+            <span class="text-gray-600">Venta bruta (Productos):</span>
             <span class="font-semibold text-gray-800">S/ {{ saleTotal.toFixed(2) }}</span>
+          </div>
+
+          <div
+            v-if="selectedPlatform === 'whatsapp' && deliveryCost > 0"
+            class="flex justify-between text-sm"
+          >
+            <span class="text-gray-600">Envío / Delivery (WhatsApp):</span>
+            <span :class="['font-semibold', isDeliveryFree ? 'text-gray-400 line-through' : 'text-blue-600']">
+              + S/ {{ deliveryCost.toFixed(2) }}
+            </span>
+          </div>
+
+          <div
+            v-if="selectedPlatform === 'whatsapp' && deliveryCost > 0 && isDeliveryFree"
+            class="flex justify-between text-sm text-orange-600 font-medium"
+          >
+            <span>Descuento Delivery Gratis:</span>
+            <span>- S/ {{ deliveryCost.toFixed(2) }}</span>
           </div>
 
           <div
@@ -287,7 +350,7 @@
         </div>
 
         <p class="text-xs text-gray-400 mt-2">
-          * El monto registrado será el total cobrado (venta bruta + envases). La comisión es un dato de referencia para análisis de rentabilidad.
+          * {{ selectedPlatform === 'whatsapp' ? (isDeliveryFree ? 'El monto registrado será el total cobrado sin delivery (venta bruta + envases). Se generará automáticamente un egreso enlazado por el costo del delivery.' : 'El monto registrado será el total cobrado (venta bruta + envases + envío). Se generará automáticamente un egreso enlazado por el costo del delivery.') : 'El monto registrado será el total cobrado (venta bruta + envases). La comisión es un dato de referencia para análisis de rentabilidad.' }}
         </p>
       </div>
     </Transition>
@@ -313,6 +376,8 @@ const salesChannel = ref(transactionStore.transactionToAdd.value.salesChannel ||
 const selectedPlatform = ref(transactionStore.transactionToAdd.value.deliveryPlatform || null);
 const customPlatformName = ref(transactionStore.transactionToAdd.value.deliveryPlatformName || '');
 const commissionPct = ref(transactionStore.transactionToAdd.value.platformCommissionPct || null);
+const deliveryCost = ref(transactionStore.transactionToAdd.value.deliveryCost || 0);
+const isDeliveryFree = ref(transactionStore.transactionToAdd.value.isDeliveryFree || false);
 const platforms = ref([]);
 const packagingItems = ref([...( transactionStore.transactionToAdd.value.packagingItems || [])]);
 const loadingPackaging = ref(false);
@@ -330,6 +395,7 @@ const saleTotal = computed(() => {
 });
 
 const commissionAmount = computed(() => {
+  if (selectedPlatform.value === 'whatsapp') return 0;
   if (!commissionPct.value || commissionPct.value <= 0) return 0;
   return round2(saleTotal.value * commissionPct.value / 100);
 });
@@ -341,11 +407,15 @@ const platformDisplayName = computed(() => {
 });
 
 const netIncome = computed(() => {
-  return round2(saleTotal.value - commissionAmount.value + packagingCostTotal.value);
+  // Gross sales + envases + delivery (whatsapp) - platform commission - delivery (whatsapp)
+  // Which mathematically simplifies to: saleTotal + packagingCostTotal - commissionAmount
+  const isFree = isDeliveryFree.value === true;
+  const deliveryAdded = (selectedPlatform.value === 'whatsapp' && !isFree) ? (deliveryCost.value || 0) : 0;
+  return round2(saleTotal.value - commissionAmount.value + packagingCostTotal.value + deliveryAdded);
 });
 
 const hasFinancialImpact = computed(() => {
-  return commissionAmount.value > 0 || packagingCostTotal.value > 0;
+  return commissionAmount.value > 0 || packagingCostTotal.value > 0 || (selectedPlatform.value === 'whatsapp' && deliveryCost.value > 0);
 });
 
 // Methods
@@ -362,6 +432,17 @@ const selectPlatform = (platform) => {
     customPlatformName.value = '';
     commissionPct.value = 0;
   }
+  if (platform.id === 'whatsapp') {
+    commissionPct.value = 0;
+  } else {
+    deliveryCost.value = 0;
+    isDeliveryFree.value = false;
+  }
+  syncToStore();
+};
+
+const toggleDeliveryFree = () => {
+  isDeliveryFree.value = !isDeliveryFree.value;
   syncToStore();
 };
 
@@ -373,13 +454,26 @@ const updateCommission = () => {
   syncToStore();
 };
 
+const updateDeliveryCost = () => {
+  syncToStore();
+};
+
 const syncToStore = () => {
   const tx = transactionStore.transactionToAdd.value;
   tx.salesChannel = salesChannel.value;
   tx.deliveryPlatform = selectedPlatform.value;
   tx.deliveryPlatformName = platformDisplayName.value;
-  tx.platformCommissionPct = commissionPct.value;
-  tx.platformCommissionAmount = commissionAmount.value;
+  if (selectedPlatform.value === 'whatsapp') {
+    tx.platformCommissionPct = 0;
+    tx.platformCommissionAmount = 0;
+    tx.deliveryCost = deliveryCost.value || 0;
+    tx.isDeliveryFree = isDeliveryFree.value;
+  } else {
+    tx.platformCommissionPct = commissionPct.value;
+    tx.platformCommissionAmount = commissionAmount.value;
+    tx.deliveryCost = 0;
+    tx.isDeliveryFree = false;
+  }
   tx.packagingItems = [...packagingItems.value];
   tx.packagingCost = packagingCostTotal.value;
 };
@@ -443,6 +537,8 @@ watch(salesChannel, async (newChannel) => {
     selectedPlatform.value = null;
     customPlatformName.value = '';
     commissionPct.value = null;
+    deliveryCost.value = 0;
+    isDeliveryFree.value = false;
     packagingItems.value = [];
     syncToStore();
   }
@@ -455,8 +551,20 @@ watch(salesChannel, async (newChannel) => {
     selectedPlatform.value = null;
     customPlatformName.value = '';
     commissionPct.value = null;
+    deliveryCost.value = 0;
+    isDeliveryFree.value = false;
   }
 
+  syncToStore();
+});
+
+watch(selectedPlatform, (newPlatform) => {
+  if (newPlatform === 'whatsapp') {
+    commissionPct.value = 0;
+  } else {
+    deliveryCost.value = 0;
+    isDeliveryFree.value = false;
+  }
   syncToStore();
 });
 
@@ -489,6 +597,8 @@ onMounted(async () => {
     selectedPlatform.value = tx.deliveryPlatform;
     customPlatformName.value = tx.deliveryPlatformName || '';
     commissionPct.value = tx.platformCommissionPct;
+    deliveryCost.value = tx.deliveryCost || 0;
+    isDeliveryFree.value = tx.isDeliveryFree || false;
     packagingItems.value = [...(tx.packagingItems || [])];
   }
 

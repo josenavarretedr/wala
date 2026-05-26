@@ -24,7 +24,6 @@ import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 <style scoped>
 .clients-dashboard-wrapper {
   min-height: 100vh;
-  background: #f9fafb;
   padding-bottom: 2rem;
 }
 </style>

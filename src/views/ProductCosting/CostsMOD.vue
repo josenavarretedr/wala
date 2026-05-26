@@ -5,12 +5,12 @@
       <div class="max-w-4xl mx-auto px-4 py-4">
         <div class="flex items-center gap-3">
           <BackBtn
-            :route-name="'InventoryProductCosting'"
+            :route-name="'InventoryEditProductEconomicInfo'"
             :route-params="{
               businessId: route.params.businessId,
               productId: route.params.productId,
             }"
-            tooltip-text="Volver al costeo"
+            tooltip-text="Volver al producto"
           />
           <div class="flex-1">
             <h1 class="text-2xl font-bold text-gray-900">Calcular Costo MOD</h1>
@@ -221,9 +221,9 @@ const handleSave = async (data) => {
 };
 
 const goBack = () => {
-  // Volver a la vista de costeo del producto
+  // Volver a la vista de información económica
   router.push({
-    name: "InventoryProductCosting",
+    name: "InventoryEditProductEconomicInfo",
     params: {
       businessId: route.params.businessId,
       productId: route.params.productId,

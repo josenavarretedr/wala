@@ -1,15 +1,21 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8"
+    class="min-h-screen bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8 font-display relative overflow-hidden"
   >
+    <!-- Ambient blurs -->
+    <div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10">
+      <div class="absolute top-10 left-10 w-96 h-96 bg-orange-50 rounded-full filter blur-3xl opacity-30"></div>
+      <div class="absolute bottom-20 right-10 w-96 h-96 bg-emerald-50 rounded-full filter blur-3xl opacity-20"></div>
+    </div>
+
     <div class="max-w-4xl mx-auto">
       <!-- Botón de volver -->
       <button
         @click="goBack"
-        class="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-100 rounded-full text-sm font-semibold text-gray-600 hover:text-gray-900 shadow-sm transition-all duration-300 hover:-translate-x-1 cursor-pointer"
       >
         <svg
-          class="w-5 h-5"
+          class="w-4 h-4 text-emerald-600"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -17,32 +23,35 @@
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="2"
+            stroke-width="2.5"
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        <span class="font-medium">Volver</span>
+        <span>Volver</span>
       </button>
 
       <!-- Contenedor principal -->
-      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-8 sm:p-12 md:p-16 relative overflow-hidden">
         <!-- Header -->
-        <div
-          class="bg-gradient-to-r from-green-500 to-green-600 px-8 py-12 text-center"
-        >
-          <h1 class="text-3xl font-bold text-white mb-4">
-            CONDICIONES GENERALES DE ADHESIÓN Y USO DE LA PLATAFORMA WALA
+        <div class="text-center pb-10 border-b border-gray-100 mb-10">
+          <span
+            class="inline-block px-4 py-1.5 bg-emerald-50 border border-emerald-100/60 text-emerald-600 text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+          >
+            Términos de Uso
+          </span>
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight uppercase">
+            Condiciones Generales de Adhesión y Uso de WALA
           </h1>
-          <p class="text-green-100 text-sm mt-2">
+          <p class="text-gray-400 text-sm mt-3 font-semibold">
             Última actualización: enero 2026
           </p>
         </div>
 
         <!-- Contenido -->
-        <div class="px-8 py-10 space-y-8">
+        <div class="space-y-12">
           <!-- Introducción -->
-          <section class="border-l-4 border-green-500 pl-6">
-            <div class="text-gray-700 leading-relaxed space-y-4">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Las presentes Condiciones Generales de Uso de la Plataforma de
                 Wala (en adelante, las "Condiciones de Uso") regulan la relación
@@ -113,17 +122,17 @@
           </section>
 
           <!-- Cláusula Primera -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >1</span
               >
               CLÁUSULA PRIMERA: NATURALEZA JURÍDICA
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>1.1.</strong> El Cliente entiende y reconoce que estas
                 Condiciones de Uso y Política de Privacidad tienen la naturaleza
@@ -151,24 +160,24 @@
           </section>
 
           <!-- Cláusula Segunda -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >2</span
               >
               CLÁUSULA SEGUNDA: DEFINICIONES
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>2.1.</strong> Los términos utilizados en estas
                 Condiciones de Uso tendrán los significados que se indican a
                 continuación:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>
                   <strong>Cliente:</strong> Una persona física o jurídica que se
                   registra, y usa la Plataforma de Wala con el fin de gestionar
@@ -199,17 +208,17 @@
           </section>
 
           <!-- Cláusula Tercera -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >3</span
               >
               CLÁUSULA TERCERA: CONTRAPRESTACIÓN POR EL USO DE LA PLATAFORMA
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>3.1.</strong> La contraprestación de los servicios es
                 equivalente a la oferta de contrato en línea completada. Los
@@ -236,17 +245,17 @@
           </section>
 
           <!-- Cláusula Cuarta -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >4</span
               >
               CLÁUSULA CUARTA: PROPIEDAD INTELECTUAL
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>4.1.</strong> Wala es y será dueño exclusivo y retendrá
                 todo derecho, título e interés sobre la marca y Plataforma y el
@@ -265,17 +274,17 @@
           </section>
 
           <!-- Cláusula Quinta -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >5</span
               >
               CLÁUSULA QUINTA: CONFIDENCIALIDAD
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>5.1.</strong> Las Partes reconocen que, durante la
                 relación contractual, podrán tener acceso a información
@@ -294,20 +303,20 @@
           </section>
 
           <!-- Cláusula Sexta -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >6</span
               >
               CLÁUSULA SEXTA: USO – OBLIGACIONES DEL CLIENTE
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p><strong>6.1.</strong> El Cliente se obliga a:</p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>
                   Abstenerse de copiar total o parcialmente los elementos
                   técnicos, visuales o funcionales de las Plataformas.
@@ -329,17 +338,17 @@
           </section>
 
           <!-- Cláusula Séptima -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >7</span
               >
               CLÁUSULA SÉPTIMA: PROTECCIÓN Y TRATAMIENTO DE DATOS PERSONALES
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>7.1.</strong> En el marco de la prestación de los
                 Servicios, el Cliente podrá proporcionar a Wala datos personales
@@ -357,17 +366,17 @@
           </section>
 
           <!-- Cláusula Octava -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >8</span
               >
               CLÁUSULA OCTAVA: RESPONSABILIDAD
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>8.1.</strong> El Cliente reconoce y acepta que el acceso
                 y uso del Servicio se realiza bajo su exclusiva responsabilidad.
@@ -390,17 +399,17 @@
           </section>
 
           <!-- Cláusula Novena -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >9</span
               >
               CLÁUSULA NOVENA: RESOLUCIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>9.1.</strong> Ante un incumplimiento, las Partes podrán
                 resolver el presente Contrato en cualquier momento, únicamente
@@ -418,17 +427,17 @@
           </section>
 
           <!-- Cláusula Décima -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >10</span
               >
               CLÁUSULA DÉCIMA: CESIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>10.1.</strong> El Cliente no podrá ceder sus derechos y
                 obligaciones en virtud de estas Condiciones de uso sin el
@@ -440,17 +449,17 @@
           </section>
 
           <!-- Cláusula Undécima -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >11</span
               >
               CLÁUSULA UNDÉCIMA: ACUERDO INTEGRAL
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>11.1.</strong> Las presentes Condiciones de Uso
                 constituyen la manifestación íntegra de la voluntad de las
@@ -462,17 +471,17 @@
           </section>
 
           <!-- Cláusula Duodécima -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >12</span
               >
               CLÁUSULA DUODÉCIMA: DISPOSICIÓN GENERAL
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>12.1.</strong> Estas Condiciones de uso pueden ser
                 modificadas de vez en cuando. Si se producen cambios
@@ -484,17 +493,17 @@
           </section>
 
           <!-- Cláusula Decimotercera -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >13</span
               >
               CLÁUSULA DECIMOTERCERA: LEY APLICABLE Y JURISDICCIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>13.1.</strong> Estas Condiciones de uso se regirán e
                 interpretarán exclusivamente de acuerdo con las leyes de Lima,
@@ -511,17 +520,17 @@
           </section>
 
           <!-- Cláusula Decimocuarta -->
-          <section class="border-l-4 border-green-500 pl-6">
+          <section class="border-l-2 border-emerald-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >14</span
               >
               CLÁUSULA DECIMOCUARTA: ACEPTACIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>14.1.</strong> Al aceptar las presentes Condiciones de
                 Uso, el Cliente declara tener capacidad jurídica y reconoce
@@ -532,8 +541,8 @@
           </section>
 
           <!-- Footer -->
-          <div class="pt-8 border-t border-gray-200">
-            <p class="text-center text-sm text-gray-500">
+          <div class="pt-10 border-t border-gray-100 text-center space-y-2 mt-12">
+            <p class="text-sm text-gray-500 font-medium">
               © 2026 NEW COOPERATION S.A.C. Todos los derechos reservados.
             </p>
           </div>

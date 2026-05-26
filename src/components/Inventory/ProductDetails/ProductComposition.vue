@@ -1,27 +1,7 @@
 <template>
   <div
-    class="w-full bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-xl shadow-md border border-purple-100 p-5 relative overflow-hidden transition-all duration-300 hover:shadow-lg"
+    class="w-full bg-white rounded-xl shadow-sm border border-purple-100 p-5 relative overflow-hidden transition-all duration-300 hover:shadow-md"
   >
-    <!-- Patrón decorativo de fondo -->
-    <div
-      class="absolute inset-0 opacity-[0.04] pointer-events-none"
-      style="
-        background-image: radial-gradient(
-          circle at 1px 1px,
-          #9333ea 1px,
-          transparent 0
-        );
-        background-size: 24px 24px;
-      "
-    ></div>
-
-    <!-- Decoración adicional: círculos de gradiente -->
-    <div
-      class="absolute -top-8 -right-8 w-32 h-32 bg-gradient-to-br from-purple-200/30 to-transparent rounded-full blur-2xl pointer-events-none"
-    ></div>
-    <div
-      class="absolute -bottom-8 -left-8 w-32 h-32 bg-gradient-to-tr from-indigo-200/30 to-transparent rounded-full blur-2xl pointer-events-none"
-    ></div>
 
     <!-- Contenido principal -->
     <div class="relative z-10">

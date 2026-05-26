@@ -1141,6 +1141,10 @@ const handleExpenseSelected = (expenseData) => {
     transactionStore.setExpenseCategory(expenseData.category);
   }
 
+  if (expenseData.subcategory) {
+    transactionStore.setExpenseSubcategory(expenseData.subcategory);
+  }
+
   console.log("✅ DEBUG - After Selection:", {
     description: description.value,
     expenseType: expenseType.value,

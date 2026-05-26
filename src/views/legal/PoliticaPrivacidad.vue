@@ -1,15 +1,21 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8"
+    class="min-h-screen bg-gray-50/50 py-12 px-4 sm:px-6 lg:px-8 font-display relative overflow-hidden"
   >
+    <!-- Ambient blurs -->
+    <div class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10">
+      <div class="absolute top-10 left-10 w-96 h-96 bg-orange-50 rounded-full filter blur-3xl opacity-30"></div>
+      <div class="absolute bottom-20 right-10 w-96 h-96 bg-emerald-50 rounded-full filter blur-3xl opacity-20"></div>
+    </div>
+
     <div class="max-w-4xl mx-auto">
       <!-- Botón de volver -->
       <button
         @click="goBack"
-        class="mb-6 flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-100 rounded-full text-sm font-semibold text-gray-600 hover:text-gray-900 shadow-sm transition-all duration-300 hover:-translate-x-1 cursor-pointer"
       >
         <svg
-          class="w-5 h-5"
+          class="w-4 h-4 text-[#E35336]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -17,41 +23,44 @@
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="2"
+            stroke-width="2.5"
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        <span class="font-medium">Volver</span>
+        <span>Volver</span>
       </button>
 
       <!-- Contenedor principal -->
-      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-8 sm:p-12 md:p-16 relative overflow-hidden">
         <!-- Header -->
-        <div
-          class="bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-12 text-center"
-        >
-          <h1 class="text-3xl font-bold text-white mb-4">
-            POLÍTICAS DE PRIVACIDAD Y PROTECCIÓN DE DATOS DE WALA.LAT
+        <div class="text-center pb-10 border-b border-gray-100 mb-10">
+          <span
+            class="inline-block px-4 py-1.5 bg-orange-50 border border-orange-100/60 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full mb-4"
+          >
+            Marco Legal WALA
+          </span>
+          <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight leading-tight uppercase">
+            Políticas de Privacidad y Protección de Datos
           </h1>
-          <p class="text-blue-100 text-sm mt-2">
+          <p class="text-gray-400 text-sm mt-3 font-semibold">
             Última actualización: enero 2026
           </p>
         </div>
 
         <!-- Contenido -->
-        <div class="px-8 py-10 space-y-8">
+        <div class="space-y-12">
           <!-- Sección 1: INTRODUCCIÓN -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >1</span
               >
               INTRODUCCIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong>NEW COOPERATION S.A.C.</strong> (en adelante,
                 "Proveedor"), con RUC N° 20614634805 y domicilio en Mza. C Lote.
@@ -85,17 +94,17 @@
           </section>
 
           <!-- Sección 2: INFORMACIÓN QUE RECOPILAMOS -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >2</span
               >
               INFORMACIÓN QUE RECOPILAMOS
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p><strong>2.1. Información recopilada:</strong></p>
               <p>
                 Para utilizar nuestros servicios, recopilamos determinados datos
@@ -103,7 +112,7 @@
                 través de terceros, incluyendo:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>
                   Información de identificación personal (nombre, correo
                   electrónico).
@@ -131,7 +140,7 @@
                 utiliza nuestros servicios:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>Datos de uso y rendimiento del servicio.</li>
                 <li>
                   Información del dispositivo (dirección IP, tipo de navegador,
@@ -147,23 +156,23 @@
           </section>
 
           <!-- Sección 3: FINALIDAD DEL TRATAMIENTO -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >3</span
               >
               FINALIDAD DEL TRATAMIENTO DE DATOS
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Sus datos personales serán tratados para las siguientes
                 finalidades:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>Proporcionar, mantener y mejorar nuestros servicios.</li>
                 <li>Procesar transacciones y gestionar su cuenta.</li>
                 <li>Autenticar su acceso a la plataforma.</li>
@@ -194,23 +203,23 @@
           </section>
 
           <!-- Sección 4: BASE LEGAL -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >4</span
               >
               BASE LEGAL PARA EL TRATAMIENTO
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Tratamos sus datos personales en base a las siguientes bases
                 legales:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>
                   La ejecución del contrato de servicios entre usted y el
                   Proveedor.
@@ -227,17 +236,17 @@
           </section>
 
           <!-- Sección 5: CONFIDENCIALIDAD Y SEGURIDAD -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >5</span
               >
               CONFIDENCIALIDAD Y SEGURIDAD
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p><strong>5.1. Medidas de seguridad</strong></p>
               <p>
                 Implementamos medidas técnicas y organizativas apropiadas para
@@ -262,17 +271,17 @@
           </section>
 
           <!-- Sección 6: ALMACENAMIENTO Y CONSERVACIÓN -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >6</span
               >
               ALMACENAMIENTO Y CONSERVACIÓN DE DATOS
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Conservamos sus datos personales durante el tiempo necesario
                 para cumplir con las finalidades para las que fueron
@@ -288,17 +297,17 @@
           </section>
 
           <!-- Sección 7: TRANSFERENCIA DE DATOS -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >7</span
               >
               TRANSFERENCIA DE DATOS PERSONALES
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 <strong
                   >7.1. Transferencia de datos personales a terceros</strong
@@ -309,7 +318,7 @@
                 las siguientes circunstancias:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>Cuando contamos con su consentimiento expreso.</li>
                 <li>
                   Con proveedores de servicios que nos ayudan a prestar nuestros
@@ -329,7 +338,7 @@
                 tratamiento de datos personales son:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>
                   <strong>Google Cloud Platform:</strong> Infraestructura
                   tecnológica y almacenamiento en la nube.
@@ -356,7 +365,7 @@
               <p>
                 El Proveedor podrá hacer públicos los análisis para la
                 implementación del Servicio; no obstante, los análisis del
-                servicio no incorporarán detalle alguno de los datos personales
+                servicio no corporarán detalle alguno de los datos personales
                 de los Titulares o información que de alguna manera pueda servir
                 para identificar al Usuario.
               </p>
@@ -364,17 +373,17 @@
           </section>
 
           <!-- Sección 8: DERECHOS DE LOS TITULARES -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >8</span
               >
               DERECHOS DE LOS TITULARES DE DATOS
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Los Titulares cuentan con los derechos que le ha conferido la
                 Constitución y las Normas de Datos Personales, como los de
@@ -387,7 +396,7 @@
                 dirigida al Proveedor, la misma que debe contener:
               </p>
 
-              <ul class="list-disc list-inside space-y-2 ml-4">
+              <ul class="list-disc list-inside space-y-2 ml-4 text-gray-600">
                 <li>Nombres y apellidos del Titular y acreditación de estos</li>
                 <li>Petición concreta que da lugar a la solicitud</li>
                 <li>Domicilio o dirección electrónica para notificaciones</li>
@@ -398,17 +407,17 @@
           </section>
 
           <!-- Sección 9: COOKIES -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >9</span
               >
               COOKIES Y TECNOLOGÍAS SIMILARES
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Utilizamos cookies y tecnologías similares para mejorar su
                 experiencia y analizar el tráfico. Puede gestionar sus
@@ -421,17 +430,17 @@
           </section>
 
           <!-- Sección 10: MODIFICACIONES -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >10</span
               >
               MODIFICACIONES A LA POLÍTICA DE PRIVACIDAD
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Nos reservamos el derecho de modificar esta Política de
                 Privacidad en cualquier momento. Le notificaremos sobre cambios
@@ -442,17 +451,17 @@
           </section>
 
           <!-- Sección 11: LEY APLICABLE -->
-          <section class="border-l-4 border-blue-500 pl-6">
+          <section class="border-l-2 border-orange-200/80 pl-6 sm:pl-8">
             <h2
-              class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3"
+              class="text-xl sm:text-2xl font-extrabold text-gray-900 mb-5 flex items-center gap-3.5"
             >
               <span
-                class="flex items-center justify-center w-10 h-10 bg-blue-100 text-blue-600 rounded-full font-bold"
+                class="flex items-center justify-center w-8 h-8 bg-orange-50 text-[#E35336] rounded-lg border border-orange-100/50 font-bold text-sm shrink-0 shadow-sm"
                 >11</span
               >
               LEGISLACIÓN APLICABLE Y JURISDICCIÓN
             </h2>
-            <div class="text-gray-700 leading-relaxed space-y-4">
+            <div class="text-gray-600 leading-relaxed space-y-4 text-sm sm:text-base">
               <p>
                 Esta Política de Privacidad se rige por las leyes peruanas,
                 específicamente por las Normas de Datos personales. Cualquier
@@ -464,13 +473,12 @@
           </section>
 
           <!-- Footer -->
-          <div class="pt-8 border-t border-gray-200">
-            <p class="text-center text-sm text-gray-500">
+          <div class="pt-10 border-t border-gray-100 text-center space-y-2 mt-12">
+            <p class="text-sm text-gray-500 font-medium">
               © 2026 NEW COOPERATION S.A.C. Todos los derechos reservados.
             </p>
-            <p class="text-center text-xs text-gray-400 mt-2">
-              Este documento ha sido elaborado en cumplimiento de la Ley N°
-              29733 - Ley de Protección de Datos Personales del Perú
+            <p class="text-xs text-gray-400">
+              Este documento ha sido elaborado en cumplimiento de la Ley N° 29733 - Ley de Protección de Datos Personales del Perú.
             </p>
           </div>
         </div>

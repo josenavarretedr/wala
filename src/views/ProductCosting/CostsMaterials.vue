@@ -1049,7 +1049,7 @@ const handleSave = async () => {
     // Redirect después de 2 segundos
     setTimeout(() => {
       router.push({
-        name: "InventoryProductCosting",
+        name: "InventoryEditProductEconomicInfo",
         params: {
           businessId: route.params.businessId,
           productId: route.params.productId,
@@ -1116,7 +1116,7 @@ const handleSaveSimpleCost = async () => {
     // Redirect después de 2 segundos
     setTimeout(() => {
       router.push({
-        name: "InventoryProductCosting",
+        name: "InventoryEditProductEconomicInfo",
         params: {
           businessId: route.params.businessId,
           productId: route.params.productId,
@@ -1143,7 +1143,7 @@ const handleGoBack = () => {
   }
 
   router.push({
-    name: "InventoryProductCosting",
+    name: "InventoryEditProductEconomicInfo",
     params: {
       businessId: route.params.businessId,
       productId: route.params.productId,

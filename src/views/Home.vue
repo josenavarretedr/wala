@@ -8,13 +8,13 @@
 
     <Pain></Pain>
 
+    <PruebaSocial></PruebaSocial>
+
     <TwoRoutes></TwoRoutes>
 
     <How></How>
 
-    <InstitutionalValidation></InstitutionalValidation>
-
-    <PruebaSocial></PruebaSocial>
+    <!-- <InstitutionalValidation></InstitutionalValidation> -->
 
     <CTA></CTA>
 
@@ -49,7 +49,7 @@ onMounted(() => {
       {
         threshold: 0.05,
         rootMargin: "0px 0px -50px 0px",
-      }
+      },
     );
 
     document.querySelectorAll(".scroll-fade-up").forEach((el) => {

@@ -242,6 +242,33 @@
           </span>
         </div>
 
+        <!-- Costo de envío (WhatsApp Directo) -->
+        <div
+          v-if="transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' && 
+                transactionStore.transactionToAdd.value.deliveryPlatform === 'whatsapp' && 
+                transactionStore.transactionToAdd.value.deliveryCost > 0"
+          class="flex justify-between text-sm mb-2"
+        >
+          <span class="text-gray-600">
+            Envío / Delivery (WhatsApp):
+          </span>
+          <span :class="['font-medium', transactionStore.transactionToAdd.value.isDeliveryFree ? 'text-gray-400 line-through' : 'text-blue-600']">
+            + S/ {{ transactionStore.transactionToAdd.value.deliveryCost.toFixed(2) }}
+          </span>
+        </div>
+
+        <!-- Delivery Gratis (Descuento) -->
+        <div
+          v-if="transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' && 
+                transactionStore.transactionToAdd.value.deliveryPlatform === 'whatsapp' && 
+                transactionStore.transactionToAdd.value.deliveryCost > 0 &&
+                transactionStore.transactionToAdd.value.isDeliveryFree"
+          class="flex justify-between text-sm mb-2 text-orange-600 font-medium"
+        >
+          <span>Descuento Delivery Gratis:</span>
+          <span>- S/ {{ transactionStore.transactionToAdd.value.deliveryCost.toFixed(2) }}</span>
+        </div>
+
         <!-- Costo de envases -->
         <div
           v-if="transactionStore.transactionToAdd.value.packagingCost > 0"
@@ -392,7 +419,9 @@ const getTotal = () => {
     return sum + item.price * item.quantity;
   }, 0);
   const packagingCost = transactionStore.transactionToAdd.value.packagingCost || 0;
-  return itemsTotal + packagingCost;
+  const isFree = transactionStore.transactionToAdd.value.isDeliveryFree === true;
+  const deliveryCost = (transactionStore.transactionToAdd.value.salesChannel === 'DELIVERY' && transactionStore.transactionToAdd.value.deliveryPlatform === 'whatsapp' && !isFree) ? (transactionStore.transactionToAdd.value.deliveryCost || 0) : 0;
+  return itemsTotal + packagingCost + deliveryCost;
 };
 
 const getTypeLabel = computed(() => {
@@ -448,6 +477,7 @@ const formatDate = (date) => {
 const getNetIncome = () => {
   const total = getTotal();
   const commission = transactionStore.transactionToAdd.value.platformCommissionAmount || 0;
+  // Rider logistics payout is registered as a separate expense, so don't subtract it here.
   return total - commission;
 };
 </script>

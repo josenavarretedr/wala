@@ -36,6 +36,13 @@ const routes = [
     ]
   },
 
+  // Invitaciones a negocios (público)
+  {
+    path: '/invite/:token',
+    name: 'JoinBusiness',
+    component: () => import('@/views/auth/JoinBusiness.vue')
+  },
+
   // Rutas legales (públicas)
   {
     path: '/legal',
@@ -90,7 +97,7 @@ const routes = [
         path: 'dashboard',
         name: 'BusinessDashboard',
         component: () => import('@/views/dashboard/DashboardRedirect.vue'),
-        meta: { title: 'Dashboard' }
+        meta: { title: 'Dashboard', moduleKey: 'dashboard' }
       },
 
       {
@@ -173,6 +180,7 @@ const routes = [
         path: 'accounts-balance',
         name: 'AccountBalanceApp',
         component: () => import('@/views/AccountsBalanceApp/AccountBalanceAppWrapper.vue'),
+        meta: { requiresAuth: true, moduleKey: 'accountsBalance', title: 'Balance de Cuentas' }
       },
 
       // ✅ NUEVO: Cuentas por Cobrar
@@ -180,7 +188,7 @@ const routes = [
         path: 'accounts-receivable',
         name: 'AccountsReceivable',
         component: () => import('@/views/AccountsReceivable.vue'),
-        meta: { requiresAuth: true, title: 'Cuentas por Cobrar' }
+        meta: { requiresAuth: true, moduleKey: 'accountsReceivable', title: 'Cuentas por Cobrar' }
       },
 
       // ✅ NUEVO: Asesoría
@@ -345,7 +353,8 @@ const routes = [
       {
         path: 'inventory',
         name: 'InventoryDashboard',
-        component: () => import('@/views/Inventory/InventoryDashboard.vue')
+        component: () => import('@/views/Inventory/InventoryDashboard.vue'),
+        meta: { requiresAuth: true, moduleKey: 'inventory', title: 'Inventario' }
       },
       {
         path: 'inventory/product/new',
@@ -380,7 +389,15 @@ const routes = [
       {
         path: 'inventory/product/:productId/costing',
         name: 'InventoryProductCosting',
-        component: () => import('@/views/ProductCosting/ProductCosting.vue')
+        redirect: to => {
+          return {
+            name: 'InventoryEditProductEconomicInfo',
+            params: {
+              businessId: to.params.businessId,
+              productId: to.params.productId
+            }
+          }
+        }
       },
       {
         path: 'inventory/product/:productId/costing/costs-materials',
@@ -428,13 +445,27 @@ const routes = [
         path: 'clients',
         name: 'ClientsDashboard',
         component: () => import('@/views/Clients/ClientsDashboard.vue'),
-        meta: { title: 'Clientes' }
+        meta: { title: 'Clientes', moduleKey: 'clients' }
       },
       {
         path: 'clients/:clientId',
         name: 'ClientDetails',
         component: () => import('@/views/Clients/ClientDetails.vue'),
-        meta: { title: 'Detalle del Cliente' }
+        meta: { title: 'Detalle del Cliente', moduleKey: 'clients' }
+      },
+
+      // ✅ NUEVO: Gestión de Empleados
+      {
+        path: 'employees',
+        name: 'EmployeesDashboard',
+        component: () => import('@/views/Employees/EmployeesDashboard.vue'),
+        meta: { requiresAuth: true, role: 'gerente', title: 'Equipo de Trabajo' }
+      },
+      {
+        path: 'employees/:employeeId',
+        name: 'EmployeeDetails',
+        component: () => import('@/views/Employees/EmployeeDetails.vue'),
+        meta: { requiresAuth: true, role: 'gerente', title: 'Detalle del Empleado' }
       },
 
       // {
@@ -447,11 +478,19 @@ const routes = [
         path: 'sales',
         name: 'SalesView',
         component: () => import('@/views/Sales/SalesView.vue'),
+        meta: { requiresAuth: true, moduleKey: 'sales', title: 'Registrar Ventas' }
       },
       {
         path: 'expenses',
         name: 'ExpensesView',
         component: () => import('@/views/Expenses/ExpensesView.vue'),
+        meta: { requiresAuth: true, moduleKey: 'expenses', title: 'Registrar Gastos' }
+      },
+      {
+        path: 'income-statement',
+        name: 'IncomeStatement',
+        component: () => import('@/views/Expenses/IncomeStatementView.vue'),
+        meta: { requiresAuth: true, title: 'Estado de Resultados' }
       },
       {
         path: 'streak',
@@ -931,6 +970,30 @@ router.beforeEach(async (to, from, next) => {
         })
       } else {
         console.log('✅ Feature disponible:', to.meta.requiresFeature)
+      }
+    }
+
+    // Verificar acceso a modulo específico
+    if (to.meta.moduleKey) {
+      console.log('🔍 Verificando acceso a modulo:', to.meta.moduleKey)
+      const hasModuleAccess = userStore.hasModuleAccess(to.meta.moduleKey)
+      if (!hasModuleAccess) {
+        console.log('❌ Sin acceso al modulo:', to.meta.moduleKey)
+        // Redirigir al primer módulo al que sí tenga acceso
+        const allowedModules = userStore.currentModulosAcceso
+        if (allowedModules.length > 0) {
+          const firstAllowed = allowedModules[0]
+          let targetRoute = 'BusinessDashboard'
+          if (firstAllowed === 'sales') targetRoute = 'SalesView'
+          else if (firstAllowed === 'expenses') targetRoute = 'ExpensesView'
+          else if (firstAllowed === 'inventory') targetRoute = 'InventoryDashboard'
+          else if (firstAllowed === 'clients') targetRoute = 'ClientsDashboard'
+          
+          if (to.name !== targetRoute) {
+            return next({ name: targetRoute, params: { businessId } })
+          }
+        }
+        return next('/select-business')
       }
     }
 

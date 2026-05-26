@@ -155,6 +155,7 @@ import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useInvitationStore } from "@/stores/invitationStore";
 
 const email = ref("");
 const password = ref("");
@@ -166,10 +167,12 @@ const route = useRoute();
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const businessStore = useBusinessStore();
+const invitationStore = useInvitationStore();
 
 // Estado local del componente
 const error = ref(null);
 const isLoading = ref(false);
+const inviteToken = ref(route.query.invite || null);
 
 // Autocompletar demo
 onMounted(() => {
@@ -195,6 +198,17 @@ const handleLogin = async () => {
 
     // 2. Cargar perfil y negocios del usuario
     await userStore.loadUserProfile(uid);
+
+    // Si viene con invitación, auto-vincular al negocio y redirigir
+    if (inviteToken.value) {
+      console.log("🔗 Vinculando a negocio mediante invitación tras login...");
+      const inv = await invitationStore.useInvitation(inviteToken.value, userStore.userProfile);
+      console.log("✅ Negocio vinculado. Recargando negocios...");
+      await userStore.loadUserBusinesses(uid);
+      userStore.switchBusiness(inv.businessId);
+      await businessStore.loadBusiness(inv.businessId);
+      return router.push(`/business/${inv.businessId}/dashboard`);
+    }
 
     // 3. Verificar el rol del usuario
     const userRole = userStore.userProfile?.rol;
@@ -273,6 +287,17 @@ const handleGoogleLogin = async () => {
 
     // Cargar perfil del usuario
     await userStore.loadUserProfile(uid);
+
+    // Si viene con invitación, auto-vincular al negocio y redirigir
+    if (inviteToken.value) {
+      console.log("🔗 Vinculando a negocio mediante invitación tras Google login...");
+      const inv = await invitationStore.useInvitation(inviteToken.value, userStore.userProfile);
+      console.log("✅ Negocio vinculado. Recargando negocios...");
+      await userStore.loadUserBusinesses(uid);
+      userStore.switchBusiness(inv.businessId);
+      await businessStore.loadBusiness(inv.businessId);
+      return router.push(`/business/${inv.businessId}/dashboard`);
+    }
 
     // Verificar el rol del usuario
     const userRole = userStore.userProfile?.rol;

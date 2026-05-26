@@ -19,50 +19,87 @@
         </p>
       </div>
 
-      <!-- Grid de negocios - estilo ResumenDay -->
-      <div class="space-y-4 mb-6">
+      <!-- Negocios Propios -->
+      <div v-if="myBusinesses.length > 0" class="space-y-4 mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Mis Negocios</h3>
         <div
-          v-for="business in userStore.userBusinesses"
+          v-for="business in myBusinesses"
           :key="business.businessId"
           @click="selectBusiness(business)"
           class="w-full bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 cursor-pointer transition-all duration-200 hover:bg-gray-50 hover:shadow-md group"
         >
           <div class="flex items-center justify-between">
-            <!-- Información del negocio -->
             <div class="flex items-center gap-3 flex-1">
               <div
-                class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors"
+                class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors"
               >
-                <span class="text-blue-600 font-semibold text-lg">
+                <span class="text-orange-600 font-bold text-lg">
                   {{ business.businessName.charAt(0).toUpperCase() }}
                 </span>
               </div>
               <div class="flex-1">
-                <h3 class="text-base sm:text-lg font-semibold text-gray-900">
+                <h3 class="text-base sm:text-lg font-bold text-gray-900">
                   {{ business.businessName }}
                 </h3>
                 <p class="text-xs sm:text-sm text-gray-500">
-                  {{ business.departamento || "Sin departamento" }}
+                  {{ business.departamento || "Sin departamento" }} • Propietario 👑
                 </p>
               </div>
             </div>
+            <div class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-orange-50 transition-colors">
+              <svg class="w-4 h-4 text-gray-400 group-hover:text-orange-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Indicador de acción -->
-            <div
+      <!-- Colaboraciones / Empleados -->
+      <div v-if="collaborations.length > 0" class="space-y-4 mb-6">
+        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Donde Trabajo</h3>
+        <div
+          v-for="business in collaborations"
+          :key="business.businessId"
+          @click="business.activo !== false ? selectBusiness(business) : null"
+          :class="[
+            'w-full bg-white rounded-xl shadow-sm border p-4 sm:p-6 transition-all duration-200 group',
+            business.activo !== false
+              ? 'border-gray-100 cursor-pointer hover:bg-gray-50 hover:shadow-md'
+              : 'border-red-100 bg-red-50/25 opacity-75 cursor-not-allowed'
+          ]"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 flex-1">
+              <div
+                :class="[
+                  'w-10 h-10 rounded-lg flex items-center justify-center transition-colors',
+                  business.activo !== false ? 'bg-blue-100 group-hover:bg-blue-200' : 'bg-gray-200'
+                ]"
+              >
+                <span :class="[business.activo !== false ? 'text-blue-600' : 'text-gray-500', 'font-bold text-lg']">
+                  {{ business.businessName.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-base sm:text-lg font-bold text-gray-900">
+                  {{ business.businessName }}
+                </h3>
+                <p class="text-xs sm:text-sm text-gray-500">
+                  {{ business.departamento || "Sin departamento" }} • {{ business.rolNombre || 'Colaborador' }}
+                </p>
+                <span v-if="business.activo === false" class="inline-block mt-1.5 text-[10px] font-bold text-red-600 bg-red-100 px-2.5 py-0.5 rounded-full uppercase">
+                  Acceso Suspendido por el Gerente
+                </span>
+              </div>
+            </div>
+            
+            <div 
+              v-if="business.activo !== false"
               class="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-blue-50 transition-colors"
             >
-              <svg
-                class="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
+              <svg class="w-4 h-4 text-gray-400 group-hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
             </div>
           </div>
@@ -153,7 +190,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -165,6 +202,14 @@ const userStore = useUserStore();
 const businessStore = useBusinessStore();
 
 const isLoading = ref(false);
+
+const myBusinesses = computed(() => {
+  return userStore.userBusinesses.filter(b => b.rol === 'gerente');
+});
+
+const collaborations = computed(() => {
+  return userStore.userBusinesses.filter(b => b.rol === 'empleado');
+});
 
 onMounted(() => {
   // Verificar autenticación

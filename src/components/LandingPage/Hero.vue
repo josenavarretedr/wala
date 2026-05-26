@@ -1,5 +1,6 @@
 <template>
   <section
+    id="hero-section"
     class="min-h-screen bg-transparent flex items-center justify-center px-4 py-16 md:py-24 relative overflow-hidden"
   >
     <div class="max-w-7xl mx-auto w-full">
@@ -15,8 +16,14 @@
         class="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center"
       >
         <div class="text-center md:text-left space-y-6 md:space-y-8">
+          <!-- Premium Micro-badge -->
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E35336]/10 text-[#E35336] text-[10px] font-black tracking-widest uppercase animate-none mx-auto md:mx-0 font-display">
+            <Rocket class="w-3.5 h-3.5 stroke-[2.5]" />
+            Método WALA · Simplifica tu negocio
+          </div>
+
           <h1
-            class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight"
+            class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-gray-900 font-extrabold leading-[1.1] tracking-tight font-display"
           >
             ¿Sabes realmente <span class="text-[#E35336]">cuánto gana</span> tu negocio?
           </h1>
@@ -32,7 +39,7 @@
             class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start items-center pt-2"
           >
             <button
-              class="w-full sm:w-auto bg-[#E35336] text-white px-8 py-4 rounded-xl font-semibold text-base sm:text-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              class="w-full sm:w-auto bg-[#E35336] hover:bg-[#c2412b] text-white px-8 py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-[#E35336]/20 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
               @click="openWhatsApp"
             >
               <span class="inline-flex items-center gap-2">
@@ -42,7 +49,7 @@
             </button>
 
             <button
-              class="w-full sm:w-auto border-2 border-[#E35336] text-[#E35336] px-8 py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-200 hover:bg-[#E35336]/10"
+              class="w-full sm:w-auto border-2 border-[#E35336] text-[#E35336] px-8 py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 hover:bg-[#E35336]/10 hover:-translate-y-0.5 cursor-pointer"
               @click="goToSignup"
             >
               <span class="inline-flex items-center gap-2">
@@ -53,48 +60,86 @@
           </div>
         </div>
 
+        <!-- Derecha: Visual Block de Dashboard WALA Simulador -->
         <div class="hidden md:block scroll-fade-up">
-          <div
-            class="rounded-2xl shadow-premium shadow-premium-hover p-8"
-          >
-            <div class="space-y-5">
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-10 h-10 rounded-lg bg-[#E35336]/10 flex items-center justify-center"
-                >
-                  <GraphUp class="w-5 h-5 text-[#E35336]" />
+          <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-6 font-display animate-floatSlow relative overflow-hidden">
+            <!-- Background glow effect inside card -->
+            <div class="absolute -top-12 -right-12 w-48 h-48 bg-[#E35336]/5 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-6">
+              <!-- Dashboard Header -->
+              <div class="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div class="flex items-center gap-2.5">
+                  <div class="p-2 bg-[#E35336]/10 text-[#E35336] rounded-xl shadow-inner">
+                    <SoilAlt class="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 class="text-xs font-black text-gray-900 uppercase tracking-wider">Asesoría WALA</h3>
+                    <p class="text-[9px] text-gray-400 font-bold">Estado de Asesoría</p>
+                  </div>
                 </div>
-                <div>
-                  <p class="text-sm text-gray-500">Resultado del día</p>
-                  <p class="text-lg font-semibold text-gray-900">
-                    Ganas claridad en minutos
-                  </p>
+                <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-black text-emerald-700 ring-1 ring-inset ring-emerald-600/10">Activo</span>
+              </div>
+
+              <!-- Maturity Progress bar -->
+              <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="text-gray-500 font-bold">Madurez del Negocio</span>
+                  <span class="text-[#E35336] font-black">68%</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="flex-1 bg-gray-150 h-2.5 rounded-full overflow-hidden border border-gray-50 shadow-inner">
+                    <div class="bg-[#E35336] h-full rounded-full transition-all duration-500" style="width: 68%"></div>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center"
-                >
-                  <Cash class="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <p class="text-sm text-gray-500">Ingresos y gastos</p>
-                  <p class="text-lg font-semibold text-gray-900">
-                    Orden simple y real
-                  </p>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <div
-                  class="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center"
-                >
-                  <Check class="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p class="text-sm text-gray-500">Decisiones</p>
-                  <p class="text-lg font-semibold text-gray-900">
-                    Prioriza lo que importa
-                  </p>
+
+              <!-- Critical Areas & Indicators -->
+              <div class="space-y-3 pt-2">
+                <h4 class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Áreas Críticas Priorizadas</h4>
+                
+                <div class="space-y-2.5">
+                  <!-- Area 1 -->
+                  <div class="flex items-center justify-between p-2.5 bg-amber-50/50 border border-amber-100 rounded-2xl">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shadow-inner shrink-0">
+                        <Coins class="w-4.5 h-4.5 stroke-[2.2]" />
+                      </div>
+                      <div class="text-left">
+                        <h4 class="text-xs font-extrabold text-gray-900">Estructura de Costeos</h4>
+                        <p class="text-[9px] text-gray-400 font-bold">Prioridad 1</p>
+                      </div>
+                    </div>
+                    <span class="text-[9px] font-black uppercase text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-md">1er Freno</span>
+                  </div>
+
+                  <!-- Area 2 -->
+                  <div class="flex items-center justify-between p-2.5 bg-blue-50/50 border border-blue-100 rounded-2xl">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner shrink-0">
+                        <Archive class="w-4.5 h-4.5 stroke-[2.2]" />
+                      </div>
+                      <div class="text-left">
+                        <h4 class="text-xs font-extrabold text-gray-900">Control de Inventarios</h4>
+                        <p class="text-[9px] text-gray-400 font-bold">Prioridad 2</p>
+                      </div>
+                    </div>
+                    <span class="text-[9px] font-black uppercase text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">2do Freno</span>
+                  </div>
+
+                  <!-- Area 3 -->
+                  <div class="flex items-center justify-between p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner shrink-0">
+                        <GraphUp class="w-4.5 h-4.5 stroke-[2.2]" />
+                      </div>
+                      <div class="text-left">
+                        <h4 class="text-xs font-extrabold text-gray-900">Flujo de Caja Real</h4>
+                        <p class="text-[9px] text-gray-400 font-bold">Prioridad 3</p>
+                      </div>
+                    </div>
+                    <span class="text-[9px] font-black uppercase text-emerald-700 bg-emerald-100/50 px-2 py-0.5 rounded-md">3er Freno</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -118,7 +163,7 @@
 
 <script setup>
 import { useRouter } from "vue-router";
-import { ArrowRight, Cash, Check, Rocket, GraphUp } from "@iconoir/vue";
+import { ArrowRight, Cash, Check, Rocket, GraphUp, SoilAlt, Binocular, Coins, Archive } from "@iconoir/vue";
 import logoWalaOrigin from "@/assets/Wala Origin.png";
 
 const router = useRouter();
@@ -138,6 +183,10 @@ const goToSignup = () => {
 /* Estilos coherentes con la identidad WALA */
 .hero-section {
   position: relative;
+}
+
+.font-display {
+  font-family: "Outfit", "Inter", sans-serif;
 }
 
 /* Animación especial para el logo */

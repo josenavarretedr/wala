@@ -70,6 +70,30 @@ export const useUserStore = defineStore('user', {
       const latestProgram = programs[programs.length - 1];
 
       return latestProgram?.organizationName.toUpperCase() || 'Asesoria Wala';
+    },
+
+    // Obtener módulos permitidos en el negocio actual
+    currentModulosAcceso: (state) => {
+      if (state.currentBusiness?.rol === 'gerente' || state.currentBusiness?.permissions?.admin === true) {
+        return ['dashboard', 'sales', 'expenses', 'inventory', 'clients', 'accountsReceivable', 'accountsBalance', 'records', 'incomeStatement', 'consulting', 'quotes'];
+      }
+      return state.currentBusiness?.modulosAcceso || [];
+    },
+
+    // Obtener el nombre visible del rol del negocio actual
+    currentRolNombre: (state) => {
+      if (state.currentBusiness?.rol === 'gerente') {
+        return 'Gerente / Dueño';
+      }
+      return state.currentBusiness?.rolNombre || 'Trabajador';
+    },
+
+    // Función getter para verificar acceso a un módulo específico
+    hasModuleAccess: (state) => (moduleKey) => {
+      if (state.currentBusiness?.rol === 'gerente' || state.currentBusiness?.permissions?.admin === true) {
+        return true;
+      }
+      return (state.currentBusiness?.modulosAcceso || []).includes(moduleKey);
     }
   },
 
@@ -190,7 +214,7 @@ export const useUserStore = defineStore('user', {
     async loadUserBusinesses(uid) {
       try {
         const businessesRef = collection(db, 'users', uid, 'businesses')
-        const q = query(businessesRef, where('activo', '==', true))
+        const q = query(businessesRef)
         const querySnapshot = await getDocs(q)
 
         const allUserBusinesses = querySnapshot.docs.map(doc => ({

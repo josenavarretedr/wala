@@ -1,5 +1,5 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden">
+  <section id="testimonials-section" class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden font-display">
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
     >
@@ -12,71 +12,79 @@
     </div>
 
     <div class="max-w-4xl mx-auto text-center">
-      <h2
-        class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight mb-10"
-      >
-        Lo que dicen los emprendedores que <span class="text-[#E35336]">ya pasaron por esto</span>
-      </h2>
+      <div class="space-y-4 mb-16">
+        <span
+          class="inline-block px-4 py-1.5 bg-orange-50 border border-orange-100 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full animate-none"
+        >
+          Prueba Social
+        </span>
+        <h2
+          class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight max-w-2xl mx-auto"
+        >
+          Lo que dicen los emprendedores que <span class="text-[#E35336]">ya pasaron por esto</span>
+        </h2>
+        <p class="text-base sm:text-lg text-gray-500 font-semibold max-w-md mx-auto">
+          Casos reales de claridad y transformación que empezaron con una sesión de 20 minutos.
+        </p>
+      </div>
 
       <!-- Carrusel de Testimonios -->
-      <div class="relative">
+      <div class="relative max-w-2xl mx-auto">
         <!-- Card Container -->
-        <div class="relative min-h-[280px]">
-          <transition name="fade" mode="out-in">
+        <div class="relative min-h-[220px]">
+          <transition name="fade-slide" mode="out-in">
             <div
               :key="currentIndex"
-              class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8"
+              class="bg-gray-50/50 rounded-3xl border border-gray-150/50 p-6 sm:p-10 text-left space-y-4 relative overflow-hidden"
             >
               <div
-                class="w-12 h-12 bg-[#E35336]/10 rounded-xl flex items-center justify-center mx-auto mb-4"
+                class="w-12 h-12 bg-[#E35336]/10 text-[#E35336] rounded-2xl flex items-center justify-center shadow-inner"
               >
-                <User class="w-6 h-6 text-[#E35336]" />
+                <User class="w-6 h-6 stroke-[2.2]" />
               </div>
-              <p class="text-lg sm:text-xl text-gray-800 leading-relaxed mb-6" v-html="`“${testimonials[currentIndex].quote}”`"></p>
-              <p class="text-sm font-semibold text-gray-900">
+              <p class="text-base sm:text-lg text-gray-700 italic font-medium leading-relaxed" v-html="`“${testimonials[currentIndex].quote}”`"></p>
+              <p class="text-xs sm:text-sm font-black text-gray-900 pt-2">
                 — {{ testimonials[currentIndex].author }}
               </p>
             </div>
           </transition>
         </div>
 
-        <!-- Botones Navegación -->
-        <button
-          v-if="testimonials.length > 1"
-          class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-14 sm:-translate-x-16 w-10 h-10 rounded-full bg-[#E35336] text-white flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:-translate-y-1/2"
-          @click="prevTestimonial"
-          aria-label="Testimonio anterior"
-        >
-          <NavArrowLeft class="w-5 h-5" />
-        </button>
+        <!-- Controles de Navegación del Carrusel -->
+        <div class="flex justify-between items-center mt-6">
+          <!-- Dots Indicadores -->
+          <div class="flex gap-2">
+            <button
+              v-for="(testimonial, index) in testimonials"
+              :key="index"
+              @click="currentIndex = index"
+              class="w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer focus:outline-none"
+              :class="
+                currentIndex === index
+                  ? 'bg-[#E35336] w-6'
+                  : 'bg-gray-300 hover:bg-gray-400'
+              "
+              :aria-label="`Ir a testimonio ${index + 1}`"
+            ></button>
+          </div>
 
-        <button
-          v-if="testimonials.length > 1"
-          class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-14 sm:translate-x-16 w-10 h-10 rounded-full bg-[#E35336] text-white flex items-center justify-center hover:shadow-lg transition-all duration-200 hover:-translate-y-1/2"
-          @click="nextTestimonial"
-          aria-label="Siguiente testimonio"
-        >
-          <NavArrowRight class="w-5 h-5" />
-        </button>
-
-
-        <!-- Dots Indicadores -->
-        <div
-          v-if="testimonials.length > 1"
-          class="flex justify-center gap-2 mt-8"
-        >
-          <button
-            v-for="(testimonial, index) in testimonials"
-            :key="index"
-            class="w-2 h-2 rounded-full transition-all duration-300"
-            :class="
-              currentIndex === index
-                ? 'bg-[#E35336] w-8'
-                : 'bg-gray-300 hover:bg-gray-400'
-            "
-            @click="currentIndex = index"
-            :aria-label="`Ir a testimonio ${index + 1}`"
-          ></button>
+          <!-- Botones Prev/Next -->
+          <div class="flex gap-2">
+            <button
+              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-650 shadow-sm active:scale-95 transition-all cursor-pointer"
+              @click="prevTestimonial"
+              aria-label="Testimonio anterior"
+            >
+              <NavArrowLeft class="w-4 h-4 stroke-[2.2]" />
+            </button>
+            <button
+              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-650 shadow-sm active:scale-95 transition-all cursor-pointer"
+              @click="nextTestimonial"
+              aria-label="Siguiente testimonio"
+            >
+              <NavArrowRight class="w-4 h-4 stroke-[2.2]" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -92,10 +100,19 @@ const currentIndex = ref(0);
 const testimonials = ref([
   {
     quote:
-      "Pensé que mi problema era que vendía poco. En <span class='text-[#E35336] font-semibold'>20 minutos</span> me mostró que el freno era el costeo — llevaba meses vendiendo <span class='text-[#E35336] font-semibold'>sin cubrir mis costos reales</span>.",
-    author: "[Nombre], salón de belleza, Chiclayo",
+      "Pensé que mi problema era que vendía poco. En <span class='text-[#E35336] font-semibold'>20 minutos</span> José me mostró que el freno era el costeo — llevaba meses vendiendo <span class='text-[#E35336] font-semibold'>sin cubrir mi costo real</span>.",
+    author: "Estela R., Salón de Belleza, Chiclayo",
   },
-  // Agregar más testimonios aquí cuando estén disponibles
+  {
+    quote:
+      "El diagnóstico de 20 minutos con José me abrió los ojos. Descubrí que la falta de control de inventario estaba devorando mi flujo de caja.",
+    author: "Carlos M., Minimarket, Trujillo",
+  },
+  {
+    quote:
+      "WALA y José me ayudaron a entender que mi negocio sí era rentable, pero mezclaba todo con mi caja personal. El plan de acción fue súper práctico.",
+    author: "Sofía G., Marca de Ropa, Lima",
+  }
 ]);
 
 const nextTestimonial = () => {
@@ -110,13 +127,23 @@ const prevTestimonial = () => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
+.font-display {
+  font-family: "Outfit", "Inter", sans-serif;
 }
 
-.fade-enter-from,
-.fade-leave-to {
+/* Transición suave para el carrusel */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from {
   opacity: 0;
+  transform: translateY(6px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>

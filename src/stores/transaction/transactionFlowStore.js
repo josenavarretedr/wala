@@ -88,8 +88,8 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push(
           { label: 'Detalles ingreso', component: StepAddIncomeDetails },
           { label: 'Canal de venta', component: StepSalesChannel },
-          { label: 'Método de pago', component: StepPaymentMethod },      // NUEVO
-          { label: 'Adjuntar cliente', component: StepAttachClient },     // NUEVO
+          { label: 'Adjuntar cliente', component: StepAttachClient },     // Reordenado antes de pago
+          { label: 'Método de pago', component: StepPaymentMethod },      // Reordenado después de cliente
           { label: 'Preview ingreso', component: StepAddIncomePreview }
         );
       } else if (transactionType === 'expense') {

@@ -43,23 +43,23 @@
           <SpinnerIcon size="lg" class="text-blue-500" />
         </div>
 
-        <div v-else-if="rows.length" class="space-y-3" :class="contentClasses">
+        <div v-else-if="rows.length" class="space-y-1.5" :class="contentClasses">
           <button
             v-for="(row, idx) in rows"
             :key="row.key"
-            class="w-full text-left"
+            class="w-full text-left p-2.5 -mx-2.5 hover:bg-gray-50 rounded-xl transition-all duration-150 block"
             @click="$emit('select', row)"
           >
-            <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center justify-between mb-1.5">
               <div class="flex items-center gap-2 min-w-0">
                 <span class="text-xs text-gray-400 w-5 tabular-nums"
                   >{{ idx + 1 }}.</span
                 >
-                <span class="text-sm text-gray-800 truncate" :title="row.label">
+                <span class="text-sm font-bold text-gray-800 truncate" :title="row.label">
                   {{ row.label }}
                 </span>
               </div>
-              <div class="text-sm font-medium tabular-nums text-gray-700">
+              <div class="text-sm font-extrabold tabular-nums text-gray-900">
                 {{ formatCurrency(row.revenue) }}
               </div>
             </div>
@@ -77,10 +77,10 @@
             </div>
 
             <!-- Línea secundaria opcional (unidades) -->
-            <div class="mt-1 text-[11px] text-gray-500">
-              {{ row.units }} <span class="text-[10px]">unid.</span>
+            <div class="mt-1.5 text-[11px] text-gray-400 font-semibold pl-7">
+              {{ row.units }} <span class="text-[10px] text-gray-400 font-medium">unid.</span>
               <span class="mx-1 text-gray-300">•</span>
-              {{ row.txCount }} <span class="text-[10px]">ventas</span>
+              {{ row.txCount }} <span class="text-[10px] text-gray-400 font-medium">ventas</span>
             </div>
           </button>
         </div>
