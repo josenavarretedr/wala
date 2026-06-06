@@ -114,12 +114,10 @@ const routes = [
         meta: { title: 'Datos del Negocio' }
       },
 
-      // ✅ NUEVO: Ruta de planes y suscripciones
+      // ✅ NUEVO: Ruta de planes y suscripciones (Redirige a Pro)
       {
         path: 'plans',
-        name: 'BusinessPlans',
-        component: () => import('@/views/Plans/PlansView.vue'),
-        meta: { title: 'Planes y Suscripciones' }
+        redirect: to => `/business/${to.params.businessId}/pro`
       },
 
       // Rutas de transacciones
@@ -213,11 +211,29 @@ const routes = [
         meta: { requiresAuth: true, title: 'Detalle de Cotización' }
       },
 
-      // ✨ NUEVO: Premium
+      // ✅ NUEVO: Órdenes / Pedidos
+      {
+        path: 'orders',
+        name: 'Orders',
+        component: () => import('@/views/Orders/OrdersView.vue'),
+        meta: { requiresAuth: true, title: 'Órdenes', moduleKey: 'orders' }
+      },
+      {
+        path: 'orders/:orderId',
+        name: 'OrderDetails',
+        component: () => import('@/components/Orders/OrderDetails.vue'),
+        meta: { requiresAuth: true, title: 'Detalle de Orden' }
+      },
+
+      // ✨ NUEVO: WALA Pro
       {
         path: 'premium',
-        name: 'Premium',
-        component: () => import('@/views/business/Premium.vue'),
+        redirect: to => `/business/${to.params.businessId}/pro`
+      },
+      {
+        path: 'pro',
+        name: 'Pro',
+        component: () => import('@/views/business/ProView.vue'),
         meta: {
           requiresAuth: true,
           title: 'WALA Pro'
@@ -962,7 +978,7 @@ router.beforeEach(async (to, from, next) => {
 
         // Redirigir a página de planes con el query param de la feature bloqueada
         return next({
-          path: `/business/${businessId}/plans`,
+          path: `/business/${businessId}/pro`,
           query: {
             feature: to.meta.requiresFeature,
             from: to.path

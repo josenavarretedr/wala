@@ -137,6 +137,7 @@ export const useClientStore = defineStore('clientStore', () => {
         uuid: clientId,
         name: clientData.name,
         phone: clientData.phone || null,
+        address: clientData.address || null,
         businessId,
         isActive: true,
         // Usar metadata inicial si se proporciona, sino inicializar en 0

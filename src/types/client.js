@@ -8,6 +8,7 @@ export const ANONYMOUS_CLIENT_ID = 'anonymous-client';
  * @property {string} uuid - ID único del cliente
  * @property {string} name - Nombre completo del cliente
  * @property {string|null} [phone] - Teléfono opcional
+ * @property {string|null} [address] - Dirección del cliente (opcional)
  * @property {string|null} [dni] - DNI del cliente (opcional)
  * @property {import('firebase/firestore').Timestamp} createdAt - Fecha de creación
  * @property {import('firebase/firestore').Timestamp} updatedAt - Última actualización
@@ -30,6 +31,7 @@ export const DEFAULT_ANONYMOUS_CLIENT = {
   uuid: ANONYMOUS_CLIENT_ID,
   name: 'Cliente Anónimo',
   phone: null,
+  address: null,
   isActive: true,
   totalPurchases: 0,
   pendingBalance: 0,

@@ -27,7 +27,9 @@
     </div> -->
 
     <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
-    <div class="max-w-2xl lg:max-w-none mx-auto">
+    <div class="max-w-2xl lg:max-w-none mx-auto space-y-6">
+      <TrialActivationBanner />
+      
       <MicroApps
         :business-id="businessId"
         @navigate-to-app="handleNavigateToApp"
@@ -70,6 +72,9 @@
         <MainBtns />
       </div>
     </div>
+
+    <!-- Modal de expiración de prueba gratuita -->
+    <TrialExpiredModal />
   </div>
 </template>
 
@@ -89,6 +94,8 @@ import ClasificationTest from "@/components/Test/ClasificationTest.vue";
 const functions = getFunctions(appFirebase, "southamerica-east1");
 
 // Imports de componentes
+import TrialActivationBanner from "@/components/subscription/TrialActivationBanner.vue";
+import TrialExpiredModal from "@/components/subscription/TrialExpiredModal.vue";
 import MicroApps from "@/components/Dashboard/MicroApps.vue";
 import ResumenDay from "@/components/HistorialRecords/ResumenDay.vue";
 import Loader from "@/components/ui/Loader.vue";

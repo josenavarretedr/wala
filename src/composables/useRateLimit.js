@@ -5,6 +5,7 @@
 
 import { ref, computed } from 'vue';
 import { useAuth } from '@/composables/useAuth';
+import { useSubscription } from '@/composables/useSubscription';
 
 import appFirebase from "@/firebaseInit";
 
@@ -15,6 +16,7 @@ const db = getFirestore(appFirebase);
 export function useRateLimit() {
 
   const { getCurrentUser } = useAuth();
+  const { isPremium } = useSubscription();
 
   const limitData = ref(null);
   const isChecking = ref(false);
@@ -22,8 +24,8 @@ export function useRateLimit() {
 
   // Límites por tipo de usuario
   const LIMITS = {
-    free: 50,
-    premium: 100
+    free: 20,
+    premium: 999999
   };
 
   /**
@@ -82,8 +84,7 @@ export function useRateLimit() {
       tomorrowMidnight.setDate(tomorrowMidnight.getDate() + 1);
 
       // Determinar si es premium
-      // TODO: Integrar con sistema de suscripciones cuando esté disponible
-      const isPremium = false; // Por ahora todos son free
+      const isPremiumVal = isPremium.value;
 
       if (!limitSnap.exists()) {
         // Crear documento nuevo
@@ -91,7 +92,7 @@ export function useRateLimit() {
           userId: userId,
           count: 1,
           resetAt: tomorrowMidnight,
-          isPremium: isPremium,
+          isPremium: isPremiumVal,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         };
@@ -115,7 +116,7 @@ export function useRateLimit() {
         const resetData = {
           count: 1,
           resetAt: tomorrowMidnight,
-          isPremium: isPremium,
+          isPremium: isPremiumVal,
           updatedAt: serverTimestamp()
         };
 
@@ -131,16 +132,16 @@ export function useRateLimit() {
       }
 
       // No necesita reset - verificar límite
-      const limit = isPremium ? LIMITS.premium : LIMITS.free;
+      const limit = isPremiumVal ? LIMITS.premium : LIMITS.free;
 
       if (data.count >= limit) {
         // Excede el límite
         limitData.value = {
           ...data,
-          isPremium: isPremium
+          isPremium: isPremiumVal
         };
 
-        error.value = isPremium
+        error.value = isPremiumVal
           ? `Has alcanzado tu límite de ${LIMITS.premium} shares diarios.`
           : `Has alcanzado tu límite de ${LIMITS.free} shares diarios. Actualiza a Premium para más.`;
 
@@ -150,14 +151,14 @@ export function useRateLimit() {
       // Aún tiene cupo - incrementar
       await updateDoc(limitRef, {
         count: data.count + 1,
-        isPremium: isPremium,
+        isPremium: isPremiumVal,
         updatedAt: serverTimestamp()
       });
 
       limitData.value = {
         ...data,
         count: data.count + 1,
-        isPremium: isPremium
+        isPremium: isPremiumVal
       };
 
       return true;

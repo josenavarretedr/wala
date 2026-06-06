@@ -1,6 +1,6 @@
 <template>
   <Transition name="fade-slide" mode="out-in">
-    <div class="w-full max-w-sm lg:max-w-lg mx-auto mt-6">
+    <div class="w-full max-w-sm lg:max-w-lg mx-auto mt-6 lg:mt-0">
       <div
         class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6"
       >
@@ -236,8 +236,10 @@ const props = defineProps({
 const closeDetails = () => {
   // Emitir evento para limpiar la selección
   emit("clear-selection");
-  // Scroll hacia arriba
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  // Scroll hacia arriba (solo en pantallas móviles/pequeñas)
+  if (window.innerWidth < 1024) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 };
 
 // Watch para detectar cambios en selectedDay

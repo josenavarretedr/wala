@@ -168,7 +168,7 @@ const handleEditComposition = () => {
       premium("Define la composición de tus productos", {
         actionLink: {
           text: "Actualiza a Wala Pro",
-          route: `/business/${route.params.businessId}/premium`,
+          route: `/business/${route.params.businessId}/pro`,
         },
       });
 

@@ -22,7 +22,7 @@
         >
           <BrightCrown class="w-5 h-5 flex-shrink-0" />
           <span class="hidden sm:inline">Descubre WALA Pro</span>
-          <span class="sm:hidden">Premium</span>
+          <span class="sm:hidden">Pro</span>
         </button>
       </div>
     </div>
@@ -49,7 +49,7 @@ const handleJoinProgram = () => {
 const handleGoToPremium = () => {
   const businessId = route.params.businessId;
   if (businessId) {
-    router.push(`/business/${businessId}/premium`);
+    router.push(`/business/${businessId}/pro`);
   } else {
     console.error("No businessId found in route params");
   }

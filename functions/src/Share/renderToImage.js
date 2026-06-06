@@ -16,15 +16,23 @@ const isLocalEmulator = process.env.FUNCTIONS_EMULATOR === 'true';
 
 let chromium, puppeteer;
 
-if (isLocalEmulator) {
-  // Local: usar puppeteer completo con Chromium incluido
-  puppeteer = require('puppeteer');
-  console.log('🔧 [renderToImage] Modo LOCAL - usando puppeteer completo');
-} else {
-  // Producción: usar @sparticuz/chromium optimizado
-  chromium = require('@sparticuz/chromium');
-  puppeteer = require('puppeteer-core');
-  console.log('☁️ [renderToImage] Modo CLOUD - usando @sparticuz/chromium');
+function loadPuppeteer() {
+  if (puppeteer) return;
+  if (isLocalEmulator) {
+    puppeteer = require('puppeteer');
+    console.log('🔧 [renderToImage] Lazy loaded Puppeteer');
+  } else {
+    puppeteer = require('puppeteer-core');
+    console.log('☁️ [renderToImage] Lazy loaded Puppeteer core');
+  }
+}
+
+function loadChromium() {
+  if (chromium) return;
+  if (!isLocalEmulator) {
+    chromium = require('@sparticuz/chromium');
+    console.log('☁️ [renderToImage] Lazy loaded @sparticuz/chromium');
+  }
 }
 
 // =====================================================================
@@ -34,11 +42,14 @@ let _browserSingleton = null;
 
 const getLaunchOptions = async () => {
   if (isLocalEmulator) {
+    loadPuppeteer();
     return {
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security', '--disable-dev-shm-usage']
     };
   }
+  loadPuppeteer();
+  loadChromium();
   return {
     args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security', '--disable-dev-shm-usage'],
     defaultViewport: chromium.defaultViewport,
@@ -60,6 +71,7 @@ const getOrCreateBrowser = async () => {
     }
   }
   console.log('🆕 [Browser] Lanzando nueva instancia Puppeteer...');
+  loadPuppeteer();
   const launchOptions = await getLaunchOptions();
   _browserSingleton = await puppeteer.launch(launchOptions);
   return _browserSingleton;

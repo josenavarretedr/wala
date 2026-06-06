@@ -11,7 +11,9 @@ import StepSalesChannel from '@/components/transactionFlow/StepSalesChannel.vue'
 import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDetails.vue';
 import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePreview.vue';
 import StepAddExpensePreview from '@/components/transactionFlow/StepAddExpensePreview.vue';
-import StepAddQuotePreview from '@/components/transactionFlow/StepAddQuotePreview.vue';
+// import StepAddQuotePreview from '@/components/transactionFlow/StepAddQuotePreview.vue';
+import StepPaymentDecision from '@/components/transactionFlow/StepPaymentDecision.vue';
+import StepOrderPreview from '@/components/transactionFlow/StepOrderPreview.vue';
 // import StepSummary from '@/components/transactionFlow/StepSummary.vue';
 
 import StepTransferDetails from '@/components/transactionFlow/StepTransferDetails.vue';
@@ -84,13 +86,12 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       ];
 
       if (transactionType === 'income') {
-        // NUEVO FLUJO PARA INGRESOS CON PAGOS PARCIALES Y CLIENTES
+        // NUEVO FLUJO PARA INGRESOS CON PAGOS PARCIALES Y CLIENTES (AHORA PEDIDOS)
         this.steps.push(
-          { label: 'Detalles ingreso', component: StepAddIncomeDetails },
+          { label: 'Detalles pedido', component: StepAddIncomeDetails },
           { label: 'Canal de venta', component: StepSalesChannel },
-          { label: 'Adjuntar cliente', component: StepAttachClient },     // Reordenado antes de pago
-          { label: 'Método de pago', component: StepPaymentMethod },      // Reordenado después de cliente
-          { label: 'Preview ingreso', component: StepAddIncomePreview }
+          { label: 'Adjuntar cliente', component: StepAttachClient },
+          { label: 'Decisión de pago', component: StepPaymentDecision }
         );
       } else if (transactionType === 'expense') {
         // MANTENER FLUJO EXISTENTE PARA EGRESOS
@@ -106,19 +107,29 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           { label: 'Detalles transferencia', component: StepTransferDetails },
           { label: 'Preview transferencia', component: StepTransferPreview }
         );
-      } else if (transactionType === 'quote') {
-        // NUEVO FLUJO PARA COTIZACION
-        this.steps.push(
-          { label: 'Detalles cotización', component: StepAddIncomeDetails },
-          { label: 'Adjuntar cliente', component: StepAttachClient },
-          { label: 'Preview cotización', component: StepAddQuotePreview }
-        );
       }
 
       console.log("✅ Pasos definidos:", this.steps.map(s => s.label));
       console.log("📍 Total de pasos:", this.steps.length);
 
       // this.steps.push({ label: 'Resumen', component: StepSummary });
+    },
+    insertPaymentSteps(decision) {
+      console.log("⚡ insertPaymentSteps - decisión:", decision);
+      // Limpiar cualquier paso dinámico posterior a "Decisión de pago" (índice 4 es la decisión)
+      this.steps = this.steps.slice(0, 5);
+
+      if (decision === 'paid') {
+        this.steps.push(
+          { label: 'Método de pago', component: StepPaymentMethod },
+          { label: 'Preview ingreso', component: StepAddIncomePreview }
+        );
+      } else if (decision === 'order_only') {
+        this.steps.push(
+          { label: 'Preview pedido', component: StepOrderPreview }
+        );
+      }
+      console.log("✅ Pasos dinámicos actualizados:", this.steps.map(s => s.label));
     }
   }
 });

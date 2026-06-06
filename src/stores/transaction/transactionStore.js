@@ -1502,6 +1502,7 @@ export function useTransactionStore() {
       return addMoney(sum, multiplyMoney(item.price, item.quantity));
     }, 0);
 
+    return round2(total);
   }
 
   const modifyTransactionToAddAccount = (account) => {
@@ -3237,6 +3238,159 @@ export function useTransactionStore() {
     }
   };
 
+  /**
+   * Genera el próximo número de orden automáticamente
+   * Formato: ORD-YYYY-####
+   */
+  const getNextOrderNumber = async () => {
+    try {
+      const businessId = ensureBusinessId();
+      const db = getFirestore();
+      const currentYear = new Date().getFullYear();
+
+      // Buscar todas las órdenes del año actual
+      const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+      const ordersRef = collection(db, 'businesses', businessId, 'orders');
+      const q = query(
+        ordersRef,
+        where('year', '==', currentYear),
+        orderBy('orderNumber', 'desc'),
+        limit(1)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        // Primera orden del año
+        return `ORD-${currentYear}-0001`;
+      }
+
+      // Obtener el último número y sumar 1
+      const lastOrder = snapshot.docs[0].data();
+      const lastNumber = parseInt(lastOrder.orderNumber.split('-')[2]) || 0;
+      const nextNumber = lastNumber + 1;
+
+      return `ORD-${currentYear}-${String(nextNumber).padStart(4, '0')}`;
+
+    } catch (error) {
+      console.error('❌ Error generando número de orden:', error);
+      // Fallback
+      const currentYear = new Date().getFullYear();
+      return `ORD-${currentYear}-${String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0')}`;
+    }
+  };
+
+  /**
+   * Guarda un pedido en Firestore
+   * Los pedidos NO afectan inventario ni cuentas de forma inmediata (solo cuando se cobran)
+   */
+  const addOrder = async () => {
+    try {
+      console.log('📋 Iniciando guardado de pedido...');
+
+      // Validaciones básicas
+      if (!transactionToAdd.value.items || transactionToAdd.value.items.length === 0) {
+        throw new Error('El pedido debe tener al menos un producto');
+      }
+
+      // Generar UUID y número de orden
+      const orderUuid = uuidv4();
+      const orderNumber = await getNextOrderNumber();
+      const businessId = ensureBusinessId();
+      const currentUser = await import('@/composables/useAuth').then(m => m.useAuth().getCurrentUser());
+
+      // Calcular total
+      const total = getTransactionToAddTotal();
+
+      // Crear objeto de orden
+      const order = {
+        uuid: orderUuid,
+        orderNumber: orderNumber,
+        type: 'order',
+        status: 'inbox', // inbox | in_progress | completed | cancelled
+
+        // Fechas
+        createdAt: serverTimestamp(),
+        year: new Date().getFullYear(),
+
+        // Canal de venta y delivery
+        salesChannel: transactionToAdd.value.salesChannel || 'LOCAL',
+        deliveryAddress: transactionToAdd.value.deliveryAddress || '',
+        deliveryPlatform: transactionToAdd.value.deliveryPlatform || null,
+        deliveryPlatformName: transactionToAdd.value.deliveryPlatformName || null,
+        deliveryCost: transactionToAdd.value.deliveryCost || 0,
+        platformCommissionPct: transactionToAdd.value.platformCommissionPct || null,
+        platformCommissionAmount: transactionToAdd.value.platformCommissionAmount || 0,
+        isDeliveryFree: transactionToAdd.value.isDeliveryFree || false,
+        packagingCost: transactionToAdd.value.packagingCost || 0,
+        packagingItems: transactionToAdd.value.packagingItems || [],
+
+        // Cliente
+        clientId: transactionToAdd.value.clientId || ANONYMOUS_CLIENT_ID,
+        clientName: transactionToAdd.value.clientName || 'Cliente Anónimo',
+
+        // Productos
+        items: transactionToAdd.value.items.map(item => ({
+          uuid: item.uuid || item.selectedProductUuid,
+          name: item.name || item.description,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit || 'unidad',
+          price: item.price,
+          totalItemPrice: item.price * item.quantity
+        })),
+
+        // Totales
+        total: total,
+        amount: total,
+        itemsCount: transactionToAdd.value.items.length,
+
+        // Metadata
+        businessId: businessId,
+        userId: currentUser?.uid || 'unknown',
+
+        // Notas
+        notes: transactionToAdd.value.notes || ''
+      };
+
+      console.log('📋 Guardando pedido:', {
+        orderNumber: order.orderNumber,
+        total: order.total,
+        itemsCount: order.itemsCount,
+        clientName: order.clientName
+      });
+
+      // Guardar en Firestore en colección separada 'orders'
+      const db = getFirestore();
+      const { doc, setDoc } = await import('firebase/firestore');
+      const orderRef = doc(db, 'businesses', businessId, 'orders', orderUuid);
+
+      await setDoc(orderRef, order);
+
+      console.log('✅ Pedido guardado exitosamente:', orderNumber);
+
+      // Actualizar metadata del cliente si existe
+      if (order.clientId && order.clientId !== ANONYMOUS_CLIENT_ID) {
+        try {
+          const { useClientStore } = await import('@/stores/clientStore');
+          const clientStore = useClientStore();
+          await clientStore.updateClientMetadata(order.clientId);
+          console.log('✅ Metadata del cliente actualizada');
+        } catch (clientError) {
+          console.warn('⚠️ No se pudo actualizar metadata del cliente:', clientError);
+        }
+      }
+
+      status.value = 'success';
+      return { success: true, orderNumber: order.orderNumber, orderUuid: order.uuid };
+
+    } catch (error) {
+      console.error('❌ Error guardando pedido:', error);
+      status.value = 'error';
+      throw error;
+    }
+  };
+
   return {
     transactionsInStore,
     transactionToAdd,
@@ -3248,6 +3402,8 @@ export function useTransactionStore() {
     saveSystemTransaction,
     addQuote,
     getNextQuoteNumber,
+    addOrder,
+    getNextOrderNumber,
     getTransactions,
     getTransactionsToday,
     getTransactionsByDayStore,

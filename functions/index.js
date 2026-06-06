@@ -79,4 +79,7 @@ exports.adminGetAllPrograms = adminModule.adminGetAllPrograms;
 exports.adminUpdateSubscription = adminModule.adminUpdateSubscription;
 exports.adminEnrollBusinessInProgram = adminModule.adminEnrollBusinessInProgram;
 
+// 🎁 SUBSCRIPTIONS - Expiración de trials
+exports.checkTrialExpiration = require('./src/Subscriptions/trialExpiration');
+
 

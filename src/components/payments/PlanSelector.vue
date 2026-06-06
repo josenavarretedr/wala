@@ -40,7 +40,7 @@
       <ul class="space-y-2 text-sm text-gray-700">
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Inventario ilimitado</span>
+          <span>Hasta 20 productos</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
@@ -166,6 +166,10 @@
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
           <span>Todo lo de Free y Pro</span>
+        </li>
+        <li class="flex items-start gap-2">
+          <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
+          <span>Clasificación automática con IA</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />

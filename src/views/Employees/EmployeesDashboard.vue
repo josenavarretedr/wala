@@ -31,7 +31,7 @@
         <h4 class="font-bold text-sm text-[#8b2413]">Plan Gratuito: Límite de 3 colaboradores</h4>
         <p class="text-xs text-[#8b2413]/90 mt-0.5">
           Tu plan actual permite tener hasta 3 personas trabajando. Si necesitas un equipo más grande, considera adquirir 
-          <router-link :to="`/business/${businessStore.getBusinessId}/plans`" class="font-bold underline text-[#E35336] hover:text-[#c2412b]">WALA Premium</router-link> para colaboradores ilimitados.
+          <router-link :to="`/business/${businessStore.getBusinessId}/pro`" class="font-bold underline text-[#E35336] hover:text-[#c2412b]">WALA Pro</router-link> para colaboradores ilimitados.
         </p>
       </div>
     </div>

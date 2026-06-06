@@ -795,7 +795,7 @@ const handlePremiumClick = () => {
   toast.premium("Costea cada producto adecuadamente", {
     actionLink: {
       text: "Actualiza a Wala Pro",
-      route: `/business/${route.params.businessId}/premium`,
+      route: `/business/${route.params.businessId}/pro`,
     },
   });
 };

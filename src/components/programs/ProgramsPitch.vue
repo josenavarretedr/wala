@@ -189,7 +189,7 @@ const goToPremium = () => {
   const businessId = route.params.businessId;
   console.log("businessId:", businessId); // Debug
   if (businessId) {
-    router.push(`/business/${businessId}/premium`);
+    router.push(`/business/${businessId}/pro`);
   } else {
     console.error("No businessId found in route params");
   }

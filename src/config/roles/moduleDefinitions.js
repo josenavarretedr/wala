@@ -72,11 +72,11 @@ export const MODULE_DEFINITIONS = [
     route: 'ConsultingDashboard'
   },
   {
-    key: 'quotes',
-    label: 'Cotizaciones',
-    icon: 'Page',
-    description: 'Creación y seguimiento de presupuestos para clientes.',
-    route: 'Quotes'
+    key: 'orders',
+    label: 'Órdenes',
+    icon: 'ClipboardCheck',
+    description: 'Gestión de pedidos y seguimiento de órdenes.',
+    route: 'Orders'
   }
 ];
 

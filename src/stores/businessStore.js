@@ -49,7 +49,12 @@ export const useBusinessStore = defineStore('business', {
      */
     isPremium: (state) => {
       const sub = state.business?.subscription
-      return ['premium', 'pro', 'max'].includes(sub?.plan) && sub?.status === 'active'
+      if (!sub) return false
+      const isActive = ['premium', 'pro', 'max'].includes(sub.plan) && sub.status === 'active'
+      const isTrial = sub.status === 'trial' && sub.endDate && (
+        typeof sub.endDate.toDate === 'function' ? sub.endDate.toDate() : new Date(sub.endDate)
+      ) > new Date()
+      return isActive || isTrial
     },
 
     /**
@@ -57,7 +62,12 @@ export const useBusinessStore = defineStore('business', {
      */
     isPro: (state) => {
       const sub = state.business?.subscription
-      return sub?.plan === 'pro' && sub?.status === 'active'
+      if (!sub) return false
+      const isActive = sub.plan === 'pro' && sub.status === 'active'
+      const isTrial = sub.plan === 'pro' && sub.status === 'trial' && sub.endDate && (
+        typeof sub.endDate.toDate === 'function' ? sub.endDate.toDate() : new Date(sub.endDate)
+      ) > new Date()
+      return isActive || isTrial
     },
 
     /**
@@ -83,7 +93,8 @@ export const useBusinessStore = defineStore('business', {
       const sub = state.business?.subscription
       if (sub?.status !== 'trial') return false
       if (!sub.endDate) return false
-      return new Date() < sub.endDate.toDate()
+      const end = typeof sub.endDate.toDate === 'function' ? sub.endDate.toDate() : new Date(sub.endDate)
+      return new Date() < end
     },
 
     /**
@@ -122,7 +133,7 @@ export const useBusinessStore = defineStore('business', {
     canAddProduct: (state) => {
       const usage = state.business?.usage || {}
       const features = state.business?.features || {}
-      const maxProducts = features.maxProducts || 100
+      const maxProducts = features.maxProducts || 20
 
       return usage.productCount < maxProducts
     },
@@ -142,8 +153,8 @@ export const useBusinessStore = defineStore('business', {
         },
         products: {
           current: usage.productCount || 0,
-          max: features.maxProducts || 100,
-          available: (features.maxProducts || 100) - (usage.productCount || 0)
+          max: features.maxProducts || 20,
+          available: (features.maxProducts || 20) - (usage.productCount || 0)
         }
       }
     }
@@ -632,7 +643,7 @@ export const useBusinessStore = defineStore('business', {
       // Plan free (por defecto)
       return {
         maxEmployees: 3,
-        maxProducts: 999999, // inventario ilimitado (Free)
+        maxProducts: 20, // límite de 20 productos (Free)
         advancedReports: false,
         multiLocation: false,
         apiAccess: false,
@@ -774,6 +785,85 @@ export const useBusinessStore = defineStore('business', {
         return true
       } catch (error) {
         console.error('❌ Error actualizando plan:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Activa una prueba gratuita de 5 días del plan Pro para el negocio
+     */
+    async activateProfileTrial(businessId, userId) {
+      try {
+        console.log('🎁 Activando trial Pro de 5 días para negocio:', businessId)
+        const businessRef = doc(db, 'businesses', businessId)
+        
+        // 1. Validar estado actual
+        const businessSnap = await getDoc(businessRef)
+        if (!businessSnap.exists()) {
+          throw new Error('Negocio no encontrado')
+        }
+        const businessData = businessSnap.data()
+        const currentSub = businessData.subscription || {}
+        
+        if (currentSub.trialUsed) {
+          throw new Error('La prueba gratuita ya ha sido utilizada en este negocio')
+        }
+        
+        if (currentSub.plan && currentSub.plan !== 'free') {
+          throw new Error('El negocio ya cuenta con un plan activo')
+        }
+
+        const startDate = new Date()
+        const endDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+
+        const subscriptionUpdate = {
+          'subscription.plan': 'pro',
+          'subscription.status': 'trial',
+          'subscription.startDate': startDate,
+          'subscription.endDate': endDate,
+          'subscription.trialUsed': true,
+          'subscription.trialSource': 'profile_completion',
+          'subscription.updatedAt': startDate,
+          'subscription.updatedBy': userId
+        }
+
+        // 2. Actualizar negocio
+        await updateDoc(businessRef, subscriptionUpdate)
+
+        // 3. Registrar en historial para tracking/trazabilidad
+        const historyRef = collection(db, 'businesses', businessId, 'subscriptions')
+        await addDoc(historyRef, {
+          plan: 'pro',
+          status: 'trial',
+          startDate: startDate,
+          endDate: endDate,
+          trialSource: 'profile_completion',
+          activatedBy: userId,
+          createdAt: startDate,
+          type: 'trial_activation'
+        })
+
+        // 4. Actualizar features según el nuevo plan (pro)
+        await this.refreshBusinessFeatures(businessId)
+
+        // 5. Actualizar estado local si es el negocio cargado
+        if (this.business && this.business.id === businessId) {
+          this.business.subscription = {
+            plan: 'pro',
+            status: 'trial',
+            startDate: startDate,
+            endDate: endDate,
+            trialUsed: true,
+            trialSource: 'profile_completion',
+            updatedAt: startDate,
+            updatedBy: userId
+          }
+        }
+
+        console.log('✅ Trial Pro de 5 días activado con éxito')
+        return true
+      } catch (error) {
+        console.error('❌ Error al activar trial de perfil:', error)
         throw error
       }
     },

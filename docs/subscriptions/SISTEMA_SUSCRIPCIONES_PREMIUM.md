@@ -99,7 +99,7 @@ Este sistema implementa un modelo **freemium de 3 tiers** (Free / Pro / Max) a n
   // ✨ CAMPOS DE FEATURES habilitadas (cache por plan)
   features: {
     maxEmployees: 3,           // free: 3, pro/max: 999999
-    maxProducts: 999999,       // ilimitado en todos los planes
+    maxProducts: 20,           // free: 20, pro/max: 999999
     advancedReports: false,    // pro ✅, max ✅
     multiLocation: false,      // solo max ✅
     apiAccess: false,          // solo max ✅
@@ -128,7 +128,7 @@ Este sistema implementa un modelo **freemium de 3 tiers** (Free / Pro / Max) a n
 ```javascript
 {
   maxEmployees: 3,
-  maxProducts: 999999,       // inventario ilimitado
+  maxProducts: 20,           // límite de 20 productos
   advancedReports: false,
   multiLocation: false,
   apiAccess: false,
@@ -1022,12 +1022,18 @@ Para preguntas o problemas:
 
 ---
 
-**Última actualización:** 6 de mayo de 2026  
-**Versión:** 2.0.0
+**Última actualización:** 6 de junio de 2026  
+**Versión:** 2.1.0
 
 ---
 
 ## Changelog
+
+### [v2.1.0 - Junio 2026] — Corrección de Inconsistencias y Límites Definitivos
+- **Límites Dinámicos**: Corrección del límite de productos en el plan Free de ilimitado/999999 a **20 productos** en base de datos (`businessStore.js`) y forzado en `AddProduct.vue`.
+- **Compartición**: Conexión de `useRateLimit.js` con el composable `useSubscription()` real y límite ajustado a **20 envíos diarios** para plan Free.
+- **Acceso IA**: Clasificación automática restringida estrictamente a **WALA Max** usando comprobaciones granulares de `hasAccess('aiClassification')` y actualización de `PremiumLockWrapper.vue` para soportar insignias de plan Max.
+- **Visuales**: Actualizados textos informativos en el selector de planes.
 
 ### [v2.0.0 - Mayo 2026] — Auditoría de Veracidad
 - 🔴 **BREAKING**: Documentación actualizada de 2 tiers (Free/Premium) a **3 tiers (Free/Pro/Max)**

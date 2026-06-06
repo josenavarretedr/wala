@@ -1,7 +1,6 @@
 /* eslint-disable */
 
 const functions = require("firebase-functions");
-const { OpenAI } = require("openai");
 
 /**
  * Cloud Function Callable: Proxy para llamadas a la API de Grok (xAI).
@@ -21,6 +20,7 @@ exports.grokProxy = functions
   .region("southamerica-east1")
   .runWith({ timeoutSeconds: 300, memory: "512MB" })
   .https.onCall(async (data, context) => {
+    const { OpenAI } = require("openai");
     // Verificar autenticación
     if (!context.auth) {
       throw new functions.https.HttpsError(

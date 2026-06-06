@@ -163,8 +163,8 @@ export function useSubscription() {
   const goToPlans = () => {
     const businessId = businessStore.getBusinessId
     if (businessId) {
-      console.log('📍 [useSubscription] Navegando a planes:', businessId)
-      router.push(`/business/${businessId}/plans`)
+      console.log('📍 [useSubscription] Navegando a pro:', businessId)
+      router.push(`/business/${businessId}/pro`)
     } else {
       console.error('❌ [useSubscription] No hay businessId disponible')
     }
@@ -244,9 +244,9 @@ export function useSubscription() {
       badge = '👑'
       color = 'amber'
     } else if (isPro.value) {
-      name = 'Pro'
-      badge = '⚡'
-      color = 'indigo'
+      name = sub?.status === 'trial' ? 'Prueba Pro' : 'Pro'
+      badge = sub?.status === 'trial' ? '🎁' : '⚡'
+      color = sub?.status === 'trial' ? 'emerald' : 'indigo'
     }
 
     return {
@@ -259,6 +259,26 @@ export function useSubscription() {
       daysLeft: daysRemaining.value
     }
   })
+
+  /**
+   * Indica si la prueba gratuita ha expirado
+   */
+  const isTrialExpired = computed(() => {
+    const sub = subscription.value
+    if (sub?.status !== 'trial') return false
+    if (!sub.endDate) return false
+    const end = typeof sub.endDate.toDate === 'function' ? sub.endDate.toDate() : new Date(sub.endDate)
+    return new Date() >= end
+  })
+
+  /**
+   * Activa la prueba gratuita de 5 días para el negocio actual
+   */
+  const activateTrial = async (userId) => {
+    const businessId = businessStore.getBusinessId
+    if (!businessId) throw new Error('No hay negocio cargado')
+    return await businessStore.activateProfileTrial(businessId, userId)
+  }
 
   /**
    * Indica si debe mostrar advertencia de expiración próxima
@@ -281,6 +301,7 @@ export function useSubscription() {
     isMax,
     isFree,
     isTrialActive,
+    isTrialExpired,
     subscription,
     limits,
     daysRemaining,
@@ -297,6 +318,7 @@ export function useSubscription() {
     requireFeature,
     requireLimit,
     showUpgradeModal,
-    goToPlans
+    goToPlans,
+    activateTrial
   }
 }

@@ -121,41 +121,32 @@
           <div
             class="bg-purple-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
           >
-            <!-- <div
-              class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mr-3"
-            >
-              <svg
-                class="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </div> -->
             <div class="font-medium text-purple-700 truncate px-1">
               {{ transactionData.clientName || "Sin nombre" }}
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Tipo de método de pago -->
-          <!-- <div
-            class="bg-green-50 rounded-xl p-4 text-center flex flex-row items-center justify-left"
-          >
-            <div
-              class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-3"
-            >
-              <component :is="getAccountIcon" class="w-4 h-4 text-white" />
-            </div>
-            <div class="text-sm font-medium text-green-700">
-              {{ getAccountLabel }}
-            </div>
-          </div> -->
+      <!-- Datos de Delivery / Envío -->
+      <div
+        v-if="
+          transactionData.salesChannel === 'DELIVERY' &&
+          transactionData.deliveryAddress
+        "
+        class="p-4 border-b border-gray-100"
+      >
+        <h3
+          class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2"
+        >
+          <MapPin class="w-5 h-5 text-gray-600" />
+          Envío / Delivery:
+        </h3>
+        <div class="bg-blue-50 rounded-xl p-4 text-left flex flex-col gap-1 border border-blue-100">
+          <div class="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Dirección de Entrega</div>
+          <div class="text-sm font-semibold text-gray-850 leading-relaxed">
+            {{ transactionData.deliveryAddress }}
+          </div>
         </div>
       </div>
 
@@ -301,6 +292,8 @@
         v-if="
           transactionData.items &&
           transactionData.items.length > 0 &&
+          transactionData.payments &&
+          transactionData.payments.length > 0 &&
           isOnePayment === false
         "
         :class="[
@@ -419,7 +412,7 @@
 import { computed } from "vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
-import { TaskList, Package, User, Coins, SmartphoneDevice } from "@iconoir/vue";
+import { TaskList, Package, User, Coins, SmartphoneDevice, MapPin } from "@iconoir/vue";
 
 const props = defineProps({
   transactionData: {

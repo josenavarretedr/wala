@@ -1,8 +1,8 @@
 /* eslint-disable */
 
-const { OpenAI } = require("openai");
 
 async function callGrok({ apiKey, model, prompt }) {
+  const { OpenAI } = require("openai");
 
   // DEBUG: Verificar la API key recibida
   console.log(`🔍 callGrok recibió API key - Longitud: ${apiKey ? apiKey.length : 0}, Primeros 15: ${apiKey ? apiKey.substring(0, 15) : 'undefined'}, Últimos 10: ${apiKey ? apiKey.substring(apiKey.length - 10) : 'undefined'}`);

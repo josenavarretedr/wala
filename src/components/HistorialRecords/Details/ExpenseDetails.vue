@@ -247,7 +247,8 @@
               <PremiumLockWrapper
                 v-if="isOverheadExpense"
                 :isPremium="isPremium"
-                :isLocked="!isPremium"
+                :isLocked="!hasAccess('aiClassification')"
+                badgeText="Max"
                 @locked-click="handlePremiumClick"
               >
                 <template #content="{ contentClasses }">
@@ -379,7 +380,7 @@ const props = defineProps({
 });
 
 const route = useRoute();
-const { isPremium } = useSubscription();
+const { isPremium, hasAccess } = useSubscription();
 const { premium } = useToast();
 
 // ========================================
@@ -387,10 +388,10 @@ const { premium } = useToast();
 // ========================================
 
 const handlePremiumClick = () => {
-  premium("La clasificación automática con IA está disponible en Wala Pro.", {
+  premium("La clasificación automática con IA está disponible en WALA Max.", {
     actionLink: {
-      text: "Actualiza a Wala Pro",
-      route: `/business/${route.params.businessId}/premium`,
+      text: "Actualiza a WALA Max",
+      route: `/business/${route.params.businessId}/pro`,
     },
   });
 };

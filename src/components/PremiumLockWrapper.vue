@@ -18,7 +18,7 @@
     <div v-if="showBadge" :class="badgeOverlayClasses">
       <div :class="badgeClasses">
         <BrightCrown class="w-3.5 h-3.5" />
-        <span>Pro</span>
+        <span>{{ badgeText }}</span>
       </div>
     </div>
 
@@ -40,6 +40,7 @@ import { computed, watch } from "vue";
  * @prop {Boolean} isPremium - Si el usuario tiene plan Premium (default: true)
  * @prop {Boolean} isLocked - Si el contenido debe estar bloqueado (default: false)
  * @prop {Boolean} clickable - Si debe emitir evento al hacer click cuando está bloqueado (default: true)
+ * @prop {String} badgeText - Texto de la insignia (default: 'Pro')
  *
  * @slot header - Contenido del encabezado (siempre visible, sin blur)
  * @slot content - Contenido principal (se aplica blur cuando isLocked=true)
@@ -73,6 +74,10 @@ const props = defineProps({
   clickable: {
     type: Boolean,
     default: true,
+  },
+  badgeText: {
+    type: String,
+    default: "Pro",
   },
 });
 

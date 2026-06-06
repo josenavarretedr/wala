@@ -140,12 +140,14 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Detalles ingreso":
+    case "Detalles pedido":
     case "Detalles cotización":
     case "Detalles egreso":
     case "Detalles transferencia":
-      // Para ingresos y cotizaciones, verificar que haya items
+      // Para ingresos, pedidos y cotizaciones, verificar que haya items
       if (
         currentStepLabel === "Detalles ingreso" ||
+        currentStepLabel === "Detalles pedido" ||
         currentStepLabel === "Detalles cotización"
       ) {
         result = transactionData.items && transactionData.items.length > 0;
@@ -223,9 +225,17 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Preview ingreso":
+    case "Preview pedido":
     case "Preview cotización":
-      // Para preview de ingresos y cotizaciones, siempre permitir finalizar
+      // Para preview de ingresos, pedidos y cotizaciones, siempre permitir finalizar
       result = true;
+      break;
+
+    case "Decisión de pago":
+      // Verificar que se haya seleccionado una opción
+      result =
+        transactionData.paymentDecision !== null &&
+        transactionData.paymentDecision !== undefined;
       break;
 
     case "Método de pago":
@@ -333,7 +343,14 @@ const getValidationMessage = () => {
       return "Debes seleccionar un método de pago";
 
     case "Detalles ingreso":
+    case "Detalles pedido":
       return "Debes agregar al menos un producto";
+
+    case "Decisión de pago":
+      return "Debes seleccionar una opción para continuar";
+
+    case "Preview pedido":
+      return "Los datos del pedido están incompletos";
 
     case "Detalles egreso":
       // Mensaje específico según la categoría
@@ -393,10 +410,38 @@ const finalizarRegistro = async () => {
       paymentStatus: transactionStore.transactionToAdd.value.paymentStatus,
     });
 
-    // Detectar si es una cotización
+    // Detectar si es una cotización o un pedido
     const isQuote = transactionStore.transactionToAdd.value.type === "quote";
+    const isOrder = transactionStore.transactionToAdd.value.type === "order";
 
-    if (isQuote) {
+    if (isOrder) {
+      // Guardar como pedido (sin afectar inventario ni cuentas inmediatamente)
+      console.log("📋 Guardando como pedido...");
+
+      const result = await transactionStore.addOrder();
+
+      console.log("✅ Pedido guardado:", result.orderNumber);
+
+      const businessId = businessStore.getBusinessId;
+      flow.transactionLoading = false;
+
+      // Toast de éxito para pedido
+      success(`Pedido ${result.orderNumber} registrado exitosamente`);
+      setTimeout(() => {
+        success("Redirigiendo al Kanban de órdenes...");
+        router.replace({
+          name: "Orders",
+          params: {
+            businessId,
+          },
+        });
+
+        // Resetear y navegar
+        transactionStore.resetTransactionToAdd();
+        flow.resetFlow();
+        isFinalizando.value = false;
+      }, 500);
+    } else if (isQuote) {
       // Guardar como cotización (sin afectar inventario ni cuentas)
       console.log("📋 Guardando como cotización...");
 
@@ -437,6 +482,19 @@ const finalizarRegistro = async () => {
 
       const businessId = businessStore.getBusinessId;
       const registerId = result.transactionId;
+
+      // Si la transacción proviene de un pedido, marcar el pedido como finalizado/cobrado
+      const orderId = transactionStore.transactionToAdd.value.orderId;
+      if (orderId) {
+        try {
+          const { useOrders } = await import('@/composables/useOrders');
+          const { updateOrderStatus } = useOrders();
+          await updateOrderStatus(orderId, 'completed');
+          console.log(`✅ Pedido ${orderId} marcado como completado/cobrado`);
+        } catch (orderError) {
+          console.warn('⚠️ No se pudo marcar el pedido como completado:', orderError);
+        }
+      }
 
       // NO resetear loading aquí, mantener el botón deshabilitado hasta navegar
       flow.transactionLoading = false;

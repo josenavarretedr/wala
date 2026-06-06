@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screenp-3 sm:p-4 lg:p-6">
+  <div class="min-h-screen p-3 sm:p-4 lg:p-6">
     <!-- Header -->
-    <div class="max-w-sm lg:max-w-lg mx-auto mb-4 lg:mb-5">
+    <div class="max-w-sm lg:max-w-5xl mx-auto mb-4 lg:mb-5">
       <div class="flex items-center gap-3 mb-2">
         <button
           @click="goBack"
@@ -32,15 +32,22 @@
       </p>
     </div>
 
-    <!-- Componente de calendario -->
-    <CalendarMonthView @day-selected="handleDaySelected" />
+    <!-- Contenedor de dos columnas para pantallas grandes -->
+    <div class="max-w-sm lg:max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <!-- Columna izquierda: Calendario -->
+      <div>
+        <CalendarMonthView @day-selected="handleDaySelected" />
+      </div>
 
-    <!-- Componente de detalles del día -->
-    <StreakDetails
-      ref="streakDetailsRef"
-      :selectedDay="selectedDay"
-      @clear-selection="handleClearSelection"
-    />
+      <!-- Columna derecha: Detalles de la racha -->
+      <div>
+        <StreakDetails
+          ref="streakDetailsRef"
+          :selectedDay="selectedDay"
+          @clear-selection="handleClearSelection"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -70,12 +77,14 @@ const handleDaySelected = async (dayData) => {
   // Esperar a que el DOM se actualice
   await nextTick();
 
-  // Hacer scroll suave hacia StreakDetails
-  if (streakDetailsRef.value && streakDetailsRef.value.$el) {
-    streakDetailsRef.value.$el.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
+  // Hacer scroll suave hacia StreakDetails (solo en pantallas móviles/pequeñas)
+  if (window.innerWidth < 1024) {
+    if (streakDetailsRef.value && streakDetailsRef.value.$el) {
+      streakDetailsRef.value.$el.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
   }
 };
 

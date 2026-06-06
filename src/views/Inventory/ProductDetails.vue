@@ -1,6 +1,6 @@
 <template>
   <div
-    class="product-details-wrapper space-y-4 max-w-2xl mx-auto bg-white/80 shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
+    class="product-details-wrapper space-y-4 max-w-2xl lg:max-w-6xl mx-auto bg-white/80 shadow-2xl shadow-gray-300/50 rounded-3xl border border-gray-100 p-4 sm:p-6 mb-20"
   >
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
@@ -50,79 +50,84 @@
         />
       </div>
 
-      <ProductHeader
-        :key="`header-${product.uuid}-${product.stock}-${
-          product.stockLog?.length || 0
-        }`"
-        :description="product.description"
-        :stock="product.stock"
-        :product-id="product.uuid"
-        :product-type="product.type"
-        :track-stock="product.trackStock"
-        :is-perishable="product.isPerishable"
-        :expiration-date="product.expirationDate"
-        :unit="product.unit"
-        :stock-log="product.stockLog"
-        :classification="product.classification"
-        :price="product.price ?? 0"
-        :cost="product.cost ?? null"
-        :min-stock="product.minStock ?? null"
-        :has-variants="Boolean(product.hasVariants)"
-        :total-variants="
-          Number(
-            product?.stockSummary?.totalVariants ||
-              product?.variantCombos?.length ||
-              0,
-          )
-        "
-        :combine-variant-attributes="
-          Boolean(product?.variantSchema?.combineAttributes)
-        "
-        class="mb-6"
-      />
+      <!-- Layout de dos columnas en pantallas grandes (lg) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <!-- Columna Izquierda: Información General, Composición y Alertas -->
+        <div class="space-y-6">
+          <ProductHeader
+            :key="`header-${product.uuid}-${product.stock}-${
+              product.stockLog?.length || 0
+            }`"
+            :description="product.description"
+            :stock="product.stock"
+            :product-id="product.uuid"
+            :product-type="product.type"
+            :track-stock="product.trackStock"
+            :is-perishable="product.isPerishable"
+            :expiration-date="product.expirationDate"
+            :unit="product.unit"
+            :stock-log="product.stockLog"
+            :classification="product.classification"
+            :price="product.price ?? 0"
+            :cost="product.cost ?? null"
+            :min-stock="product.minStock ?? null"
+            :has-variants="Boolean(product.hasVariants)"
+            :total-variants="
+              Number(
+                product?.stockSummary?.totalVariants ||
+                  product?.variantCombos?.length ||
+                  0,
+              )
+            "
+            :combine-variant-attributes="
+              Boolean(product?.variantSchema?.combineAttributes)
+            "
+          />
 
-      <ProductComposition
-        v-if="product.type === 'PRODUCT' || product.type === 'SERVICE'"
-        :product-id="product.uuid"
-        :product-type="product.type"
-        :composition="product.composition"
-        class="mb-6"
-      />
+          <ProductComposition
+            v-if="product.type === 'PRODUCT' || product.type === 'SERVICE'"
+            :product-id="product.uuid"
+            :product-type="product.type"
+            :composition="product.composition"
+          />
 
-      <ProductEconomicInfo
-        :price="product.price"
-        :cost="product.cost"
-        :unit="product.unit"
-        :product-type="product.type"
-        class="mb-4"
-      />
+          <ProductEconomicInfo
+            :price="product.price"
+            :cost="product.cost"
+            :unit="product.unit"
+            :product-type="product.type"
+          />
 
-      <!-- Stock Alert Card (Destacado) -->
-      <ProductStockAlert
-        v-if="product.trackStock"
-        :stock="product.stock"
-        :unit="product.unit"
-        :product-id="product.uuid"
-        :min-stock="product.minStock ?? null"
-        :description="product.description"
-        :product-type="product.type"
-      />
-      <!-- <ProductoNoStock v-else /> -->
-      <!-- Statistics Summary -->
-      <ResumenMoves
-        :stock-log="product.stockLog"
-        :product-unit="product.unit || 'uni'"
-        :track-stock="product?.trackStock ?? false"
-        class="mb-4"
-      />
+          <!-- Stock Alert Card (Destacado) -->
+          <ProductStockAlert
+            v-if="product.trackStock"
+            :stock="product.stock"
+            :unit="product.unit"
+            :product-id="product.uuid"
+            :min-stock="product.minStock ?? null"
+            :description="product.description"
+            :product-type="product.type"
+          />
+        </div>
 
-      <!-- Stock History Section -->
-      <ProductMoves
-        :stock-log="product.stockLog"
-        :product-unit="product.unit || 'uni'"
-        :track-stock="product?.trackStock ?? false"
-        :has-variants="Boolean(product?.hasVariants)"
-      />
+        <!-- Columna Derecha: Resumen de Movimientos e Historial -->
+        <div class="space-y-6">
+          <!-- Statistics Summary -->
+          <ResumenMoves
+            :stock-log="product.stockLog"
+            :product-unit="product.unit || 'uni'"
+            :track-stock="product?.trackStock ?? false"
+          />
+
+          <!-- Stock History Section -->
+          <ProductMoves
+            :stock-log="product.stockLog"
+            :product-unit="product.unit || 'uni'"
+            :track-stock="product?.trackStock ?? false"
+            :has-variants="Boolean(product?.hasVariants)"
+          />
+        </div>
+      </div>
     </div>
     <div
       class="fixed bottom-0 left-0 right-0 z-50 p-3 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-xl border-t border-gray-100"

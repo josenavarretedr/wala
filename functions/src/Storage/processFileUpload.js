@@ -3,7 +3,6 @@
 const { onObjectFinalized } = require('firebase-functions/v2/storage');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
-const sharp = require('sharp');
 const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
@@ -164,6 +163,7 @@ exports.processFileUpload = onObjectFinalized(
  * Procesa una imagen (resize, preview, conversión HEIC)
  */
 async function processImage(bucket, filePath, fileId, tenantId, uid, folderName, contentType, fileSize, fileDocRef) {
+  const sharp = require('sharp');
   const tempLocalFile = path.join(os.tmpdir(), `temp-${fileId}`);
   const tempPreviewFile = path.join(os.tmpdir(), `preview-${fileId}.jpg`);
 

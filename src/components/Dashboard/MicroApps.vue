@@ -420,6 +420,7 @@ import {
   Community,
   BrightCrown,
   Bookmark,
+  ClipboardCheck,
   ChatBubble,
   SoilAlt,
 } from "@iconoir/vue";
@@ -512,18 +513,18 @@ const allMicroApps = ref([
   },
   {
     id: 7,
-    name: "Cotizaciones",
-    route: "/quotes",
+    name: "Órdenes",
+    route: "/orders",
     available: true,
-    icon: Bookmark,
+    icon: ClipboardCheck,
     isComponent: true,
-    color: "purple",
-    moduleKey: "quotes",
+    color: "orange",
+    moduleKey: "orders",
   },
   {
     id: 9,
     name: "Pro",
-    route: "/premium",
+    route: "/pro",
     available: true,
     icon: BrightCrown,
     isComponent: true,
@@ -609,11 +610,7 @@ const mainApps = computed(() => {
 
 // Todas las apps permitidas para mostrar en el bottom sheet
 const allDisplayApps = computed(() => {
-  const apps = allowedMicroApps.value;
-  if (isPremium.value) {
-    return apps.filter((app) => app.id !== 9);
-  }
-  return apps;
+  return allowedMicroApps.value;
 });
 
 // Funciones

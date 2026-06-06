@@ -53,8 +53,8 @@ export const ROLE_TEMPLATES = {
     {
       rolNombre: 'Vendedor',
       icon: 'User',
-      description: 'Consulta productos en inventario, realiza cotizaciones y registra ventas.',
-      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'quotes'],
+      description: 'Consulta productos en inventario, gestiona pedidos y registra ventas.',
+      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'orders'],
       canCreate: true,
       canEdit: false,
       canDelete: false
@@ -132,7 +132,7 @@ export const ROLE_TEMPLATES = {
       rolNombre: 'Farmacéutico',
       icon: 'User',
       description: 'Consulta recetas, verifica stock de medicamentos y asesora a clientes.',
-      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'quotes'],
+      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'orders'],
       canCreate: true,
       canEdit: false,
       canDelete: false
@@ -160,8 +160,8 @@ export const ROLE_TEMPLATES = {
     {
       rolNombre: 'Vendedor',
       icon: 'User',
-      description: 'Gestión de clientes, cotizaciones y registro de ventas.',
-      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'quotes'],
+      description: 'Gestión de clientes, pedidos y registro de ventas.',
+      modulosAcceso: ['dashboard', 'sales', 'inventory', 'clients', 'orders'],
       canCreate: true,
       canEdit: false,
       canDelete: false

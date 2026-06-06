@@ -178,8 +178,8 @@ const mainItems = computed(() => {
     // },
     {
       icon: "BrightCrown",
-      label: "Premium",
-      to: `/business/${businessId}/premium`,
+      label: "WALA Pro",
+      to: `/business/${businessId}/pro`,
       badgeColor: "text-orange-500",
       permission: null,
     },

@@ -146,7 +146,7 @@ const selectTimeRange = (value) => {
       {
         actionLink: {
           text: "Actualiza a Wala Pro",
-          route: `/business/${route.params.businessId}/premium`,
+          route: `/business/${route.params.businessId}/pro`,
         },
       },
     );
@@ -192,7 +192,7 @@ const handleLockedClick = (widgetType) => {
     {
       actionLink: {
         text: "Actualiza a Wala Pro",
-        route: `/business/${route.params.businessId}/premium`,
+        route: `/business/${route.params.businessId}/pro`,
       },
     },
   );

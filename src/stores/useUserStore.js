@@ -111,6 +111,7 @@ export const useUserStore = defineStore('user', {
           const userData = userDoc.data()
 
           this.userProfile = {
+            ...userData,
             uid: userData.uid || uid,
             email: userData.email,
             nombre: userData.nombre,

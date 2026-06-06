@@ -138,19 +138,27 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventoryStore";
+import { useSubscription } from "@/composables/useSubscription";
 import SearchProductForCreation from "@/components/Inventory/SearchProductForCreation.vue";
 import ProductForm from "@/components/Inventory/ProductForm.vue";
 
 const route = useRoute();
 const router = useRouter();
 const inventoryStore = useInventoryStore();
+const { requireLimit } = useSubscription();
 
 // Estado del wizard
 const wizardStep = ref(1); // 1: Búsqueda, 2: Formulario
 const saving = ref(false);
+
+onMounted(() => {
+  if (!requireLimit("product")) {
+    router.back();
+  }
+});
 
 // Datos del formulario
 const formData = ref({
@@ -203,6 +211,9 @@ const handleNewProductRequested = ({ description }) => {
  * Maneja la creación del producto
  */
 const handleCreateProduct = async (productData) => {
+  if (!requireLimit("product")) {
+    return;
+  }
   try {
     saving.value = true;
 

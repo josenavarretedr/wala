@@ -499,11 +499,19 @@ function selectClient(client) {
   selectedClient.value = client;
   transactionStore.setClientInfo(client.uuid, client.name);
   searchQuery.value = "";
+  
+  // Si el cliente tiene dirección guardada, pre-cargarla
+  if (client.address) {
+    deliveryAddress.value = client.address;
+    transactionStore.transactionToAdd.value.deliveryAddress = client.address;
+  }
 }
 
 function clearSelectedClient() {
   selectedClient.value = null;
   transactionStore.setClientInfo(null, null);
+  deliveryAddress.value = "";
+  transactionStore.transactionToAdd.value.deliveryAddress = "";
 
   if (!isClientRequired.value) {
     selectAnonymousClient();
@@ -514,8 +522,23 @@ function clearSearch() {
   searchQuery.value = "";
 }
 
+let addressDebounceTimer = null;
+
 function syncDeliveryAddress() {
   transactionStore.transactionToAdd.value.deliveryAddress = deliveryAddress.value;
+
+  // Persistir en el perfil de cliente con debounce de 1 segundo
+  if (selectedClient.value && selectedClient.value.uuid !== ANONYMOUS_CLIENT_ID) {
+    if (addressDebounceTimer) clearTimeout(addressDebounceTimer);
+    addressDebounceTimer = setTimeout(async () => {
+      try {
+        await clientStore.updateClient(selectedClient.value.uuid, { address: deliveryAddress.value });
+        console.log("✅ Dirección del cliente guardada en perfil");
+      } catch (err) {
+        console.warn("⚠️ No se pudo guardar la dirección en el perfil del cliente:", err);
+      }
+    }, 1000);
+  }
 }
 
 function openCreateClientModal() {
@@ -523,7 +546,7 @@ function openCreateClientModal() {
     premium("Gestionada tus clientes.", {
       actionLink: {
         text: "Actualiza a Wala Pro",
-        route: `/business/${route.params.businessId}/premium`,
+        route: `/business/${route.params.businessId}/pro`,
       },
     });
     return;
