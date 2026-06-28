@@ -4,11 +4,11 @@
  */
 
 export const DEFAULT_ZONAS = [
-  'Av. Balta',
-  'Av. Luis González',
-  'Mercado Modelo',
-  'Urbanizaciones',
-  'Centro Comercial'
+  'Av. Balta y transversales (Alta)',
+  'Zona salones / Av. Luis González (Alta)',
+  'Mercado Modelo - puestos grandes (Media)',
+  'Urbanizaciones residenciales (Media)',
+  'Centro comercial / Real Plaza (Complementaria)'
 ]
 
 export const DEFAULT_SECTORES = [
@@ -34,27 +34,33 @@ export const AREAS_CRITICAS = [
 
 export const METAS_SEMANALES_DEFAULT = {
   visitasTarget: 40,
+  pruebasTarget: 5,
   agendadosTarget: 6,
   tasaAgendamientoMin: 12, // %
-  cierresTarget: 1,
-  tasaCierreMin: 15, // %
+  diagnosticosEjecutadosTarget: 5,
+  cierresTarget: 1, // Advisory
+  cierresWalaTarget: 2, // WALA S/49
+  tasaCierreMin: 20, // % (updated to 20% according to plan)
   cajaTarget: 450 // S/.
 }
 
 export const WHATSAPP_TEMPLATES = {
-  tarjeta_entregada: 'Hola [Nombre], soy José de WALA, te dejé mi tarjeta hoy. Cuando tengas 20 min me escribes para tu diagnóstico gratuito.',
+  tarjeta_entregada: 'Hola [Nombre]. Soy José, el de WALA. Te comparto lo que te comenté: nuestro copiloto te ayuda a ordenar tu negocio, entender tus números y tomar mejores decisiones. Si quieres, te paso el acceso para probarlo gratis 5 días o agendamos el diagnóstico para ver qué te conviene más. ¿Qué te queda mejor esta semana?',
   agendado: 'Hola [Nombre], te escribo para recordarte que tenemos agendado tu diagnóstico para mañana. ¡Nos vemos!',
-  diagnosticado: '[Nombre], te mando el resumen de lo que vimos. Tus 3 áreas críticas fueron: [AREAS]. La que más te está costando plata ahora es [AREA_PRINCIPAL]. ¿Cuándo nos vemos para el plan de acción?',
-  seguimiento_1: 'Hola [Nombre], ¿pudiste revisar el resumen? Cuéntame si arrancamos esta semana.',
-  seguimiento_2: '[Nombre], seguimos pendientes. ¿Te parece si empezamos el programa en estos días?',
-  seguimiento_3: 'Hola [Nombre], paso por aquí para saber si al final te animaste. Sería genial empezar a ordenar tus finanzas.',
-  seguimiento_4: '[Nombre], este será mi último mensaje. Si decides avanzar más adelante, aquí tienes mi número. ¡Un abrazo!',
-  cierre_advisory: '¡Excelente [Nombre]! Nos vemos pronto. Programa de asesoría 2 meses: S/.450.',
-  cierre_wala: 'Bienvenido a WALA [Nombre]. Tu suscripción S/.49/mes está activa.'
+  diagnosticado: '[Nombre], te mando el resumen de lo que vimos. Tus 3 áreas críticas fueron: [AREAS]. La que más te está costando plata ahora mismo es [AREA_PRINCIPAL]. ¿Cuándo arrancamos?',
+  seguimiento_trial_1: 'Hola [Nombre], ¿cómo vas con WALA? Quería ver si pudiste ingresar. Recuerda que con WALA puedes registrar tus ventas y gastos diarios para tener tu negocio ordenado. Si tienes alguna duda me avisas.',
+  seguimiento_trial_2: 'Hola [Nombre], ¿cómo vas con WALA? Mañana termina tu prueba gratuita de 5 días. Si quieres seguir usándolo para tener control de tus números, coméntame para activar tu suscripción de S/49/mes. ¿Cómo vas?',
+  seguimiento_trial_3: 'Hola [Nombre], ya venció tu prueba gratuita de WALA. Este será mi último mensaje para no importunar. Si deseas ordenar tus finanzas y entender tus números más adelante, WALA estará listo por S/49/mes. ¡Mucho éxito en tus ventas!',
+  seguimiento_advisory_1: '[Nombre], te mando el resumen de lo que vimos. Tus 3 áreas críticas fueron: [AREAS]. La que más te está costando plata ahora mismo es [AREA_PRINCIPAL]. ¿Cuándo arrancamos?',
+  seguimiento_advisory_2: 'Hola [Nombre], te escribo para ver si pudiste pensar en el programa de asesoría y el plan de acción que armamos. ¿Cuándo nos vemos para empezar?',
+  seguimiento_advisory_3: 'Hola [Nombre], este será mi último mensaje para no importunar. Si deseas ordenar tus finanzas y la asesoría personalizada más adelante, me avisas. ¡Un abrazo!',
+  cierre_advisory: 'Con lo que veo en tus 3 áreas, lo que más te conviene es el programa completo: 2 meses, nos vemos cada semana, te acompaño con el plan de acción y tienes acceso a WALA incluido. El total es S/450, lo dividimos en dos: S/225 hoy y S/225 al mes. ¿Cuándo arrancamos?',
+  cierre_wala: 'Bienvenido a WALA [Nombre]. Tu suscripción de S/49/mes está activa.'
 }
 
 export const LEAD_STATUS = {
   tarjeta_entregada: 'Visitado (Tarjeta Entregada)',
+  prueba_activa: 'Prueba Activa (7d)',
   agendado: 'Agendado',
   diagnosticado: 'Diagnosticado',
   en_seguimiento: 'En Seguimiento',

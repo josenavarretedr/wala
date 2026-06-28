@@ -1018,6 +1018,52 @@ export function useInventory() {
   };
 
   /**
+   * Elimina un producto del inventario y sus sub-colecciones asociadas (stockLog)
+   * @param {string} productId - ID del producto a eliminar
+   * @returns {Promise<boolean>}
+   */
+  const deleteProduct = async (productId) => {
+    try {
+      const businessId = ensureBusinessId();
+
+      if (!businessId) {
+        throw new Error('No se puede eliminar producto sin businessId activo');
+      }
+
+      console.log(`📦 [deleteProduct] Iniciando eliminación de producto ${productId} en business ${businessId}`);
+
+      const productRef = doc(db, `businesses/${businessId}/products`, productId);
+
+      // 1. Verificar si el producto existe
+      const productSnap = await getDoc(productRef);
+      if (!productSnap.exists()) {
+        throw new Error(`El producto con ID ${productId} no existe`);
+      }
+
+      // 2. Eliminar todos los documentos de la sub-colección stockLog
+      const stockLogsRef = collection(db, `businesses/${businessId}/products/${productId}/stockLog`);
+      const stockLogsSnap = await getDocs(stockLogsRef);
+      
+      if (!stockLogsSnap.empty) {
+        console.log(`📦 [deleteProduct] Eliminando ${stockLogsSnap.size} stockLogs del producto ${productId}`);
+        const deletePromises = stockLogsSnap.docs.map(stockLogDoc => deleteDoc(stockLogDoc.ref));
+        await Promise.all(deletePromises);
+        console.log(`✅ [deleteProduct] ${stockLogsSnap.size} stockLogs eliminados correctamente`);
+      }
+
+      // 3. Eliminar el documento principal del producto
+      await deleteDoc(productRef);
+      console.log(`✅ [deleteProduct] Producto ${productId} eliminado exitosamente`);
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Error en deleteProduct:', error);
+      throw error;
+    }
+  };
+
+
+  /**
    * 🤖 Clasificar producto usando IA (llamada a Cloud Function)
    * @param {string|Object} descriptionOrData - Descripción del producto o { description, type, businessId }
    * @returns {Promise<Object>} Clasificación sugerida
@@ -1903,6 +1949,7 @@ export function useInventory() {
     createService,
     createStockLog,
     deleteStockLog,
+    deleteProduct,
     getAllItemsInInventory,
     getProductById,
     updateProduct,

@@ -9,7 +9,7 @@ const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
 
 export function useInventoryStore() {
-  const { getAllItemsInInventory, createItem, createProduct, createStockLog, getProductById, updateProduct } = useInventory();
+  const { getAllItemsInInventory, createItem, createProduct, createStockLog, getProductById, updateProduct, deleteProduct } = useInventory();
   const { logInventoryOperation, logCreate, startOperationChain } = useTraceability();
 
   // Obtener los ítems en inventario
@@ -682,6 +682,62 @@ export function useInventoryStore() {
         reason: 'batch_production_failed',
         severity: 'high'
       });
+    }
+  };
+
+  /**
+   * Elimina un producto del inventario con trazabilidad completa
+   * @param {string} productId - ID del producto a eliminar
+   * @returns {Promise<boolean>}
+   */
+  const deleteExistingProduct = async (productId) => {
+    const operationChain = startOperationChain('delete_existing_product');
+
+    try {
+      console.log('📦 Eliminando producto:', productId);
+
+      // Obtener detalles del producto antes de eliminar (para el log de trazabilidad)
+      const productData = await getProductById(productId);
+
+      // === TRAZABILIDAD: Log de inicio ===
+      await operationChain.addStep('delete', 'inventory', productId, {
+        previousState: productData,
+        reason: 'product_deletion_initiated',
+        severity: 'high',
+        tags: ['product_deletion', 'inventory_remove', 'user_action']
+      });
+
+      // Llamar al composable para eliminar el producto
+      await deleteProduct(productId);
+
+      // === TRAZABILIDAD: Log de éxito ===
+      await operationChain.finish({
+        reason: 'product_deleted_successfully',
+        metadata: {
+          productId,
+          description: productData?.description,
+          relatedEntities: [
+            { type: 'inventory', id: productId, relationship: 'deleted' }
+          ]
+        }
+      });
+
+      console.log('✅ Producto eliminado con trazabilidad completa:', productId);
+
+      // Refrescar inventario para quitar el producto de la lista reactiva
+      await getItemsInInventory();
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error eliminando producto:', error);
+      
+      await operationChain.addStep('error', 'inventory', productId, {
+        newState: { error: error.message },
+        reason: 'product_deletion_failed',
+        severity: 'high',
+        tags: ['product_error', 'deletion_failure']
+      });
+      
       throw error;
     }
   };
@@ -698,5 +754,6 @@ export function useInventoryStore() {
     updateProduct: updateProductDetails,
     createNewProduct,
     produceBatch,
+    deleteProduct: deleteExistingProduct,
   };
 }

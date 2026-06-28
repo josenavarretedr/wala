@@ -52,7 +52,15 @@ export async function fetchSettings() {
       cohortes: []
     }
   }
-  return { id: snap.id, ...snap.data() }
+  const data = snap.data()
+  return {
+    id: snap.id,
+    ...data,
+    whatsappTemplates: {
+      ...WHATSAPP_TEMPLATES,
+      ...(data.whatsappTemplates || {})
+    }
+  }
 }
 
 /**
@@ -134,6 +142,13 @@ export async function createRecord(data) {
     mensajeWhatsapp: data.mensajeWhatsapp ?? '',
     cohorte: data.cohorte ?? null,
     campana: data.campana ?? null,
+    associatedBusinessId: data.associatedBusinessId ?? null,
+    associatedBusinessName: data.associatedBusinessName ?? null,
+    // Clasificación de Negocios Plan Junio 2026
+    tiempoNegocio: data.tiempoNegocio ?? null,
+    metodoControl: data.metodoControl ?? null,
+    resultadoVisita: data.resultadoVisita ?? null,
+    peldanoSugerido: data.peldanoSugerido ?? null,
     // Timestamps
     createdAt: now,
     updatedAt: now
@@ -186,22 +201,32 @@ export function getKPIsWeekly(records, metas = {}) {
     return fecha >= startOfWeek
   })
 
-  const visitas = weekRecords.filter((r) => r.eventType === 'visita')
-  const diagnosticos = weekRecords.filter((r) => r.eventType === 'diagnostico')
-  const cierres = weekRecords.filter((r) => r.eventType === 'cierre')
+  // Visitas en frío (Negocios visitados)
+  const visitasTotal = weekRecords.filter((r) => r.eventType === 'visita' || r.statusPipeline === 'tarjeta_entregada').length
 
-  const visitasTotal = visitas.length
-  const agendados = visitas.filter((r) => r.resultado === 'agendado').length
+  // Pruebas activadas
+  const pruebasActivadas = weekRecords.filter((r) => r.resultadoVisita === 'prueba_activada').length
 
-  const tasaAgendamiento =
-    visitasTotal > 0 ? Math.round((agendados / visitasTotal) * 100) : 0
+  // Diagnósticos agendados
+  const agendados = weekRecords.filter(
+    (r) => r.statusPipeline === 'agendado' || r.resultado === 'agendado' || r.resultadoVisita === 'diagnostico_agendado'
+  ).length
 
-  const cierresAdvisory = cierres.filter((r) => r.tipoCierre === 'advisory').length
-  const cierresWala = cierres.filter((r) => r.tipoCierre === 'wala').length
+  // Tasa de agendamiento
+  const tasaAgendamiento = visitasTotal > 0 ? Math.round((agendados / visitasTotal) * 100) : 0
+
+  // Diagnósticos ejecutados
+  const diagnosticosTotal = weekRecords.filter((r) =>
+    ['diagnosticado', 'en_seguimiento', 'cerrado_advisory', 'cerrado_wala'].includes(r.statusPipeline) || r.eventType === 'diagnostico'
+  ).length
+
+  // Cierres
+  const cierresAdvisory = weekRecords.filter((r) => r.statusPipeline === 'cerrado_advisory' || (r.eventType === 'cierre' && r.tipoCierre === 'advisory')).length
+  const cierresWala = weekRecords.filter((r) => r.statusPipeline === 'cerrado_wala' || (r.eventType === 'cierre' && r.tipoCierre === 'wala')).length
   const totalCierres = cierresAdvisory + cierresWala
 
-  const tasaCierre =
-    diagnosticos.length > 0 ? Math.round((totalCierres / diagnosticos.length) * 100) : 0
+  // Tasa de cierre
+  const tasaCierre = diagnosticosTotal > 0 ? Math.round((totalCierres / diagnosticosTotal) * 100) : 0
 
   const cajaAdvisory = cierresAdvisory * 225
   const cajaWala = cierresWala * 49
@@ -209,29 +234,45 @@ export function getKPIsWeekly(records, metas = {}) {
 
   // Alertas
   const alertas = []
-  const visitasTarget = metas.visitasTarget ?? METAS_SEMANALES_DEFAULT.visitasTarget
-  const tasaAgendamientoMin = metas.tasaAgendamientoMin ?? METAS_SEMANALES_DEFAULT.tasaAgendamientoMin
-  const cierresTarget = metas.cierresTarget ?? METAS_SEMANALES_DEFAULT.cierresTarget
-  const cajaTarget = metas.cajaTarget ?? METAS_SEMANALES_DEFAULT.cajaTarget
+  
+  // Alertas de gestión comercial de la Sección 9 del Plan
+  if (visitasTotal > 0 && tasaAgendamiento < 8) {
+    alertas.push('Tasa de agendamiento < 8%: revisar pitch de entrada')
+  }
+  if (diagnosticosTotal > 0 && tasaCierre < 15) {
+    alertas.push('Tasa de cierre < 15%: revisar la sesión de diagnóstico o el cierre')
+  }
+  
+  const day = now.getDay() // 0=domingo, 5=viernes, 6=sábado
+  if ((day === 5 || day === 6 || day === 0) && cajaTotal === 0) {
+    alertas.push('Viernes con S/0 cobrados: estás mandando prospectos de capacidad alta al carril de prueba gratuita')
+  }
+
+  // Alertas estándar basadas en metas
+  const visitasTarget = metas.visitasTarget ?? 40
+  const tasaAgendamientoMin = metas.tasaAgendamientoMin ?? 12
+  const cierresTarget = metas.cierresTarget ?? 1
+  const cajaTarget = metas.cajaTarget ?? 450
 
   if (visitasTotal < visitasTarget * 0.5) {
     alertas.push(`⚠️ Solo ${visitasTotal} visitas de ${visitasTarget} esperadas esta semana`)
   }
-  if (visitasTotal > 0 && tasaAgendamiento < tasaAgendamientoMin) {
+  if (visitasTotal > 0 && tasaAgendamiento < tasaAgendamientoMin && tasaAgendamiento >= 8) {
     alertas.push(`⚠️ Tasa de agendamiento ${tasaAgendamiento}% bajo mínimo ${tasaAgendamientoMin}%`)
   }
-  if (totalCierres < cierresTarget && diagnosticos.length >= cierresTarget) {
+  if (totalCierres < cierresTarget && diagnosticosTotal >= cierresTarget) {
     alertas.push(`⚠️ ${totalCierres} cierres de ${cierresTarget} esperados`)
   }
-  if (cajaTotal < cajaTarget * 0.5 && cierres.length > 0) {
+  if (cajaTotal < cajaTarget * 0.5 && totalCierres > 0) {
     alertas.push(`⚠️ Caja S/.${cajaTotal} bajo 50% de la meta S/.${cajaTarget}`)
   }
 
   return {
     visitasTotal,
+    pruebasActivadas,
     agendados,
     tasaAgendamiento,
-    diagnosticosTotal: diagnosticos.length,
+    diagnosticosTotal,
     cierresAdvisory,
     cierresWala,
     totalCierres,

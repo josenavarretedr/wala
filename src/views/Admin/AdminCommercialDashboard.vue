@@ -71,6 +71,8 @@
           @update-status="handleUpdateStatus"
           @view-details="handleViewDetails"
           @edit="handleEditRecord"
+          @associate-business="handleAssociateBusinessRequest"
+          @activate-plan="handleActivatePlan"
         />
       </div>
 
@@ -191,6 +193,13 @@
                 />
               </div>
               <div class="meta-field">
+                <label>Pruebas activadas target</label>
+                <input
+                  v-model.number="formConfig.metasSemanales.pruebasTarget"
+                  type="number"
+                />
+              </div>
+              <div class="meta-field">
                 <label>Agendados target</label>
                 <input
                   v-model.number="formConfig.metasSemanales.agendadosTarget"
@@ -205,9 +214,23 @@
                 />
               </div>
               <div class="meta-field">
-                <label>Cierres target</label>
+                <label>Diag. ejecutados target</label>
+                <input
+                  v-model.number="formConfig.metasSemanales.diagnosticosEjecutadosTarget"
+                  type="number"
+                />
+              </div>
+              <div class="meta-field">
+                <label>Cierres Advisory target</label>
                 <input
                   v-model.number="formConfig.metasSemanales.cierresTarget"
+                  type="number"
+                />
+              </div>
+              <div class="meta-field">
+                <label>Cierres WALA target</label>
+                <input
+                  v-model.number="formConfig.metasSemanales.cierresWalaTarget"
                   type="number"
                 />
               </div>
@@ -232,7 +255,7 @@
           <div class="config-section">
             <h3 class="config-subtitle">Plantillas de WhatsApp</h3>
             <div class="template-group" v-for="(val, key) in formConfig.whatsappTemplates" :key="key">
-              <label>{{ key }}</label>
+              <label>{{ getTemplateLabel(key) }}</label>
               <textarea
                 v-model="formConfig.whatsappTemplates[key]"
                 rows="2"
@@ -271,6 +294,15 @@
       @close="closeEditModal"
       @submit="handleEditSubmit"
     />
+
+    <!-- Associate Business Modal -->
+    <AssociateBusinessModal
+      :is-open="showAssociateModal"
+      :lead-id="currentAssociateLead?.id"
+      :lead-name="currentAssociateLead?.contactName || currentAssociateLead?.businessName"
+      @close="closeAssociateModal"
+      @submit="handleAssociateSubmit"
+    />
   </div>
 </template>
 
@@ -281,6 +313,7 @@ import CommercialKPIs from "@/components/Admin/CommercialKPIs.vue";
 import PipelineLeads from "@/components/Admin/PipelineLeads.vue";
 import QuickEntryModal from "@/components/Admin/QuickEntryModal.vue";
 import EditLeadModal from "@/components/Admin/EditLeadModal.vue";
+import AssociateBusinessModal from "@/components/Admin/AssociateBusinessModal.vue";
 import { useToast } from "@/composables/useToast";
 
 // Store
@@ -291,6 +324,8 @@ const activeTab = ref("kpis");
 const showQuickEntry = ref(false);
 const showEditModal = ref(false);
 const currentEditLead = ref(null);
+const showAssociateModal = ref(false);
+const currentAssociateLead = ref(null);
 
 const { showToast } = useToast();
 
@@ -417,9 +452,18 @@ const handleUpdateMetas = async (newMetas) => {
 
 const handleUpdateStatus = async (payload) => {
   try {
-    // payload: { recordId, statusPipeline }
-    await commerceStore.setRecordStatus(payload.recordId, payload.statusPipeline);
+    // payload: { recordId, statusPipeline, ...extraData }
+    const { recordId, statusPipeline, ...extraData } = payload;
+    await commerceStore.setRecordStatus(recordId, statusPipeline, extraData);
     showToastMessage("Estado actualizado", "success");
+
+    // Si el estado es agendado, abrir automáticamente el modal de edición para fijar la fecha
+    if (statusPipeline === 'agendado') {
+      const record = commerceStore.records.find(r => r.id === recordId);
+      if (record) {
+        handleEditRecord(record);
+      }
+    }
   } catch (err) {
     showToastMessage("Error al actualizar estado", "error");
     console.error("Update status error:", err);
@@ -434,6 +478,37 @@ const handleViewDetails = (record) => {
 const handleEditRecord = (record) => {
   currentEditLead.value = record;
   showEditModal.value = true;
+};
+
+const handleAssociateBusinessRequest = (record) => {
+  currentAssociateLead.value = record;
+  showAssociateModal.value = true;
+};
+
+const closeAssociateModal = () => {
+  showAssociateModal.value = false;
+  currentAssociateLead.value = null;
+};
+
+const handleAssociateSubmit = async ({ recordId, businessId, businessName }) => {
+  try {
+    await commerceStore.associateLeadToBusiness(recordId, businessId, businessName);
+    showToastMessage("Negocio vinculado correctamente", "success");
+    closeAssociateModal();
+  } catch (err) {
+    showToastMessage("Error al vincular negocio", "error");
+    console.error(err);
+  }
+};
+
+const handleActivatePlan = async ({ businessId, planType }) => {
+  try {
+    await commerceStore.activatePlanFromCRM(businessId, planType);
+    showToastMessage(`Plan ${planType === 'trial' ? 'Prueba 5d' : 'Premium'} activado con éxito`, "success");
+  } catch (err) {
+    showToastMessage("Error al activar plan para el negocio", "error");
+    console.error(err);
+  }
 };
 
 const closeEditModal = () => {
@@ -479,6 +554,23 @@ const handleQuickEntrySubmit = async (data) => {
 // ──────────────────────────────────────────────
 // Toast Helper
 // ──────────────────────────────────────────────
+
+const getTemplateLabel = (key) => {
+  const map = {
+    tarjeta_entregada: 'Pitch Inicial (Visita en Frío - Enlace de Registro 5d)',
+    agendado: 'Recordatorio de Diagnóstico Agendado',
+    diagnosticado: 'Resumen de Diagnóstico (3 Áreas Críticas)',
+    seguimiento_trial_1: 'Prueba Gratis - Seguimiento Día 2 (Ingreso y Valor)',
+    seguimiento_trial_2: 'Prueba Gratis - Seguimiento Día 5 (Expira Mañana)',
+    seguimiento_trial_3: 'Prueba Gratis - Seguimiento Expirado (Último Contacto)',
+    seguimiento_advisory_1: 'Advisory - Seguimiento Día 2 (Recordatorio de Áreas)',
+    seguimiento_advisory_2: 'Advisory - Seguimiento Día 4 (Pensar en Programa)',
+    seguimiento_advisory_3: 'Advisory - Seguimiento Día 6 (Último Contacto)',
+    cierre_advisory: 'Mensaje de Cierre - Advisory (S/. 450)',
+    cierre_wala: 'Mensaje de Cierre - WALA (S/. 49/mes)'
+  };
+  return map[key] || key;
+};
 
 const showToastMessage = (message, type = "success") => {
   showToast({ message, type });

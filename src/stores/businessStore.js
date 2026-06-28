@@ -104,7 +104,7 @@ export const useBusinessStore = defineStore('business', {
       const sub = state.business?.subscription
       if (!sub?.endDate) return null
       const now = new Date()
-      const end = sub.endDate.toDate()
+      const end = typeof sub.endDate.toDate === 'function' ? sub.endDate.toDate() : new Date(sub.endDate)
       const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24))
       return diff > 0 ? diff : 0
     },
@@ -563,10 +563,13 @@ export const useBusinessStore = defineStore('business', {
         const businesses = []
         querySnapshot.forEach((doc) => {
           const businessData = doc.data()
-          if (businessData.nombre.toLowerCase().includes(searchTerm.toLowerCase()) && businessData.activo) {
+          const nameVal = businessData.nombre || businessData.businessName || businessData.name || ''
+          const isActive = businessData.activo !== false
+          if (nameVal.toLowerCase().includes(searchTerm.toLowerCase()) && isActive) {
             businesses.push({
               id: doc.id,
-              ...businessData
+              ...businessData,
+              nombre: nameVal // Asegurar que tenga el campo nombre estandarizado
             })
           }
         })
@@ -765,15 +768,21 @@ export const useBusinessStore = defineStore('business', {
         // Calcular fecha de fin (ejemplo: 30 días para premium)
         const endDate = newPlan === 'premium' ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) : null
 
-        const subscriptionUpdate = {
-          'subscription.plan': newPlan,
-          'subscription.status': 'active',
-          'subscription.updatedAt': new Date(),
-          'subscription.updatedBy': userId
-        }
+        let subscriptionUpdate = {}
+        if (newPlan === 'free') {
+          // Si es free, reestablecemos la suscripción completa al estado por defecto (eliminando trial usado, métodos de pago previos, etc.)
+          subscriptionUpdate['subscription'] = this.getDefaultSubscription(userId)
+        } else {
+          subscriptionUpdate = {
+            'subscription.plan': newPlan,
+            'subscription.status': 'active',
+            'subscription.updatedAt': new Date(),
+            'subscription.updatedBy': userId
+          }
 
-        if (endDate) {
-          subscriptionUpdate['subscription.endDate'] = endDate
+          if (endDate) {
+            subscriptionUpdate['subscription.endDate'] = endDate
+          }
         }
 
         await updateDoc(businessRef, subscriptionUpdate)

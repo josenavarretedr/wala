@@ -129,18 +129,18 @@ export function useSubscription() {
    */
   const showUpgradeModal = (featureName, customMessage = null) => {
     const messages = {
-      advancedReports: 'Desbloquea reportes avanzados y exportación de datos con el plan Pro o Max.',
-      multiLocation: 'Gestiona múltiples ubicaciones con el plan Max.',
-      apiAccess: 'Accede a nuestra API para integraciones personalizadas con el plan Max.',
-      prioritySupport: 'Obtén soporte prioritario y atención personalizada con el plan Max.',
-      customBranding: 'Personaliza la marca de tus reportes y documentos con el plan Pro o Max.',
+      advancedReports: 'Desbloquea reportes avanzados y exportación de datos con el plan Pro o WALA Asesoría.',
+      multiLocation: 'Gestiona múltiples ubicaciones con WALA Asesoría.',
+      apiAccess: 'Accede a nuestra API para integraciones personalizadas con WALA Asesoría.',
+      prioritySupport: 'Obtén soporte prioritario y atención personalizada con WALA Asesoría.',
+      customBranding: 'Personaliza la marca de tus reportes y documentos con el plan Pro o WALA Asesoría.',
       aiClassification: 'Usa inteligencia artificial para clasificar productos automáticamente.',
-      exportData: 'Exporta tus datos a Excel, PDF y más formatos con el plan Pro o Max.',
-      maxEmployees: 'Has alcanzado el límite de empleados. Actualiza a Pro o Max para agregar ilimitados.',
-      maxProducts: 'Has alcanzado el límite de productos. Actualiza a Pro o Max para agregar ilimitados.'
+      exportData: 'Exporta tus datos a Excel, PDF y más formatos con el plan Pro o WALA Asesoría.',
+      maxEmployees: 'Has alcanzado el límite de empleados. Actualiza a Pro o WALA Asesoría para agregar ilimitados.',
+      maxProducts: 'Has alcanzado el límite de productos. Actualiza a Pro o WALA Asesoría para agregar ilimitados.'
     }
 
-    const message = customMessage || messages[featureName] || 'Esta función requiere el plan Pro o Max.'
+    const message = customMessage || messages[featureName] || 'Esta función requiere el plan Pro o WALA Asesoría.'
 
     console.log('🚀 [useSubscription] Mostrar modal de upgrade')
     console.log('   Feature:', featureName)
@@ -240,7 +240,7 @@ export function useSubscription() {
     let color = 'gray'
 
     if (isMax.value || sub?.plan === 'premium') {
-      name = 'Max'
+      name = 'WALA Asesoría'
       badge = '👑'
       color = 'amber'
     } else if (isPro.value) {

@@ -248,7 +248,7 @@
                 v-if="isOverheadExpense"
                 :isPremium="isPremium"
                 :isLocked="!hasAccess('aiClassification')"
-                badgeText="Max"
+                badgeText="Asesoría"
                 @locked-click="handlePremiumClick"
               >
                 <template #content="{ contentClasses }">
@@ -388,9 +388,9 @@ const { premium } = useToast();
 // ========================================
 
 const handlePremiumClick = () => {
-  premium("La clasificación automática con IA está disponible en WALA Max.", {
+  premium("La clasificación automática con IA está disponible en WALA Asesoría.", {
     actionLink: {
-      text: "Actualiza a WALA Max",
+      text: "Ver WALA Asesoría",
       route: `/business/${route.params.businessId}/pro`,
     },
   });

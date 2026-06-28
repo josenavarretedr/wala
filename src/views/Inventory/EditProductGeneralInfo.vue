@@ -45,16 +45,51 @@
         <p class="text-gray-600 mt-4">Cargando producto...</p>
       </div>
 
-      <!-- Componente de Edición -->
-      <div
-        v-else
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-      >
-        <EditProductGeneralInfoComponent
-          :initialData="productData"
-          :saving="saving"
-          @save="handleSave"
-        />
+      <!-- Componente de Edición y Danger Zone -->
+      <div v-else class="space-y-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <EditProductGeneralInfoComponent
+            :initialData="productData"
+            :saving="saving || deleting"
+            @save="handleSave"
+          />
+        </div>
+
+        <!-- Zona de Peligro -->
+        <div class="bg-red-50 rounded-xl shadow-sm border border-red-100 p-6 mb-24">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex-1">
+              <h3 class="text-lg font-bold text-red-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Zona de Peligro
+              </h3>
+              <p class="text-xs text-red-600 mt-1">
+                Al eliminar este producto se borrará permanentemente de tu inventario junto con todo su historial. Esta acción es irreversible y no se puede deshacer.
+              </p>
+            </div>
+            <div class="flex-shrink-0">
+              <button
+                type="button"
+                @click="handleDelete"
+                :disabled="saving || deleting"
+                :class="[
+                  'w-full sm:w-auto px-5 py-3 font-semibold rounded-xl text-sm shadow-sm transition-all duration-200 flex items-center justify-center gap-2 border',
+                  saving || deleting
+                    ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'bg-red-600 border-red-700 hover:bg-red-700 hover:text-white text-white hover:shadow-md hover:shadow-red-500/20 active:scale-[0.98]'
+                ]"
+              >
+                <div v-if="deleting" class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                {{ deleting ? 'Eliminando...' : 'Eliminar Producto' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -74,6 +109,7 @@ const { success, error: showError } = useToast();
 
 const loading = ref(false);
 const saving = ref(false);
+const deleting = ref(false);
 
 const productData = ref({
   uuid: "",
@@ -214,6 +250,33 @@ const handleSave = async (payload) => {
     showError("Error al actualizar el producto");
   } finally {
     saving.value = false;
+  }
+};
+
+// Eliminar producto
+const handleDelete = async () => {
+  const isConfirmed = window.confirm(
+    `¿Estás seguro de que deseas eliminar permanentemente el producto "${productData.value.description || 'este producto'}"? Esta acción no se puede deshacer y borrará también su historial de movimientos.`
+  );
+
+  if (!isConfirmed) return;
+
+  try {
+    deleting.value = true;
+    const productId = route.params.productId;
+    await inventoryStore.deleteProduct(productId);
+    success("Producto eliminado correctamente");
+    setTimeout(() => {
+      router.push({
+        name: "InventoryDashboard",
+        params: { businessId: route.params.businessId },
+      });
+    }, 1000);
+  } catch (err) {
+    console.error("❌ Error al eliminar producto:", err);
+    showError(err.message || "Error al eliminar el producto");
+  } finally {
+    deleting.value = false;
   }
 };
 

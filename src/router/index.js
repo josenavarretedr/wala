@@ -736,7 +736,7 @@ const routes = [
     path: '/admin/commercial',
     name: 'AdminCommercial',
     component: () => import('@/views/Admin/AdminCommercialDashboard.vue'),
-    meta: { title: 'Tablero Comercial' }
+    meta: { requiresAuth: false, requiresAdminRole: false, title: 'Tablero Comercial' }
   },
 
   // Admin
@@ -1004,7 +1004,7 @@ router.beforeEach(async (to, from, next) => {
           else if (firstAllowed === 'expenses') targetRoute = 'ExpensesView'
           else if (firstAllowed === 'inventory') targetRoute = 'InventoryDashboard'
           else if (firstAllowed === 'clients') targetRoute = 'ClientsDashboard'
-          
+
           if (to.name !== targetRoute) {
             return next({ name: targetRoute, params: { businessId } })
           }

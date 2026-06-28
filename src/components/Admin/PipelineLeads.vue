@@ -53,6 +53,12 @@
               <div class="lead-names">
                 <p class="lead-name">{{ record.contactName || record.businessName }}</p>
                 <a :href="'https://wa.me/' + formatPhone(record.contactPhone)" target="_blank" class="lead-phone">📱 {{ record.contactPhone }}</a>
+                <!-- Insignia de negocio vinculado -->
+                <div v-if="record.associatedBusinessId" class="mt-1">
+                  <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-150">
+                    🔗 {{ record.associatedBusinessName || 'Vinculado' }}
+                  </span>
+                </div>
               </div>
               <button @click="openMenu(record.id)" class="btn-menu">⋮</button>
             </div>
@@ -64,20 +70,51 @@
               <span v-if="record.businessName" class="badge badge-biz">{{ record.businessName }}</span>
             </div>
 
+            <!-- Classification & Visit tags (Plan Junio 2026) -->
+            <div v-if="record.peldanoSugerido || record.resultadoVisita || record.metodoControl" class="lead-classification-tags">
+              <span v-if="record.peldanoSugerido" class="badge-tag" :class="'badge-peldano-' + record.peldanoSugerido">
+                {{ formatPeldanoBadge(record.peldanoSugerido) }}
+              </span>
+              <span v-if="record.resultadoVisita" class="badge-tag" :class="'badge-outcome-' + record.resultadoVisita">
+                {{ formatOutcomeBadge(record.resultadoVisita) }}
+              </span>
+              <span v-if="record.metodoControl" class="badge-tag badge-control">
+                {{ formatControlBadge(record.metodoControl) }}
+              </span>
+            </div>
+
             <!-- Lead Activity (Badges Inteligentes) -->
             <div class="lead-activity">
               <p class="activity-label">
                 <span>⏱️ Hace {{ daysSince(record.updatedAt || record.fechaEvento) }}d</span>
                 <span v-if="statusKey === 'en_seguimiento'" class="badge-seguimiento">
-                  Seguimiento {{ record.followUpCount || 1 }}/4
+                  Seguimiento {{ record.followUpCount || 1 }}/3
                 </span>
               </p>
+              
+              <!-- Botones de activación rápida -->
+              <div v-if="record.associatedBusinessId" class="mt-2 pt-2 border-t border-gray-100 flex gap-2">
+                <button
+                  @click="activatePlan(record.associatedBusinessId, 'trial')"
+                  class="flex-1 py-1 px-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 text-[10px] font-bold rounded transition-colors"
+                  title="Activar Prueba Pro de 5 días"
+                >
+                  +5d Pro
+                </button>
+                <button
+                  @click="activatePlan(record.associatedBusinessId, 'premium')"
+                  class="flex-1 py-1 px-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-[10px] font-bold rounded transition-colors"
+                  title="Activar Suscripción Premium S/49"
+                >
+                  +Premium S/49
+                </button>
+              </div>
             </div>
 
             <!-- Copy/WhatsApp Buttons Contextuales -->
             <div class="lead-actions">
               <button
-                v-if="statusKey === 'en_seguimiento' && (record.followUpCount || 1) < 4"
+                v-if="statusKey === 'en_seguimiento' && (record.followUpCount || 1) < 3"
                 @click="incrementFollowUp(record)"
                 class="btn-copy outline"
                 title="Siguiente Seguimiento"
@@ -97,6 +134,7 @@
             <div v-if="activeMenu === record.id" class="lead-menu">
               <button @click="viewDetails(record)">👁️ Ver detalles</button>
               <button @click="editLead(record)">✏️ Editar</button>
+              <button @click="associateBusiness(record)">🔗 Vincular negocio</button>
               <button @click="markDescartado(record.id)" class="btn-danger">🗑️ Descartar</button>
             </div>
           </div>
@@ -139,11 +177,12 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["update-status", "view-details", "edit", "copy"]);
+const emit = defineEmits(["update-status", "view-details", "edit", "copy", "associate-business", "activate-plan"]);
 
 const statusColumns = {
   tarjeta_entregada: { label: "Tarjeta Entregada", color: "#6b7280" },
-  agendado: { label: "Agendado", color: "#3b82f6" },
+  prueba_activa: { label: "Prueba Activa (5d)", color: "#3b82f6" },
+  agendado: { label: "Agendado", color: "#6366f1" },
   diagnosticado: { label: "Diagnosticado", color: "#8b5cf6" },
   en_seguimiento: { label: "En Seguimiento", color: "#f59e0b" },
   cerrado_advisory: { label: "Cierre Advisory", color: "#10b981" },
@@ -160,6 +199,7 @@ const { showToast } = useToast();
 const filteredRecordsByStatus = computed(() => {
   const grouped = {
     tarjeta_entregada: [],
+    prueba_activa: [],
     agendado: [],
     diagnosticado: [],
     en_seguimiento: [],
@@ -227,7 +267,7 @@ const onDragChange = (evt, targetStatus) => {
 
 const incrementFollowUp = (record) => {
   const current = record.followUpCount || 1;
-  if (current < 4) {
+  if (current < 3) {
     emit("update-status", {
       recordId: record.id,
       followUpCount: current + 1
@@ -236,11 +276,31 @@ const incrementFollowUp = (record) => {
 };
 
 const getPrimaryAction = (statusKey, record) => {
+  if (statusKey === 'en_seguimiento') {
+    const isTrialFlow = record.peldanoSugerido === 'peldano_1' || record.peldanoSugerido === 'peldano_2';
+    const flowPrefix = isTrialFlow ? 'seguimiento_trial' : 'seguimiento_advisory';
+    const count = record.followUpCount || 1;
+    return {
+      label: `💬 Seguimiento ${count}`,
+      templateKey: `${flowPrefix}_${count}`
+    };
+  }
+
+  if (statusKey === 'prueba_activa') {
+    const days = daysSince(record.updatedAt || record.fechaEvento);
+    if (days <= 2) {
+      return { label: "💬 Día 2: Ingreso", templateKey: "seguimiento_trial_1" };
+    } else if (days <= 5) {
+      return { label: "💬 Día 5: Expira", templateKey: "seguimiento_trial_2" };
+    } else {
+      return { label: "💬 Expirado: Cierre", templateKey: "seguimiento_trial_3" };
+    }
+  }
+
   const map = {
     tarjeta_entregada: { label: "🟢 Enviar Pitch", templateKey: "tarjeta_entregada" },
     agendado: { label: "📅 Recordatorio", templateKey: "agendado" },
     diagnosticado: { label: "📋 Enviar Resumen", templateKey: "diagnosticado" },
-    en_seguimiento: { label: `💬 Seguimiento ${record.followUpCount || 1}`, templateKey: `seguimiento_${record.followUpCount || 1}` },
     cerrado_advisory: { label: "🎉 Conf. Advisory", templateKey: "cierre_advisory" },
     cerrado_wala: { label: "🎉 Conf. WALA", templateKey: "cierre_wala" }
   };
@@ -259,8 +319,36 @@ const getWhatsappLink = (statusKey, record) => {
   template = template.replace(/\[AREAS\]/gi, (record.areasCriticas || []).join(', ') || 'tus áreas');
   template = template.replace(/\[AREA_PRINCIPAL\]/gi, (record.areasCriticas || [])[0] || 'tu área crítica');
 
+  // Si es pitch inicial (tarjeta_entregada), anexar el enlace dinámico de onboarding
+  if (action.templateKey === 'tarjeta_entregada') {
+    const sectorQuery = encodeURIComponent(mapSectorToOnboardingIndustry(record.sector || ''));
+    const nameQuery = encodeURIComponent(record.businessName || '');
+    const baseOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://wala.lat';
+    const registerLink = `\n\nRegístrate para tu prueba de 5 días aquí: ${baseOrigin}/auth/register?industry=${sectorQuery}&businessName=${nameQuery}`;
+    template += registerLink;
+  }
+
   const phone = formatPhone(record.contactPhone);
   return `https://wa.me/${phone}?text=${encodeURIComponent(template)}`;
+};
+
+const mapSectorToOnboardingIndustry = (sector) => {
+  const clean = (sector || "").toLowerCase().trim();
+  if (clean.includes("ferre")) return "ferreteria";
+  if (clean.includes("comida") || clean.includes("restaurante")) return "restaurante";
+  if (clean.includes("farmacia")) return "farmacia";
+  if (clean.includes("reposteria") || clean.includes("panaderia")) return "reposteria";
+  if (clean.includes("libreria")) return "libreria";
+  return "otro";
+};
+
+const associateBusiness = (record) => {
+  activeMenu.value = null;
+  emit("associate-business", record);
+};
+
+const activatePlan = (businessId, planType) => {
+  emit("activate-plan", { businessId, planType });
 };
 
 const openMenu = (leadId) => {
@@ -284,6 +372,34 @@ const markDescartado = (recordId) => {
     statusPipeline: "descartado",
   });
   showToast({ message: "Registro descartado", type: "success" });
+};
+
+const formatPeldanoBadge = (val) => {
+  const map = {
+    peldano_1: "P1: Negocio Pequeño",
+    peldano_2: "P2: WALA",
+    peldano_3: "P3: Negocio Serio"
+  };
+  return map[val] || val;
+};
+
+const formatOutcomeBadge = (val) => {
+  const map = {
+    solo_tarjeta: "Solo Tarjeta",
+    prueba_activada: "Prueba 7d",
+    diagnostico_hablado: "Diag. Hablado",
+    diagnostico_agendado: "Diag. Agendado"
+  };
+  return map[val] || val;
+};
+
+const formatControlBadge = (val) => {
+  const map = {
+    head: "Cabeza",
+    notebook_excel: "Cuaderno/Excel",
+    system: "Sistema"
+  };
+  return map[val] || val;
 };
 </script>
 
@@ -640,5 +756,71 @@ const markDescartado = (recordId) => {
   .filter-search {
     min-width: unset;
   }
+}
+
+/* Classification Tags CSS */
+.lead-classification-tags {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge-tag {
+  display: inline-flex;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badge-peldano-peldano_1 {
+  background: #f3f4f6;
+  color: #4b5563;
+  border-color: #e5e7eb;
+}
+
+.badge-peldano-peldano_2 {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #dbeafe;
+}
+
+.badge-peldano-peldano_3 {
+  background: #faf5ff;
+  color: #7c3aed;
+  border-color: #f3e8ff;
+}
+
+.badge-outcome-solo_tarjeta {
+  background: #fff7ed;
+  color: #ea580c;
+  border-color: #ffedd5;
+}
+
+.badge-outcome-prueba_activada {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #d1fae5;
+}
+
+.badge-outcome-diagnostico_hablado {
+  background: #f5f3ff;
+  color: #6d28d9;
+  border-color: #ede9fe;
+}
+
+.badge-outcome-diagnostico_agendado {
+  background: #f0fdf4;
+  color: #16a34a;
+  border-color: #dcfce7;
+}
+
+.badge-control {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #e2e8f0;
 }
 </style>

@@ -95,14 +95,14 @@
 
       <div class="mb-2">
         <div class="text-3xl font-extrabold text-gray-900">
-          {{ isProYearly ? "S/ 500" : "S/ 50" }}
+          {{ isProYearly ? "S/ 500" : "S/ 49" }}
         </div>
         <p class="text-sm text-gray-500">
           {{ isProYearly ? "por año" : "por mes" }}
         </p>
       </div>
       <p v-if="isProYearly" class="text-xs text-emerald-600 font-semibold mb-4">
-        Ahorras S/ 100 al año
+        Ahorras S/ 88 al año
       </p>
 
       <ul class="space-y-2 text-sm text-gray-700">
@@ -136,8 +136,8 @@
     >
       <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
-          <Infinite class="w-5 h-5 text-purple-600" />
-          <h3 class="text-lg font-bold text-gray-900">Max</h3>
+          <BrightCrown class="w-5 h-5 text-[#E35336]" />
+          <h3 class="text-lg font-bold text-gray-900">WALA Asesoría</h3>
         </div>
         <div :class="radioClass(selectedPlan === 'max')">
           <svg
@@ -158,30 +158,26 @@
       </div>
 
       <div class="mb-4">
-        <div class="text-3xl font-extrabold text-gray-900">S/ 360</div>
-        <p class="text-sm text-gray-500">Pago mensual</p>
+        <div class="text-3xl font-extrabold text-gray-900">S/ 450</div>
+        <p class="text-sm text-gray-500">2 meses de acompañamiento</p>
       </div>
 
       <ul class="space-y-2 text-sm text-gray-700">
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Todo lo de Free y Pro</span>
+          <span>Acompañamiento empresarial para ordenar finanzas</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Clasificación automática con IA</span>
+          <span>Acceso a WALA Pro (Premium) incluida</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Sesiones personalizadas grupales (máx. 20)</span>
+          <span>Diagnóstico de 20 min y plan personalizado</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Acceso a ferias locales (según disponibilidad)</span>
-        </li>
-        <li class="flex items-start gap-2">
-          <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Asistencia personalizada y prioritaria</span>
+          <span>Soporte directo y tutoría semanal</span>
         </li>
       </ul>
     </div>
@@ -190,7 +186,7 @@
 
 <script setup>
 import { computed, ref, watch } from "vue";
-import { Sparks, FireFlame, Infinite, CheckCircle } from "@iconoir/vue";
+import { Sparks, FireFlame, BrightCrown, CheckCircle } from "@iconoir/vue";
 
 const props = defineProps({
   modelValue: {

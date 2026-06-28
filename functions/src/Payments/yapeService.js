@@ -175,7 +175,36 @@ async function createYapePayment(token, businessId, planType, phoneNumber, userE
       }
     };
 
-    const payment = await paymentClient.create({ body: paymentData });
+    let payment = await paymentClient.create({ body: paymentData });
+
+    const isEmulator = process.env.FUNCTIONS_EMULATOR === 'true' || Boolean(process.env.FIREBASE_EMULATOR_HUB);
+    if (isEmulator) {
+      if (phoneNumber === '111111111' && payment.status !== 'approved') {
+        console.log('🧪 [EMULADOR] Forzando estado aprobado para número de prueba 111111111 para evitar pending_contingency');
+        payment = {
+          ...payment,
+          status: 'approved',
+          status_detail: 'accredited',
+          id: payment.id || 999999999
+        };
+      } else if (phoneNumber === '111111113' && payment.status !== 'rejected') {
+        console.log('🧪 [EMULADOR] Forzando estado rechazado (cc_rejected_insufficient_amount) para número de prueba 111111113');
+        payment = {
+          ...payment,
+          status: 'rejected',
+          status_detail: 'cc_rejected_insufficient_amount',
+          id: payment.id || 999999999
+        };
+      } else if (phoneNumber === '111111117' && payment.status !== 'rejected') {
+        console.log('🧪 [EMULADOR] Forzando estado rechazado (cc_rejected_bad_filled_security_code) para número de prueba 111111117');
+        payment = {
+          ...payment,
+          status: 'rejected',
+          status_detail: 'cc_rejected_bad_filled_security_code',
+          id: payment.id || 999999999
+        };
+      }
+    }
 
     console.log('💳 Respuesta de Mercado Pago:', {
       id: payment.id,
@@ -358,7 +387,8 @@ function getStatusMessage(status, statusDetail) {
       'cc_rejected_form_error': 'Revisa los datos ingresados'
     },
     'pending': {
-      'pending_waiting_payment': 'Esperando confirmación del pago'
+      'pending_waiting_payment': 'Esperando confirmación del pago',
+      'pending_contingency': 'El pago está en proceso de verificación por Mercado Pago (contingencia)'
     }
   };
 

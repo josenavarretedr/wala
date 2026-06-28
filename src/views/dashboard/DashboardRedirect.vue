@@ -28,7 +28,11 @@
 
     <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
     <div class="max-w-2xl lg:max-w-none mx-auto space-y-6">
-      <TrialActivationBanner />
+      <div class="p-2 sm:p-4 lg:px-8 lg:py-0">
+        <div class="max-w-md lg:max-w-7xl xl:max-w-[1600px] mx-auto">
+          <TrialActivationBanner />
+        </div>
+      </div>
       
       <MicroApps
         :business-id="businessId"

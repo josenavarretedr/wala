@@ -43,6 +43,41 @@
               <option v-for="sector in sectores" :key="sector" :value="sector">{{ sector }}</option>
             </select>
           </div>
+
+          <div class="field-group">
+            <label class="field-label">Tiempo de operación</label>
+            <select v-model="formData.tiempoNegocio" class="field-select">
+              <option value="">Seleccionar tiempo</option>
+              <option value="less_1_year">Menos de 1 año (Peldaño 1)</option>
+              <option value="more_1_year">1 año o más</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Método de control de ventas/gastos</label>
+            <select v-model="formData.metodoControl" class="field-select">
+              <option value="">Seleccionar control</option>
+              <option value="head">En la cabeza / Desordenado</option>
+              <option value="notebook_excel">Cuaderno / Excel / Más o menos</option>
+              <option value="system">Sistema / Ordenado</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Resultado de Visita en Frío</label>
+            <select v-model="formData.resultadoVisita" class="field-select">
+              <option value="">Seleccionar resultado</option>
+              <option value="solo_tarjeta">Solo tarjeta entregada</option>
+              <option value="prueba_activada">Prueba 7d activada</option>
+              <option value="diagnostico_hablado">Se habló de diagnóstico</option>
+              <option value="diagnostico_agendado">Diagnóstico Agendado</option>
+            </select>
+          </div>
+
+          <div v-if="formData.resultadoVisita === 'diagnostico_agendado'" class="field-group">
+            <label class="field-label">Fecha agendada para el diagnóstico</label>
+            <input v-model="formData.fechaAgendadaText" type="date" class="field-input" />
+          </div>
           
           <div class="field-group">
             <label class="field-label">Áreas críticas (separadas por coma)</label>
@@ -62,6 +97,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { Timestamp } from 'firebase/firestore';
 
 const props = defineProps({
   isOpen: { type: Boolean, default: false },
@@ -84,17 +120,31 @@ watch(() => props.isOpen, (newVal) => {
     } else if (phone.startsWith("+51")) {
       phone = phone.substring(3).trim();
     }
+
+    let dateText = "";
+    if (props.leadData.fechaAgendada) {
+      const d = props.leadData.fechaAgendada.toDate
+        ? props.leadData.fechaAgendada.toDate()
+        : new Date(props.leadData.fechaAgendada);
+      dateText = d.toISOString().split('T')[0];
+    }
     
     formData.value = {
       ...props.leadData,
       contactPhone: phone,
-      areasCriticasText: (props.leadData.areasCriticas || []).join(', ')
+      areasCriticasText: (props.leadData.areasCriticas || []).join(', '),
+      fechaAgendadaText: dateText
     };
   }
 });
 
 const closeModal = () => {
   emit("close");
+};
+
+const importFirestoreTimestamp = (val) => {
+  if (!val) return null;
+  return Timestamp.fromDate(new Date(val + 'T12:00:00'));
 };
 
 const submitForm = () => {
@@ -108,6 +158,37 @@ const submitForm = () => {
     ? formData.value.areasCriticasText.split(',').map(s => s.trim()).filter(Boolean)
     : [];
 
+  let statusPipeline = props.leadData.statusPipeline || 'tarjeta_entregada';
+  let eventType = props.leadData.eventType || 'visita';
+  let resultado = props.leadData.resultado || 'no_agendado';
+
+  // Si cambia a agendado o prueba activa
+  if (formData.value.resultadoVisita === 'diagnostico_agendado') {
+    statusPipeline = 'agendado';
+    eventType = 'visita';
+    resultado = 'agendado';
+  } else if (formData.value.resultadoVisita === 'prueba_activada') {
+    statusPipeline = 'prueba_activa';
+    eventType = 'visita';
+    resultado = 'no_agendado';
+  } else if ((statusPipeline === 'agendado' || statusPipeline === 'prueba_activa') &&
+             formData.value.resultadoVisita !== 'diagnostico_agendado' &&
+             formData.value.resultadoVisita !== 'prueba_activada') {
+    statusPipeline = 'tarjeta_entregada';
+    resultado = 'no_agendado';
+  }
+
+  let pSugeridoKey = "";
+  if (formData.value.tiempoNegocio === "less_1_year") {
+    pSugeridoKey = "peldano_1";
+  } else if (formData.value.tiempoNegocio === "more_1_year") {
+    if (formData.value.metodoControl === "system") {
+      pSugeridoKey = "peldano_2";
+    } else {
+      pSugeridoKey = "peldano_3";
+    }
+  }
+
   emit("submit", {
     recordId: props.leadData.id,
     businessName: formData.value.businessName,
@@ -115,7 +196,17 @@ const submitForm = () => {
     contactPhone: cleanPhone, // Guardamos el número ya formateado con 51
     zona: formData.value.zona,
     sector: formData.value.sector,
-    areasCriticas: areas
+    areasCriticas: areas,
+    tiempoNegocio: formData.value.tiempoNegocio || null,
+    metodoControl: formData.value.metodoControl || null,
+    resultadoVisita: formData.value.resultadoVisita || null,
+    peldanoSugerido: pSugeridoKey || null,
+    statusPipeline,
+    eventType,
+    resultado,
+    fechaAgendada: formData.value.resultadoVisita === 'diagnostico_agendado' && formData.value.fechaAgendadaText
+      ? importFirestoreTimestamp(formData.value.fechaAgendadaText)
+      : null
   });
   closeModal();
 };

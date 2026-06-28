@@ -189,6 +189,14 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "docType", "order": "ASCENDING" },
+        { "fieldPath": "fechaEvento", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "comercial",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "docType", "order": "ASCENDING" },
         { "fieldPath": "statusPipeline", "order": "ASCENDING" },
         { "fieldPath": "fechaEvento", "order": "DESCENDING" }
       ]
@@ -221,5 +229,20 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "businesses",
+      "fieldPath": "businessId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    }
+  ]
 }

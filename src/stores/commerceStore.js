@@ -7,6 +7,7 @@
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useBusinessStore } from '@/stores/businessStore'
 import {
   fetchSettings,
   saveSettings,
@@ -82,6 +83,7 @@ export const useCommerceStore = defineStore('commerce', () => {
   const recordsByStatus = computed(() => {
     const grouped = {
       tarjeta_entregada: [],
+      prueba_activa: [],
       agendado: [],
       diagnosticado: [],
       en_seguimiento: [],
@@ -182,8 +184,48 @@ export const useCommerceStore = defineStore('commerce', () => {
     }
   }
 
-  const setRecordStatus = async (recordId, statusPipeline) => {
-    return editRecord(recordId, { statusPipeline })
+  const setRecordStatus = async (recordId, statusPipeline, extraData = {}) => {
+    const updateData = { ...extraData }
+    if (statusPipeline !== undefined) {
+      updateData.statusPipeline = statusPipeline
+      if (statusPipeline === 'tarjeta_entregada') {
+        updateData.eventType = 'visita'
+      } else if (statusPipeline === 'prueba_activa') {
+        updateData.eventType = 'visita'
+        updateData.resultadoVisita = 'prueba_activada'
+      } else if (statusPipeline === 'agendado') {
+        updateData.eventType = 'visita'
+        updateData.resultado = 'agendado'
+        updateData.resultadoVisita = 'diagnostico_agendado'
+      } else if (statusPipeline === 'diagnosticado') {
+        updateData.eventType = 'diagnostico'
+      } else if (statusPipeline === 'en_seguimiento') {
+        updateData.eventType = 'seguimiento'
+      } else if (statusPipeline === 'cerrado_advisory') {
+        updateData.eventType = 'cierre'
+        updateData.tipoCierre = 'advisory'
+        updateData.monto = 225
+      } else if (statusPipeline === 'cerrado_wala') {
+        updateData.eventType = 'cierre'
+        updateData.tipoCierre = 'wala'
+        updateData.monto = 49
+      }
+    }
+    return editRecord(recordId, updateData)
+  }
+
+  const associateLeadToBusiness = async (recordId, businessId, businessName) => {
+    return editRecord(recordId, { associatedBusinessId: businessId, associatedBusinessName: businessName })
+  }
+
+  const activatePlanFromCRM = async (businessId, planType) => {
+    const businessStore = useBusinessStore()
+    const uId = 'admin-crm'
+    if (planType === 'trial') {
+      await businessStore.activateProfileTrial(businessId, uId)
+    } else {
+      await businessStore.updateSubscriptionPlan(businessId, planType, uId)
+    }
   }
 
   const removeRecord = async (recordId) => {
@@ -263,6 +305,8 @@ export const useCommerceStore = defineStore('commerce', () => {
     addRecord,
     editRecord,
     setRecordStatus,
+    associateLeadToBusiness,
+    activatePlanFromCRM,
     removeRecord,
 
     // Actions — Init & Filters

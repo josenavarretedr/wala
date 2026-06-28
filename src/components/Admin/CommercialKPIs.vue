@@ -54,6 +54,24 @@
         </div>
       </div>
 
+      <!-- Pruebas Activadas -->
+      <div class="kpi-card">
+        <div class="kpi-icon pruebas-icon">7d</div>
+        <div class="kpi-content">
+          <p class="kpi-label">Pruebas Activadas</p>
+          <p class="kpi-value">{{ kpis.pruebasActivadas ?? 0 }}</p>
+          <p
+            class="kpi-meta"
+            :class="{
+              'meta-ok': (kpis.pruebasActivadas ?? 0) >= (metas.pruebasTarget ?? 5),
+              'meta-alerta': (kpis.pruebasActivadas ?? 0) < (metas.pruebasTarget ?? 5),
+            }"
+          >
+            Meta: {{ metas.pruebasTarget ?? 5 }}
+          </p>
+        </div>
+      </div>
+
       <!-- Agendados -->
       <div class="kpi-card">
         <div class="kpi-icon agendados">📅</div>
@@ -68,8 +86,25 @@
                 'tasa-alerta':
                   kpis.tasaAgendamiento < metas.tasaAgendamientoMin,
               }"
-              >{{ kpis.tasaAgendamiento }}%</span
-            >
+              >{{ kpis.tasaAgendamiento }}%</span> (mín {{ metas.tasaAgendamientoMin }}%)
+          </p>
+        </div>
+      </div>
+
+      <!-- Diagnósticos Ejecutados -->
+      <div class="kpi-card">
+        <div class="kpi-icon diagnosticos-icon">Dx</div>
+        <div class="kpi-content">
+          <p class="kpi-label">Diag. Ejecutados</p>
+          <p class="kpi-value">{{ kpis.diagnosticosTotal }}</p>
+          <p
+            class="kpi-meta"
+            :class="{
+              'meta-ok': kpis.diagnosticosTotal >= (metas.diagnosticosEjecutadosTarget ?? 5),
+              'meta-alerta': kpis.diagnosticosTotal < (metas.diagnosticosEjecutadosTarget ?? 5),
+            }"
+          >
+            Meta: {{ metas.diagnosticosEjecutadosTarget ?? 5 }}
           </p>
         </div>
       </div>
@@ -78,7 +113,7 @@
       <div class="kpi-card">
         <div class="kpi-icon cierres">✅</div>
         <div class="kpi-content">
-          <p class="kpi-label">Cierres</p>
+          <p class="kpi-label">Cierres Totales</p>
           <p class="kpi-value">{{ kpis.totalCierres ?? (kpis.cierresAdvisory + kpis.cierresWala) }}</p>
           <p class="kpi-meta">
             Tasa:
@@ -87,8 +122,7 @@
                 'tasa-ok': kpis.tasaCierre >= metas.tasaCierreMin,
                 'tasa-alerta': kpis.tasaCierre < metas.tasaCierreMin,
               }"
-              >{{ kpis.tasaCierre }}%</span
-            >
+              >{{ kpis.tasaCierre }}%</span> (mín {{ metas.tasaCierreMin }}%)
           </p>
         </div>
       </div>
@@ -97,7 +131,7 @@
       <div class="kpi-card">
         <div class="kpi-icon caja">💰</div>
         <div class="kpi-content">
-          <p class="kpi-label">Caja</p>
+          <p class="kpi-label">Caja Cobrada</p>
           <p class="kpi-value">S/.{{ kpis.cajaTotal }}</p>
           <p
             class="kpi-meta"
@@ -157,9 +191,16 @@
           </div>
 
           <div class="modal-body">
-            <label class="field-label">Visitasarget</label>
+            <label class="field-label">Visitas Target</label>
             <input
               v-model.number="formMetas.visitasTarget"
+              type="number"
+              class="field-input"
+            />
+
+            <label class="field-label">Pruebas Activadas Target</label>
+            <input
+              v-model.number="formMetas.pruebasTarget"
               type="number"
               class="field-input"
             />
@@ -178,9 +219,23 @@
               class="field-input"
             />
 
-            <label class="field-label">Cierres Target</label>
+            <label class="field-label">Diagnósticos Ejecutados Target</label>
+            <input
+              v-model.number="formMetas.diagnosticosEjecutadosTarget"
+              type="number"
+              class="field-input"
+            />
+
+            <label class="field-label">Cierres Advisory Target</label>
             <input
               v-model.number="formMetas.cierresTarget"
+              type="number"
+              class="field-input"
+            />
+
+            <label class="field-label">Cierres WALA Target</label>
+            <input
+              v-model.number="formMetas.cierresWalaTarget"
               type="number"
               class="field-input"
             />
@@ -365,8 +420,20 @@ const saveMetas = () => {
   background: #dbeafe;
 }
 
+.kpi-icon.pruebas-icon {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
 .kpi-icon.agendados {
   background: #dcfce7;
+}
+
+.kpi-icon.diagnosticos-icon {
+  background: #f5f3ff;
+  color: #6d28d9;
+  font-weight: 800;
 }
 
 .kpi-icon.cierres {

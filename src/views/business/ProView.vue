@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen py-12 px-4 relative">
     <div class="max-w-5xl mx-auto space-y-8">
-      <!-- VISTA SUSCRIPCIÓN ACTIVA (Pro, Max o Trial) -->
+      <!-- VISTA SUSCRIPCIÓN ACTIVA (Pro, Asesoría o Trial) -->
       <div v-if="isPremium" class="space-y-8 animate-fade-in">
         <div
           :class="[
@@ -52,20 +52,36 @@
               </p>
             </div>
 
-            <!-- Indicador de Tiempo Transcurrido -->
+            <!-- Indicador de Tiempo Restante -->
             <div
-              class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center min-w-[160px] self-start md:self-auto"
+              class="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-6 text-center min-w-[160px] self-start md:self-auto flex flex-col justify-center items-center"
             >
               <span
                 class="text-xs font-bold text-white/70 block uppercase tracking-wider"
-                >Duración Activa</span
+                >Tiempo Restante</span
               >
-              <span class="text-3xl font-black mt-1 block">
-                {{ timeElapsed }}
-              </span>
+              <div class="flex items-center justify-center gap-2 mt-1">
+                <svg
+                  v-if="isLessThan72Hours"
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6 animate-pulse text-orange-400 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <span class="text-3xl font-black block leading-none">
+                  {{ formattedTimeLeft }}
+                </span>
+              </div>
               <span
-                class="text-[10px] text-white/60 block mt-1 uppercase tracking-wider"
-                >transcurrido</span
+                class="text-[10px] text-white/60 block mt-2 uppercase tracking-wider leading-none"
+                >{{ isLessThan72Hours ? 'cuenta regresiva' : 'restantes' }}</span
               >
             </div>
           </div>
@@ -192,12 +208,12 @@
                 >
                 <span class="text-[11px] text-gray-450 block"
                   >Puedes degradar tu cuenta a Free para probar el flujo de
-                  checkout nuevamente.</span
+                  checkout nuevamente. <span v-if="!isLocalhost" class="text-red-500 font-semibold">(Solo disponible en localhost)</span></span
                 >
               </div>
               <button
                 @click="handleResetToFree"
-                :disabled="isProcessing"
+                :disabled="isProcessing || !isLocalhost"
                 class="px-4 py-2 border border-[#E35336] text-[#E35336] hover:bg-[#E35336]/5 disabled:opacity-50 text-xs font-bold rounded-xl transition-all"
               >
                 {{
@@ -331,13 +347,21 @@
           <PlanSelector v-model="selectedPlan" />
 
           <button
-            v-if="isPaidPlan"
+            v-if="isPaidPlan && selectedPlan !== 'max'"
             @click="openPaymentModal"
             :disabled="isProcessing"
             class="w-full sm:w-auto mx-auto block bg-[#E35336] hover:bg-[#c94227] text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ isProcessing ? "Procesando..." : "Continuar con el pago" }}
           </button>
+          <a
+            v-else-if="selectedPlan === 'max'"
+            href="https://wa.me/51921492993?text=Hola,%20me%20interesa%20el%20Programa%20de%20Asesor%C3%ADa%20WALA%20de%202%20meses.%20Me%20gustar%C3%ADa%20agendar%20el%20diagn%C3%B3stico%20gratuito."
+            target="_blank"
+            class="w-full sm:w-auto mx-auto block text-center bg-[#E35336] hover:bg-[#c94227] text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
+          >
+            Solicitar Diagnóstico por WhatsApp
+          </a>
           <p v-else class="text-center text-sm text-gray-500 font-medium">
             El plan Free no requiere pago.
           </p>
@@ -360,7 +384,7 @@
         >
           <p class="text-center text-gray-600 font-medium">
             Selecciona el plan que mejor se adapta a tu negocio. Puedes pagar
-            con tarjeta o Yape para planes Pro y Max.
+            con tarjeta o Yape para el plan Pro, o solicitar el programa de Asesoría.
           </p>
         </div>
       </div>
@@ -566,11 +590,15 @@ const isProcessing = ref(false);
 const paymentResult = ref({});
 const mpScriptLoaded = ref(false);
 
+const isLocalhost = computed(() => {
+  return typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+});
+
 const PLAN_CONFIGS = {
   free: { name: "Free", amount: 0.0 },
-  pro_monthly: { name: "Pro Mensual", amount: 50.0 },
-  pro_yearly: { name: "Pro Anual", amount: 500.0 },
-  max: { name: "Max", amount: 360.0 },
+  pro_monthly: { name: "Pro Mensual", amount: 49.0 },
+  pro_yearly: { name: "Pro Anual", amount: 490.0 },
+  max: { name: "WALA Asesoría", amount: 450.0 },
 };
 
 const isPaidPlan = computed(() => selectedPlan.value !== "free");
@@ -627,37 +655,62 @@ const formattedPlanPrice = computed(() => {
   const sub = subscription.value;
   if (sub?.status === "trial") return "Gratis (S/ 0.00)";
   if (sub?.amount) {
+    if (sub.plan === "max" || sub.plan === "premium") {
+      return `S/ ${sub.amount.toFixed(2)} por 2 meses`;
+    }
     const cycle = sub.planType === "pro_yearly" ? "al año" : "al mes";
     return `S/ ${sub.amount.toFixed(2)} ${cycle}`;
   }
   return "No especificado";
 });
 
-const timeElapsed = computed(() => {
+const timeLeftMs = ref(0);
+let timerInterval = null;
+
+const updateTimeLeft = () => {
   const sub = subscription.value;
-  if (!sub?.startDate) return "0 días";
-
-  let start;
-  if (sub.startDate && typeof sub.startDate.toDate === "function") {
-    start = sub.startDate.toDate();
-  } else {
-    start = new Date(sub.startDate);
+  if (!sub || !sub.endDate) {
+    timeLeftMs.value = null;
+    return;
   }
+  const end = typeof sub.endDate.toDate === "function" ? sub.endDate.toDate() : new Date(sub.endDate);
+  const diff = end.getTime() - Date.now();
+  timeLeftMs.value = diff > 0 ? diff : 0;
+};
 
-  const diffMs = Math.abs(new Date() - start);
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffMins = Math.floor(diffMs / (1000 * 65)); // 60s
+const startTimer = () => {
+  updateTimeLeft();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    updateTimeLeft();
+  }, 1000);
+};
 
-  if (diffMins < 60) return `${diffMins || 1} min`;
-  if (diffHours < 24) return `${diffHours} hora${diffHours !== 1 ? "s" : ""}`;
-  if (diffDays <= 30) return `${diffDays} día${diffDays !== 1 ? "s" : ""}`;
-
-  const months = Math.floor(diffDays / 30);
-  const remainingDays = diffDays % 30;
-  if (remainingDays === 0) return `${months} mes${months !== 1 ? "es" : ""}`;
-  return `${months} mes${months !== 1 ? "es" : ""}, ${remainingDays} d`;
+const isLessThan72Hours = computed(() => {
+  if (timeLeftMs.value === null) return false;
+  return timeLeftMs.value < 259200000; // 72 hours
 });
+
+const formattedTimeLeft = computed(() => {
+  if (timeLeftMs.value === null) return "∞";
+  if (timeLeftMs.value <= 0) return "Expirado";
+
+  if (!isLessThan72Hours.value) {
+    const days = Math.ceil(timeLeftMs.value / (1000 * 60 * 60 * 24));
+    return `${days} día${days !== 1 ? "s" : ""}`;
+  } else {
+    const totalSecs = Math.floor(timeLeftMs.value / 1000);
+    const hours = Math.floor(totalSecs / 3600);
+    const minutes = Math.floor((totalSecs % 3600) / 60);
+    const seconds = totalSecs % 60;
+    const pad = (num) => String(num).padStart(2, "0");
+    return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  }
+});
+
+watch(subscription, () => {
+  updateTimeLeft();
+}, { deep: true });
 
 const activeFeaturesList = computed(() => {
   const list = [
@@ -823,6 +876,7 @@ const goBack = () => {
 };
 
 onMounted(async () => {
+  startTimer();
   try {
     await loadMercadoPagoScript();
     mpScriptLoaded.value = true;
@@ -895,6 +949,7 @@ watch(selectedPlan, async () => {
 
 onUnmounted(() => {
   unmountBrick();
+  if (timerInterval) clearInterval(timerInterval);
 });
 </script>
 

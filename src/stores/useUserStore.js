@@ -422,6 +422,14 @@ export const useUserStore = defineStore('user', {
 
     async updateUserProfile(updates) {
       if (!this.userProfile?.uid) {
+        const currentUser = auth?.currentUser;
+        if (currentUser?.uid) {
+          console.log('⚠️ Perfil no cargado en memoria en useUserStore, cargando antes de actualizar...');
+          await this.loadUserProfile(currentUser.uid);
+        }
+      }
+
+      if (!this.userProfile?.uid) {
         throw new Error('No hay usuario para actualizar')
       }
 

@@ -57,7 +57,7 @@ const functions = getFunctions(appFirebase, 'southamerica-east1');
 const functionsUsCentral1 = getFunctions(appFirebase, 'us-central1');
 
 // Verificar si estamos en un entorno local para conectar a los emuladores
-if (window.location.hostname === 'localhost') {
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
   connectFirestoreEmulator(db, 'localhost', 8080);
   connectAuthEmulator(auth, 'http://localhost:9099');
   connectStorageEmulator(storage, 'localhost', 9199);

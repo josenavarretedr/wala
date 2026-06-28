@@ -447,6 +447,9 @@ const loadUserData = async () => {
   if (user) {
     // Cargar datos desde Firestore
     try {
+      if (!userStore.userProfile?.uid) {
+        await userStore.loadUserProfile(user.uid);
+      }
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 

@@ -90,26 +90,71 @@
             </select>
           </div>
 
-          <!-- Step 2: Detalles de la Visita -->
+          <!-- Step 2: Clasificación y Resultado (Plan Junio 2026) -->
           <div v-else-if="currentStep === 2" class="step-content">
-            <h3 class="step-title">Detalles de la Visita</h3>
-            <label class="field-label">Resultado</label>
+            <h3 class="step-title">Clasificación de Negocio</h3>
+            
+            <label class="field-label">¿Cuánto tiempo lleva con el negocio?</label>
             <div class="radio-group">
               <label class="radio-item">
-                <input v-model="formData.resultado" type="radio" value="agendado" />
-                <span>✅ Agendado (para diagnóstico)</span>
+                <input v-model="formData.tiempoNegocio" type="radio" value="less_1_year" />
+                <span>Menos de 1 año (Peldaño 1)</span>
               </label>
               <label class="radio-item">
-                <input v-model="formData.resultado" type="radio" value="no_agendado" />
-                <span>❌ No agendado</span>
+                <input v-model="formData.tiempoNegocio" type="radio" value="more_1_year" />
+                <span>1 año o más (Seguir analizando)</span>
               </label>
             </div>
-            <template v-if="formData.resultado === 'agendado'">
-              <label class="field-label">Fecha agendada</label>
+
+            <label class="field-label">¿Cómo lleva el control de sus ventas y gastos?</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input v-model="formData.metodoControl" type="radio" value="head" />
+                <span>En la cabeza / Desordenado (Dolor real)</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.metodoControl" type="radio" value="notebook_excel" />
+                <span>Cuaderno / Excel / Más o menos (Algo de control)</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.metodoControl" type="radio" value="system" />
+                <span>Sistema / Ordenado (Sin urgencia visible)</span>
+              </label>
+            </div>
+
+            <!-- Peldaño sugerido dinámico -->
+            <div v-if="peldanoSugerido" class="suggested-banner">
+              <span class="banner-title">Peldaño sugerido por Plan:</span>
+              <span class="banner-value">{{ peldanoSugerido }}</span>
+            </div>
+
+            <h3 class="step-title mt-4">Resultado de la Visita</h3>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input v-model="formData.resultadoVisita" type="radio" value="solo_tarjeta" />
+                <span>Solo tarjeta entregada (Sin tiempo)</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.resultadoVisita" type="radio" value="prueba_activada" />
+                <span>Prueba 7d activada</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.resultadoVisita" type="radio" value="diagnostico_hablado" />
+                <span>Se habló de diagnóstico (Interesado)</span>
+              </label>
+              <label class="radio-item">
+                <input v-model="formData.resultadoVisita" type="radio" value="diagnostico_agendado" />
+                <span>Diagnóstico Agendado</span>
+              </label>
+            </div>
+
+            <template v-if="formData.resultadoVisita === 'diagnostico_agendado'">
+              <label class="field-label">Fecha agendada para el diagnóstico</label>
               <input v-model="formData.fechaAgendada" type="date" class="field-input" />
             </template>
-            <label class="field-label">Notas</label>
-            <textarea v-model="formData.notas" placeholder="Observaciones de la visita..." rows="2" class="field-input"></textarea>
+
+            <label class="field-label">Notas / Observaciones</label>
+            <textarea v-model="formData.notas" placeholder="Ej: Negocio de comida con local fijo, requiere costeo rápido..." rows="2" class="field-input"></textarea>
           </div>
 
           <!-- Step 3: Resumen -->
@@ -120,8 +165,11 @@
               <p><strong>Contacto:</strong> {{ formData.contactName }} ({{ fullPhone }})</p>
               <p><strong>Zona:</strong> {{ formData.zona }}</p>
               <p><strong>Sector:</strong> {{ formData.sector }}</p>
-              <p><strong>Evento:</strong> Visita en frío</p>
-              <p v-if="formData.resultado"><strong>Resultado:</strong> {{ formData.resultado }}</p>
+              <p><strong>Tiempo operación:</strong> {{ formData.tiempoNegocio === 'less_1_year' ? 'Menos de 1 año' : '1 año o más' }}</p>
+              <p><strong>Control actual:</strong> {{ formatControlLabel(formData.metodoControl) }}</p>
+              <p><strong>Peldaño Sugerido:</strong> {{ peldanoSugerido }}</p>
+              <p><strong>Resultado visita:</strong> {{ formatOutcomeLabel(formData.resultadoVisita) }}</p>
+              <p v-if="formData.resultadoVisita === 'diagnostico_agendado'"><strong>Fecha agendada:</strong> {{ formData.fechaAgendada }}</p>
               <p v-if="formData.notas"><strong>Notas:</strong> {{ formData.notas }}</p>
             </div>
 
@@ -185,9 +233,11 @@ const defaultForm = () => ({
   localPhone: "",
   zona: "",
   sector: "",
-  resultado: "agendado",
   notas: "",
   fechaAgendada: "",
+  tiempoNegocio: "",
+  metodoControl: "",
+  resultadoVisita: "",
 });
 
 const formData = ref(defaultForm());
@@ -205,6 +255,20 @@ const selectCountry = (country) => {
   showDropdown.value = false;
 };
 
+const peldanoSugerido = computed(() => {
+  if (!formData.value.tiempoNegocio) return "";
+  if (formData.value.tiempoNegocio === "less_1_year") {
+    return "Peldaño 1: Entrada gratuita (Prueba 7d)";
+  }
+  if (formData.value.tiempoNegocio === "more_1_year") {
+    if (formData.value.metodoControl === "system") {
+      return "Peldaño 2: WALA Premium (S/49/mes)";
+    }
+    return "Peldaño 3: Programa Premium (S/450)";
+  }
+  return "";
+});
+
 const canProceed = computed(() => {
   if (currentStep.value === 1) {
     return (
@@ -214,15 +278,49 @@ const canProceed = computed(() => {
     );
   }
   if (currentStep.value === 2) {
-    return formData.value.resultado !== null;
+    return (
+      formData.value.tiempoNegocio !== "" &&
+      formData.value.metodoControl !== "" &&
+      formData.value.resultadoVisita !== "" &&
+      (formData.value.resultadoVisita !== "diagnostico_agendado" || formData.value.fechaAgendada !== "")
+    );
   }
   return true;
 });
 
 const whatsappMsg = computed(() => {
   const name = formData.value.contactName || "[Nombre]";
-  return `Buenos días ${name}, soy José. Te contacto de WALA — hacemos diagnósticos empresariales gratuitos. ¿Tienes 30 minutos esta semana?`;
+  if (formData.value.resultadoVisita === "prueba_activada") {
+    return `Hola ${name}. Soy José, el de WALA. Te comparto lo que te comenté: nuestro copiloto te ayuda a ordenar tu negocio, entender tus números y tomar mejores decisiones. Te paso el acceso para probarlo gratis 7 días. ¿Me confirmas si pudiste ingresar?`;
+  }
+  if (formData.value.resultadoVisita === "diagnostico_hablado") {
+    return `Hola ${name}. Soy José, el de WALA. Me dio gusto conversar contigo. Como te comentaba, te propongo hacer un diagnóstico gratuito de 20 minutos de tu negocio. Avísame qué día te queda mejor esta semana.`;
+  }
+  if (formData.value.resultadoVisita === "diagnostico_agendado") {
+    return `Hola ${name}, te escribo para confirmarte que tenemos agendado tu diagnóstico gratuito de WALA para el ${formData.value.fechaAgendada || 'día programado'}. ¡Nos vemos!`;
+  }
+  // Default / solo_tarjeta
+  return `Hola ${name}. Soy José, el de WALA. Te comparto lo que te comenté: nuestro copiloto te ayuda a ordenar tu negocio, entender tus números y tomar mejores decisiones. Si quieres, te paso el acceso para probarlo gratis 7 días o agendamos el diagnóstico para ver qué te conviene más. ¿Qué te queda mejor esta semana?`;
 });
+
+const formatControlLabel = (val) => {
+  const map = {
+    head: "En la cabeza / Desordenado",
+    notebook_excel: "Cuaderno / Excel / Más o menos",
+    system: "Sistema / Ordenado"
+  };
+  return map[val] || val;
+};
+
+const formatOutcomeLabel = (val) => {
+  const map = {
+    solo_tarjeta: "Solo tarjeta entregada",
+    prueba_activada: "Prueba 7d activada",
+    diagnostico_hablado: "Se habló de diagnóstico",
+    diagnostico_agendado: "Diagnóstico Agendado"
+  };
+  return map[val] || val;
+};
 
 const nextStep = () => { if (canProceed.value) currentStep.value++; };
 const previousStep = () => { if (currentStep.value > 1) currentStep.value--; };
@@ -249,30 +347,57 @@ const copyWhatsapp = async () => {
 };
 
 const submitForm = () => {
-  const fechaEvento = formData.value.fechaAgendada
-    ? Timestamp.fromDate(new Date(formData.value.fechaAgendada))
-    : Timestamp.now();
+  const fechaEvento = Timestamp.now();
+  let statusPipeline = "tarjeta_entregada";
+  let eventType = "visita";
+  let resultado = "no_agendado";
+
+  if (formData.value.resultadoVisita === "diagnostico_agendado") {
+    statusPipeline = "agendado";
+    eventType = "visita";
+    resultado = "agendado";
+  } else if (formData.value.resultadoVisita === "prueba_activada") {
+    statusPipeline = "prueba_activa";
+    eventType = "visita";
+    resultado = "no_agendado";
+  }
+
+  let pSugeridoKey = "";
+  if (formData.value.tiempoNegocio === "less_1_year") {
+    pSugeridoKey = "peldano_1";
+  } else if (formData.value.tiempoNegocio === "more_1_year") {
+    if (formData.value.metodoControl === "system") {
+      pSugeridoKey = "peldano_2";
+    } else {
+      pSugeridoKey = "peldano_3";
+    }
+  }
 
   const payload = {
     docType: "record",
-    eventType: "visita",
-    statusPipeline: "nuevo",
+    eventType,
+    statusPipeline,
     businessName: formData.value.businessName,
     contactName: formData.value.contactName,
     contactPhone: fullPhone.value.replace(/\s+/g, ''), // Sin espacios
     zona: formData.value.zona,
     sector: formData.value.sector,
-    resultado: formData.value.resultado,
+    resultado,
     monto: 0,
     notas: formData.value.notas,
     fechaEvento,
-    fechaAgendada: formData.value.fechaAgendada
+    fechaAgendada: formData.value.resultadoVisita === "diagnostico_agendado" && formData.value.fechaAgendada
       ? Timestamp.fromDate(new Date(formData.value.fechaAgendada))
       : null,
     tipoCierre: null,
     tipoSeguimiento: null,
     areasCriticas: [],
-    mensajeWhatsapp: whatsappMsg.value
+    mensajeWhatsapp: whatsappMsg.value,
+    // Nuevos campos de clasificación Plan Junio 2026
+    tiempoNegocio: formData.value.tiempoNegocio,
+    metodoControl: formData.value.metodoControl,
+    resultadoVisita: formData.value.resultadoVisita,
+    peldanoSugerido: pSugeridoKey
   };
 
   emit("submit", payload);
@@ -484,6 +609,32 @@ const submitForm = () => {
   border: 1px solid #e5e7eb;
 }
 .summary-box p { font-size: 0.875rem; margin: 0.4rem 0; color: #374151; }
+
+.suggested-banner {
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 0.75rem;
+  padding: 0.85rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+}
+.banner-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #4338ca;
+  text-transform: uppercase;
+}
+.banner-value {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #312e81;
+  margin-top: 0.15rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
 
 .whatsapp-copy {
   background: #ecfdf5;

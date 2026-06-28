@@ -1,19 +1,9 @@
 <template>
   <div
     v-if="visible"
-    class="group relative overflow-hidden rounded-xl border border-l-4 transition-all duration-300 bg-white/80 backdrop-blur-md shadow-sm hover:shadow-md hover:-translate-y-0.5"
+    class="group relative overflow-hidden rounded-xl border-2 transition-all duration-300 backdrop-blur-md shadow-sm hover:shadow-md hover:-translate-y-0.5"
     :class="bannerClasses"
   >
-    <!-- Background subtle shapes for premium feel -->
-    <div
-      class="absolute -right-10 -top-10 w-32 h-32 rounded-full blur-xl pointer-events-none transition-all duration-500"
-      :class="shapeClasses"
-    ></div>
-    <div
-      class="absolute -left-10 -bottom-10 w-28 h-28 rounded-full blur-xl pointer-events-none transition-all duration-500"
-      :class="shapeClasses"
-    ></div>
-
     <div
       class="p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10"
     >
@@ -40,9 +30,9 @@
             </span>
             <span
               v-if="isTrialActive"
-              class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse"
+              class="text-xs font-semibold text-[#E35336] bg-[#E35336]/10 border border-[#E35336]/20 px-2 py-0.5 rounded-md flex items-center gap-1 animate-pulse"
             >
-              <span>⚡</span>
+              <Flash class="w-3.5 h-3.5" />
               <span>Modo Pro Activo</span>
             </span>
           </div>
@@ -64,7 +54,7 @@
               class="w-36 h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200/30 shrink-0"
             >
               <div
-                class="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-500 rounded-full"
+                class="h-full bg-blue-600 transition-all duration-500 rounded-full"
                 :style="{ width: `${completionPercentage}%` }"
               ></div>
             </div>
@@ -87,14 +77,14 @@
             class="mt-3 flex items-center gap-3 pt-1"
           >
             <div
-              class="w-36 h-2 bg-emerald-100/60 rounded-full overflow-hidden border border-emerald-200/20 shrink-0"
+              class="w-36 h-2 bg-[#E35336]/10 rounded-full overflow-hidden border border-[#E35336]/20 shrink-0"
             >
               <div
-                class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full"
+                class="h-full bg-[#E35336] rounded-full"
                 :style="{ width: `${(daysRemaining / 5) * 100}%` }"
               ></div>
             </div>
-            <span class="text-xs font-semibold text-emerald-800">
+            <span class="text-xs font-semibold text-[#E35336]">
               Quedan {{ daysRemaining }} día{{
                 daysRemaining !== 1 ? "s" : ""
               }}
@@ -142,16 +132,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { useProfileCompletion } from "@/composables/useProfileCompletion";
 import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
-import { TaskList, Gift, BrightCrown, InfoCircle } from "@iconoir/vue";
+import { TaskList, Gift, BrightCrown, InfoCircle, Flash } from "@iconoir/vue";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const userStore = useUserStore();
 const toast = useToast();
 
 const { isProfileComplete, completionPercentage, missingFields } =
@@ -166,6 +158,21 @@ const {
 } = useSubscription();
 
 const isActivating = ref(false);
+const isLoadingProfile = ref(true);
+
+onMounted(async () => {
+  try {
+    if (authStore.user?.uid) {
+      if (!userStore.userProfile) {
+        await userStore.loadUserProfile(authStore.user.uid);
+      }
+    }
+  } catch (error) {
+    console.error("Error loading user profile in TrialActivationBanner:", error);
+  } finally {
+    isLoadingProfile.value = false;
+  }
+});
 
 // Determine the state of the trial/profile
 // States: 'incomplete' | 'eligible' | 'active' | 'expired' | 'hidden'
@@ -196,7 +203,12 @@ const currentState = computed(() => {
   return "incomplete";
 });
 
-const visible = computed(() => currentState.value !== "hidden");
+const visible = computed(() => {
+  if (isLoadingProfile.value || !userStore.userProfile) {
+    return false;
+  }
+  return currentState.value !== "hidden";
+});
 
 const badgeText = computed(() => {
   switch (currentState.value) {
@@ -264,15 +276,15 @@ const actionText = computed(() => {
 const bannerClasses = computed(() => {
   switch (currentState.value) {
     case "incomplete":
-      return "border-gray-100 border-l-blue-500";
+      return "border-blue-100 hover:border-blue-200 bg-white/95";
     case "eligible":
-      return "border-emerald-100/80 border-l-emerald-500 shadow-emerald-500/5 bg-gradient-to-br from-white/95 to-emerald-50/20";
+      return "border-emerald-200 hover:border-emerald-300 shadow-emerald-500/5 bg-white/95";
     case "active":
-      return "border-gray-100 border-l-indigo-500 bg-gradient-to-br from-white/95 to-indigo-50/20";
+      return "border-[#E35336]/20 hover:border-[#E35336]/30 bg-white/95";
     case "expired":
-      return "border-gray-100 border-l-amber-500 bg-gradient-to-br from-white/95 to-amber-50/10";
+      return "border-amber-100 hover:border-amber-200 bg-white/95";
     default:
-      return "border-gray-100 border-l-gray-400";
+      return "border-gray-100 hover:border-gray-200 bg-white/95";
   }
 });
 
@@ -283,7 +295,7 @@ const iconContainerClasses = computed(() => {
     case "eligible":
       return "bg-emerald-50 border-emerald-100 text-emerald-600 shadow-sm shadow-emerald-500/10";
     case "active":
-      return "bg-indigo-50 border-indigo-100 text-indigo-600 shadow-sm shadow-indigo-500/10";
+      return "bg-[#E35336]/10 border-[#E35336]/20 text-[#E35336] shadow-sm shadow-[#E35336]/10";
     case "expired":
       return "bg-amber-50 border-amber-100 text-amber-700";
     default:
@@ -298,7 +310,7 @@ const badgeClasses = computed(() => {
     case "eligible":
       return "bg-emerald-50 text-emerald-700 border-emerald-200 font-extrabold animate-pulse";
     case "active":
-      return "bg-indigo-50 text-indigo-700 border-indigo-200";
+      return "bg-[#E35336]/10 text-[#E35336] border-[#E35336]/20";
     case "expired":
       return "bg-amber-50 text-amber-700 border-amber-200";
     default:
@@ -311,28 +323,13 @@ const actionButtonClasses = computed(() => {
     case "incomplete":
       return "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/10 hover:shadow-blue-600/20";
     case "eligible":
-      return "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-emerald-600/20 hover:shadow-emerald-600/30";
+      return "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20 hover:shadow-emerald-600/30";
     case "active":
-      return "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-600/10 hover:shadow-indigo-600/20";
+      return "bg-[#E35336] hover:bg-[#c2412b] text-white shadow-[#E35336]/10 hover:shadow-[#E35336]/20";
     case "expired":
       return "bg-amber-600 hover:bg-amber-700 text-white shadow-amber-600/10 hover:shadow-amber-600/20";
     default:
       return "bg-gray-800 hover:bg-gray-900 text-white";
-  }
-});
-
-const shapeClasses = computed(() => {
-  switch (currentState.value) {
-    case "incomplete":
-      return "bg-blue-500/5";
-    case "eligible":
-      return "bg-emerald-500/10";
-    case "active":
-      return "bg-indigo-500/5";
-    case "expired":
-      return "bg-amber-500/5";
-    default:
-      return "bg-gray-500/5";
   }
 });
 

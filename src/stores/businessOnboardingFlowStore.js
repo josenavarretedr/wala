@@ -74,6 +74,14 @@ export const useBusinessOnboardingFlowStore = defineStore('businessOnboardingFlo
     isFlowActive.value = true;
     currentStepIndex.value = 0;
     resetFormData();
+
+    // Pre-cargar valores desde query params de la URL si están presentes
+    if (route.query.industry) {
+      businessOnboardingData.value.industry = decodeURIComponent(route.query.industry);
+    }
+    if (route.query.businessName) {
+      businessOnboardingData.value.nombre = decodeURIComponent(route.query.businessName);
+    }
   }
 
   /**

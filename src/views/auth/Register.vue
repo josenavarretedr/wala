@@ -431,7 +431,10 @@ const register = async () => {
     } else {
       // Business owners van a onboarding para crear su primer negocio
       console.log("🔄 Redirigiendo a onboarding para crear primer negocio...");
-      router.push("/onboarding");
+      const queryParams = {};
+      if (route.query.industry) queryParams.industry = route.query.industry;
+      if (route.query.businessName) queryParams.businessName = route.query.businessName;
+      router.push({ path: "/onboarding", query: queryParams });
     }
   } catch (err) {
     console.error("❌ Error en registro:", err);
@@ -501,7 +504,10 @@ const handleGoogleRegister = async () => {
     } else {
       // Business owners van a onboarding para crear su primer negocio
       console.log("🔄 Redirigiendo a onboarding para crear primer negocio...");
-      router.push("/onboarding");
+      const queryParams = {};
+      if (route.query.industry) queryParams.industry = route.query.industry;
+      if (route.query.businessName) queryParams.businessName = route.query.businessName;
+      router.push({ path: "/onboarding", query: queryParams });
     }
   } catch (err) {
     console.error("❌ Error en registro con Google:", err);
