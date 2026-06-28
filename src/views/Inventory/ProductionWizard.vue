@@ -306,11 +306,13 @@ const materialsRequired = computed(() => {
     const netQuantity = (mat.quantity || 0) * productionQuantity.value;
     // Cálculo cantidad bruta aplicando yieldFactor (si es 50%, necesito el doble)
     const yieldFactor = mat.yieldFactor || 100;
-    const grossQuantity = netQuantity / (yieldFactor / 100);
+    // Redondear a 2 decimales para evitar problemas de precisión en UI y stock log
+    const grossQuantity = Math.round((netQuantity / (yieldFactor / 100) + Number.EPSILON) * 100) / 100;
     
     const currentStock = mat.stock || 0; 
     const costPerUnit = mat.costPerUnit || mat.cost || 0;
-    const totalCost = grossQuantity * costPerUnit;
+    // Redondear totalCost de insumos a 2 decimales
+    const totalCost = Math.round((grossQuantity * costPerUnit + Number.EPSILON) * 100) / 100;
 
     const isTrackStock = mat.trackStock !== false; // Por defecto true
     
@@ -349,7 +351,8 @@ const canProceedNext = computed(() => {
 });
 
 const totalProductionCost = computed(() => {
-  return materialsRequired.value.reduce((sum, mat) => sum + mat.totalCost, 0);
+  const rawSum = materialsRequired.value.reduce((sum, mat) => sum + mat.totalCost, 0);
+  return Math.round((rawSum + Number.EPSILON) * 100) / 100;
 });
 
 // Methods

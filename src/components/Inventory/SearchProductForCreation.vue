@@ -240,6 +240,27 @@ onMounted(() => {
     autocompleteInput.setAttribute("autocorrect", "off");
     autocompleteInput.setAttribute("autocapitalize", "off");
     autocompleteInput.setAttribute("spellcheck", "false");
+
+    // Escuchar la tecla Enter para seleccionar el primer elemento si no hay ninguno seleccionado activamente
+    autocompleteInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        // Verificar si ya hay un elemento seleccionado de forma activa (con las flechas del teclado)
+        const activeItem = document.querySelector(
+          ".aa-Item[aria-selected='true']"
+        );
+        if (activeItem) {
+          // Dejar que Algolia maneje la selección del elemento activo
+          return;
+        }
+
+        // Buscar el primer elemento de la lista en el panel del autocomplete
+        const firstItem = document.querySelector(".aa-Item");
+        if (firstItem) {
+          event.preventDefault();
+          firstItem.click();
+        }
+      }
+    });
   }
 });
 </script>

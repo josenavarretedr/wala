@@ -138,3 +138,38 @@ const initApp = async () => {
 
 initApp();
 
+// 🔠 Transformar automáticamente todos los inputs de tipo texto a mayúsculas
+const transformToUppercase = (event) => {
+  if (event.isComposing) return;
+  const target = event.target;
+  if (
+    target &&
+    target.tagName === 'INPUT' &&
+    (target.type === 'text' || !target.getAttribute('type'))
+  ) {
+    const originalValue = target.value;
+    const upperValue = originalValue.toUpperCase();
+    
+    if (originalValue !== upperValue) {
+      try {
+        const start = target.selectionStart;
+        const end = target.selectionEnd;
+        
+        target.value = upperValue;
+        
+        if (start !== null && end !== null) {
+          target.setSelectionRange(start, end);
+        }
+      } catch (e) {
+        target.value = upperValue;
+      }
+    }
+  }
+};
+
+window.addEventListener('input', transformToUppercase, true);
+window.addEventListener('change', transformToUppercase, true);
+window.addEventListener('compositionend', transformToUppercase, true);
+
+
+

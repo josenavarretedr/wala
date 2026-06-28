@@ -19,6 +19,7 @@
       <input
         v-model="localNombre"
         @input="handleInput"
+        @keyup.enter="handleEnter"
         type="text"
         required
         autofocus
@@ -73,6 +74,13 @@ const examples = [
 const handleInput = () => {
   localNombre.value = localNombre.value.toUpperCase();
   flowStore.updateField("nombre", localNombre.value);
+};
+
+// Avanzar al siguiente paso con Enter
+const handleEnter = () => {
+  if (flowStore.canGoNext) {
+    flowStore.nextStep();
+  }
 };
 
 // Mantener sincronizado con el store si cambia externamente

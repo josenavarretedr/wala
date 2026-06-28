@@ -451,6 +451,7 @@ watch(
   () => [
     transactionStore.itemToAddInTransaction.value.quantity,
     transactionStore.itemToAddInTransaction.value.selectedProductUuid,
+    transactionStore.itemToAddInTransaction.value.variantId,
   ],
   async ([quantity, productId]) => {
     // Solo validar si hay producto, cantidad, y composición
@@ -476,7 +477,7 @@ watch(
         {
           uuid: productId,
           trackStock: item.trackStock,
-          stock: item.stock,
+          stock: selectedAvailableStock.value,
           composition: item.composition,
         },
         parseFloat(quantity),

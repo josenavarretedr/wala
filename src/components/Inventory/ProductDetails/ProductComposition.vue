@@ -2,7 +2,6 @@
   <div
     class="w-full bg-white rounded-xl shadow-sm border border-purple-100 p-5 relative overflow-hidden transition-all duration-300 hover:shadow-md"
   >
-
     <!-- Contenido principal -->
     <div class="relative z-10">
       <!-- Header con icono y texto -->
@@ -48,7 +47,7 @@
             </p>
             <p class="text-xs text-purple-600/80 mt-0.5">
               <span class="hidden sm:inline"
-                >Define materiales y pasos de preparación</span
+                >Define insumos y actualizamos en cada movimiento. Wala!</span
               >
               <span class="inline sm:hidden">Ingredientes y pasos</span>
             </p>

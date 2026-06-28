@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 p-4 sm:p-6">
+  <div class="min-h-screen p-4 sm:p-6">
     <!-- Header con navegación -->
     <div class="max-w-4xl mx-auto mb-6">
       <div class="flex items-center gap-3 mb-4">

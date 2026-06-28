@@ -150,7 +150,7 @@ export function useTransactionStore() {
    * @param {string} transactionId - UUID de la transacción
    * @returns {Promise<Array>} Array de materialStockLogs creados
    */
-  const processCompositionStockLogs = async (productId, quantitySold, transactionId) => {
+  const processCompositionStockLogs = async (productId, quantitySold, transactionId, variantId = null) => {
     try {
       // Obtener el producto completo
       const product = await getProductById(productId);
@@ -165,10 +165,41 @@ export function useTransactionStore() {
         return [];
       }
 
+      // Calcular la cantidad real a producir
+      let quantityToProduce = quantitySold;
+      if (product.trackStock) {
+        let productStock = product.stock ?? 0;
+        if (variantId && Array.isArray(product.variantCombos)) {
+          const variant = product.variantCombos.find(v => v.id === variantId);
+          if (variant) {
+            productStock = Number(variant.stock || 0);
+          }
+        }
+        
+        if (quantitySold > productStock) {
+          quantityToProduce = quantitySold - productStock;
+        } else {
+          quantityToProduce = 0;
+        }
+      }
+
+      // Si no es necesario producir nada (el stock cubre la venta), no se descuentan insumos
+      if (quantityToProduce <= 0) {
+        console.log('🧩 [COMPOSITION] No es necesario producir. Stock del producto terminado es suficiente:', {
+          productId,
+          productName: product.description,
+          quantitySold,
+          variantId
+        });
+        return [];
+      }
+
       console.log('🧩 [COMPOSITION] Procesando stock de composición:', {
         productId,
         productName: product.description,
         quantitySold,
+        quantityToProduce,
+        variantId,
         materialsCount: product.composition.length
       });
 
@@ -177,8 +208,10 @@ export function useTransactionStore() {
         try {
           const materialProductId = material.productId;
           const quantityPerUnit = parseFloat(material.quantity) || 0;
+          const yieldRatio = material.yieldFactor ? material.yieldFactor / 100 : 1;
+          const grossQuantityPerUnit = quantityPerUnit / yieldRatio;
           // ✅ Aplicar redondeo para evitar decimales excesivos
-          const totalQuantityNeeded = roundStock(quantityPerUnit * quantitySold);
+          const totalQuantityNeeded = roundStock(grossQuantityPerUnit * quantityToProduce);
 
           // Validar que el material existe
           const materialProduct = await getProductById(materialProductId);
@@ -218,13 +251,13 @@ export function useTransactionStore() {
           console.log('  📦 Descontando material:', {
             material: materialProduct.description,
             quantityPerUnit,
-            quantitySold,
+            quantityToProduce,
             totalQuantity: materialItem.quantity,
             currentStock: materialProduct.stock
           });
 
-          // Crear stockLog para el material
-          const stockLogUuid = await createStockLog(materialItem, 'sell');
+          // Crear stockLog para el material como production_out
+          const stockLogUuid = await createStockLog(materialItem, 'production_out');
 
           console.log('  ✅ StockLog creado para material:', stockLogUuid);
 
@@ -410,7 +443,7 @@ export function useTransactionStore() {
             console.log('🔍 Procesando stockLog y composición en paralelo para:', itemUuid);
             const [stockLogUuid, materialStockLogs] = await Promise.all([
               createStockLog(itemWithTransaction),
-              processCompositionStockLogs(itemUuid, item.quantity, transactionId)
+              processCompositionStockLogs(itemUuid, item.quantity, transactionId, item.variantId)
             ]);
 
             if (materialStockLogs.length > 0) {

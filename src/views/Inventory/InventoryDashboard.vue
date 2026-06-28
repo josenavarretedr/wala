@@ -1,5 +1,8 @@
 <template>
-  <div class="inventory-dashboard-wrapper">
+  <div class="inventory-dashboard-wrapper pb-24">
+    <div class="max-w-[1200px] mx-auto px-4 pt-4">
+      <MetricsInventory />
+    </div>
     <Suspense>
       <template #default>
         <ListAllProducts />
@@ -22,6 +25,7 @@
 </template>
 
 <script setup>
+import MetricsInventory from "@/components/Inventory/MetricsInventory.vue";
 import ListAllProducts from "@/components/Inventory/ListAllProducts.vue";
 import NavigationBtnInventory from "@/components/Inventory/NavigationBtnInventory.vue";
 </script>

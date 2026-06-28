@@ -34,7 +34,7 @@
             getQuantityColorClass,
           ]"
         >
-          {{ getQuantityPrefix }}{{ log.quantity || 0 }} {{ productUnit }}
+          {{ getQuantityPrefix }}{{ formattedQuantity }} {{ productUnit }}
         </div>
 
         <!-- Botón de detalles -->
@@ -179,6 +179,7 @@ import {
   Refresh,
   Calculator,
   InfoCircle,
+  Settings,
 } from "@iconoir/vue";
 
 const props = defineProps({
@@ -214,6 +215,12 @@ onMounted(() => {
   });
 });
 
+// Computed: formattedQuantity rounds to max 2 decimals to keep UI/UX clean
+const formattedQuantity = computed(() => {
+  const qty = Number(props.log.quantity || 0);
+  return parseFloat(qty.toFixed(2));
+});
+
 // Computed: Badge class
 const getBadgeClass = computed(() => {
   switch (props.log.type) {
@@ -228,6 +235,9 @@ const getBadgeClass = computed(() => {
     case "adjustment":
     case "inventory":
       return "bg-amber-50 text-amber-700 border border-amber-200";
+    case "production_in":
+    case "production_out":
+      return "bg-purple-50 text-purple-700 border border-purple-200";
     default:
       return "bg-gray-50 text-gray-700 border border-gray-200";
   }
@@ -245,6 +255,9 @@ const getIcon = computed(() => {
     case "adjustment":
     case "inventory":
       return Calculator;
+    case "production_in":
+    case "production_out":
+      return Settings;
     default:
       return Package;
   }
@@ -259,13 +272,15 @@ const getTypeText = computed(() => {
     return: "Devolución",
     adjustment: "Ajuste",
     inventory: "Inventario",
+    production_in: "Producción",
+    production_out: "Producción",
   };
   return types[props.log.type] || "Movimiento";
 });
 
 // Computed: Quantity prefix
 const getQuantityPrefix = computed(() => {
-  return props.log.type === "sell" || props.log.type === "waste" ? "-" : "+";
+  return props.log.type === "sell" || props.log.type === "waste" || props.log.type === "production_out" ? "-" : "+";
 });
 
 // Computed: Quantity color class
@@ -281,6 +296,10 @@ const getQuantityColorClass = computed(() => {
     case "adjustment":
     case "inventory":
       return "text-amber-600";
+    case "production_in":
+      return "text-green-600";
+    case "production_out":
+      return "text-red-600";
     default:
       return "text-gray-600";
   }

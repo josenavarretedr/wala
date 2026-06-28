@@ -97,7 +97,10 @@
             :unit="product.unit"
             :product-type="product.type"
           />
+        </div>
 
+        <!-- Columna Derecha: Resumen de Movimientos e Historial -->
+        <div class="space-y-6">
           <!-- Stock Alert Card (Destacado) -->
           <ProductStockAlert
             v-if="product.trackStock"
@@ -108,10 +111,7 @@
             :description="product.description"
             :product-type="product.type"
           />
-        </div>
 
-        <!-- Columna Derecha: Resumen de Movimientos e Historial -->
-        <div class="space-y-6">
           <!-- Statistics Summary -->
           <ResumenMoves
             :stock-log="product.stockLog"

@@ -2,8 +2,10 @@
 import { ref } from "vue";
 import { useInventory } from "@/composables/useInventory";
 import { useTraceability } from "@/composables/useTraceability";
+import { round2, roundStock } from "@/utils/mathUtils";
 
 const allItemsInInventory = ref([]); // Lista reactiva para almacenar los ítems
+const isLoading = ref(false); // Bandera reactiva de carga
 
 const itemToAddToInventory = ref({}); // Ítem a agregar al inventario
 
@@ -14,6 +16,7 @@ export function useInventoryStore() {
 
   // Obtener los ítems en inventario
   const getItemsInInventory = async () => {
+    isLoading.value = true;
     try {
       // === TRAZABILIDAD: Log de acceso a inventario ===
       await logInventoryOperation(
@@ -50,6 +53,8 @@ export function useInventoryStore() {
           component: 'InventoryStore.getItemsInInventory'
         }
       );
+    } finally {
+      isLoading.value = false;
     }
   };
 
@@ -637,12 +642,13 @@ export function useInventoryStore() {
       for (const material of materials) {
         if (!material.trackStock) continue;
 
+        const roundedQty = roundStock(material.quantityToDeduct);
         const stockLogData = {
           uuid: material.productId,
-          quantity: material.quantityToDeduct,
+          quantity: roundedQty,
           type: 'production_out',
           cost: material.cost,
-          totalCost: material.cost * material.quantityToDeduct,
+          totalCost: round2(material.cost * roundedQty),
           description: `Consumo para producción de lote`,
         };
 
@@ -650,12 +656,14 @@ export function useInventoryStore() {
       }
 
       // 2. Incrementar stock del producto final
+      const roundedProdQty = roundStock(quantity);
+      const roundedTotalCost = round2(totalCost);
       const producedStockLog = {
         uuid: productId,
-        quantity: quantity,
+        quantity: roundedProdQty,
         type: 'production_in',
-        cost: totalCost / quantity, // Costo unitario
-        totalCost: totalCost,
+        cost: round2(roundedTotalCost / roundedProdQty), // Costo unitario
+        totalCost: roundedTotalCost,
         description: `Producción de lote`,
       };
 
@@ -666,8 +674,8 @@ export function useInventoryStore() {
         reason: 'batch_production_completed',
         metadata: {
           productId,
-          quantityProduced: quantity,
-          totalCost: totalCost,
+          quantityProduced: roundedProdQty,
+          totalCost: roundedTotalCost,
           materialsConsumed: materials.length
         }
       });
@@ -744,6 +752,7 @@ export function useInventoryStore() {
 
   return {
     allItemsInInventory,
+    isLoading,
     itemToAddToInventory,
     getItemsInInventory,
     getProductDetails,

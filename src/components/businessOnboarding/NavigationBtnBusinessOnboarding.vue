@@ -37,6 +37,7 @@
       <!-- Botón Crear Empresa (último paso) -->
       <button
         v-if="flowStore.isLastStep"
+        id="submit-business-btn"
         @click="handleCreateBusiness"
         :disabled="!flowStore.canGoNext || isCreating"
         :class="[

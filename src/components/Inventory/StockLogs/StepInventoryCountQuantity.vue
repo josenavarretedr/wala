@@ -1,10 +1,7 @@
 <template>
   <div>
     <!-- Loading state -->
-    <div
-      v-if="isLoading"
-      class="bg-blue-50 border border-blue-200 rounded-lg p-6"
-    >
+    <div v-if="isLoading" class="bg-blue-50 rounded-lg p-6">
       <div class="flex items-center justify-center gap-2">
         <svg
           class="animate-spin h-5 w-5 text-blue-600"
@@ -31,54 +28,19 @@
     </div>
 
     <!-- Sección de conteo de inventario -->
-    <div
-      v-else
-      class="bg-white border-2 border-blue-200 rounded-xl p-6 shadow-sm"
-    >
+    <div v-else class="p-6">
       <!-- Header -->
       <div class="flex items-center gap-3 mb-6">
         <div
-          class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center shrink-0"
+          class="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center shrink-0"
         >
-          <Package class="w-6 h-6 text-white" />
+          <Package class="w-5 h-5" />
         </div>
         <div class="flex-1">
-          <h1 class="text-2xl font-bold text-gray-800">Conteo de Inventario</h1>
-          <p class="text-sm text-gray-500">
+          <h1 class="text-base font-semibold text-gray-800">Conteo de Inventario</h1>
+          <p class="text-xs text-gray-500">
             {{ flow.countData.productData?.description || "Producto" }}
           </p>
-        </div>
-      </div>
-
-      <!-- Información contextual -->
-      <div class="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div class="flex items-start gap-3">
-          <div
-            class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center shrink-0"
-          >
-            <span class="text-white text-sm font-bold">ℹ️</span>
-          </div>
-          <div class="flex-1">
-            <h3 class="font-semibold text-blue-900 mb-2">
-              ¿Cuántas unidades tienes físicamente?
-            </h3>
-            <p class="text-sm text-blue-700 leading-relaxed">
-              Ingresa la cantidad exacta que tienes en tu inventario físico. El
-              sistema comparará con el stock digital y te mostrará si hay
-              diferencias.
-            </p>
-            <div class="mt-3 pt-3 border-t border-blue-300">
-              <div class="text-sm">
-                <span class="font-semibold text-blue-900"
-                  >Stock digital actual:</span
-                >
-                <span class="ml-2 font-bold text-blue-600">
-                  {{ digitalStockValue }}
-                  {{ flow.countData.productData?.unit || "uni" }}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -118,29 +80,29 @@
           </div>
         </div>
 
-        <div class="rounded-xl p-4 border-2 bg-indigo-50 border-indigo-200">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div
-            class="flex items-center justify-between text-sm text-indigo-800"
+            class="flex items-center justify-between text-sm text-gray-600"
           >
             <span>Total digital</span>
-            <span class="font-semibold"
+            <span class="font-semibold text-gray-800"
               >{{ formatNumber(digitalStockValue) }}
               {{ flow.countData.productData?.unit || "uni" }}</span
             >
           </div>
           <div
-            class="flex items-center justify-between text-sm text-indigo-800 mt-1"
+            class="flex items-center justify-between text-sm text-gray-600 mt-2"
           >
             <span>Total físico</span>
-            <span class="font-semibold"
+            <span class="font-semibold text-gray-800"
               >{{ formatNumber(flow.countData.physicalStock) }}
               {{ flow.countData.productData?.unit || "uni" }}</span
             >
           </div>
           <div
-            class="flex items-center justify-between mt-2 pt-2 border-t border-indigo-200"
+            class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100"
           >
-            <span class="text-sm font-semibold text-indigo-900"
+            <span class="text-sm font-semibold text-gray-800"
               >Diferencia</span
             >
             <span
@@ -148,6 +110,9 @@
               :class="difference >= 0 ? 'text-green-600' : 'text-red-600'"
             >
               {{ difference >= 0 ? "+" : "" }}{{ formatNumber(difference) }}
+              <span class="text-xs font-normal text-gray-500 ml-0.5">
+                {{ flow.countData.productData?.unit || "uni" }}
+              </span>
             </span>
           </div>
         </div>
@@ -171,18 +136,14 @@
             step="0.01"
             :disabled="isDisabled"
             :class="inputClasses"
-            class="w-full text-4xl font-bold py-4 px-6 rounded-xl transition-all duration-200 tabular-nums focus:outline-none"
+            class="w-full text-2xl font-bold py-3 px-5 rounded-xl border-2 transition-all duration-200 tabular-nums focus:outline-none"
             placeholder="0.00"
             @input="handleInputChange"
             @focus="handleFocus"
           />
 
           <div
-            class="absolute right-6 top-1/2 transform -translate-y-1/2 text-2xl font-semibold"
-            :class="{
-              'text-gray-400': isDisabled,
-              'text-gray-600': !isDisabled,
-            }"
+            class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400"
           >
             {{ flow.countData.productData?.unit || "uni" }}
           </div>
@@ -214,22 +175,17 @@
           <div v-if="hasUserInput" class="mt-4">
             <div
               v-if="hasDiscrepancy"
-              :class="[
-                'rounded-xl p-4 border-2',
-                difference > 0
-                  ? 'bg-green-50 border-green-300'
-                  : 'bg-red-50 border-red-300',
-              ]"
+              class="bg-white rounded-xl shadow-sm border border-gray-100 p-5"
             >
               <div class="flex items-start gap-3">
                 <div
                   :class="[
                     'w-10 h-10 rounded-full flex items-center justify-center shrink-0',
-                    difference > 0 ? 'bg-green-500' : 'bg-red-500',
+                    difference > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600',
                   ]"
                 >
                   <svg
-                    class="w-5 h-5 text-white"
+                    class="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -251,93 +207,58 @@
                   </svg>
                 </div>
                 <div class="flex-1">
-                  <h3
-                    :class="[
-                      'font-bold text-lg mb-1',
-                      difference > 0 ? 'text-green-900' : 'text-red-900',
-                    ]"
-                  >
+                  <h3 class="text-base font-semibold text-gray-800">
                     {{
                       difference > 0
-                        ? "⬆️ Excedente detectado"
-                        : "⬇️ Faltante detectado"
+                        ? "Excedente detectado"
+                        : "Faltante detectado"
                     }}
                   </h3>
-                  <p
-                    :class="[
-                      'text-sm mb-3',
-                      difference > 0 ? 'text-green-700' : 'text-red-700',
-                    ]"
-                  >
+                  <p class="text-xs text-gray-500 mb-4">
                     {{
                       difference > 0
-                        ? "Tienes más stock del registrado"
-                        : "Tienes menos stock del registrado"
+                        ? "El stock físico es mayor al registrado digitalmente"
+                        : "El stock físico es menor al registrado digitalmente"
                     }}
                   </p>
 
                   <div class="grid grid-cols-2 gap-3">
-                    <div
-                      class="bg-white rounded-lg p-3 border"
-                      :class="
-                        difference > 0 ? 'border-green-200' : 'border-red-200'
-                      "
-                    >
+                    <div class="bg-white rounded-xl p-3 border border-gray-100 shadow-sm">
                       <div class="text-xs text-gray-500 mb-1">
                         Stock Digital
                       </div>
-                      <div class="text-xl font-bold text-gray-800">
+                      <div class="text-base font-bold text-gray-800">
                         {{ formatNumber(digitalStockValue) }}
-                        <span class="text-sm font-normal text-gray-500">
+                        <span class="text-xs font-normal text-gray-500 ml-0.5">
                           {{ flow.countData.productData?.unit || "uni" }}
                         </span>
                       </div>
                     </div>
-                    <div
-                      class="bg-white rounded-lg p-3 border"
-                      :class="
-                        difference > 0 ? 'border-green-200' : 'border-red-200'
-                      "
-                    >
+                    <div class="bg-white rounded-xl p-3 border border-gray-100 shadow-sm">
                       <div class="text-xs text-gray-500 mb-1">Stock Físico</div>
                       <div
-                        class="text-xl font-bold"
-                        :class="
-                          difference > 0 ? 'text-green-600' : 'text-red-600'
-                        "
+                        class="text-base font-bold"
+                        :class="difference > 0 ? 'text-green-600' : 'text-red-600'"
                       >
                         {{ formatNumber(physicalStock) }}
-                        <span class="text-sm font-normal text-gray-500">
+                        <span class="text-xs font-normal text-gray-500 ml-0.5">
                           {{ flow.countData.productData?.unit || "uni" }}
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <div
-                    class="mt-3 pt-3 border-t"
-                    :class="
-                      difference > 0 ? 'border-green-200' : 'border-red-200'
-                    "
-                  >
+                  <div class="mt-4 pt-3 border-t border-gray-100">
                     <div class="flex items-center justify-between">
-                      <span
-                        class="text-sm font-medium"
-                        :class="
-                          difference > 0 ? 'text-green-800' : 'text-red-800'
-                        "
-                      >
+                      <span class="text-xs font-medium text-gray-500">
                         Diferencia:
                       </span>
                       <span
-                        class="text-2xl font-bold"
-                        :class="
-                          difference > 0 ? 'text-green-600' : 'text-red-600'
-                        "
+                        class="text-lg font-bold"
+                        :class="difference > 0 ? 'text-green-600' : 'text-red-600'"
                       >
-                        {{ difference > 0 ? "+" : ""
-                        }}{{ formatNumber(difference) }}
-                        <span class="text-base font-normal">
+                        {{ difference > 0 ? "+" : "" }}{{ formatNumber(difference) }}
+                        <span class="text-xs font-normal text-gray-500 ml-0.5">
                           {{ flow.countData.productData?.unit || "uni" }}
                         </span>
                       </span>
@@ -350,14 +271,14 @@
             <!-- Sin diferencia - Todo cuadra -->
             <div
               v-else
-              class="rounded-xl p-4 border-2 bg-emerald-50 border-emerald-300"
+              class="bg-white rounded-xl shadow-sm border border-gray-100 p-5"
             >
               <div class="flex items-start gap-3">
                 <div
-                  class="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center shrink-0"
+                  class="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0"
                 >
                   <svg
-                    class="w-6 h-6 text-white"
+                    class="w-5 h-5"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -371,18 +292,19 @@
                   </svg>
                 </div>
                 <div class="flex-1">
-                  <h3 class="font-bold text-lg text-emerald-900 mb-1">
-                    ✅ Inventario cuadrado
+                  <h3 class="text-base font-semibold text-gray-800">
+                    Inventario cuadrado
                   </h3>
-                  <p class="text-sm text-emerald-700">
-                    El stock físico coincide con el stock digital. No hay
-                    discrepancias.
+                  <p class="text-xs text-gray-500 mb-4">
+                    El stock físico coincide exactamente con el stock digital.
                   </p>
-                  <div class="mt-3 flex items-center gap-2 text-emerald-800">
-                    <span class="text-sm font-medium">Stock verificado:</span>
-                    <span class="text-xl font-bold">
+                  <div class="mt-3 flex items-center gap-2">
+                    <span class="text-xs font-medium text-gray-500">Stock verificado:</span>
+                    <span class="text-base font-bold text-emerald-600">
                       {{ formatNumber(physicalStock) }}
-                      {{ flow.countData.productData?.unit || "uni" }}
+                      <span class="text-xs font-normal text-gray-500 ml-0.5">
+                        {{ flow.countData.productData?.unit || "uni" }}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -474,18 +396,18 @@ const isDisabled = computed(() => false);
 // Clases dinámicas para el input
 const inputClasses = computed(() => {
   if (isDisabled.value) {
-    return "border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed";
+    return "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed";
   }
   if (!hasUserInput.value) {
-    return "border-blue-500 bg-blue-50 text-blue-700 ring-2 ring-blue-200";
+    return "border-gray-200 bg-white text-gray-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
   }
   if (!hasDiscrepancy.value) {
-    return "border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-200";
+    return "border-emerald-300 bg-emerald-50/20 text-emerald-700 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100";
   }
   if (difference.value > 0) {
-    return "border-green-500 bg-green-50 text-green-700 ring-2 ring-green-200";
+    return "border-green-300 bg-green-50/20 text-green-700 focus:border-green-500 focus:ring-4 focus:ring-green-100";
   }
-  return "border-red-500 bg-red-50 text-red-700 ring-2 ring-red-200";
+  return "border-red-300 bg-red-50/20 text-red-700 focus:border-red-500 focus:ring-4 focus:ring-red-100";
 });
 
 // Manejadores
@@ -679,10 +601,4 @@ input:focus-visible {
   animation: spin 1s linear infinite;
 }
 
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  input[type="number"] {
-    font-size: 1.875rem; /* 30px */
-  }
-}
 </style>

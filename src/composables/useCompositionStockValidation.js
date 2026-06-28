@@ -201,14 +201,38 @@ export function useCompositionStockValidation() {
 
     // Nivel 1: Validar stock del producto final (si tiene trackStock)
     let hasProductStockIssue = false;
+    let quantityToProduce = requestedQuantity;
+
     if (product.trackStock) {
       const productStock = product.stock ?? 0;
       hasProductStockIssue = requestedQuantity > productStock;
+      
+      // Si tiene control de stock, solo necesitamos producir la diferencia (si es que falta stock)
+      if (hasProductStockIssue) {
+        quantityToProduce = requestedQuantity - productStock;
+      } else {
+        quantityToProduce = 0;
+      }
     }
 
     // Nivel 2: Validar stock de materiales en composición
-    const compositionValidation = await validateCompositionStock(product.uuid || product.productId, requestedQuantity);
-    const hasCompositionStockIssue = compositionValidation.hasComposition && !compositionValidation.valid;
+    let compositionValidation = null;
+    let hasCompositionStockIssue = false;
+
+    if (quantityToProduce > 0) {
+      compositionValidation = await validateCompositionStock(product.uuid || product.productId, quantityToProduce);
+      hasCompositionStockIssue = compositionValidation.hasComposition && !compositionValidation.valid;
+    } else {
+      // Si no es necesario producir nada (o la cantidad a producir es 0), no hay problemas de stock de composición
+      const hasComposition = product.composition && Array.isArray(product.composition) && product.composition.length > 0;
+      compositionValidation = {
+        valid: true,
+        hasComposition,
+        insufficientMaterials: [],
+        warnings: [],
+      };
+      hasCompositionStockIssue = false;
+    }
 
     return {
       hasProductStockIssue,

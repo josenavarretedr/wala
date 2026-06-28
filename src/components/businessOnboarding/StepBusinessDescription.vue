@@ -19,6 +19,7 @@
       <textarea
         v-model="localDescripcion"
         @input="handleInput"
+        @keydown.enter.exact.prevent="handleEnter"
         rows="5"
         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-base resize-none"
         placeholder="Describe brevemente tu negocio: qué vendes, qué servicios ofreces, quiénes son tus clientes, qué te hace especial..."
@@ -130,6 +131,16 @@ const localDescripcion = ref(flowStore.businessOnboardingData.descripcion);
 // Sincronizar con el store
 const handleInput = () => {
   flowStore.updateField("descripcion", localDescripcion.value);
+};
+
+// Avanzar al siguiente paso / enviar con Enter
+const handleEnter = () => {
+  if (flowStore.canGoNext) {
+    const btn = document.getElementById("submit-business-btn");
+    if (btn) {
+      btn.click();
+    }
+  }
 };
 
 // Mantener sincronizado con el store si cambia externamente

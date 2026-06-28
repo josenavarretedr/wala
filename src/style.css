@@ -53,3 +53,14 @@
 .delay-300 {
   transition-delay: 300ms;
 }
+
+/* Transformación de todos los inputs de tipo texto a mayúsculas */
+input[type="text"], input:not([type]) {
+  text-transform: uppercase;
+}
+
+/* Mantener el placeholder con el formato original (opcional, para mejor UX) */
+input[type="text"]::placeholder, input:not([type])::placeholder {
+  text-transform: none;
+}
+

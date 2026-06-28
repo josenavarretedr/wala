@@ -456,7 +456,7 @@
         </button>
       </div>
 
-      <div v-if="!canUseVariants" class="p-3 bg-gray-50 rounded-lg">
+      <div v-if="!canUseVariants" class="p-3 bg-white/40 backdrop-blur-md border border-white/20 rounded-lg">
         <p class="text-xs text-gray-600">
           Las variantes solo están disponibles para Mercadería y Producto
           Elaborado.
@@ -563,7 +563,7 @@
               </div>
               <button
                 type="button"
-                class="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                class="px-3 py-2 text-xs rounded-lg border border-gray-200 text-gray-700 hover:bg-white/40 hover:backdrop-blur-md"
                 @click="addOption(attributeIndex)"
               >
                 + Agregar opción
@@ -599,7 +599,7 @@
             <div
               v-for="combo in localFormData.variantCombos"
               :key="combo.id"
-              class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-gray-50 rounded-lg"
+              class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center p-2 bg-white/40 backdrop-blur-md border border-white/20 rounded-lg"
             >
               <div class="sm:col-span-2">
                 <p class="text-sm font-medium text-gray-800">
@@ -680,7 +680,7 @@
           Esta fecha se mostrará en la ficha del producto como alerta.
         </p>
       </div>
-      <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
+      <div v-else class="mt-3 p-3 bg-white/40 backdrop-blur-md border border-white/20 rounded-lg">
         <p class="text-xs text-gray-600">
           Este producto no requiere fecha de vencimiento.
         </p>
@@ -763,7 +763,7 @@
           ✓ El stock de este producto será monitoreado automáticamente
         </p>
       </div>
-      <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
+      <div v-else class="mt-3 p-3 bg-white/40 backdrop-blur-md border border-white/20 rounded-lg">
         <p class="text-xs text-gray-600">
           ✗ Este
           {{ localFormData.type === "SERVICE" ? "servicio" : "producto" }} no
@@ -827,7 +827,7 @@
           ✓ Podrás configurar envases para este producto en la sección de Costos y Materiales
         </p>
       </div>
-      <div v-else class="mt-3 p-3 bg-gray-50 rounded-lg">
+      <div v-else class="mt-3 p-3 bg-white/40 backdrop-blur-md border border-white/20 rounded-lg">
         <p class="text-xs text-gray-600">
           Este producto no tiene configuración de delivery
         </p>

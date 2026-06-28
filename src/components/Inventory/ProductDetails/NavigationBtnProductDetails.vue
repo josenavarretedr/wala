@@ -50,7 +50,7 @@
         ]"
       >
         <Minus class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-        <span class="font-semibold tracking-wide">EGRESO</span>
+        <span class="font-semibold tracking-wide">SALIDA</span>
       </button>
     </div>
   </div>
@@ -110,7 +110,7 @@ const handleIngresoAction = () => {
   // Validar que exista apertura
   if (!opening.value) {
     warning(
-      "Debes aperturar antes de registrar transacciones en el inventario"
+      "Debes aperturar antes de registrar transacciones en el inventario",
     );
     return;
   }
@@ -135,7 +135,7 @@ const handleEgresoAction = () => {
   // Validar que exista apertura
   if (!opening.value) {
     warning(
-      "Debes aperturar antes de registrar transacciones en el inventario"
+      "Debes aperturar antes de registrar transacciones en el inventario",
     );
     return;
   }
@@ -176,7 +176,9 @@ button::before {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
+  transition:
+    width 0.6s,
+    height 0.6s;
 }
 
 button:active::before {

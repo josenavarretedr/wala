@@ -577,7 +577,7 @@
       </div>
 
       <!-- Factor de Rendimiento (Solo para RAW_MATERIAL si capabilities.enableWasteManagement) -->
-      <div v-if="localFormData.type === 'RAW_MATERIAL' && capabilities.enableWasteManagement" class="bg-amber-50 rounded-lg p-4 border border-amber-100">
+      <!-- <div v-if="localFormData.type === 'RAW_MATERIAL' && capabilities.enableWasteManagement" class="bg-amber-50 rounded-lg p-4 border border-amber-100">
         <div class="flex items-start gap-3">
           <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 mt-1">
             <span class="text-amber-600 text-lg">🔄</span>
@@ -601,7 +601,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Margen de Ganancia (Solo si tiene precio y costo) -->
       <div

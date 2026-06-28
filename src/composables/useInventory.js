@@ -345,7 +345,7 @@ export function useInventory() {
 
       const stockLog = {
         uuid: uuidv4(),
-        quantity: item.quantity,
+        quantity: roundStock(Number(item.quantity || 0)),
         type: typeStockLog,
         variantId: item.variantId || null,
       };
