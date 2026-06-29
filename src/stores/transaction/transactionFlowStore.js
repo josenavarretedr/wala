@@ -18,6 +18,8 @@ import StepOrderPreview from '@/components/transactionFlow/StepOrderPreview.vue'
 
 import StepTransferDetails from '@/components/transactionFlow/StepTransferDetails.vue';
 import StepTransferPreview from '@/components/transactionFlow/StepTransferPreview.vue';
+import StepPaymentMethodExpense from '@/components/transactionFlow/StepPaymentMethodExpense.vue';
+import StepAttachSupplier from '@/components/transactionFlow/StepAttachSupplier.vue';
 
 export const useTransactionFlowStore = defineStore('transactionFlow', {
   state: () => ({
@@ -94,11 +96,12 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
           { label: 'Decisión de pago', component: StepPaymentDecision }
         );
       } else if (transactionType === 'expense') {
-        // MANTENER FLUJO EXISTENTE PARA EGRESOS
+        // NUEVO FLUJO PARA EGRESOS CON PROVEEDORES Y CUENTAS POR PAGAR
         this.steps.push(
-          { label: 'Cuenta', component: StepCashOrBank },
           { label: 'Tipo Egreso', component: StepExpenseType },
           { label: 'Detalles egreso', component: StepAddExpenseDetails },
+          { label: 'Método de pago', component: StepPaymentMethodExpense },
+          { label: 'Adjuntar proveedor', component: StepAttachSupplier },
           { label: 'Preview egreso', component: StepAddExpensePreview }
         );
       } else if (transactionType === 'transfer') {

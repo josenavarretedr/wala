@@ -2,7 +2,8 @@ import { defineStore } from 'pinia';
 
 // Importa los componentes de los pasos
 import StepAddStockQuantity from '@/components/Inventory/StockLogs/StepAddStockQuantity.vue';
-import StepCashOrBank from '@/components/transactionFlow/StepCashOrBank.vue';
+import StepPaymentMethodExpense from '@/components/transactionFlow/StepPaymentMethodExpense.vue';
+import StepAttachSupplier from '@/components/transactionFlow/StepAttachSupplier.vue';
 import StepAddStockPreview from '@/components/Inventory/StockLogs/StepAddStockPreview.vue';
 
 export const useAddStockFlowStore = defineStore('addStockFlow', {
@@ -10,7 +11,8 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
     currentStep: 0,
     steps: [
       { label: 'Cantidad y Precio', component: StepAddStockQuantity },
-      { label: 'Método de pago', component: StepCashOrBank },
+      { label: 'Método de pago', component: StepPaymentMethodExpense },
+      { label: 'Adjuntar proveedor', component: StepAttachSupplier },
       { label: 'Preview', component: StepAddStockPreview },
     ],
     addStockLoading: false,
@@ -23,6 +25,13 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
       cost: 0, // Costo de compra
       priceConfirmed: false, // Si el costo fue confirmado
       account: null, // 'cash' o 'bank'
+      paymentType: 'complete', // 'complete' o 'partial'
+      paidAmount: 0,
+      balance: 0,
+      isPartial: false,
+      supplierId: null,
+      supplierName: null,
+      supplierPhone: null,
     }
   }),
   getters: {
@@ -76,6 +85,13 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
         cost: 0,
         priceConfirmed: false,
         account: null,
+        paymentType: 'complete',
+        paidAmount: 0,
+        balance: 0,
+        isPartial: false,
+        supplierId: null,
+        supplierName: null,
+        supplierPhone: null,
       };
     },
     // Actualizar datos del flujo
@@ -114,6 +130,8 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
             this.addStockData.priceConfirmed;
         case 'Método de pago':
           return this.addStockData.account !== null;
+        case 'Adjuntar proveedor':
+          return this.addStockData.supplierId !== null && this.addStockData.supplierId !== undefined;
         case 'Preview':
           return true;
         default:

@@ -14,20 +14,134 @@
     <div
       class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
     >
-      <!-- Total destacado -->
+      <!-- Total destacado con estado de pago -->
       <div
         v-if="hasValidData"
-        class="bg-gradient-to-r from-red-500 to-red-600 text-white p-6 text-center"
+        :class="[
+          'text-white p-6 text-center',
+          getPaymentStatus() === 'completed'
+            ? 'bg-gradient-to-r from-red-500 to-red-600'
+            : 'bg-gradient-to-r from-orange-500 to-orange-600',
+        ]"
       >
         <div class="text-3xl font-bold mb-1">
           S/ {{ getTotalAmount().toFixed(2) }}
         </div>
-        <div class="text-red-100 text-sm">Total del gasto</div>
+        <div
+          :class="[
+            'text-sm',
+            getPaymentStatus() === 'completed'
+              ? 'text-red-100'
+              : 'text-orange-100',
+          ]"
+        >
+          Total de la compra / gasto
+        </div>
+        <!-- Badge de estado de pago -->
+        <div v-if="getPaymentStatus() !== 'completed'" class="mt-3">
+          <span
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-sm"
+          >
+            <svg
+              class="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            Pago Parcial / Crédito
+          </span>
+        </div>
       </div>
 
-      <!-- Información de tipo y cuenta -->
+      <!-- Información de pago parcial o historial -->
+      <div
+        v-if="
+          hasValidData &&
+          props.transactionData.payments &&
+          props.transactionData.payments.length > 0
+        "
+        :class="[
+          'border-b p-4',
+          getPaymentStatus() !== 'completed'
+            ? 'bg-orange-50 border-orange-100'
+            : 'bg-gray-50 border-gray-100',
+        ]"
+      >
+        <!-- Resumen de pagos (solo si no está completado) -->
+        <div
+          v-if="getPaymentStatus() !== 'completed'"
+          class="space-y-2 text-sm mb-4 pb-4 border-b border-orange-200"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Abono inicial:</span>
+            <span class="font-semibold text-orange-600">
+              S/ {{ getInitialPayment().toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-600">Saldo pendiente:</span>
+            <span class="font-semibold text-red-600">
+              S/ {{ getBalance().toFixed(2) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Resumen de pagos -->
+        <div>
+          <h4 class="text-xs font-semibold text-gray-700 mb-2">
+            {{
+              getPaymentStatus() === "completed"
+                ? "Resumen de pagos"
+                : "Pagos registrados"
+            }}
+          </h4>
+          <div class="space-y-2">
+            <div
+              v-for="(payment, index) in props.transactionData.payments"
+              :key="index"
+              class="flex justify-between items-center text-xs bg-white rounded-lg p-2 border border-gray-100"
+            >
+              <div class="flex items-center gap-2">
+                <span class="text-gray-500"
+                  >Pago {{ index + 1 }}
+                  {{ index === 0 ? "(Inicial)" : "" }}</span
+                >
+                <span
+                  :class="[
+                    'px-2 py-0.5 rounded text-[10px] font-semibold',
+                    payment.account === 'cash'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-purple-100 text-purple-700',
+                  ]"
+                >
+                  {{ payment.account === "cash" ? "Efectivo" : "Digital" }}
+                </span>
+              </div>
+              <span class="font-semibold text-gray-800">
+                S/ {{ payment.amount.toFixed(2) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Información de tipo, cuenta y proveedor -->
       <div v-if="hasValidData" class="p-4 border-b border-gray-100">
-        <div class="grid grid-cols-2 gap-3">
+        <div
+          :class="[
+            'grid gap-3',
+            props.transactionData.supplierId
+              ? 'grid-cols-3'
+              : 'grid-cols-2',
+          ]"
+        >
           <div class="bg-red-50 rounded-xl p-4 text-center">
             <div
               class="w-8 h-8 bg-red-500 rounded-full mx-auto mb-2 flex items-center justify-center"
@@ -47,6 +161,33 @@
             </div>
             <div class="text-sm font-medium text-green-700">
               {{ getAccountLabel }}
+            </div>
+          </div>
+
+          <!-- Proveedor -->
+          <div
+            v-if="props.transactionData.supplierId"
+            class="bg-purple-50 rounded-xl p-4 text-center"
+          >
+            <div
+              class="w-8 h-8 bg-purple-500 rounded-full mx-auto mb-2 flex items-center justify-center"
+            >
+              <svg
+                class="w-4 h-4 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"
+                />
+              </svg>
+            </div>
+            <div class="text-sm font-medium text-purple-700 truncate px-1" :title="props.transactionData.supplierName">
+              {{ props.transactionData.supplierName }}
             </div>
           </div>
         </div>
@@ -456,6 +597,22 @@ const getTotalAmount = () => {
 
   // Para labor/overhead: usar el amount directo
   return props.transactionData.amount || 0;
+};
+
+const getPaymentStatus = () => {
+  return props.transactionData.paymentStatus || "completed";
+};
+
+const getInitialPayment = () => {
+  const payments = props.transactionData.payments;
+  if (payments && payments.length > 0) {
+    return payments[0].amount || 0;
+  }
+  return 0;
+};
+
+const getBalance = () => {
+  return props.transactionData.balance || 0;
 };
 
 // ========================================

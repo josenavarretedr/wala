@@ -77,6 +77,20 @@ export const MODULE_DEFINITIONS = [
     icon: 'ClipboardCheck',
     description: 'Gestión de pedidos y seguimiento de órdenes.',
     route: 'Orders'
+  },
+  {
+    key: 'suppliers',
+    label: 'Proveedores',
+    icon: 'User',
+    description: 'Directorio de proveedores e historial de compras.',
+    route: 'SuppliersDashboard'
+  },
+  {
+    key: 'accountsPayable',
+    label: 'Cuentas por Pagar',
+    icon: 'Hourglass',
+    description: 'Seguimiento de compras al crédito y egresos pendientes.',
+    route: 'AccountsPayable'
   }
 ];
 

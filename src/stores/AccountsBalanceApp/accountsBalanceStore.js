@@ -1,4 +1,4 @@
-﻿// accountsBalanceStore.js
+// accountsBalanceStore.js
 
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
@@ -188,8 +188,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       return tx.amount || 0;
     }
 
-    // Si es un ingreso con sistema de pagos
-    if (tx.type === 'income' && tx.payments && tx.payments.length > 0) {
+    // Si es un ingreso o egreso con sistema de pagos
+    if ((tx.type === 'income' || tx.type === 'expense') && tx.payments && tx.payments.length > 0) {
       // Siempre usar el primer pago (pago inicial)
       return tx.payments[0].amount || 0;
     }
@@ -278,7 +278,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactions(
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
     );
   });
@@ -294,7 +294,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactions(
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&
@@ -314,7 +314,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactions(
+    return sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&

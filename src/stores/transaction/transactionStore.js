@@ -772,6 +772,45 @@ export function useTransactionStore() {
           });
         }
 
+        // === PROCESAMIENTO DE PAGOS PARA EGRESOS ===
+        if (transactionSnapshot.type === 'expense') {
+          const totalAmount = transactionSnapshot.amount || 0;
+
+          // Si payments está vacío, crear payment inicial con el monto total
+          if (!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) {
+            // Pago completo: crear payment con el monto total
+            transactionSnapshot.payments = [{
+              uuid: crypto.randomUUID(),
+              amount: totalAmount,
+              date: Timestamp.now(),
+              account: transactionSnapshot.account || 'cash',
+              notes: 'Pago completo al registrar',
+              registeredBy: transactionSnapshot.userId || 'unknown'
+            }];
+          }
+
+          // Calcular y agregar campos calculados de pago
+          const calculatedFields = calculatePaymentStatus({
+            ...transactionSnapshot,
+            total: totalAmount,
+            amount: totalAmount
+          });
+
+          transactionSnapshot.paymentStatus = calculatedFields.paymentStatus;
+          transactionSnapshot.totalPaid = calculatedFields.totalPaid;
+          transactionSnapshot.balance = calculatedFields.balance;
+
+          console.log('💰 Información de pago de egreso procesada:', {
+            totalAmount,
+            payments: transactionSnapshot.payments.length,
+            totalPaid: transactionSnapshot.totalPaid,
+            balance: transactionSnapshot.balance,
+            paymentStatus: transactionSnapshot.paymentStatus,
+            supplierId: transactionSnapshot.supplierId,
+            supplierName: transactionSnapshot.supplierName
+          });
+        }
+
         // === TRAZABILIDAD: Log de creación de transacción (fire-and-forget) ===
         logTransactionOperation(
           'create',
@@ -1334,6 +1373,62 @@ export function useTransactionStore() {
           severity: 'medium',
           tags: ['data_error', 'fetch_failure', 'accounts_receivable'],
           component: 'TransactionStore.fetchPendingTransactions'
+        }
+      );
+
+      throw error;
+    }
+  };
+
+  /**
+   * Obtiene todas las transacciones de egreso con balance pendiente (para Cuentas por Pagar)
+   * Filtra transacciones de tipo 'expense' con balance > 0
+   */
+  const fetchPendingPayables = async () => {
+    try {
+      console.log('🔄 Cargando egresos con balance pendiente (Cuentas por Pagar)...');
+
+      // === TRAZABILIDAD: Log de acceso a datos ===
+      await logTransactionOperation(
+        'read',
+        'pending_payables',
+        { action: 'fetch_pending_payables' },
+        {
+          reason: 'data_access_pending_payables',
+          severity: 'low',
+          tags: ['data_read', 'accounts_payable', 'pending_balance'],
+          component: 'TransactionStore.fetchPendingPayables'
+        }
+      );
+
+      // Cargar todas las transacciones
+      const allTransactions = await getAllTransactions();
+
+      // Filtrar solo las de tipo 'expense' que tienen balance pendiente
+      const pendingPayables = allTransactions.filter(t =>
+        t.type === 'expense' &&
+        t.balance &&
+        t.balance > 0
+      );
+
+      transactionsInStore.value = pendingPayables;
+
+      console.log(`✅ ${pendingPayables.length} egresos con balance pendiente cargados`);
+      return pendingPayables;
+
+    } catch (error) {
+      console.error('❌ Error cargando egresos pendientes:', error);
+
+      // === TRAZABILIDAD: Log de error ===
+      await logTransactionOperation(
+        'error',
+        'pending_payables',
+        { error: error.message },
+        {
+          reason: 'fetch_pending_payables_failed',
+          severity: 'medium',
+          tags: ['data_error', 'fetch_failure', 'accounts_payable'],
+          component: 'TransactionStore.fetchPendingPayables'
         }
       );
 
@@ -2967,8 +3062,8 @@ export function useTransactionStore() {
         throw new Error('Transacción original no encontrada');
       }
 
-      if (originalTransaction.type !== 'income') {
-        throw new Error('Solo se pueden registrar pagos para ingresos');
+      if (originalTransaction.type !== 'income' && originalTransaction.type !== 'expense') {
+        throw new Error('Solo se pueden registrar pagos para ingresos o egresos');
       }
 
       console.log('📊 [PAYMENT] Transacción original encontrada:', {
@@ -3015,9 +3110,14 @@ export function useTransactionStore() {
         relatedTransactionId: originalTransaction.uuid,
         relatedTransactionTotal: originalTransaction.total || originalTransaction.amount || 0,
 
-        // Cliente
-        clientId: originalTransaction.clientId || ANONYMOUS_CLIENT_ID,
-        clientName: originalTransaction.clientName || 'Cliente Anónimo',
+        // Cliente o Proveedor según tipo de transacción
+        ...(originalTransaction.type === 'income' ? {
+          clientId: originalTransaction.clientId || ANONYMOUS_CLIENT_ID,
+          clientName: originalTransaction.clientName || 'Cliente Anónimo',
+        } : {
+          supplierId: originalTransaction.supplierId || null,
+          supplierName: originalTransaction.supplierName || null,
+        }),
 
         // Cálculos
         previousBalance,
@@ -3046,7 +3146,7 @@ export function useTransactionStore() {
         total: originalTransaction.total || originalTransaction.amount || 0
       });
 
-      console.log('🔄 [PAYMENT] Actualizando venta original:', {
+      console.log('🔄 [PAYMENT] Actualizando venta/compra original:', {
         uuid: originalTransaction.uuid,
         newPaymentsCount: updatedPayments.length,
         newStatus: updatedStatus.paymentStatus,
@@ -3077,7 +3177,7 @@ export function useTransactionStore() {
         updatedAt: Timestamp.now()
       });
 
-      console.log('📝 [PAYMENT] Actualizando venta original en batch:', {
+      console.log('📝 [PAYMENT] Actualizando venta/compra original en batch:', {
         path: `businesses/${businessId}/transactions/${originalTransaction.uuid}`,
         paymentsCount: updatedPayments.length,
         paymentStatus: updatedStatus.paymentStatus
@@ -3086,11 +3186,16 @@ export function useTransactionStore() {
       await batch.commit();
       console.log('✅ [PAYMENT] Batch commit exitoso');
 
-      // 8. Actualizar metadata del cliente si existe
-      if (originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
+      // 8. Actualizar metadata del cliente o proveedor si existe
+      if (originalTransaction.type === 'income' && originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
         const clientStore = useClientStore();
         await clientStore.updateClientMetadata(originalTransaction.clientId);
         console.log('✅ [PAYMENT] Metadata del cliente actualizada');
+      } else if (originalTransaction.type === 'expense' && originalTransaction.supplierId) {
+        const { useSupplierStore } = await import('@/stores/supplierStore');
+        const supplierStore = useSupplierStore();
+        await supplierStore.updateSupplierMetadata(originalTransaction.supplierId);
+        console.log('✅ [PAYMENT] Metadata del proveedor actualizada');
       }
 
       // 9. Actualizar state local
@@ -3486,6 +3591,7 @@ export function useTransactionStore() {
     setClientInfo,
     setPaymentInfo,
     createPaymentTransaction,
-    deletePaymentFromIncomeTransaction
+    deletePaymentFromIncomeTransaction,
+    fetchPendingPayables
   };
 }

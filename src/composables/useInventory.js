@@ -376,6 +376,14 @@ export function useInventory() {
         stockLog.transactionId = item.transactionId;
       }
 
+      // Agregar proveedor si existe
+      if (item.supplierId) {
+        stockLog.supplierId = item.supplierId;
+      }
+      if (item.supplierName) {
+        stockLog.supplierName = item.supplierName;
+      }
+
       // Para conteos de inventario, agregar campos adicionales
       if (typeStockLog === 'count') {
         if (item.physicalStock !== undefined && item.physicalStock !== null) {

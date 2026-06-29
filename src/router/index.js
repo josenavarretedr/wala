@@ -470,6 +470,26 @@ const routes = [
         meta: { title: 'Detalle del Cliente', moduleKey: 'clients' }
       },
 
+      // ✅ NUEVO: Rutas de Proveedores y Cuentas por Pagar
+      {
+        path: 'suppliers',
+        name: 'SuppliersDashboard',
+        component: () => import('@/views/Suppliers/SuppliersDashboard.vue'),
+        meta: { title: 'Proveedores', moduleKey: 'suppliers' }
+      },
+      {
+        path: 'suppliers/:supplierId',
+        name: 'SupplierDetails',
+        component: () => import('@/views/Suppliers/SupplierDetails.vue'),
+        meta: { title: 'Detalle del Proveedor', moduleKey: 'suppliers' }
+      },
+      {
+        path: 'accounts-payable',
+        name: 'AccountsPayable',
+        component: () => import('@/views/AccountsPayable.vue'),
+        meta: { requiresAuth: true, moduleKey: 'accountsPayable', title: 'Cuentas por Pagar' }
+      },
+
       // ✅ NUEVO: Gestión de Empleados
       {
         path: 'employees',

@@ -279,6 +279,8 @@ import { useRoute } from "vue-router";
 import { BrightCrown } from "@iconoir/vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
+
 const route = useRoute();
 const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
 const { isPremium } = useSubscription();
@@ -288,27 +290,136 @@ const showResume = ref(false);
 const resumenDayRef = ref(null);
 
 const accountsBalanceStore = useAccountsBalanceStore();
+const transactionStore = useTransactionStore();
 
 // ===== 🚀 MIGRACIÓN A DAILYSUMMARY =====
 // Ahora el store carga datos desde dailySummary automáticamente
 // Los computed properties del store ya están configurados para usar
 // dailySummary cuando esté disponible (modo híbrido)
 
+const getEffectiveAmount = (tx) => {
+  if (tx.type === 'payment') {
+    return tx.amount || 0;
+  }
+  if ((tx.type === 'income' || tx.type === 'expense') && tx.payments && tx.payments.length > 0) {
+    return tx.payments[0].amount || 0;
+  }
+  return tx.amount || 0;
+};
+
 // Usar los cálculos del store (ahora híbrido con dailySummary)
 const opening = computed(() => accountsBalanceStore.openingTransaction);
 const saldoInicial = computed(() => accountsBalanceStore.saldoInicial);
-const totalIngresos = computed(() => accountsBalanceStore.totalIngresos);
-const totalEgresos = computed(() => accountsBalanceStore.totalEgresos);
+
+const totalIngresos = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.totalIngresos;
+  }
+  const incomes = txs
+    .filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const clientPayments = txs
+    .filter(tx => tx.type === 'payment' && (tx.clientId || tx.clientName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  return incomes + clientPayments;
+});
+
+const totalEgresos = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.totalEgresos;
+  }
+  const expenses = txs
+    .filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const supplierPayments = txs
+    .filter(tx => tx.type === 'payment' && (tx.supplierId || tx.supplierName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  return expenses + supplierPayments;
+});
+
 const totalAjustesCierre = computed(() => {
   return accountsBalanceStore.totalAjustesCierre;
 });
-const resultadoOperacional = computed(
-  () => accountsBalanceStore.resultadoOperacional,
-);
-const saldoActual = computed(() => accountsBalanceStore.saldoActual);
 
-const saldoActualCash = computed(() => accountsBalanceStore.saldoActualCash);
-const saldoActualBank = computed(() => accountsBalanceStore.saldoActualBank);
+const resultadoOperacional = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.resultadoOperacional;
+  }
+  return totalIngresos.value - totalEgresos.value;
+});
+
+const saldoActualCash = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.saldoActualCash;
+  }
+  const ingresosIn = txs
+    .filter(tx => tx.type === 'income' && tx.account === 'cash' && tx.subcategory !== 'opening_adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const cobrosIn = txs
+    .filter(tx => tx.type === 'payment' && tx.account === 'cash' && (tx.clientId || tx.clientName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const ingresos = ingresosIn + cobrosIn;
+
+  const egresosOut = txs
+    .filter(tx => tx.type === 'expense' && tx.account === 'cash' && tx.category !== 'adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const pagosOut = txs
+    .filter(tx => tx.type === 'payment' && tx.account === 'cash' && (tx.supplierId || tx.supplierName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const egresos = egresosOut + pagosOut;
+
+  const transfersOut = txs
+    .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'cash')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const transfersIn = txs
+    .filter(tx => tx.type === 'transfer' && tx.toAccount === 'cash')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const inicial = opening.value ? (opening.value.realCashBalance || 0) : accountsBalanceStore.saldoInicialCash;
+  return inicial + ingresos - egresos - transfersOut + transfersIn;
+});
+
+const saldoActualBank = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.saldoActualBank;
+  }
+  const ingresosIn = txs
+    .filter(tx => tx.type === 'income' && tx.account === 'bank' && tx.subcategory !== 'opening_adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const cobrosIn = txs
+    .filter(tx => tx.type === 'payment' && tx.account === 'bank' && (tx.clientId || tx.clientName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const ingresos = ingresosIn + cobrosIn;
+
+  const egresosOut = txs
+    .filter(tx => tx.type === 'expense' && tx.account === 'bank' && tx.category !== 'adjustment')
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const pagosOut = txs
+    .filter(tx => tx.type === 'payment' && tx.account === 'bank' && (tx.supplierId || tx.supplierName))
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const egresos = egresosOut + pagosOut;
+
+  const transfersOut = txs
+    .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'bank')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const transfersIn = txs
+    .filter(tx => tx.type === 'transfer' && tx.toAccount === 'bank')
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const inicial = opening.value ? (opening.value.realBankBalance || 0) : accountsBalanceStore.saldoInicialBank;
+  return inicial + ingresos - egresos - transfersOut + transfersIn;
+});
+
+const saldoActual = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  if (txs.length === 0) {
+    return accountsBalanceStore.saldoActual;
+  }
+  return saldoActualCash.value + saldoActualBank.value;
+});
 
 // 🔄 Watch para detectar cambios en transacciones y recargar automáticamente
 watch(

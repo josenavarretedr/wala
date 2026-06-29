@@ -216,135 +216,6 @@
       </button>
 
       <!-- Indicador de saldo disponible -->
-      <div
-        v-if="transactionStore.itemToAddInExpenseMaterial.value.description"
-        class="p-4 rounded-xl border"
-        :class="{
-          'bg-green-50 border-green-200': !wouldExceedBalance,
-          'bg-red-50 border-red-200': wouldExceedBalance,
-        }"
-      >
-        <div class="flex items-start gap-3">
-          <!-- Icono -->
-          <div
-            class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center"
-            :class="{
-              'bg-green-100': !wouldExceedBalance,
-              'bg-red-100': wouldExceedBalance,
-            }"
-          >
-            <span
-              class="text-xl"
-              :class="{
-                'text-green-600': !wouldExceedBalance,
-                'text-red-600': wouldExceedBalance,
-              }"
-            >
-              {{ wouldExceedBalance ? "⚠️" : "💰" }}
-            </span>
-          </div>
-
-          <!-- Contenido -->
-          <div class="flex-1 min-w-0">
-            <p
-              class="text-sm font-semibold mb-1"
-              :class="{
-                'text-green-800': !wouldExceedBalance,
-                'text-red-800': wouldExceedBalance,
-              }"
-            >
-              {{
-                wouldExceedBalance ? "Saldo insuficiente" : "Saldo disponible"
-              }}
-            </p>
-
-            <div class="space-y-1">
-              <!-- Saldo actual -->
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600"
-                  >Saldo en {{ selectedAccountLabel }}:</span
-                >
-                <span class="font-semibold text-gray-900">
-                  S/ {{ maxAmount.toFixed(2) }}
-                </span>
-              </div>
-
-              <!-- Total ya agregado -->
-              <div
-                v-if="getMaterialsTotal() > 0"
-                class="flex items-center justify-between text-sm"
-              >
-                <span class="text-gray-600">Total agregado:</span>
-                <span class="font-semibold text-gray-900">
-                  S/ {{ getMaterialsTotal().toFixed(2) }}
-                </span>
-              </div>
-
-              <!-- Costo del item actual -->
-              <div
-                v-if="getCurrentItemTotal() > 0"
-                class="flex items-center justify-between text-sm"
-              >
-                <span class="text-gray-600">Este material:</span>
-                <span class="font-semibold text-orange-600">
-                  S/ {{ getCurrentItemTotal().toFixed(2) }}
-                </span>
-              </div>
-
-              <!-- Divider -->
-              <div
-                v-if="getMaterialsTotal() > 0 || getCurrentItemTotal() > 0"
-                class="border-t border-gray-200 pt-1 mt-1"
-              ></div>
-
-              <!-- Total general -->
-              <div class="flex items-center justify-between text-sm">
-                <span class="font-semibold text-gray-700">Total después:</span>
-                <span
-                  class="font-bold text-base"
-                  :class="{
-                    'text-green-600': !wouldExceedBalance,
-                    'text-red-600': wouldExceedBalance,
-                  }"
-                >
-                  S/
-                  {{ (getMaterialsTotal() + getCurrentItemTotal()).toFixed(2) }}
-                </span>
-              </div>
-
-              <!-- Saldo restante -->
-              <div class="flex items-center justify-between text-sm">
-                <span class="text-gray-600">Saldo restante:</span>
-                <span
-                  class="font-semibold"
-                  :class="{
-                    'text-green-600': !wouldExceedBalance,
-                    'text-red-600': wouldExceedBalance,
-                  }"
-                >
-                  S/
-                  {{
-                    Math.max(
-                      0,
-                      maxAmount - getMaterialsTotal() - getCurrentItemTotal(),
-                    ).toFixed(2)
-                  }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Mensaje de advertencia -->
-            <p
-              v-if="wouldExceedBalance"
-              class="mt-2 text-xs text-red-700 font-medium"
-            >
-              ⚠️ No tienes saldo suficiente para esta compra. Solo puedes
-              agregar hasta S/
-              {{ Math.max(0, maxAmount - getMaterialsTotal()).toFixed(2) }}
-            </p>
-          </div>
-        </div>
-      </div>
 
       <!-- Lista de materiales agregados -->
       <div
@@ -458,9 +329,6 @@
                   S/ {{ getMaterialsTotal().toFixed(2) }}
                 </span>
               </div>
-              <p class="text-xs text-gray-600 mt-2">
-                Saldo disponible: S/ {{ maxAmount.toFixed(2) }}
-              </p>
             </div>
           </template>
 
@@ -581,7 +449,14 @@
         </div>
         <div class="flex flex-col gap-1">
           <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
-          <p v-if="maxAmount > 0" class="text-xs text-blue-600 font-medium">
+          <p
+            v-if="
+              transactionStore.transactionToAdd.value.account &&
+              maxAmount !== Infinity &&
+              maxAmount > 0
+            "
+            class="text-xs text-blue-600 font-medium"
+          >
             Saldo disponible en {{ selectedAccountLabel }}: S/
             {{ maxAmount.toFixed(2) }}
           </p>
@@ -1206,7 +1081,10 @@ const canAddMaterial = computed(() => {
     return false;
   }
 
-  // Validar que el total no exceda el saldo disponible
+  // Validar que el total no exceda el saldo disponible (solo si hay cuenta)
+  const selectedAccount = transactionStore.transactionToAdd.value.account;
+  if (!selectedAccount) return true;
+
   const currentTotal = getMaterialsTotal();
   const newItemTotal = (material.cost || 0) * (material.quantity || 0);
   const wouldExceedBalance = currentTotal + newItemTotal > maxAmount.value;
@@ -1279,6 +1157,9 @@ const getCurrentItemTotal = () => {
  * Computed: Verifica si el total excedería el saldo disponible
  */
 const wouldExceedBalance = computed(() => {
+  const selectedAccount = transactionStore.transactionToAdd.value.account;
+  if (!selectedAccount) return false;
+
   const currentTotal = getMaterialsTotal();
   const newItemTotal = getCurrentItemTotal();
   return currentTotal + newItemTotal > maxAmount.value;
@@ -1483,7 +1364,7 @@ const maxAmount = computed(() => {
     return Math.max(0, saldoActualBank.value);
   }
 
-  return 0; // Si no hay cuenta seleccionada
+  return Infinity; // Devuelve infinito si no se ha elegido cuenta aún
 });
 
 // Etiqueta de la cuenta seleccionada

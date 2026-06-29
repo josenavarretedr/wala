@@ -163,6 +163,13 @@ const finalizarRegistro = async () => {
       cost,
       account,
       productData: product,
+      paymentType,
+      paidAmount,
+      balance,
+      isPartial,
+      supplierId,
+      supplierName,
+      supplierPhone,
     } = flow.addStockData;
     const businessId = route.params.businessId;
 
@@ -171,6 +178,18 @@ const finalizarRegistro = async () => {
     // 1. Preparar la transacción de gasto (compra de material)
     transactionStore.modifyTransactionToAddType("expense");
     transactionStore.modifyTransactionToAddAccount(account);
+
+    // Asignar datos del proveedor a la transacción
+    transactionStore.transactionToAdd.value.supplierId = supplierId || null;
+    transactionStore.transactionToAdd.value.supplierName = supplierName || null;
+    transactionStore.transactionToAdd.value.supplierPhone = supplierPhone || null;
+
+    // Configurar información de pago (pago completo vs parcial)
+    if (isPartial) {
+      transactionStore.setPaymentInfo(account, true, paidAmount);
+    } else {
+      transactionStore.setPaymentInfo(account, false, null);
+    }
 
     // Establecer descripción del gasto
     const description = `Compra de ${product.description}`;
@@ -193,6 +212,9 @@ const finalizarRegistro = async () => {
       code: product.code,
       type: product.type || "MERCH",
       totalCost: quantity * cost,
+      // Asociar proveedor directo al item
+      supplierId: supplierId || null,
+      supplierName: supplierName || null,
     };
 
     // Asignar materialItems al transactionToAdd

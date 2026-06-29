@@ -1,7 +1,7 @@
 <template>
-  <!-- CARD PARA TRANSACCIONES TIPO 'PAYMENT' (COBROS) -->
+  <!-- CARD PARA TRANSACCIONES TIPO 'PAYMENT' DE CLIENTES (COBROS) -->
   <div
-    v-if="record.type === 'payment'"
+    v-if="record.type === 'payment' && (record.clientId || record.clientName)"
     class="bg-emerald-50 rounded-xl shadow-sm border border-emerald-200 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-emerald-300"
   >
     <!-- Header -->
@@ -114,6 +114,123 @@
     </div>
   </div>
 
+  <!-- CARD PARA TRANSACCIONES TIPO 'PAYMENT' DE PROVEEDORES (PAGOS) -->
+  <div
+    v-else-if="
+      record.type === 'payment' && (record.supplierId || record.supplierName)
+    "
+    class="bg-rose-50 rounded-xl shadow-sm border border-rose-200 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-rose-300"
+  >
+    <!-- Header -->
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <div class="flex items-center gap-2 flex-1 min-w-0">
+        <!-- Badge de Pago -->
+        <div
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-rose-100 text-rose-800 border border-rose-300 shrink-0"
+        >
+          <svg
+            class="w-3 h-3"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+          <span class="hidden sm:inline">Pago</span>
+        </div>
+
+        <!-- Método de pago -->
+        <div
+          :class="[
+            'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0',
+            record.account === 'cash'
+              ? 'bg-green-100 text-green-700 border border-green-200'
+              : 'bg-purple-100 text-purple-700 border border-purple-200',
+          ]"
+        >
+          <component
+            :is="record.account === 'cash' ? Coins : SmartphoneDevice"
+            class="w-3 h-3"
+          />
+          <span class="hidden sm:inline">{{
+            record.account === "cash" ? "Efectivo" : "Digital"
+          }}</span>
+        </div>
+      </div>
+
+      <!-- Monto -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="text-base sm:text-lg font-bold text-rose-700 tabular-nums">
+          -S/ {{ formatAmount(record.amount) }}
+        </div>
+        <router-link
+          :to="{
+            name: 'DetailsRecords',
+            params: { registerId: record.uuid },
+          }"
+          class="p-1 text-rose-400 hover:text-rose-600 rounded-md transition-colors"
+          title="Ver detalles del pago"
+        >
+          <InfoCircle class="w-4 h-4" />
+        </router-link>
+      </div>
+    </div>
+
+    <!-- Proveedor y referencia -->
+    <div class="space-y-1 text-xs">
+      <div class="flex items-center gap-1.5 text-rose-700">
+        <svg
+          class="w-3 h-3 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"
+          />
+        </svg>
+        <span class="font-medium truncate">{{
+          record.supplierName || "Proveedor"
+        }}</span>
+      </div>
+      <div class="text-rose-600 flex items-center gap-2">
+        <span>Compra #{{ record.relatedTransactionId.slice(0, 8) }}</span>
+        <span v-if="record.newBalance > 0" class="text-orange-600 font-medium">
+          • Deuda: S/ {{ record.newBalance.toFixed(2) }}
+        </span>
+        <span v-else class="text-green-700 font-medium">• Saldado</span>
+      </div>
+    </div>
+
+    <!-- Fecha -->
+    <div
+      class="flex items-center gap-1.5 text-rose-600 mt-2 pt-2 border-t text-xs border-rose-200"
+    >
+      <svg
+        class="w-3 h-3 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <span class="truncate">{{ formatedDate(record.createdAt) }}</span>
+    </div>
+  </div>
+
   <!-- CARD PARA INGRESOS Y EGRESOS (EXISTENTE CON MEJORAS) -->
   <div
     v-else
@@ -183,7 +300,10 @@
 
         <!-- Badge de estado de pago parcial -->
         <div
-          v-if="record.type === 'income' && record.paymentStatus === 'partial'"
+          v-if="
+            (record.type === 'income' || record.type === 'expense') &&
+            record.paymentStatus === 'partial'
+          "
           class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200 shrink-0"
         >
           <svg
@@ -207,7 +327,10 @@
 
         <!-- Badge de pago pendiente -->
         <div
-          v-if="record.type === 'income' && record.paymentStatus === 'pending'"
+          v-if="
+            (record.type === 'income' || record.type === 'expense') &&
+            record.paymentStatus === 'pending'
+          "
           class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-red-100 text-red-700 border border-red-200 shrink-0"
         >
           <svg
@@ -229,7 +352,7 @@
         <!-- Badge de pago completado (con sistema de pagos) -->
         <div
           v-if="
-            record.type === 'income' &&
+            (record.type === 'income' || record.type === 'expense') &&
             record.paymentStatus === 'completed' &&
             record.payments &&
             record.payments.length > 1
@@ -255,19 +378,23 @@
 
       <!-- Lado derecho: Monto y botón -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Monto para ingresos con sistema de pagos (parcial, pendiente o completado con historial) -->
+        <!-- Monto para transacciones con sistema de pagos (parcial, pendiente o completado con historial) -->
         <div
           v-if="
-            record.type === 'income' &&
+            (record.type === 'income' || record.type === 'expense') &&
             record.payments &&
             record.payments.length > 0
           "
           class="text-right"
         >
           <div
-            class="text-base sm:text-lg font-bold text-blue-600 tabular-nums"
+            :class="[
+              'text-base sm:text-lg font-bold tabular-nums',
+              record.type === 'income' ? 'text-blue-600' : 'text-red-600',
+            ]"
           >
-            +S/ {{ formatAmount(getDisplayAmount(record)) }}
+            {{ record.type === "income" ? "+" : "-" }}S/
+            {{ formatAmount(getDisplayAmount(record)) }}
           </div>
           <div
             v-if="record.paymentStatus && record.payments.length > 1"
@@ -344,6 +471,27 @@
         />
       </svg>
       <span class="truncate font-medium">{{ record.clientName }}</span>
+    </div>
+
+    <!-- Proveedor (solo para egresos con proveedor) -->
+    <div
+      v-if="record.type === 'expense' && record.supplierId"
+      class="flex items-center gap-1 text-xs text-gray-600 mb-2 px-2 py-1 bg-gray-50 rounded-md"
+    >
+      <svg
+        class="w-3 h-3 shrink-0"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5"
+        />
+      </svg>
+      <span class="truncate font-medium">{{ record.supplierName }}</span>
     </div>
 
     <!-- Información adicional si existe -->
