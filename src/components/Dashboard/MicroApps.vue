@@ -576,6 +576,17 @@ const allMicroApps = ref([
     color: "orange",
     role: "gerente",
   },
+
+  {
+    id: 13,
+    name: "Acopio",
+    route: "/acopio",
+    available: true,
+    icon: SoilAlt,
+    isComponent: true,
+    color: "teal",
+    moduleKey: "inventory",
+  },
 ]);
 
 // Función helper para obtener la clase de color del icono

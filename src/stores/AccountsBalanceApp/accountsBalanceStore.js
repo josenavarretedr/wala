@@ -182,6 +182,14 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
    * Helper para calcular el monto recibido de una transacción
    * Considera el sistema de pagos parciales
    */
+  const isInitialPayment = (payment, tx) => {
+    if (!payment || !tx) return false;
+    const pDate = payment.date?.seconds ? new Date(payment.date.seconds * 1000) : new Date(payment.date);
+    const txDate = tx.createdAt?.seconds ? new Date(tx.createdAt.seconds * 1000) : new Date(tx.createdAt || tx.date);
+    if (!pDate || !txDate) return false;
+    return Math.abs(pDate.getTime() - txDate.getTime()) < 900000; // 15 minutos
+  };
+
   const getReceivedAmount = (tx) => {
     // Si es un pago (cobro), usar el amount completo
     if (tx.type === 'payment') {
@@ -189,9 +197,15 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Si es un ingreso o egreso con sistema de pagos
-    if ((tx.type === 'income' || tx.type === 'expense') && tx.payments && tx.payments.length > 0) {
-      // Siempre usar el primer pago (pago inicial)
-      return tx.payments[0].amount || 0;
+    if ((tx.type === 'income' || tx.type === 'expense') && tx.payments) {
+      if (tx.payments.length > 0) {
+        // Solo contar el primer pago si es un pago inicial (realizado al momento del registro)
+        if (isInitialPayment(tx.payments[0], tx)) {
+          return tx.payments[0].amount || 0;
+        }
+      }
+      // Si el array de pagos está definido pero vacío, o es posterior, significa que no ha salido dinero como parte de este doc
+      return 0;
     }
 
     // Para transacciones sin sistema de pagos, usar amount normal

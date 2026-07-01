@@ -383,6 +383,18 @@ const routes = [
         component: () => import('@/views/Inventory/ProductionWizard.vue')
       },
       {
+        path: 'acopio',
+        name: 'InventoryAcopioDashboard',
+        component: () => import('@/views/Inventory/AcopioList.vue'),
+        meta: { requiresAuth: true, moduleKey: 'inventory', title: 'Acopio' }
+      },
+      {
+        path: 'inventory/acopio/nuevo',
+        name: 'InventoryAcopioWizard',
+        component: () => import('@/views/Inventory/AcopioWizard.vue'),
+        meta: { requiresAuth: true, moduleKey: 'inventory', title: 'Registrar Acopio' }
+      },
+      {
         path: 'inventory/product/:productId',
         name: 'InventoryProductDetails',
         component: () => import('@/views/Inventory/ProductDetails.vue')

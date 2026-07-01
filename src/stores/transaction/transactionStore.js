@@ -776,8 +776,8 @@ export function useTransactionStore() {
         if (transactionSnapshot.type === 'expense') {
           const totalAmount = transactionSnapshot.amount || 0;
 
-          // Si payments está vacío, crear payment inicial con el monto total
-          if (!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) {
+          // Si payments está vacío y no es un acopio, crear payment inicial con el monto total
+          if ((!transactionSnapshot.payments || transactionSnapshot.payments.length === 0) && !transactionSnapshot.acopioId) {
             // Pago completo: crear payment con el monto total
             transactionSnapshot.payments = [{
               uuid: crypto.randomUUID(),
@@ -2979,14 +2979,14 @@ export function useTransactionStore() {
       currentPaymentStatus: transactionToAdd.value.paymentStatus
     });
 
-    if (isPartialPayment && partialAmount) {
+    if (isPartialPayment && (partialAmount !== null && partialAmount !== undefined)) {
       // Pago parcial: crear payment con el monto parcial
       transactionToAdd.value.payments = [{
         uuid: crypto.randomUUID(),
         amount: partialAmount,
         date: Timestamp.now(),
         account: paymentMethod,
-        notes: 'Pago inicial',
+        notes: partialAmount === 0 ? 'Crédito total (sin abono)' : 'Pago inicial',
         registeredBy: transactionToAdd.value.userId || 'unknown'
       }];
 

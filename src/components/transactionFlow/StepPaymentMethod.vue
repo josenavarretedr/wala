@@ -159,10 +159,51 @@
                 </div>
               </div>
             </div>
-            <!-- <span class="text-lg font-semibold text-orange-600">Parcial</span> -->
             <span
               v-if="!isPremium"
               class="flex items-center gap-1.5 px-3 py-1 bg-white text-orange-600 text-xs font-semibold rounded-full border-orange-600 shadow-lg"
+            >
+              <BrightCrown class="w-4 h-4" />
+              Pro
+            </span>
+          </button>
+
+          <!-- Crédito Total -->
+          <button
+            @click="handleCreditSelect()"
+            :class="[
+              'w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between',
+              paymentType === 'credit'
+                ? 'border-red-500 bg-red-50'
+                : 'border-gray-200 bg-white hover:border-gray-300',
+            ]"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                  paymentType === 'credit'
+                    ? 'border-red-500'
+                    : 'border-gray-300',
+                ]"
+              >
+                <div
+                  v-if="paymentType === 'credit'"
+                  class="w-3 h-3 rounded-full bg-red-500"
+                ></div>
+              </div>
+              <div class="text-left">
+                <div class="font-medium text-gray-800">
+                  Crédito Total
+                </div>
+                <div class="text-xs text-gray-500">
+                  No se registra abono inicial (100% crédito)
+                </div>
+              </div>
+            </div>
+            <span
+              v-if="!isPremium"
+              class="flex items-center gap-1.5 px-3 py-1 bg-white text-red-600 text-xs font-semibold rounded-full border-red-600 shadow-lg"
             >
               <BrightCrown class="w-4 h-4" />
               Pro
@@ -241,6 +282,27 @@
           <span>{{ validationError }}</span>
         </div>
       </div>
+
+      <!-- Resumen de crédito total -->
+      <div
+        v-if="paymentType === 'credit'"
+        class="bg-red-50 p-4 rounded-lg space-y-3 text-sm"
+      >
+        <div class="flex justify-between text-gray-600">
+          <span>Total de la venta:</span>
+          <span class="font-medium">S/ {{ totalAmount.toFixed(2) }}</span>
+        </div>
+        <div class="flex justify-between text-gray-600">
+          <span>Abono inicial:</span>
+          <span class="font-medium text-red-600">S/ 0.00 (Crédito Total)</span>
+        </div>
+        <div
+          class="flex justify-between text-gray-800 font-semibold border-t border-red-200 pt-2"
+        >
+          <span>Saldo pendiente:</span>
+          <span class="text-red-600">S/ {{ totalAmount.toFixed(2) }}</span>
+        </div>
+      </div>
     </div>
 
     <!-- Indicador de selección -->
@@ -260,7 +322,7 @@
           />
         </svg>
         <span>
-          {{ paymentType === "complete" ? "Pago completo" : "Abono parcial" }}
+          {{ paymentType === "complete" ? "Pago completo" : (paymentType === "credit" ? "Crédito total" : "Abono parcial") }}
           por
           {{ methodLabels[selectedMethod] }}
         </span>
@@ -289,7 +351,7 @@ const { warning, success, premium } = useToast();
 
 // Estado local
 const selectedMethod = ref(null);
-const paymentType = ref("complete"); // 'complete' | 'partial'
+const paymentType = ref("complete"); // 'complete' | 'partial' | 'credit'
 const partialAmount = ref(0);
 const validationError = ref("");
 const partialAmountInput = ref(null);
@@ -320,6 +382,9 @@ const totalAmount = computed(() => {
 });
 
 const balance = computed(() => {
+  if (paymentType.value === "credit") {
+    return totalAmount.value;
+  }
   if (paymentType.value === "partial" && partialAmount.value > 0) {
     return Math.max(totalAmount.value - partialAmount.value, 0);
   }
@@ -363,6 +428,32 @@ function handlePartialAmountInputFocus() {
       partialAmountInput.value.blur();
     }
   });
+}
+
+function handleCreditSelect() {
+  setPaymentType("credit");
+
+  if (!isPremium.value) {
+    // Auto-cambiar a pago completo y ajustar el monto para mejor UX
+    paymentType.value = "complete";
+    validationError.value = "";
+
+    // Mostrar toast informativo con delay para asegurar visibilidad
+    nextTick(() => {
+      premium("Registra ventas a crédito o pagos parciales", {
+        actionLink: {
+          text: "Actualiza a Wala Pro",
+          route: `/business/${route.params.businessId}/pro`,
+        },
+      });
+
+      console.log("🔔 Toast mostrado");
+    });
+    return;
+  }
+
+  partialAmount.value = 0;
+  validationError.value = "";
 }
 
 function setPaymentType(type) {
@@ -413,6 +504,9 @@ watch([partialAmount, paymentType], () => {
     } else {
       validationError.value = "";
     }
+  } else if (paymentType.value === "credit") {
+    validationError.value = "";
+    partialAmount.value = 0;
   }
 });
 
@@ -421,8 +515,8 @@ watch(
   [selectedMethod, paymentType, partialAmount],
   () => {
     if (selectedMethod.value && paymentType.value) {
-      const isPartial = paymentType.value === "partial";
-      const amount = isPartial ? partialAmount.value : null;
+      const isPartial = paymentType.value === "partial" || paymentType.value === "credit";
+      const amount = paymentType.value === "partial" ? partialAmount.value : (paymentType.value === "credit" ? 0 : null);
 
       console.log("🔄 StepPaymentMethod watch triggered:", {
         selectedMethod: selectedMethod.value,

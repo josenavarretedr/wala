@@ -301,8 +301,11 @@ const getEffectiveAmount = (tx) => {
   if (tx.type === 'payment') {
     return tx.amount || 0;
   }
-  if ((tx.type === 'income' || tx.type === 'expense') && tx.payments && tx.payments.length > 0) {
-    return tx.payments[0].amount || 0;
+  if ((tx.type === 'income' || tx.type === 'expense') && tx.payments) {
+    if (tx.payments.length > 0) {
+      return tx.payments[0].amount || 0;
+    }
+    return 0; // Si el array de pagos está definido pero vacío, es 100% crédito y no ha salido dinero
   }
   return tx.amount || 0;
 };

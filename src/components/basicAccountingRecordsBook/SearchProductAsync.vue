@@ -14,8 +14,8 @@ import "@algolia/autocomplete-theme-classic";
 const props = defineProps({
   mode: {
     type: String,
-    default: "transaction", // 'transaction', 'materials', 'production'
-    validator: (value) => ["transaction", "materials", "production"].includes(value),
+    default: "transaction", // 'transaction', 'materials', 'production', 'acopio'
+    validator: (value) => ["transaction", "materials", "production", "acopio"].includes(value),
   },
   excludeProductId: {
     type: String,
@@ -66,6 +66,9 @@ function buildIndex(items) {
   } else if (props.mode === "production") {
     // Modo producción: productos con composición (receta) y control de stock activo
     filteredItems = items.filter((p) => p.composition && p.composition.length > 0 && p.trackStock === true);
+  } else if (props.mode === "acopio") {
+    // Modo acopio: insumos (RAW_MATERIAL) y mercadería (MERCH) con trackStock = true
+    filteredItems = items.filter((p) => (p.type === "RAW_MATERIAL" || p.type === "MERCH") && p.trackStock === true);
   }
 
   // Excluir el producto específico si se proporciona
@@ -295,8 +298,8 @@ onMounted(() => {
                 // Emit para modo materiales
                 emit("material-selected", selected);
                 clearAutocompleteInput();
-              } else if (props.mode === "production") {
-                // Emit para modo producción
+              } else if (props.mode === "production" || props.mode === "acopio") {
+                // Emit para modo producción o acopio
                 emit("product-selected", selected);
                 clearAutocompleteInput();
               } else {
@@ -350,16 +353,16 @@ onMounted(() => {
                 `;
               } else {
                 // Plantilla para producto existente
-                // Mostrar costo en modo materials, precio en modo transaction
+                // Mostrar costo en modo materials/acopio, precio en modo transaction
                 const displayValue =
-                  props.mode === "materials"
+                  (props.mode === "materials" || props.mode === "acopio")
                     ? item.productCost
                       ? `S/ ${item.productCost.toFixed(2)}`
                       : "Sin costo"
                     : `S/ ${item.productPrice?.toFixed(2) || "0.00"}`;
 
                 const valueClass =
-                  props.mode === "materials" && !item.productCost
+                  (props.mode === "materials" || props.mode === "acopio") && !item.productCost
                     ? "text-amber-600"
                     : "text-gray-700";
 
@@ -387,7 +390,7 @@ onMounted(() => {
                               ${item.variantLabel}
                             </span>`
                           : ""}
-                        ${props.mode === "materials" &&
+                        ${(props.mode === "materials" || props.mode === "acopio") &&
                         item.productStock !== undefined
                           ? html`<span class="text-sm text-gray-500">
                               • Stock: ${item.productStock}</span

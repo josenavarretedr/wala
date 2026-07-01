@@ -173,6 +173,39 @@
               </div>
             </div>
           </button>
+
+          <!-- Crédito Total -->
+          <button
+            @click="setPaymentType('credit')"
+            :class="[
+              'w-full p-4 rounded-lg border-2 transition-all flex items-center justify-between',
+              paymentType === 'credit'
+                ? 'border-red-500 bg-red-50'
+                : 'border-gray-200 bg-white hover:border-gray-300',
+            ]"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center',
+                  paymentType === 'credit' ? 'border-red-500' : 'border-gray-300',
+                ]"
+              >
+                <div
+                  v-if="paymentType === 'credit'"
+                  class="w-3 h-3 rounded-full bg-red-500"
+                ></div>
+              </div>
+              <div class="text-left">
+                <div class="font-medium text-gray-800">
+                  Crédito Total
+                </div>
+                <div class="text-xs text-gray-500">
+                  Se compra a crédito sin realizar abono inicial (100% por pagar)
+                </div>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -224,6 +257,27 @@
         </div>
       </div>
 
+      <!-- Resumen de crédito total -->
+      <div
+        v-if="paymentType === 'credit'"
+        class="bg-red-50 p-4 rounded-lg space-y-3 text-sm border border-red-100"
+      >
+        <div class="flex justify-between text-gray-600">
+          <span>Total del gasto:</span>
+          <span class="font-medium">S/ {{ totalAmount.toFixed(2) }}</span>
+        </div>
+        <div class="flex justify-between text-gray-600">
+          <span>Abono inicial:</span>
+          <span class="font-medium text-red-600">S/ 0.00 (Crédito Total)</span>
+        </div>
+        <div
+          class="flex justify-between text-gray-800 font-semibold border-t border-red-200 pt-2"
+        >
+          <span>Por pagar (Deuda):</span>
+          <span class="text-red-600">S/ {{ totalAmount.toFixed(2) }}</span>
+        </div>
+      </div>
+
       <!-- Error de validación -->
       <div
         v-if="validationError"
@@ -263,7 +317,7 @@
           />
         </svg>
         <span>
-          {{ paymentType === "complete" ? "Pago completo" : "Abono parcial" }}
+          {{ paymentType === "complete" ? "Pago completo" : (paymentType === "credit" ? "Crédito total" : "Abono parcial") }}
           por
           {{ methodLabels[selectedMethod] }}
         </span>
@@ -291,7 +345,7 @@ const isAddStockFlow = computed(() => route.name === "AddStock");
 
 // Estado local
 const selectedMethod = ref(null);
-const paymentType = ref("complete"); // 'complete' | 'partial'
+const paymentType = ref("complete"); // 'complete' | 'partial' | 'credit'
 const partialAmount = ref(0);
 const validationError = ref("");
 
@@ -339,6 +393,9 @@ const totalAmount = computed(() => {
 });
 
 const balance = computed(() => {
+  if (paymentType.value === "credit") {
+    return totalAmount.value;
+  }
   if (paymentType.value === "partial") {
     return Math.max(totalAmount.value - (partialAmount.value || 0), 0);
   }
@@ -392,6 +449,10 @@ function setPaymentType(type) {
   }
   paymentType.value = type;
   validationError.value = "";
+  
+  if (type === "credit") {
+    partialAmount.value = 0;
+  }
 }
 
 function handlePartialAmountInput() {
@@ -414,17 +475,20 @@ watch([selectedMethod, paymentType, partialAmount, totalAmount], () => {
 
   if (paymentType.value === "partial") {
     if (currentPaid <= 0) {
-      validationError.value = "El abono inicial debe ser mayor a 0 (o puede ser 0 si es 100% crédito, pero se requiere saldo)";
+      validationError.value = "El abono inicial debe ser mayor a 0";
     } else if (currentPaid >= totalAmount.value) {
       paymentType.value = "complete";
       partialAmount.value = 0;
       success("Cambiado a Pago Completo automáticamente");
       return;
     }
+  } else if (paymentType.value === "credit") {
+    // Para crédito total, el pago inicial es 0 y es válido
+    return;
   }
 
-  // Validar contra saldo disponible en la cuenta
-  if (currentPaid > activeBalance.value) {
+  // Validar contra saldo disponible en la cuenta (solo si se desembolsa dinero ahora)
+  if (paymentType.value !== "credit" && currentPaid > activeBalance.value) {
     validationError.value = `Saldo insuficiente en ${methodLabels[selectedMethod.value]} (Disponible: S/ ${activeBalance.value.toFixed(2)})`;
   }
 });
@@ -444,9 +508,9 @@ watch(
     }
 
     if (selectedMethod.value && paymentType.value) {
-      const isPartial = paymentType.value === "partial";
-      const paid = isPartial ? partialAmount.value : totalAmount.value;
-      const remains = isPartial ? balance.value : 0;
+      const isPartial = paymentType.value === "partial" || paymentType.value === "credit";
+      const paid = paymentType.value === "partial" ? partialAmount.value : (paymentType.value === "credit" ? 0 : totalAmount.value);
+      const remains = paymentType.value === "partial" ? balance.value : (paymentType.value === "credit" ? totalAmount.value : 0);
 
       if (isAddStockFlow.value) {
         addStockFlow.addStockData.account = selectedMethod.value;

@@ -96,7 +96,15 @@
             class="w-full p-4 rounded-lg border border-gray-200 bg-white hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-between text-left"
           >
             <div>
-              <div class="font-medium text-gray-800">{{ supplier.name }}</div>
+              <div class="flex items-center gap-2">
+                <span class="font-medium text-gray-800">{{ supplier.name }}</span>
+                <span
+                  v-if="supplier.isPartner"
+                  class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200"
+                >
+                  Socio
+                </span>
+              </div>
               <div v-if="supplier.phone" class="text-xs text-gray-500 mt-0.5">
                 📞 {{ supplier.phone }}
               </div>

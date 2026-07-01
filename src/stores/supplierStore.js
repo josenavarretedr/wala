@@ -95,6 +95,7 @@ export const useSupplierStore = defineStore('supplierStore', () => {
         supplierId: supplierId,
         name: supplierData.name,
         phone: supplierData.phone || null,
+        isPartner: supplierData.isPartner || false,
         businessId,
         isActive: true,
         totalExpenses: initialMetadata.totalExpenses ?? 0,

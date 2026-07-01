@@ -13,8 +13,8 @@ export function calculatePaymentStatus(transaction) {
   const total = transaction.total || transaction.amount || 0;
   const { payments = [] } = transaction;
 
-  // Si no hay payments array o está vacío, el pago está completo
-  if (!payments || payments.length === 0) {
+  // Si no hay payments array o está vacío y no es un acopio, el pago está completo
+  if ((!payments || payments.length === 0) && !transaction.acopioId) {
     return {
       paymentStatus: PaymentStatuses.COMPLETED,
       totalPaid: total,

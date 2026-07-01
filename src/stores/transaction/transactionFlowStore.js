@@ -92,7 +92,6 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
         this.steps.push(
           { label: 'Detalles pedido', component: StepAddIncomeDetails },
           { label: 'Canal de venta', component: StepSalesChannel },
-          { label: 'Adjuntar cliente', component: StepAttachClient },
           { label: 'Decisión de pago', component: StepPaymentDecision }
         );
       } else if (transactionType === 'expense') {
@@ -119,16 +118,18 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
     },
     insertPaymentSteps(decision) {
       console.log("⚡ insertPaymentSteps - decisión:", decision);
-      // Limpiar cualquier paso dinámico posterior a "Decisión de pago" (índice 4 es la decisión)
-      this.steps = this.steps.slice(0, 5);
+      // Limpiar cualquier paso dinámico posterior a "Decisión de pago" (índice 3 es la decisión)
+      this.steps = this.steps.slice(0, 4);
 
       if (decision === 'paid') {
         this.steps.push(
           { label: 'Método de pago', component: StepPaymentMethod },
+          { label: 'Adjuntar cliente', component: StepAttachClient },
           { label: 'Preview ingreso', component: StepAddIncomePreview }
         );
       } else if (decision === 'order_only') {
         this.steps.push(
+          { label: 'Adjuntar cliente', component: StepAttachClient },
           { label: 'Preview pedido', component: StepOrderPreview }
         );
       }

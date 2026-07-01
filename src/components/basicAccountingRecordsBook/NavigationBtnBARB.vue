@@ -94,8 +94,9 @@
 import { ArrowLeft, ArrowRight, Check } from "@iconoir/vue";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useAddStockFlowStore } from "@/stores/Inventory/AddStockFlow";
 import { ANONYMOUS_CLIENT_ID } from "@/types/client";
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
@@ -104,7 +105,9 @@ import { useToast } from "@/composables/useToast";
 const flow = useTransactionFlowStore();
 const businessStore = useBusinessStore();
 const transactionStore = useTransactionStore();
+const addStockFlow = useAddStockFlowStore();
 const router = useRouter();
+const route = useRoute();
 
 // Toast
 const { success } = useToast();
@@ -257,8 +260,8 @@ const isNextButtonEnabled = computed(() => {
         const hasPayments =
           transactionData.payments && transactionData.payments.length > 0;
 
-        // Debe tener payments, y el monto debe ser mayor a 0 y menor que el total
-        result = hasPayments && totalPaid > 0 && totalPaid < total;
+        // Debe tener payments, y el monto debe ser mayor o igual a 0 y menor que el total (permite abono de 0 en crédito total)
+        result = hasPayments && totalPaid >= 0 && totalPaid < total;
       } else {
         // Sin estado definido
         result = false;
@@ -292,6 +295,15 @@ const isNextButtonEnabled = computed(() => {
         // Si es pago completo, siempre puede avanzar (cliente es opcional)
         result = true;
       }
+      break;
+
+    case "Adjuntar proveedor":
+      // Validar que se haya seleccionado un proveedor (siempre requerido)
+      const hasSupplier =
+        route.name === "AddStock"
+          ? addStockFlow.addStockData.supplierId !== null && addStockFlow.addStockData.supplierId !== undefined
+          : transactionData.supplierId !== null && transactionData.supplierId !== undefined;
+      result = hasSupplier;
       break;
 
     case "Canal de venta":
@@ -382,6 +394,9 @@ const getValidationMessage = () => {
         }
       }
       return "Debes seleccionar un cliente para continuar con un pago parcial";
+
+    case "Adjuntar proveedor":
+      return "Debes seleccionar un proveedor para continuar";
 
     case "Canal de venta":
       return "Selecciona una plataforma de delivery y configura la comisión";

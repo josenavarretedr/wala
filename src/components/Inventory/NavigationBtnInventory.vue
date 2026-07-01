@@ -31,13 +31,26 @@
         <span class="font-semibold tracking-wide">PRODUCIR LOTE</span>
       </button>
     </div>
+
+    <!-- Botón Acopio (Teal) -->
+    <div
+      class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
+    >
+      <button
+        @click="handleAcopio"
+        class="w-full py-2 px-3 sm:py-2.5 sm:px-4 bg-white border border-teal-600 text-teal-600 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm hover:bg-teal-600 hover:text-white hover:shadow-md hover:shadow-teal-500/20 transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+      >
+        <SoilAlt class="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+        <span class="font-semibold tracking-wide">REGISTRAR ACOPIO</span>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
-import { BounceRight, Plus } from "@iconoir/vue";
+import { BounceRight, Plus, SoilAlt } from "@iconoir/vue";
 import { useBusinessStore } from "@/stores/businessStore";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
@@ -64,6 +77,15 @@ const handleAddProduct = () => {
 const handleProduce = () => {
   router.push({
     name: "InventoryProductionWizard",
+    params: {
+      businessId: route.params.businessId,
+    },
+  });
+};
+
+const handleAcopio = () => {
+  router.push({
+    name: "InventoryAcopioWizard",
     params: {
       businessId: route.params.businessId,
     },

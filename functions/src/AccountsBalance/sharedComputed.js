@@ -16,6 +16,35 @@
 const { dateRangeForDay } = require('../Helpers/time');
 const { round2, addMoney, subtractMoney, parseMoneyNumber } = require('../Helpers/mathUtils');
 
+function isInitialPayment(payment, tx) {
+  if (!payment || !tx) return false;
+  
+  let pTime = 0;
+  if (payment.date) {
+    if (typeof payment.date.toMillis === 'function') {
+      pTime = payment.date.toMillis();
+    } else if (payment.date.seconds) {
+      pTime = payment.date.seconds * 1000;
+    } else {
+      pTime = new Date(payment.date).getTime();
+    }
+  }
+  
+  let txTime = 0;
+  if (tx.createdAt) {
+    if (typeof tx.createdAt.toMillis === 'function') {
+      txTime = tx.createdAt.toMillis();
+    } else if (tx.createdAt.seconds) {
+      txTime = tx.createdAt.seconds * 1000;
+    } else {
+      txTime = new Date(tx.createdAt).getTime();
+    }
+  }
+  
+  if (!pTime || !txTime) return false;
+  return Math.abs(pTime - txTime) < 900000; // 15 minutos
+}
+
 /**
  * Calcula los agregados financieros detallados de un día específico.
  * Equivalente a TODOS los computed properties de accountsBalanceStore.
@@ -136,46 +165,35 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
     if (txType === 'income' && category !== 'adjustment') {
       hasTxn = true;
 
-      // 💰 LÓGICA DE PAGOS PARCIALES Y COMPLETADOS:
-      // - Si tiene payments[] con múltiples pagos (>1) Y está completed:
-      //   Usar payments[0].amount (pago inicial recibido ese día)
-      // - Si paymentStatus === 'completed' sin payments[] o solo 1 pago:
-      //   Contar amount completo (pago directo)
-      // - Si paymentStatus === 'partial': Contar solo payments[0].amount
-      // - Si paymentStatus === 'pending': Contar 0 (no se ha recibido nada)
       let amountReceived = amount;
 
-      // Verificar si tiene sistema de pagos múltiples
-      const hasMultiplePayments = tx.payments && Array.isArray(tx.payments) && tx.payments.length > 1;
+      const hasPayments = tx.payments && Array.isArray(tx.payments) && tx.payments.length > 0;
 
-      if (tx.paymentStatus === 'completed' && hasMultiplePayments) {
-        // Caso especial: Venta completada con múltiples pagos
-        // Solo contar el pago inicial (el resto ya se contó como type='payment')
-        amountReceived = parseMoneyNumber(tx.payments[0].amount || 0);
-        console.log(`  ✅ Completed with ${tx.payments.length} payments: using initial ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
-      } else if (tx.paymentStatus === 'partial' && tx.payments && tx.payments.length > 0) {
-        // Pago parcial: usar solo el primer pago
-        amountReceived = parseMoneyNumber(tx.payments[0].amount || 0);
-        console.log(`  💵 Partial payment: ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
+      if (hasPayments) {
+        // Si tiene pagos en el array, solo sumamos el primero si se realizó al momento de registrar (inicial)
+        if (isInitialPayment(tx.payments[0], tx)) {
+          amountReceived = parseMoneyNumber(tx.payments[0].amount || 0);
+          console.log(`  💵 Initial payment found in income: ${amountReceived} of ${amount} [${account}] (${tx.uuid})`);
+        } else {
+          amountReceived = 0; // Pago posterior (se cuenta como transacción tipo 'payment')
+          console.log(`  ⏳ Subsequent payment ignored in parent income: ${amount} [${account}] (${tx.uuid})`);
+        }
       } else if (tx.paymentStatus === 'pending') {
         // Sin pagar
         amountReceived = 0;
         console.log(`  ⏳ Pending payment: ${amount} [${account}] (${tx.uuid})`);
       } else {
-        // Pago completo directo (sin sistema de pagos) o completed con 1 solo pago
+        // Pago completo directo (sin array de pagos)
         console.log(`  💰 Full payment: ${amountReceived} [${account}] (${tx.uuid})`);
       }
 
       totalIngresos = addMoney(totalIngresos, amountReceived);
 
       // Por cuenta (excluyendo ajustes de apertura)
-      // Para pagos parciales o completados con múltiples pagos, usar el account del payments[0]
-      if ((tx.paymentStatus === 'partial' || (tx.paymentStatus === 'completed' && hasMultiplePayments))
-        && tx.payments && Array.isArray(tx.payments) && tx.payments.length > 0) {
+      if (hasPayments && amountReceived > 0) {
         // Usar el método del primer pago
         const firstPayment = tx.payments[0];
         const paymentAmount = parseMoneyNumber(firstPayment.amount || 0);
-        // ✅ Soportar "account" O "method" (fallback para transacciones antiguas)
         const paymentAccount = firstPayment.account || firstPayment.method || 'cash';
 
         if (paymentAccount === 'cash') {
@@ -184,7 +202,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
           ingresosBank = addMoney(ingresosBank, paymentAmount);
         }
       } else {
-        // Pago completo directo: usar account principal
+        // Pago completo directo o pendiente (donde amountReceived es 0)
         if (account === 'cash' && subcategory !== 'opening_adjustment') {
           ingresosCash = addMoney(ingresosCash, amountReceived);
         }
@@ -193,39 +211,83 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
         }
       }
     }
-
+    
     // === PAGOS POSTERIORES (tipo 'payment') ===
-    // Contar pagos registrados hoy de ventas antiguas
     if (txType === 'payment') {
       hasTxn = true;
       const paymentAmount = parseMoneyNumber(amount || 0);
 
-      totalIngresos = addMoney(totalIngresos, paymentAmount);
-
-      // Desglosar por cuenta
-      if (account === 'cash') {
-        ingresosCash = addMoney(ingresosCash, paymentAmount);
-      } else if (account === 'bank' || account === 'yape' || account === 'plin') {
-        ingresosBank = addMoney(ingresosBank, paymentAmount);
+      // Si tiene supplierId, es un pago a proveedor (salida de dinero)
+      if (tx.supplierId) {
+        totalEgresos = addMoney(totalEgresos, paymentAmount);
+        if (account === 'cash') {
+          egresosCash = addMoney(egresosCash, paymentAmount);
+        } else if (account === 'bank' || account === 'yape' || account === 'plin') {
+          egresosBank = addMoney(egresosBank, paymentAmount);
+        }
+        console.log(`  💸 Payment sent to supplier: ${paymentAmount} [${account}] (${tx.uuid})`);
+      } else {
+        // De lo contrario, es un cobro a cliente (entrada de dinero)
+        totalIngresos = addMoney(totalIngresos, paymentAmount);
+        if (account === 'cash') {
+          ingresosCash = addMoney(ingresosCash, paymentAmount);
+        } else if (account === 'bank' || account === 'yape' || account === 'plin') {
+          ingresosBank = addMoney(ingresosBank, paymentAmount);
+        }
+        console.log(`  💰 Payment received from client: ${paymentAmount} [${account}] (${tx.uuid})`);
       }
-
-      console.log(`  � Payment received: ${paymentAmount} [${account}] (${tx.uuid})`);
     }
 
     // === EGRESOS (excluyendo ajustes) ===
     if (txType === 'expense' && category !== 'adjustment') {
       hasTxn = true;
-      totalEgresos = addMoney(totalEgresos, amount);
+
+      let amountPaid = amount;
+
+      const hasPayments = tx.payments && Array.isArray(tx.payments) && tx.payments.length > 0;
+
+      if (hasPayments) {
+        // Si tiene pagos en el array, solo sumamos el primero si se realizó al momento de registrar (inicial)
+        if (isInitialPayment(tx.payments[0], tx)) {
+          amountPaid = parseMoneyNumber(tx.payments[0].amount || 0);
+          console.log(`  💸 Initial payment found in expense: ${amountPaid} of ${amount} [${account}] (${tx.uuid})`);
+        } else {
+          amountPaid = 0; // Pago posterior (se cuenta como transacción tipo 'payment')
+          console.log(`  ⏳ Subsequent payment ignored in parent expense: ${amount} [${account}] (${tx.uuid})`);
+        }
+      } else if (tx.paymentStatus === 'pending') {
+        // Pago pendiente / Crédito: no ha salido dinero
+        amountPaid = 0;
+        console.log(`  ⏳ Pending expense payment: ${amount} [${account}] (${tx.uuid})`);
+      } else {
+        // Pago completo directo (sin array de pagos)
+        console.log(`  💰 Full payment expense: ${amountPaid} [${account}] (${tx.uuid})`);
+      }
+
+      totalEgresos = addMoney(totalEgresos, amountPaid);
 
       // Por cuenta
-      if (account === 'cash') {
-        egresosCash = addMoney(egresosCash, amount);
-      }
-      if (account === 'bank') {
-        egresosBank = addMoney(egresosBank, amount);
+      if (hasPayments && amountPaid > 0) {
+        const firstPayment = tx.payments[0];
+        const paymentAmount = parseMoneyNumber(firstPayment.amount || 0);
+        const paymentAccount = firstPayment.account || firstPayment.method || 'cash';
+
+        if (paymentAccount === 'cash') {
+          egresosCash = addMoney(egresosCash, paymentAmount);
+        } else if (paymentAccount === 'bank' || paymentAccount === 'yape' || paymentAccount === 'plin') {
+          egresosBank = addMoney(egresosBank, paymentAmount);
+        }
+      } else {
+        // Pago completo directo o pendiente (donde amountPaid es 0)
+        if (account === 'cash') {
+          egresosCash = addMoney(egresosCash, amountPaid);
+        }
+        if (account === 'bank' || account === 'yape' || account === 'plin') {
+          egresosBank = addMoney(egresosBank, amountPaid);
+        }
       }
 
-      console.log(`  💸 Expense: ${amount} [${account}] (${tx.uuid})`);
+      console.log(`  💸 Expense summary: ${amountPaid} of ${amount} [${account}] (${tx.uuid})`);
     }
 
     // === TRANSFERENCIAS ===

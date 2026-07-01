@@ -382,8 +382,7 @@
         <div
           v-if="
             (record.type === 'income' || record.type === 'expense') &&
-            record.payments &&
-            record.payments.length > 0
+            (record.paymentStatus === 'pending' || record.paymentStatus === 'partial' || (record.payments && record.payments.length > 0))
           "
           class="text-right"
         >
@@ -397,7 +396,7 @@
             {{ formatAmount(getDisplayAmount(record)) }}
           </div>
           <div
-            v-if="record.paymentStatus && record.payments.length > 1"
+            v-if="record.paymentStatus && (record.paymentStatus === 'pending' || record.paymentStatus === 'partial' || (record.payments && record.payments.length > 1))"
             class="text-xs text-gray-500"
           >
             de S/ {{ getTotal(record) }}
@@ -558,10 +557,11 @@ function getTotal(record) {
 }
 
 function getDisplayAmount(record) {
-  // Si payments existe y tiene exactamente 1 elemento (pago inicial)
+  // Si payments existe y tiene elementos
   if (record.payments && record.payments.length >= 1) {
     return record.payments[0].amount || 0;
   }
+  return 0; // Si no hay pagos registrados, el abono/pago inicial fue 0
 }
 
 function formatedDate(date) {

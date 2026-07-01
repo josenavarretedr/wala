@@ -112,42 +112,12 @@
 
       <!-- Lista de Proveedores -->
       <div v-else-if="filteredSuppliers.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
+        <CardSupplier
           v-for="supplier in filteredSuppliers"
           :key="supplier.supplierId"
+          :supplier="supplier"
           @click="viewDetails(supplier.supplierId)"
-          class="bg-white rounded-xl shadow-sm border border-gray-100 hover:border-purple-200 hover:shadow-md transition-all duration-200 p-5 cursor-pointer flex flex-col justify-between h-44"
-        >
-          <div>
-            <div class="flex items-start justify-between gap-3">
-              <h3 class="font-bold text-gray-900 text-lg truncate flex-1">
-                {{ supplier.name }}
-              </h3>
-              <span
-                v-if="supplier.pendingBalance > 0"
-                class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-600 border border-red-100 flex-shrink-0"
-              >
-                Debe
-              </span>
-            </div>
-            <p v-if="supplier.phone" class="text-xs sm:text-sm text-gray-500 mt-1 flex items-center gap-1.5">
-              <span>📞</span> {{ supplier.phone }}
-            </p>
-          </div>
-
-          <div class="border-t border-gray-50 pt-3 mt-4 flex items-center justify-between text-xs sm:text-sm text-gray-600">
-            <div>
-              <span class="text-gray-400 block text-[10px] uppercase tracking-wider">Total Comprado</span>
-              <span class="font-semibold text-gray-800">S/ {{ (supplier.totalExpenses || 0).toFixed(2) }}</span>
-            </div>
-            <div class="text-right">
-              <span class="text-gray-400 block text-[10px] uppercase tracking-wider">Saldo Pendiente</span>
-              <span :class="['font-semibold', supplier.pendingBalance > 0 ? 'text-red-600' : 'text-gray-800']">
-                S/ {{ (supplier.pendingBalance || 0).toFixed(2) }}
-              </span>
-            </div>
-          </div>
-        </div>
+        />
       </div>
 
       <!-- Estado Vacío -->
@@ -226,6 +196,7 @@ import { ref, onMounted } from "vue";
 import { useSuppliers } from "@/composables/useSuppliers";
 import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
+import CardSupplier from "@/components/Suppliers/CardSupplier.vue";
 
 const router = useRouter();
 const route = useRoute();

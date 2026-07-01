@@ -38,6 +38,12 @@
             </h1>
             <div class="flex items-center gap-2 flex-wrap">
               <span
+                v-if="supplier.isPartner"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200"
+              >
+                Socio de Acopio
+              </span>
+              <span
                 v-if="supplier.pendingBalance > 0"
                 class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200"
               >

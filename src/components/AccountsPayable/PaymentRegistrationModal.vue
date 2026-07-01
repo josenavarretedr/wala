@@ -25,6 +25,38 @@
           <p class="text-xs text-purple-600 mt-1">Gasto: {{ transaction.description || 'Gasto' }}</p>
         </div>
 
+        <!-- Ajustar Precio Pactado (solo si es Acopio) -->
+        <div v-if="transaction.acopioId" class="bg-teal-50 p-4 rounded-xl border border-teal-100 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs text-teal-700 uppercase tracking-wider font-semibold">Gasto por Acopio</span>
+            <button type="button" @click="toggleAdjustPrice" class="text-xs font-bold text-teal-600 underline">
+              {{ isAdjustingPrice ? 'Cancelar Ajuste' : 'Ajustar Precio Pactado' }}
+            </button>
+          </div>
+          <p class="text-xs text-teal-600">
+            Cantidad acopiada: <span class="font-semibold">{{ acopioQuantity.toFixed(2) }} {{ acopioUnit }}</span>
+          </p>
+
+          <div v-if="isAdjustingPrice" class="space-y-2 pt-2 border-t border-teal-200">
+            <label class="block text-xs font-semibold text-gray-600">Nuevo Precio Unitario Pactado</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">S/</span>
+              <input
+                v-model.number="adjustedUnitPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                class="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:border-teal-500 focus:outline-none text-sm font-bold"
+                placeholder="0.00"
+              />
+            </div>
+            <div class="flex justify-between text-xs text-gray-500 pt-1">
+              <span>Nuevo total de deuda:</span>
+              <span class="font-bold text-teal-700">S/ {{ adjustedTotalAmount.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Método de pago -->
         <div class="space-y-2">
           <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider">Método de Pago</label>
@@ -150,6 +182,7 @@
 import { ref, computed, watch } from "vue";
 import { useAccountsPayable } from "@/composables/useAccountsPayable";
 import { useToast } from "@/composables/useToast";
+import { useAcopioStore } from "@/stores/acopioStore";
 
 const props = defineProps({
   show: Boolean,
@@ -162,6 +195,7 @@ const props = defineProps({
 const emit = defineEmits(["close", "payment-registered"]);
 
 const { addPaymentToExpenseTransaction } = useAccountsPayable();
+const acopioStore = useAcopioStore();
 const { success, error } = useToast();
 
 const isSubmitting = ref(false);
@@ -171,7 +205,43 @@ const paymentAmount = ref(0);
 const notes = ref("");
 const validationError = ref("");
 
+// Estado para ajuste de precio de acopios
+const isAdjustingPrice = ref(false);
+const adjustedUnitPrice = ref(0);
+
+const acopioQuantity = computed(() => {
+  return props.transaction.materialItems?.[0]?.quantity || 0;
+});
+
+const acopioUnit = computed(() => {
+  return props.transaction.materialItems?.[0]?.unit || 'uni';
+});
+
+const acopioCurrentPrice = computed(() => {
+  return props.transaction.materialItems?.[0]?.cost || 0;
+});
+
+const adjustedTotalAmount = computed(() => {
+  return acopioQuantity.value * (adjustedUnitPrice.value || 0);
+});
+
+function toggleAdjustPrice() {
+  isAdjustingPrice.value = !isAdjustingPrice.value;
+  if (isAdjustingPrice.value) {
+    adjustedUnitPrice.value = acopioCurrentPrice.value;
+  }
+}
+
+watch(() => props.transaction, (newVal) => {
+  isAdjustingPrice.value = false;
+  adjustedUnitPrice.value = newVal?.materialItems?.[0]?.cost || 0;
+}, { immediate: true });
+
 const remaining = computed(() => {
+  if (isAdjustingPrice.value) {
+    const totalPaid = props.transaction.totalPaid || 0;
+    return Math.max(adjustedTotalAmount.value - totalPaid, 0);
+  }
   return props.transaction.balance || 0;
 });
 
@@ -181,7 +251,7 @@ const newBalance = computed(() => {
 });
 
 // Validación en tiempo real
-watch([paymentType, paymentAmount, selectedAccount], () => {
+watch([paymentType, paymentAmount, selectedAccount, remaining], () => {
   validationError.value = "";
   
   if (!selectedAccount.value) {
@@ -208,6 +278,18 @@ async function submitPayment() {
   if (validationError.value || !selectedAccount.value) return;
 
   isSubmitting.value = true;
+
+  // 1. Si está ajustando el precio, actualizar el acopio primero
+  if (isAdjustingPrice.value && props.transaction.acopioId) {
+    try {
+      await acopioStore.updateAcopioPrice(props.transaction.acopioId, adjustedUnitPrice.value);
+    } catch (err) {
+      error("Error al ajustar precio acordado del acopio: " + err.message);
+      isSubmitting.value = false;
+      return;
+    }
+  }
+
   const amountToPay = paymentType.value === "complete" ? remaining.value : paymentAmount.value;
 
   try {
@@ -233,5 +315,6 @@ function close() {
   paymentAmount.value = 0;
   notes.value = "";
   validationError.value = "";
+  isAdjustingPrice.value = false;
 }
 </script>
