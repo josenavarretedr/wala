@@ -14,6 +14,7 @@
 const admin = require('firebase-admin');
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const crypto = require('crypto');
+const { getFeaturesForPlan } = require('../Helpers/subscriptionHelper');
 
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN,
@@ -229,6 +230,7 @@ async function handleApprovedPayment(businessId, planType, payment) {
     // Actualizar suscripción vigente del negocio
     await businessRef.update({
       subscription,
+      features: getFeaturesForPlan(planConfig.plan),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 

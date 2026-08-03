@@ -307,6 +307,7 @@ function getIndustryLabel() {
     libreria: 'Librería',
     restaurante: 'Restaurante',
     farmacia: 'Farmacia',
+    cooperativa_agricola: 'Cooperativa agrícola',
     otro: 'Otro rubro'
   };
   const ind = businessStore.business?.industry || 'otro';

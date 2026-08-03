@@ -3,6 +3,7 @@
 const { MercadoPagoConfig, Payment } = require('mercadopago');
 const admin = require('firebase-admin');
 const { Timestamp } = require('firebase-admin/firestore');
+const { getFeaturesForPlan } = require('../Helpers/subscriptionHelper');
 
 // Inicializar Mercado Pago
 const accessToken = process.env.MP_ACCESS_TOKEN;
@@ -260,6 +261,7 @@ async function activateYapeSubscription(businessId, planType, payment, externalR
       .doc(businessId)
       .update({
         subscription: subscriptionData,
+        features: getFeaturesForPlan(plan.plan),
         updatedAt: now,
       });
 

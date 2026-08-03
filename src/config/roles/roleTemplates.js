@@ -147,6 +147,26 @@ export const ROLE_TEMPLATES = {
       canDelete: false
     }
   ],
+  cooperativa_agricola: [
+    {
+      rolNombre: 'Encargado de Acopio',
+      icon: 'SoilAlt',
+      description: 'Gestión de registros de acopio, recepción de cosechas y lotes.',
+      modulosAcceso: ['dashboard', 'inventory', 'suppliers', 'accountsPayable'],
+      canCreate: true,
+      canEdit: true,
+      canDelete: false
+    },
+    {
+      rolNombre: 'Tesorero / Caja',
+      icon: 'Wallet',
+      description: 'Gestión de liquidez, pagos a socios y cuentas por pagar.',
+      modulosAcceso: ['dashboard', 'sales', 'expenses', 'accountsBalance', 'records', 'accountsPayable'],
+      canCreate: true,
+      canEdit: false,
+      canDelete: false
+    }
+  ],
   otro: [
     {
       rolNombre: 'Cajero',

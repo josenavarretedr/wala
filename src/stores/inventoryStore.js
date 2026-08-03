@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { useInventory } from "@/composables/useInventory";
 import { useTraceability } from "@/composables/useTraceability";
 import { round2, roundStock } from "@/utils/mathUtils";
+import { useBusinessStore } from "@/stores/businessStore";
 
 const allItemsInInventory = ref([]); // Lista reactiva para almacenar los ítems
 const isLoading = ref(false); // Bandera reactiva de carga
@@ -36,6 +37,16 @@ export function useInventoryStore() {
       allItemsInInventory.value = items; // Almacenar en la lista reactiva
 
       console.log("✅ Items fetched successfully with traceability from useInventoryStore.js");
+
+      // Recalibrar/sincronizar conteo de productos en Firestore
+      const businessStore = useBusinessStore();
+      const businessId = businessStore.getBusinessId;
+      if (businessId) {
+        businessStore.updateUsageStats(businessId, {
+          employeeCount: businessStore.employees.length || 1,
+          productCount: items.length
+        });
+      }
 
     } catch (error) {
       console.error("❌ Error fetching items:", error);

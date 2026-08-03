@@ -4,7 +4,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white/40 backdrop-blur-md p-6 rounded-3xl border border-white/20 shadow-sm">
       <div class="space-y-1">
         <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2">
-          <Group class="w-8 h-8 text-gray-800" />
+          <Community class="w-8 h-8 text-[#E35336]" />
           <span>Equipo de Trabajo</span>
         </h1>
         <p class="text-sm text-gray-500 font-medium">Gestiona accesos diferenciados y roles de tus colaboradores.</p>

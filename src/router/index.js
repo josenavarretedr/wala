@@ -507,13 +507,13 @@ const routes = [
         path: 'employees',
         name: 'EmployeesDashboard',
         component: () => import('@/views/Employees/EmployeesDashboard.vue'),
-        meta: { requiresAuth: true, role: 'gerente', title: 'Equipo de Trabajo' }
+        meta: { requiresAuth: true, moduleKey: 'employees', title: 'Equipo de Trabajo' }
       },
       {
         path: 'employees/:employeeId',
         name: 'EmployeeDetails',
         component: () => import('@/views/Employees/EmployeeDetails.vue'),
-        meta: { requiresAuth: true, role: 'gerente', title: 'Detalle del Empleado' }
+        meta: { requiresAuth: true, moduleKey: 'employees', title: 'Detalle del Empleado' }
       },
 
       // {

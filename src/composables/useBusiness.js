@@ -93,7 +93,7 @@ export const createBusiness = async (uid, businessData) => {
     },
     features: {
       maxEmployees: 3,
-      maxProducts: 100,
+      maxProducts: 20,
       advancedReports: false,
       multiLocation: false,
       apiAccess: false,

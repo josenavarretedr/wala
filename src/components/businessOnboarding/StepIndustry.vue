@@ -93,6 +93,23 @@
         </div>
       </button>
 
+      <!-- Cooperativa agrícola -->
+      <button
+        type="button"
+        @click="selectIndustry('cooperativa_agricola')"
+        :class="getButtonClasses('cooperativa_agricola', 'emerald')"
+      >
+        <div :class="getIconContainerClasses('cooperativa_agricola', 'emerald')">
+          <SoilAlt class="w-8 h-8" />
+        </div>
+        <div class="text-left sm:text-center flex-1 sm:flex-initial">
+          <span class="text-base sm:text-lg font-semibold block"
+            >Cooperativa agrícola</span
+          >
+          <span class="text-xs opacity-80">Acopio y producción</span>
+        </div>
+      </button>
+
       <!-- Otro -->
       <button
         type="button"
@@ -146,7 +163,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useBusinessOnboardingFlowStore } from "@/stores/businessOnboardingFlowStore";
-import { Wrench, Shop, Book, PizzaSlice, HalfMoon, Suggestion } from "@iconoir/vue";
+import { Wrench, Shop, Book, PizzaSlice, HalfMoon, Suggestion, SoilAlt } from "@iconoir/vue";
 
 const flowStore = useBusinessOnboardingFlowStore();
 
@@ -171,6 +188,7 @@ const getButtonClasses = (industry, colorName) => {
       libreria: "bg-indigo-50 text-indigo-600 border-2 border-indigo-600",
       restaurante: "bg-yellow-50 text-yellow-600 border-2 border-yellow-600",
       farmacia: "bg-teal-50 text-teal-600 border-2 border-teal-600",
+      cooperativa_agricola: "bg-emerald-50 text-emerald-600 border-2 border-emerald-600",
       otro: "bg-purple-50 text-purple-600 border-2 border-purple-600",
     };
     return [baseClasses, selectedClasses[industry]];
@@ -187,6 +205,8 @@ const getButtonClasses = (industry, colorName) => {
       "bg-white text-gray-600 hover:bg-yellow-50 hover:text-yellow-600 border border-gray-200",
     farmacia:
       "bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-600 border border-gray-200",
+    cooperativa_agricola:
+      "bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 border border-gray-200",
     otro: "bg-white text-gray-600 hover:bg-purple-50 hover:text-purple-600 border border-gray-200",
   };
 
@@ -202,6 +222,7 @@ const getIconContainerClasses = (industry, colorName) => {
     libreria: "bg-indigo-50",
     restaurante: "bg-yellow-50",
     farmacia: "bg-teal-50",
+    cooperativa_agricola: "bg-emerald-50",
     otro: "bg-purple-50",
   };
 
@@ -215,6 +236,7 @@ const getIndustryLabel = (industry) => {
     libreria: "Librería",
     restaurante: "Restaurante",
     farmacia: "Farmacia",
+    cooperativa_agricola: "Cooperativa agrícola",
     otro: "Otro",
   };
   return labels[industry] || industry;

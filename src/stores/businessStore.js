@@ -122,9 +122,10 @@ export const useBusinessStore = defineStore('business', {
     canAddEmployee: (state) => {
       const usage = state.business?.usage || {}
       const features = state.business?.features || {}
-      const maxEmployees = features.maxEmployees || 3
+      const maxEmployees = features.maxEmployees || features.maxEmployee || 3
+      const currentEmployees = usage.employeeCount !== undefined && usage.employeeCount !== null ? usage.employeeCount : 1
 
-      return usage.employeeCount < maxEmployees
+      return currentEmployees < maxEmployees
     },
 
     /**
@@ -133,9 +134,20 @@ export const useBusinessStore = defineStore('business', {
     canAddProduct: (state) => {
       const usage = state.business?.usage || {}
       const features = state.business?.features || {}
-      const maxProducts = features.maxProducts || 20
+      const maxProducts = features.maxProducts || features.maxProduct || 20
+      const currentProducts = usage.productCount !== undefined && usage.productCount !== null ? usage.productCount : 0
 
-      return usage.productCount < maxProducts
+      console.log('🔍 [businessStore] canAddProduct check:', {
+        businessId: state.business?.id,
+        currentProducts,
+        maxProducts,
+        hasFeatures: !!state.business?.features,
+        featuresObject: JSON.parse(JSON.stringify(features)),
+        usageObject: JSON.parse(JSON.stringify(usage)),
+        result: currentProducts < maxProducts
+      });
+
+      return currentProducts < maxProducts
     },
 
     /**
@@ -144,17 +156,21 @@ export const useBusinessStore = defineStore('business', {
     limits: (state) => {
       const features = state.business?.features || {}
       const usage = state.business?.usage || {}
+      const currentEmployees = usage.employeeCount !== undefined && usage.employeeCount !== null ? usage.employeeCount : 1
+      const currentProducts = usage.productCount !== undefined && usage.productCount !== null ? usage.productCount : 0
+      const maxEmployees = features.maxEmployees || features.maxEmployee || 3
+      const maxProducts = features.maxProducts || features.maxProduct || 20
 
       return {
         employees: {
-          current: usage.employeeCount || 0,
-          max: features.maxEmployees || 3,
-          available: (features.maxEmployees || 3) - (usage.employeeCount || 0)
+          current: currentEmployees,
+          max: maxEmployees,
+          available: Math.max(0, maxEmployees - currentEmployees)
         },
         products: {
-          current: usage.productCount || 0,
-          max: features.maxProducts || 20,
-          available: (features.maxProducts || 20) - (usage.productCount || 0)
+          current: currentProducts,
+          max: maxProducts,
+          available: Math.max(0, maxProducts - currentProducts)
         }
       }
     }

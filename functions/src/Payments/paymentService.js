@@ -3,6 +3,7 @@
 const { MercadoPagoConfig, Payment, Preference } = require('mercadopago');
 const admin = require('firebase-admin');
 const { FieldValue, Timestamp } = require('firebase-admin/firestore');
+const { getFeaturesForPlan } = require('../Helpers/subscriptionHelper');
 
 // Inicializar Firebase Admin si no está inicializado
 if (!admin.apps.length) {
@@ -287,6 +288,7 @@ async function activateSubscription(businessId, planType, payment, externalRefer
       .doc(businessId)
       .update({
         subscription: subscriptionData,
+        features: getFeaturesForPlan(plan.plan),
         updatedAt: now,
       });
 

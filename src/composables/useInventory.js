@@ -16,9 +16,11 @@ import {
   where,
   orderBy,
   limit,
+  increment,
 } from "firebase/firestore";
 import appFirebase, { functions } from "@/firebaseInit";
 import { httpsCallable } from "firebase/functions";
+import { useBusinessStore } from "@/stores/businessStore";
 
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from 'uuid';
@@ -173,6 +175,30 @@ const validateUniqueVariantLabel = (variantCombos = []) => {
 };
 
 export function useInventory() {
+  const businessStore = useBusinessStore();
+
+  const adjustProductCount = async (businessId, amount) => {
+    try {
+      const businessRef = doc(db, 'businesses', businessId);
+      await updateDoc(businessRef, {
+        'usage.productCount': increment(amount),
+        'usage.lastUpdated': serverTimestamp()
+      });
+      // Actualizar estado local del store de negocio si es el negocio actual
+      if (businessStore.business && businessStore.business.id === businessId) {
+        if (!businessStore.business.usage) {
+          businessStore.business.usage = { productCount: 0 };
+        }
+        businessStore.business.usage.productCount = Math.max(
+          0,
+          (businessStore.business.usage.productCount || 0) + amount
+        );
+      }
+    } catch (e) {
+      console.warn('⚠️ Error al ajustar conteo de productos:', e);
+    }
+  };
+
   const createItem = async (item, type = 'MERCH') => {
     try {
       const businessId = ensureBusinessId();
@@ -201,6 +227,7 @@ export function useInventory() {
         type,
         trackStock,
       });
+      await adjustProductCount(businessId, 1);
       console.log('BusinessId', businessId);
       console.log("Item created successfully", item);
     } catch (error) {
@@ -305,6 +332,7 @@ export function useInventory() {
 
       // Crear producto en Firestore
       await setDoc(productRef, productPayload);
+      await adjustProductCount(businessId, 1);
 
       console.log('✅ Producto creado exitosamente:', {
         id: productId,
@@ -436,6 +464,7 @@ export function useInventory() {
           };
 
           await setDoc(productRef, productPayload);
+          await adjustProductCount(businessId, 1);
 
           console.log('✅ Producto creado exitosamente antes del stockLog:', {
             id: item.uuid,
@@ -1069,6 +1098,7 @@ export function useInventory() {
 
       // 3. Eliminar el documento principal del producto
       await deleteDoc(productRef);
+      await adjustProductCount(businessId, -1);
       console.log(`✅ [deleteProduct] Producto ${productId} eliminado exitosamente`);
       
       return true;

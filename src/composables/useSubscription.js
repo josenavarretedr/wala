@@ -95,6 +95,11 @@ export function useSubscription() {
    * }
    */
   const checkLimit = (resourceType) => {
+    console.log('🔍 [useSubscription] checkLimit called:', {
+      resourceType,
+      canAddEmployee: businessStore.canAddEmployee,
+      canAddProduct: businessStore.canAddProduct
+    });
     if (resourceType === 'employee') {
       return businessStore.canAddEmployee
     }
@@ -213,6 +218,12 @@ export function useSubscription() {
    */
   const requireLimit = (resourceType, showModal = true) => {
     const canAdd = checkLimit(resourceType)
+
+    console.log('🔍 [useSubscription] requireLimit check:', {
+      resourceType,
+      canAdd,
+      showModal
+    });
 
     if (!canAdd && showModal) {
       const featureMap = {

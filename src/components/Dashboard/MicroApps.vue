@@ -428,6 +428,7 @@ import {
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { useBusinessStore } from "@/stores/businessStore";
 import { useSubscription } from "@/composables/useSubscription";
 
 // Props
@@ -444,6 +445,7 @@ const emit = defineEmits(["navigateToApp"]);
 // Stores
 const programStore = useProgramStore();
 const userStore = useUserStore();
+const businessStore = useBusinessStore();
 
 // Subscription
 const { isPremium } = useSubscription();
@@ -553,7 +555,7 @@ const allMicroApps = ref([
     icon: Community,
     isComponent: true,
     color: "orange",
-    role: "gerente",
+    moduleKey: "employees",
   },
 
   {
@@ -565,29 +567,8 @@ const allMicroApps = ref([
     isComponent: true,
     color: "teal",
     moduleKey: "inventory",
+    industry: "cooperativa_agricola",
   },
-
-  // {
-  //   id: 12,
-  //   name: "Pro",
-  //   route: "/pro",
-  //   available: true,
-  //   icon: BrightCrown,
-  //   isComponent: true,
-  //   color: "orange",
-  //   role: "gerente",
-  // },
-
-  // {
-  //   id: 13,
-  //   name: "Asesoría",
-  //   route: "/consulting",
-  //   available: true,
-  //   icon: SoilAlt,
-  //   isComponent: true,
-  //   color: "teal",
-  //   moduleKey: "consulting",
-  // },
 ]);
 
 // Función helper para obtener la clase de color del icono
@@ -627,6 +608,7 @@ const getValue = (value) => {
 
 // Filtrar aplicaciones según permisos y rol del usuario
 const allowedMicroApps = computed(() => {
+  const currentIndustry = businessStore.business?.industry || userStore.currentBusiness?.industry;
   return allMicroApps.value.filter((app) => {
     // 1. Verificar restricción de rol
     if (app.role && userStore.getCurrentBusinessRole !== app.role) {
@@ -634,6 +616,10 @@ const allowedMicroApps = computed(() => {
     }
     // 2. Verificar restricción de moduloKey
     if (app.moduleKey && !userStore.hasModuleAccess(app.moduleKey)) {
+      return false;
+    }
+    // 3. Verificar restricción de rubro/industria
+    if (app.industry && currentIndustry !== app.industry) {
       return false;
     }
     return true;

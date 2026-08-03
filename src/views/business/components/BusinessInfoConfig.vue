@@ -205,7 +205,7 @@
 </template>
 
 <script setup>
-import { Community, Globe, Clock, Bell, Wrench, Shop, Book, PizzaSlice, HalfMoon, Suggestion, ShoppingBag, Calendar, WashingMachine, ViewGrid } from "@iconoir/vue";
+import { Community, Globe, Clock, Bell, Wrench, Shop, Book, PizzaSlice, HalfMoon, Suggestion, ShoppingBag, Calendar, WashingMachine, ViewGrid, SoilAlt } from "@iconoir/vue";
 
 const props = defineProps({
   modelValue: {
@@ -232,6 +232,7 @@ const industryOptions = [
   { id: 'libreria', label: 'Librería', color: 'indigo', icon: Book },
   { id: 'restaurante', label: 'Restaurante', color: 'yellow', icon: PizzaSlice },
   { id: 'farmacia', label: 'Farmacia', color: 'teal', icon: HalfMoon },
+  { id: 'cooperativa_agricola', label: 'Cooperativa agrícola', color: 'emerald', icon: SoilAlt },
   { id: 'otro', label: 'Otro', color: 'purple', icon: Suggestion }
 ];
 

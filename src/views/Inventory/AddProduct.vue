@@ -142,6 +142,7 @@ import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useSubscription } from "@/composables/useSubscription";
+import { useBusinessStore } from "@/stores/businessStore";
 import SearchProductForCreation from "@/components/Inventory/SearchProductForCreation.vue";
 import ProductForm from "@/components/Inventory/ProductForm.vue";
 
@@ -155,6 +156,15 @@ const wizardStep = ref(1); // 1: Búsqueda, 2: Formulario
 const saving = ref(false);
 
 onMounted(() => {
+  const businessStore = useBusinessStore();
+  console.log("🔍 [AddProduct.vue] onMounted details:", {
+    businessId: businessStore.getBusinessId,
+    businessName: businessStore.getBusinessName,
+    businessData: businessStore.business ? JSON.parse(JSON.stringify(businessStore.business)) : null,
+    canAddProduct: businessStore.canAddProduct,
+    limits: JSON.parse(JSON.stringify(businessStore.limits))
+  });
+
   if (!requireLimit("product")) {
     router.back();
   }

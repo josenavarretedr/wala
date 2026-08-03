@@ -91,6 +91,13 @@ export const MODULE_DEFINITIONS = [
     icon: 'Hourglass',
     description: 'Seguimiento de compras al crédito y egresos pendientes.',
     route: 'AccountsPayable'
+  },
+  {
+    key: 'employees',
+    label: 'Equipo de Trabajo',
+    icon: 'Community',
+    description: 'Gestión de colaboradores, roles y permisos de acceso al negocio.',
+    route: 'EmployeesDashboard'
   }
 ];
 
@@ -103,7 +110,7 @@ export function mapModulesToLegacyPermissions(modulosAcceso, canCreate, canEdit,
     editarMovimientos: canEdit === true,
     // Empleados no deben poder borrar movimientos por defecto a menos que se les dé permiso explícito de canDelete
     verReportes: modulosAcceso.includes('records') || modulosAcceso.includes('incomeStatement') || modulosAcceso.includes('dashboard'),
-    gestionarEmpleados: false, // Reservado solo para gerentes
+    gestionarEmpleados: modulosAcceso.includes('employees'),
     configurarNegocio: false   // Reservado solo para gerentes
   };
 }

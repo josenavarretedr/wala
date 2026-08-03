@@ -858,12 +858,13 @@ const {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const INDUSTRY_MAP = {
-  ferreteria:  { label: 'Ferretería',  color: '#dc2626' },
-  reposteria:  { label: 'Repostería',  color: '#db2777' },
-  libreria:    { label: 'Librería',    color: '#4338ca' },
-  restaurante: { label: 'Restaurante', color: '#d97706' },
-  farmacia:    { label: 'Farmacia',    color: '#0d9488' },
-  otro:        { label: 'Otro',        color: '#7c3aed' },
+  ferreteria:           { label: 'Ferretería',           color: '#dc2626' },
+  reposteria:           { label: 'Repostería',           color: '#db2777' },
+  libreria:             { label: 'Librería',             color: '#4338ca' },
+  restaurante:          { label: 'Restaurante',          color: '#d97706' },
+  farmacia:             { label: 'Farmacia',             color: '#0d9488' },
+  cooperativa_agricola: { label: 'Cooperativa agrícola', color: '#059669' },
+  otro:                 { label: 'Otro',                 color: '#7c3aed' },
 };
 const BUSINESS_TYPE_MAP = {
   FOOD_PRODUCTION:      { label: 'Prod. Alimentos', color: '#d97706' },

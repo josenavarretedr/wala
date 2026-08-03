@@ -47,7 +47,7 @@ const PLAN_FEATURES = {
   },
   free: {
     maxEmployees: 3,
-    maxProducts: 999999,
+    maxProducts: 20,
     advancedReports: false,
     multiLocation: false,
     apiAccess: false,

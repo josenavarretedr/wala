@@ -32,8 +32,9 @@
       </button>
     </div>
 
-    <!-- Botón Acopio (Teal) -->
+    <!-- Botón Acopio (Teal) - Solo para Cooperativa agrícola -->
     <div
+      v-if="isCooperativaAgricola"
       class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
     >
       <button
@@ -52,14 +53,22 @@ import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
 import { BounceRight, Plus, SoilAlt } from "@iconoir/vue";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 
 const route = useRoute();
 const router = useRouter();
 
 const businessStore = useBusinessStore();
+const userStore = useUserStore();
+
 const capabilities = computed(() => {
   return getBusinessCapabilities(businessStore.business?.businessType);
+});
+
+const isCooperativaAgricola = computed(() => {
+  const industry = businessStore.business?.industry || userStore.currentBusiness?.industry;
+  return industry === "cooperativa_agricola";
 });
 
 const handleAddProduct = () => {

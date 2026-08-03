@@ -75,7 +75,7 @@ export const useUserStore = defineStore('user', {
     // Obtener módulos permitidos en el negocio actual
     currentModulosAcceso: (state) => {
       if (state.currentBusiness?.rol === 'gerente' || state.currentBusiness?.permissions?.admin === true) {
-        return ['dashboard', 'sales', 'expenses', 'inventory', 'clients', 'accountsReceivable', 'accountsBalance', 'records', 'incomeStatement', 'consulting', 'quotes'];
+        return ['dashboard', 'sales', 'expenses', 'inventory', 'clients', 'accountsReceivable', 'accountsBalance', 'records', 'incomeStatement', 'consulting', 'quotes', 'orders', 'suppliers', 'accountsPayable', 'employees'];
       }
       return state.currentBusiness?.modulosAcceso || [];
     },

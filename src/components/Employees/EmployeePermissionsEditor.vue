@@ -18,16 +18,14 @@
             : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
         ]"
       >
-        <!-- Icono genérico en base a svg -->
+        <!-- Icono específico del módulo -->
         <div 
           :class="[
-            'p-2 rounded-lg shrink-0',
+            'p-2 rounded-lg shrink-0 flex items-center justify-center',
             localModulosAcceso.includes(mod.key) ? 'bg-[#E35336] text-white' : 'bg-gray-100 text-gray-500'
           ]"
         >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-          </svg>
+          <component :is="getModuleIcon(mod.icon)" class="w-5 h-5" />
         </div>
         
         <div class="flex-1">
@@ -135,6 +133,41 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { MODULE_DEFINITIONS } from '@/config/roles/moduleDefinitions';
+import {
+  GraphUp,
+  GraphDown,
+  BoxIso,
+  Group,
+  Community,
+  Hourglass,
+  Reports,
+  LightBulb,
+  Wallet,
+  ClipboardCheck,
+  ViewGrid,
+  Page
+} from '@iconoir/vue';
+
+const getModuleIcon = (iconName) => {
+  const map = {
+    TrendingUp: GraphUp,
+    TrendingDown: GraphDown,
+    Database: BoxIso,
+    BoxIso: BoxIso,
+    User: Group,
+    Group: Group,
+    Community: Community,
+    Hourglass: Hourglass,
+    GraphUp: Reports,
+    Reports: Reports,
+    LightBulb: LightBulb,
+    Wallet: Wallet,
+    ClipboardCheck: ClipboardCheck,
+    ViewGrid: ViewGrid,
+    HistoricShield: Page
+  };
+  return map[iconName] || Community;
+};
 
 const props = defineProps({
   modulosAcceso: { type: Array, default: () => [] },
