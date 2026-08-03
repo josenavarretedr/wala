@@ -125,6 +125,7 @@
             :product-unit="product.unit || 'uni'"
             :track-stock="product?.trackStock ?? false"
             :has-variants="Boolean(product?.hasVariants)"
+            :product-cost="product.cost || 0"
           />
         </div>
       </div>
@@ -141,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onActivated, nextTick } from "vue";
+import { ref, onMounted, watch, onActivated, nextTick, onBeforeUnmount } from "vue";
 import { useRoute, useRouter, onBeforeRouteUpdate } from "vue-router";
 import { useInventory } from "@/composables/useInventory";
 import ProductHeader from "@/components/Inventory/ProductDetails/ProductHeader.vue";
@@ -154,6 +155,7 @@ import ResumenMoves from "@/components/Inventory/ProductDetails/ResumenMoves.vue
 import BackBtn from "@/components/ui/BackBtn.vue";
 
 import NavigationBtnProductDetails from "@/components/Inventory/ProductDetails/NavigationBtnProductDetails.vue";
+import { useAcopioStore } from "@/stores/acopioStore";
 
 // Router
 const route = useRoute();
@@ -161,6 +163,7 @@ const router = useRouter();
 
 // Composables
 const { getProductById } = useInventory();
+const acopioStore = useAcopioStore();
 
 // State
 const product = ref(null);
@@ -213,6 +216,11 @@ const loadProduct = async () => {
 // Lifecycle
 onMounted(() => {
   loadProduct();
+  acopioStore.fetchAcopios();
+});
+
+onBeforeUnmount(() => {
+  acopioStore.cleanup();
 });
 
 // Hook que se ejecuta cuando se navega a esta misma ruta (ej: volver de AddStock)
@@ -260,6 +268,7 @@ onActivated(() => {
   // Solo recargar si ya existe un producto (evita doble carga inicial)
   if (product.value) {
     loadProduct();
+    acopioStore.fetchAcopios();
   }
 });
 </script>

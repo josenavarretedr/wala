@@ -23,6 +23,14 @@
           <span>Variante</span>
           <span>{{ variantBadgeLabel }}</span>
         </div>
+
+        <div
+          v-if="isAcopio"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold shrink-0 bg-teal-50 text-teal-700 border border-teal-200 animate-pulse-once"
+        >
+          <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+          <span>Acopio</span>
+        </div>
       </div>
 
       <!-- Lado derecho: Cantidad y botón de detalles -->
@@ -72,33 +80,62 @@
 
     <!-- Información financiera -->
     <div
-      v-if="log.cost || log.price"
+      v-if="log.cost !== undefined || log.price !== undefined || isAcopio"
       class="pt-2 border-t border-gray-100 space-y-2"
     >
       <!-- Grid de cost y price -->
       <div class="grid grid-cols-2 gap-2">
-        <!-- Costo (solo para compras) -->
+        <!-- Costo (solo para compras / acopio) -->
         <div
-          v-if="log.cost && log.type === 'buy'"
-          class="flex flex-col gap-0.5 bg-amber-50 rounded-lg px-2 py-1.5 border border-amber-200"
+          v-if="(log.cost !== undefined || isAcopio) && log.type === 'buy'"
+          :class="[
+            'flex rounded-lg px-2 py-1.5 border justify-between items-center',
+            isAcopio ? 'col-span-2 bg-teal-50/50 border-teal-200' : 'flex-col gap-0.5 bg-amber-50 border-amber-200'
+          ]"
         >
-          <span class="text-[10px] text-amber-600 font-medium">Costo</span>
-          <div class="flex items-center gap-1">
-            <svg
-              class="w-3 h-3 shrink-0 text-amber-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div class="flex flex-col gap-0.5">
+            <span :class="['text-[10px] font-medium', isAcopio ? 'text-teal-600' : 'text-amber-600']">
+              {{ isAcopio ? 'Precio Acordado (Acopio)' : 'Costo' }}
+            </span>
+            <div class="flex items-center gap-1">
+              <svg
+                class="w-3 h-3 shrink-0"
+                :class="isAcopio ? 'text-teal-600' : 'text-amber-600'"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span :class="['text-xs font-bold', isAcopio ? 'text-teal-800' : 'text-amber-700']">
+                <template v-if="isAcopio && (!log.cost || log.cost === 0)">
+                  <span class="text-[10px] bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-semibold">Por definir</span>
+                </template>
+                <template v-else>
+                  S/ {{ (log.cost || 0).toFixed(2) }}
+                </template>
+              </span>
+            </div>
+          </div>
+
+          <!-- Diferencia (solo si es acopio y tenemos productCost de referencia) -->
+          <div v-if="isAcopio && productCost" class="text-right">
+            <span class="text-[10px] text-gray-500 block font-medium">Dif. vs Costo Base</span>
+            <span 
+              :class="[
+                'text-xs font-bold',
+                costDifference > 0 ? 'text-red-600' : costDifference < 0 ? 'text-green-600' : 'text-gray-600'
+              ]"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span class="text-xs font-bold text-amber-700">
-              S/ {{ log.cost.toFixed(2) }}
+              {{ costDifference > 0 ? '+' : '' }}S/ {{ costDifference.toFixed(2) }}
+              <span class="text-[10px] font-medium font-mono">
+                ({{ costDifference > 0 ? '+' : '' }}{{ costDifferencePercentage }}%)
+              </span>
             </span>
           </div>
         </div>
@@ -181,6 +218,9 @@ import {
   InfoCircle,
   Settings,
 } from "@iconoir/vue";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
+
+const transactionStore = useTransactionStore();
 
 const props = defineProps({
   log: {
@@ -191,6 +231,33 @@ const props = defineProps({
     type: String,
     default: "uni",
   },
+  productCost: {
+    type: Number,
+    default: 0,
+  },
+});
+
+const isAcopio = computed(() => {
+  if (props.log.isAcopio || props.log.acopioId) return true;
+  if (props.log.transactionId) {
+    const tx = transactionStore.transactionsInStore?.value?.find(
+      t => t.uuid === props.log.transactionId || t.id === props.log.transactionId
+    );
+    if (tx && tx.acopioId) return true;
+  }
+  return false;
+});
+
+const costDifference = computed(() => {
+  if (!isAcopio.value || !props.productCost) return 0;
+  const cost = props.log.cost || 0;
+  return cost - props.productCost;
+});
+
+const costDifferencePercentage = computed(() => {
+  if (!props.productCost) return 0;
+  const percentage = (costDifference.value / props.productCost) * 100;
+  return percentage.toFixed(1);
 });
 
 const hasVariantLog = computed(() => {
@@ -412,5 +479,17 @@ function formatedDate(date) {
     font-size: 0.9rem;
     line-height: 1.25rem;
   }
+}
+@keyframes pulse-once {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+.animate-pulse-once {
+  animation: pulse-once 2s ease-in-out 1;
 }
 </style>

@@ -11,4 +11,5 @@
 - [x] Corregir el componente visual `CardStandard.vue` para que muestre `-S/ 0.00` (salida real) y `de S/ X.XX` (monto total) en transacciones de egreso pendientes.
 - [x] Corregir el componente `ResumenDay.vue` para que calcule de forma correcta el total de salidas operacionales a crédito (retornando 0 si el pago está vacío).
 - [x] Evitar la doble contabilidad (double counting) de abonos/pagos posteriores registrados el mismo día en `sharedComputed.js`, `accountsBalanceStore.js` y `ResumenDay.vue` distinguiendo el pago inicial de abonos posteriores mediante la fecha/hora.
-- [x] Verificar el flujo completo y compilar para validar que todo funcione sin errores.
+- [x] Incluir badge de "Acopio" en `CardStandarMove.vue` para los movimientos de inventario que provengan de acopio y mostrar la diferencia de costo acordado vs costo base del producto.
+- [ ] Verificar el flujo completo y compilar para validar que todo funcione sin errores.

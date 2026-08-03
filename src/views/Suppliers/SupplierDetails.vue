@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen">
     <!-- Header -->
     <div class="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
       <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
@@ -27,13 +27,17 @@
 
           <!-- Loading -->
           <div v-if="loading" class="flex items-center gap-3 flex-1">
-            <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"></div>
+            <div
+              class="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600"
+            ></div>
             <span class="text-sm text-gray-500">Cargando proveedor...</span>
           </div>
 
           <!-- Info del proveedor -->
           <div v-else-if="supplier" class="flex-1 min-w-0">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 truncate mb-1">
+            <h1
+              class="text-xl sm:text-2xl font-bold text-gray-900 truncate mb-1"
+            >
               {{ supplier.name }}
             </h1>
             <div class="flex items-center gap-2 flex-wrap">
@@ -67,7 +71,9 @@
     <!-- Contenido Principal -->
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <div v-if="loading" class="flex items-center justify-center py-20">
-        <div class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"
+        ></div>
       </div>
 
       <div v-else-if="supplier" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -76,34 +82,69 @@
           <!-- Stats de Finanzas -->
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <!-- Total Comprado -->
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Total Comprado</span>
-              <span class="text-lg font-bold text-gray-800 tabular-nums">S/ {{ financialStats.totalExpenses.toFixed(2) }}</span>
+            <div
+              class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
+            >
+              <span
+                class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1"
+                >Total Comprado</span
+              >
+              <span class="text-lg font-bold text-gray-800 tabular-nums"
+                >S/ {{ financialStats.totalExpenses.toFixed(2) }}</span
+              >
             </div>
 
             <!-- Total Pagado -->
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Total Pagado</span>
-              <span class="text-lg font-bold text-green-600 tabular-nums">S/ {{ financialStats.totalPaid.toFixed(2) }}</span>
+            <div
+              class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
+            >
+              <span
+                class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1"
+                >Total Pagado</span
+              >
+              <span class="text-lg font-bold text-green-600 tabular-nums"
+                >S/ {{ financialStats.totalPaid.toFixed(2) }}</span
+              >
             </div>
 
             <!-- Deuda Pendiente -->
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Deuda Pendiente</span>
-              <span class="text-lg font-bold text-red-600 tabular-nums">S/ {{ financialStats.pendingBalance.toFixed(2) }}</span>
+            <div
+              class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
+            >
+              <span
+                class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1"
+                >Deuda Pendiente</span
+              >
+              <span class="text-lg font-bold text-red-600 tabular-nums"
+                >S/ {{ financialStats.pendingBalance.toFixed(2) }}</span
+              >
             </div>
 
             <!-- Transacciones -->
-            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <span class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1">Transacciones</span>
-              <span class="text-lg font-bold text-gray-800 tabular-nums">{{ financialStats.transactionCount }}</span>
+            <div
+              class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"
+            >
+              <span
+                class="text-gray-400 block text-[10px] uppercase font-bold tracking-wider mb-1"
+                >Transacciones</span
+              >
+              <span class="text-lg font-bold text-gray-800 tabular-nums">{{
+                financialStats.transactionCount
+              }}</span>
             </div>
           </div>
 
           <!-- Historial de compras / Cuentas por pagar -->
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-            <h2 class="text-lg font-bold text-gray-800">Cuentas Pendientes y Compras</h2>
-            <div v-if="transactions.length > 0" class="divide-y divide-gray-100">
+          <div
+            class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4"
+          >
+            <h2 class="text-lg font-bold text-gray-800">
+              Cuentas Pendientes y Compras
+            </h2>
+            <div
+              v-if="transactions.length > 0"
+              class="divide-y divide-gray-100"
+            >
               <div
                 v-for="transaction in transactions"
                 :key="transaction.uuid"
@@ -112,7 +153,7 @@
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="font-semibold text-gray-900 text-sm">
-                      {{ transaction.description || 'Gasto registrado' }}
+                      {{ transaction.description || "Gasto registrado" }}
                     </span>
                     <span
                       :class="[
@@ -120,26 +161,51 @@
                         transaction.paymentStatus === 'completed'
                           ? 'bg-green-50 text-green-700 border-green-200'
                           : transaction.paymentStatus === 'partial'
-                          ? 'bg-orange-50 text-orange-700 border-orange-200'
-                          : 'bg-red-50 text-red-700 border-red-200'
+                            ? 'bg-orange-50 text-orange-700 border-orange-200'
+                            : 'bg-red-50 text-red-700 border-red-200',
                       ]"
                     >
                       {{ getStatusLabel(transaction.paymentStatus) }}
                     </span>
                   </div>
                   <p class="text-xs text-gray-400 mt-1">
-                    📅 {{ formatDate(transaction.createdAt || transaction.date) }} • 💳 {{ getAccountLabel(transaction.account) }}
+                    📅
+                    {{
+                      formatDate(transaction.createdAt || transaction.date)
+                    }}
+                    • 💳 {{ getAccountLabel(transaction.account) }}
                   </p>
-                  <p class="text-xs text-gray-500 mt-1 font-medium text-purple-600" v-if="transaction.materialItems && transaction.materialItems.length > 0">
-                    📦 {{ transaction.materialItems.map(item => `${item.quantity} ${item.unit} de ${item.description}`).join(', ') }}
+                  <p
+                    class="text-xs text-gray-500 mt-1 font-medium text-purple-600"
+                    v-if="
+                      transaction.materialItems &&
+                      transaction.materialItems.length > 0
+                    "
+                  >
+                    📦
+                    {{
+                      transaction.materialItems
+                        .map(
+                          (item) =>
+                            `${item.quantity} ${item.unit} de ${item.description}`,
+                        )
+                        .join(", ")
+                    }}
                   </p>
                 </div>
 
-                <div class="flex sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-2">
+                <div
+                  class="flex sm:flex-col items-start sm:items-end justify-between sm:justify-center gap-2"
+                >
                   <div class="text-sm">
                     <span class="text-gray-400 text-xs">Total: </span>
-                    <span class="font-bold text-gray-800">S/ {{ (transaction.amount || 0).toFixed(2) }}</span>
-                    <span v-if="transaction.balance > 0" class="text-xs text-red-600 block sm:mt-0.5">
+                    <span class="font-bold text-gray-800"
+                      >S/ {{ (transaction.amount || 0).toFixed(2) }}</span
+                    >
+                    <span
+                      v-if="transaction.balance > 0"
+                      class="text-xs text-red-600 block sm:mt-0.5"
+                    >
                       Falta: S/ {{ transaction.balance.toFixed(2) }}
                     </span>
                   </div>
@@ -161,8 +227,12 @@
 
         <!-- Columna Derecha: Top Productos -->
         <div class="space-y-6">
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4">
-            <h2 class="text-lg font-bold text-gray-800">Top Insumos Suministrados</h2>
+          <div
+            class="bg-white rounded-xl border border-gray-100 shadow-sm p-5 space-y-4"
+          >
+            <h2 class="text-lg font-bold text-gray-800">
+              Top Insumos Suministrados
+            </h2>
             <div v-if="topProducts.length > 0" class="space-y-3">
               <div
                 v-for="(prod, i) in topProducts"
@@ -170,16 +240,25 @@
                 class="flex items-center justify-between gap-3 text-sm"
               >
                 <div class="flex items-center gap-2 min-w-0">
-                  <span class="w-6 h-6 rounded bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0">
+                  <span
+                    class="w-6 h-6 rounded bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-xs shrink-0"
+                  >
                     {{ i + 1 }}
                   </span>
-                  <span class="font-medium text-gray-800 truncate" :title="prod.name">
+                  <span
+                    class="font-medium text-gray-800 truncate"
+                    :title="prod.name"
+                  >
                     {{ prod.name }}
                   </span>
                 </div>
                 <div class="text-right shrink-0">
-                  <span class="font-semibold text-gray-900 block">S/ {{ prod.totalAmount.toFixed(2) }}</span>
-                  <span class="text-xs text-gray-400">{{ prod.quantity }} unids</span>
+                  <span class="font-semibold text-gray-900 block"
+                    >S/ {{ prod.totalAmount.toFixed(2) }}</span
+                  >
+                  <span class="text-xs text-gray-400"
+                    >{{ prod.quantity }} unids</span
+                  >
                 </div>
               </div>
             </div>

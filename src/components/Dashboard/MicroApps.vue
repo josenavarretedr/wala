@@ -424,6 +424,7 @@ import {
   ChatBubble,
   SoilAlt,
   Hourglass,
+  SeaAndSun,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -557,36 +558,36 @@ const allMicroApps = ref([
 
   {
     id: 11,
-    name: "Asesoría",
-    route: "/consulting",
-    available: true,
-    icon: SoilAlt,
-    isComponent: true,
-    color: "teal",
-    moduleKey: "consulting",
-  },
-
-  {
-    id: 12,
-    name: "Pro",
-    route: "/pro",
-    available: true,
-    icon: BrightCrown,
-    isComponent: true,
-    color: "orange",
-    role: "gerente",
-  },
-
-  {
-    id: 13,
     name: "Acopio",
     route: "/acopio",
     available: true,
-    icon: SoilAlt,
+    icon: SeaAndSun,
     isComponent: true,
     color: "teal",
     moduleKey: "inventory",
   },
+
+  // {
+  //   id: 12,
+  //   name: "Pro",
+  //   route: "/pro",
+  //   available: true,
+  //   icon: BrightCrown,
+  //   isComponent: true,
+  //   color: "orange",
+  //   role: "gerente",
+  // },
+
+  // {
+  //   id: 13,
+  //   name: "Asesoría",
+  //   route: "/consulting",
+  //   available: true,
+  //   icon: SoilAlt,
+  //   isComponent: true,
+  //   color: "teal",
+  //   moduleKey: "consulting",
+  // },
 ]);
 
 // Función helper para obtener la clase de color del icono

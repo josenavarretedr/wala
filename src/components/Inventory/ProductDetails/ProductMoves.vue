@@ -73,6 +73,7 @@
             :key="log.uuid || index"
             :log="log"
             :product-unit="productUnit"
+            :product-cost="productCost"
             class="transition-all duration-200 hover:shadow-md"
           />
         </div>
@@ -103,6 +104,10 @@ const props = defineProps({
   hasVariants: {
     type: Boolean,
     default: false,
+  },
+  productCost: {
+    type: Number,
+    default: 0,
   },
 });
 

@@ -384,6 +384,14 @@ export function useInventory() {
         stockLog.supplierName = item.supplierName;
       }
 
+      // Copiar datos de acopio si existen
+      if (item.isAcopio) {
+        stockLog.isAcopio = Boolean(item.isAcopio);
+      }
+      if (item.acopioId) {
+        stockLog.acopioId = item.acopioId;
+      }
+
       // Para conteos de inventario, agregar campos adicionales
       if (typeStockLog === 'count') {
         if (item.physicalStock !== undefined && item.physicalStock !== null) {

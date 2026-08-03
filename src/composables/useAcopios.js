@@ -98,7 +98,9 @@ export function useAcopios() {
         transactionId: transactionId,
         supplierId: acopioData.supplierId,
         supplierName: acopioData.supplierName,
-        oldOrNewProduct: 'old'
+        oldOrNewProduct: 'old',
+        isAcopio: true,
+        acopioId: acopioId
       };
 
       // Usar type: 'buy' para que actualice stock y costo del producto
