@@ -246,6 +246,28 @@ export function useTransaccion() {
 
       console.log(`Se encontraron ${closureTransactions.length} transacciones de cierre`);
 
+      // Fallback: si no hay transacciones tipo 'closure', buscar cualquier última transacción
+      if (closureTransactions.length === 0) {
+        console.log('🔄 Fallback en useTransaction: buscando transacciones de referencia más recientes...');
+        const fallbackQ = query(
+          collection(db, 'businesses', businessId, 'transactions'),
+          orderBy('createdAt', 'desc'),
+          firestoreLimit(limit)
+        );
+        const fallbackSnap = await getDocs(fallbackQ);
+        fallbackSnap.forEach(doc => {
+          const data = doc.data();
+          closureTransactions.push({
+            id: doc.id,
+            ...data,
+            cashAmount: data.cashAmount ?? data.realCashBalance ?? data.initialCashBalance ?? 0,
+            bankAmount: data.bankAmount ?? data.realBankBalance ?? data.initialBankBalance ?? 0,
+            isFallbackTx: true,
+          });
+        });
+        console.log(`Se encontraron ${closureTransactions.length} transacciones de referencia (fallback)`);
+      }
+
       return closureTransactions;
     } catch (error) {
       console.error('Error obteniendo transacciones de cierre: ', error);

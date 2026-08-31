@@ -190,7 +190,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     return Math.abs(pDate.getTime() - txDate.getTime()) < 900000; // 15 minutos
   };
 
-  const getReceivedAmount = (tx) => {
+  const getReceivedAmount = (tx, targetAccount = null) => {
     // Si es un pago (cobro), usar el amount completo
     if (tx.type === 'payment') {
       return tx.amount || 0;
@@ -201,11 +201,22 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       if (tx.payments.length > 0) {
         // Solo contar el primer pago si es un pago inicial (realizado al momento del registro)
         if (isInitialPayment(tx.payments[0], tx)) {
-          return tx.payments[0].amount || 0;
+          const initial = tx.payments[0].amount || 0;
+          if (tx.type === 'income' && tx.isSubjectToDetraction && targetAccount !== 'detraction') {
+            return tx.netAmount ?? Math.max(0, initial - (tx.detractionAmount || 0));
+          }
+          return initial;
         }
       }
       // Si el array de pagos está definido pero vacío, o es posterior, significa que no ha salido dinero como parte de este doc
       return 0;
+    }
+
+    if (tx.type === 'income' && tx.isSubjectToDetraction) {
+      if (targetAccount === 'detraction') {
+        return tx.detractionAmount || 0;
+      }
+      return tx.netAmount ?? (tx.amount - (tx.detractionAmount || 0));
     }
 
     // Para transacciones sin sistema de pagos, usar amount normal
@@ -215,8 +226,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   /**
    * Suma transacciones considerando pagos parciales
    */
-  const sumTransactionsWithPayments = (transactions) => {
-    const sum = transactions.reduce((acc, tx) => acc + getReceivedAmount(tx), 0);
+  const sumTransactionsWithPayments = (transactions, targetAccount = null) => {
+    const sum = transactions.reduce((acc, tx) => acc + getReceivedAmount(tx, targetAccount), 0);
     return round2(sum);
   };
 
@@ -255,7 +266,8 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
         tx.type === 'income' &&
         tx.account === 'cash' &&
         tx.subcategory !== 'opening_adjustment'
-      )
+      ),
+      'cash'
     );
   });
 
@@ -275,8 +287,42 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
         tx.type === 'income' &&
         tx.account === 'bank' &&
         tx.subcategory !== 'opening_adjustment'
-      )
+      ),
+      'bank'
     );
+  });
+
+  /**
+   * Ingresos por cuenta de detracciones
+   */
+  const ingresosDetraction = computed(() => {
+    const fromIncomes = transactions.value
+      .filter(tx => tx.type === 'income' && tx.isSubjectToDetraction)
+      .reduce((acc, tx) => acc + (tx.detractionAmount || 0), 0);
+    const direct = sumTransactionsWithPayments(
+      transactions.value.filter(tx =>
+        tx.type === 'income' &&
+        tx.account === 'detraction' &&
+        !tx.isSubjectToDetraction
+      ),
+      'detraction'
+    );
+    return round2(fromIncomes + direct);
+  });
+
+  const egresosDetraction = computed(() => {
+    return sumTransactionsWithPayments(
+      transactions.value.filter(tx =>
+        tx.type === 'expense' &&
+        tx.account === 'detraction' &&
+        tx.category !== 'adjustment'
+      ),
+      'detraction'
+    );
+  });
+
+  const saldoActualDetraction = computed(() => {
+    return round2(ingresosDetraction.value - egresosDetraction.value);
   });
 
   // ===== CÁLCULOS DE EGRESOS =====

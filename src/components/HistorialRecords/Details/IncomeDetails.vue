@@ -74,6 +74,15 @@
             }}
           </span>
 
+          <!-- Badge de Detracción SPOT -->
+          <span
+            v-if="transactionData.isSubjectToDetraction"
+            class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-500/30 backdrop-blur-md text-white border border-amber-300/40"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+            Detracción {{ transactionData.detractionRate || 1.5 }}%
+          </span>
+
           <!-- Badge de Canal de Venta -->
           <span
             class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md text-white border border-white/10"
@@ -196,8 +205,8 @@
 
         <!-- Resumen final y Desglose Financiero Premium -->
         <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
-          <!-- Si no hay costos extra, mostrar solo el total simple de siempre -->
-          <template v-if="!transactionData.packagingCost && !transactionData.platformCommissionAmount && !transactionData.deliveryCost">
+          <!-- Si no hay costos extra ni detracción, mostrar solo el total simple de siempre -->
+          <template v-if="!transactionData.packagingCost && !transactionData.platformCommissionAmount && !transactionData.deliveryCost && !transactionData.isSubjectToDetraction">
             <div class="flex justify-between items-center">
               <div class="text-gray-600 font-medium">
                 {{ transactionData.items.length }}
@@ -209,7 +218,7 @@
             </div>
           </template>
           
-          <!-- Si hay envases, comisión o delivery, mostrar desglose premium -->
+          <!-- Si hay envases, comisión, delivery o detracción, mostrar desglose premium -->
           <template v-else>
             <div class="space-y-2.5 text-sm text-gray-600">
               <div class="flex justify-between items-center">
@@ -248,7 +257,7 @@
               </div>
               
               <div class="border-t border-dashed border-gray-200 my-2 pt-2 flex justify-between items-center text-base font-semibold text-gray-800">
-                <span>Total Bruto Cobrado</span>
+                <span>Total Bruto Facturado</span>
                 <span class="text-gray-900">S/ {{ getTotal().toFixed(2) }}</span>
               </div>
 
@@ -261,10 +270,20 @@
                 <span class="font-medium text-red-600">- S/ {{ getPlatformCommission().toFixed(2) }}</span>
               </div>
 
+              <!-- Detracción SPOT SUNAT -->
+              <div v-if="transactionData.isSubjectToDetraction" class="flex justify-between items-center text-gray-600">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  Detracción SPOT ({{ transactionData.detractionRate || 1.5 }}%)
+                  <span class="text-[10px] text-gray-400">→ Cuenta Detracciones</span>
+                </span>
+                <span class="font-medium text-amber-700">- S/ {{ (transactionData.detractionAmount || 0).toFixed(2) }}</span>
+              </div>
+
               <div class="border-t-2 border-double border-gray-200 pt-2.5 mt-2 flex justify-between items-center">
                 <div class="font-bold text-gray-900 flex flex-col">
-                  <span>Ingreso Neto Estimado</span>
-                  <span class="text-[10px] text-gray-400 font-normal">Monto neto real tras deducir la comisión</span>
+                  <span>Ingreso Neto Efectivo en Cuenta</span>
+                  <span class="text-[10px] text-gray-400 font-normal">Monto neto depositado en {{ getAccountLabel }}</span>
                 </div>
                 <div class="text-xl font-black text-emerald-600">
                   S/ {{ getNetIncome().toFixed(2) }}
@@ -339,19 +358,18 @@
             >
               <div class="flex justify-between items-center text-xs mb-1.5">
                 <div class="flex items-center gap-2">
-                  <span class="text-gray-500"
-                    >Pago {{ index + 1 }}
-                    {{ index === 0 ? "(Inicial)" : "" }}</span
-                  >
+                  <span class="text-gray-500">
+                    {{ isInitialPayment(payment, transactionData) ? "Pago Inicial" : `Abono #${index + (transactionData.payments.some(p => isInitialPayment(p, transactionData)) ? 0 : 1)}` }}
+                  </span>
                   <span
                     :class="[
                       'px-2 py-0.5 rounded text-xs',
-                      payment.method === 'cash'
+                      (payment.account || payment.method) === 'cash'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-purple-100 text-purple-700',
                     ]"
                   >
-                    {{ payment.method === "cash" ? "Efectivo" : "Digital" }}
+                    {{ (payment.account || payment.method) === "cash" ? "Efectivo" : "Digital" }}
                   </span>
                 </div>
                 <span class="font-semibold text-gray-800">
@@ -412,6 +430,7 @@
 import { computed } from "vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
+import { isInitialPayment } from "@/utils/paymentCalculator";
 import { TaskList, Package, User, Coins, SmartphoneDevice, MapPin } from "@iconoir/vue";
 
 const props = defineProps({
@@ -426,7 +445,11 @@ const props = defineProps({
 });
 
 const getTotal = () => {
-  if (props.transactionData.amount !== undefined && props.transactionData.amount !== null) {
+  if (
+    props.transactionData.amount !== undefined &&
+    props.transactionData.amount !== null &&
+    props.transactionData.amount > 0
+  ) {
     return props.transactionData.amount;
   }
   if (
@@ -435,9 +458,18 @@ const getTotal = () => {
   ) {
     return 0;
   }
-  return props.transactionData.items.reduce((sum, item) => {
+  const itemsTotal = props.transactionData.items.reduce((sum, item) => {
     return sum + (item.price || 0) * (item.quantity || 0);
   }, 0);
+  const packagingCost = props.transactionData.packagingCost || 0;
+  const isFree = props.transactionData.isDeliveryFree === true;
+  const deliveryCost =
+    props.transactionData.salesChannel === "DELIVERY" &&
+    props.transactionData.deliveryPlatform === "whatsapp" &&
+    !isFree
+      ? props.transactionData.deliveryCost || 0
+      : 0;
+  return itemsTotal + packagingCost + deliveryCost;
 };
 
 const getItemsSubtotal = () => {
@@ -465,7 +497,8 @@ const getDeliveryCost = () => {
 };
 
 const getNetIncome = () => {
-  return getTotal() - getPlatformCommission();
+  const detraction = props.transactionData.isSubjectToDetraction ? (props.transactionData.detractionAmount || 0) : 0;
+  return getTotal() - getPlatformCommission() - detraction;
 };
 
 const getTypeLabel = computed(() => {

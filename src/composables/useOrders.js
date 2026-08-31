@@ -245,8 +245,9 @@ export function useOrders() {
       flowStore.defineDynamicSteps('income');
       flowStore.insertPaymentSteps('paid'); // Añade Paso 4 (PaymentMethod) y otros
 
-      // Saltar directo al método de pago (paso index 4)
-      flowStore.currentStep = 4;
+      // Saltar directo al método de pago
+      const paymentStepIndex = flowStore.steps.findIndex(s => s.label === 'Método de pago');
+      flowStore.currentStep = paymentStepIndex !== -1 ? paymentStepIndex : 4;
 
       console.log('✅ Pedido precargado en el flujo de transacciones');
       console.log('📍 Posición actual:', flowStore.currentStep, flowStore.steps[flowStore.currentStep]?.label);

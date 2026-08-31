@@ -109,10 +109,9 @@
               class="flex justify-between items-center text-xs bg-white rounded-lg p-2 border border-gray-100"
             >
               <div class="flex items-center gap-2">
-                <span class="text-gray-500"
-                  >Pago {{ index + 1 }}
-                  {{ index === 0 ? "(Inicial)" : "" }}</span
-                >
+                <span class="text-gray-500">
+                  {{ isInitialPayment(payment, props.transactionData) ? "Pago Inicial" : `Abono #${index + (props.transactionData.payments.some(p => isInitialPayment(p, props.transactionData)) ? 0 : 1)}` }}
+                </span>
                 <span
                   :class="[
                     'px-2 py-0.5 rounded text-[10px] font-semibold',
@@ -500,6 +499,7 @@ import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
 import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
 import { useRoute } from "vue-router";
+import { getInitialPaymentAmount, isInitialPayment } from "@/utils/paymentCalculator";
 import {
   DatabaseExport,
   ShieldQuestion,
@@ -604,11 +604,7 @@ const getPaymentStatus = () => {
 };
 
 const getInitialPayment = () => {
-  const payments = props.transactionData.payments;
-  if (payments && payments.length > 0) {
-    return payments[0].amount || 0;
-  }
-  return 0;
+  return getInitialPaymentAmount(props.transactionData);
 };
 
 const getBalance = () => {

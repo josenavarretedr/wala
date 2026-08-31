@@ -246,27 +246,22 @@ module.exports = functions.https.onCall(async (data, context) => {
   const businessData = businessDoc.data();
   const tz = (businessData && businessData.timezone) || DEFAULT_TZ;
 
-  // === BUSCAR TODOS LOS DÍAS SIN CIERRE (hasta MAX_LOOKBACK_DAYS atrás) ===
+  // === BUSCAR TODOS LOS DÍAS SIN CIERRE ===
   const today = todayStr(tz);
   const pendingDays = []; // Días que necesitan cierre
 
   console.log(`📅 Searching for unclosed days from today: ${today} (tz: ${tz})`);
 
-  for (let i = 1; i <= MAX_LOOKBACK_DAYS; i++) {
-    const checkDay = dayMinus(today, i, tz);
+  // OPTIMIZADO: Consulta directa a Firestore de dailySummaries anteriores a hoy
+  const summariesSnap = await db
+    .collection(`businesses/${businessId}/dailySummaries`)
+    .where('day', '<', today)
+    .orderBy('day', 'desc')
+    .get();
 
-    // Leer dailySummary para este día
-    const summaryRef = db.doc(`businesses/${businessId}/dailySummaries/${checkDay}`);
-    const summarySnap = await summaryRef.get();
-
-    if (!summarySnap.exists) {
-      // No hay dailySummary = no hubo actividad = no necesita cierre
-      // Seguir buscando más atrás por si hay días anteriores con apertura
-      console.log(`  📅 ${checkDay}: No dailySummary (no activity) - continuing search`);
-      continue;
-    }
-
-    const summary = summarySnap.data();
+  for (const docSnap of summariesSnap.docs) {
+    const checkDay = docSnap.id;
+    const summary = docSnap.data();
 
     if (summary.hasOpening && !summary.hasClosure) {
       // Día con apertura pero sin cierre → necesita cierre
@@ -277,7 +272,6 @@ module.exports = functions.https.onCall(async (data, context) => {
       console.log(`  ✅ ${checkDay}: Already closed - stopping search`);
       break;
     } else {
-      // Tiene dailySummary pero no tiene opening (raro, pero posible)
       console.log(`  ℹ️  ${checkDay}: No opening - skipping`);
     }
   }

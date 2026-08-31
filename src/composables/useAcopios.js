@@ -69,7 +69,16 @@ export function useAcopios() {
         supplierId: acopioData.supplierId,
         supplierName: acopioData.supplierName,
         acopioId: acopioId,
-        payments: [],
+        payments: [
+          {
+            uuid: uuidv4(),
+            amount: 0,
+            isInitial: true,
+            date: new Date(),
+            account: 'cash',
+            notes: 'Acopio a crédito (sin desembolso inicial)'
+          }
+        ],
         account: 'cash', // Cuenta por defecto
         materialItems: [
           {
@@ -219,14 +228,7 @@ export function useAcopios() {
         }
       }
 
-      // 5. Actualizar el costo del producto
-      const productRef = doc(db, `businesses/${businessId}/products`, acopioData.productId);
-      await updateDoc(productRef, {
-        cost: newPriceNum,
-        updatedAt: serverTimestamp()
-      });
-
-      // 6. Actualizar metadata del proveedor
+      // 5. Actualizar metadata del proveedor
       await supplierStore.updateSupplierMetadata(acopioData.supplierId);
 
       console.log(`✅ Acopio y registros asociados actualizados a nuevo precio S/ ${newPriceNum}`);

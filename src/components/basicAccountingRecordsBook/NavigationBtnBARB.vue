@@ -234,13 +234,6 @@ const isNextButtonEnabled = computed(() => {
       result = true;
       break;
 
-    case "Decisión de pago":
-      // Verificar que se haya seleccionado una opción
-      result =
-        transactionData.paymentDecision !== null &&
-        transactionData.paymentDecision !== undefined;
-      break;
-
     case "Método de pago":
       // Verificar el estado de pago
       const paymentStatus = transactionData.paymentStatus;

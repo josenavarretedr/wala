@@ -138,6 +138,7 @@ export const useClientStore = defineStore('clientStore', () => {
         name: clientData.name,
         phone: clientData.phone || null,
         address: clientData.address || null,
+        rucOrDni: clientData.rucOrDni ? clientData.rucOrDni.trim() : null,
         businessId,
         isActive: true,
         // Usar metadata inicial si se proporciona, sino inicializar en 0
@@ -208,8 +209,9 @@ export const useClientStore = defineStore('clientStore', () => {
     return activeClients.value.filter(client => {
       const matchName = client.name.toLowerCase().includes(searchTerm);
       const matchPhone = client.phone && client.phone.includes(searchTerm);
+      const matchDoc = client.rucOrDni && client.rucOrDni.toLowerCase().includes(searchTerm);
 
-      return matchName || matchPhone;
+      return matchName || matchPhone || matchDoc;
     });
   }
 

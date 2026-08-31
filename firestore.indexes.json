@@ -227,12 +227,34 @@
         { "fieldPath": "eventType", "order": "ASCENDING" },
         { "fieldPath": "fechaEvento", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "token", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
     {
       "collectionGroup": "businesses",
       "fieldPath": "businessId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "fieldPath": "token",
       "indexes": [
         {
           "order": "ASCENDING",

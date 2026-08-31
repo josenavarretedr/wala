@@ -1,6 +1,6 @@
 <template>
   <!-- Cuadrícula de microaplicaciones y widgets -->
-  <div class="p-2 sm:p-4 lg:px-8 lg:py-4">
+  <div class="p-2 sm:p-4 lg:p-0">
     <!-- Contenedor para móvil -->
     <div class="lg:hidden">
       <!-- Widget de racha -->
@@ -124,111 +124,67 @@
       </div>
     </div>
 
-    <!-- Grid desktop: StreakWidget (2 cols) + 3 apps + btn "+" -->
+    <!-- Grid desktop: StreakWidget arriba y apps abajo (para columna única en lg) -->
     <div
       data-tour="micro-apps"
-      class="hidden lg:block lg:max-w-7xl xl:max-w-[1600px] lg:mx-auto"
+      class="hidden lg:block w-full"
     >
-      <div class="grid grid-cols-6 gap-4 xl:gap-5 items-stretch">
-        <!-- Widget de racha (2 columnas) -->
+      <div class="flex flex-col gap-4">
+        <!-- Widget de racha (toma ancho completo de la columna) -->
         <div
-          class="col-span-2 bg-white/80 rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
+          class="bg-white/80 rounded-lg shadow-sm border border-gray-100 overflow-hidden min-h-[140px]"
         >
           <StreakWidget :compact="true" />
         </div>
 
-        <!-- 3 apps principales en desktop -->
-        <div
-          v-for="item in mainApps"
-          :key="'desktop-' + item.id"
-          :class="[
-            'group bg-white/80 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
-            'col-span-1',
-            'p-4 min-h-[140px]',
-            item.color === 'blue' &&
-              'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
-            item.color === 'red' &&
-              'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
-            item.color === 'green' &&
-              'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
-            item.color === 'purple' &&
-              'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
-            item.color === 'indigo' &&
-              'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
-            item.color === 'orange' &&
-              'hover:shadow-lg hover:border-[#E35336]/30 hover:bg-[#E35336]/5',
-            item.color === 'teal' &&
-              'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
-            !getValue(item.available) && 'opacity-60 hover:shadow-sm',
-          ]"
-          @click="handleAppClick(item)"
-        >
-          <component
-            v-if="item.isComponent && typeof item.icon !== 'string'"
-            :is="item.icon"
+        <!-- 3 apps principales + botón "+" en desktop (4 columnas horizontales) -->
+        <div class="grid grid-cols-4 gap-4 xl:gap-5">
+          <!-- 3 apps principales en desktop -->
+          <div
+            v-for="item in mainApps"
+            :key="'desktop-' + item.id"
             :class="[
-              'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-              getValue(item.available)
-                ? getIconColor(item.color)
-                : 'text-gray-400',
-              getValue(item.available) && getIconHoverColor(item.color),
+              'group bg-white/80 rounded-lg shadow-sm border border-gray-100 flex flex-col items-center justify-center transition-all duration-200 cursor-pointer',
+              'col-span-1',
+              'p-4 min-h-[140px]',
+              item.color === 'blue' &&
+                'hover:shadow-lg hover:border-blue-300 hover:bg-blue-50',
+              item.color === 'red' &&
+                'hover:shadow-lg hover:border-red-300 hover:bg-red-50',
+              item.color === 'green' &&
+                'hover:shadow-lg hover:border-green-300 hover:bg-green-50',
+              item.color === 'purple' &&
+                'hover:shadow-lg hover:border-purple-300 hover:bg-purple-50',
+              item.color === 'indigo' &&
+                'hover:shadow-lg hover:border-indigo-300 hover:bg-indigo-50',
+              item.color === 'orange' &&
+                'hover:shadow-lg hover:border-[#E35336]/30 hover:bg-[#E35336]/5',
+              item.color === 'teal' &&
+                'hover:shadow-lg hover:border-teal-300 hover:bg-teal-50',
+              !getValue(item.available) && 'opacity-60 hover:shadow-sm',
             ]"
-          />
-          <svg
-            v-else-if="item.icon === 'receipt'"
-            :class="[
-              'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
-              getValue(item.available)
-                ? getIconColor(item.color)
-                : 'text-gray-400',
-              getValue(item.available) && getIconHoverColor(item.color),
-            ]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+            @click="handleAppClick(item)"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            <component
+              v-if="item.isComponent && typeof item.icon !== 'string'"
+              :is="item.icon"
+              :class="[
+                'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
+                getValue(item.available)
+                  ? getIconColor(item.color)
+                  : 'text-gray-400',
+                getValue(item.available) && getIconHoverColor(item.color),
+              ]"
             />
-          </svg>
-          <div
-            v-else
-            class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
-          >
-            {{ item.icon }}
-          </div>
-          <div
-            :class="[
-              'text-center px-1',
-              getValue(item.available)
-                ? 'text-gray-600 font-medium'
-                : 'text-gray-400',
-              'text-sm xl:text-base',
-            ]"
-          >
-            {{ getValue(item.name) }}
-          </div>
-          <div
-            v-if="!getValue(item.available)"
-            class="text-xs text-gray-400 mt-1"
-          >
-            Próximamente
-          </div>
-        </div>
-
-        <!-- Botón "Más Apps" desktop -->
-        <div
-          class="group col-span-1 p-4 min-h-[140px] bg-white/80 rounded-lg shadow-sm border border-[#E35336]/20 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#E35336]/5 hover:shadow-lg hover:border-[#E35336]/40"
-          @click="showBottomSheet = true"
-        >
-          <div
-            class="mb-2 w-12 h-12 xl:w-14 xl:h-14 flex items-center justify-center"
-          >
             <svg
-              class="w-8 h-8 xl:w-10 xl:h-10 text-[#E35336] transition-all duration-200 group-hover:text-[#c2412b]"
+              v-else-if="item.icon === 'receipt'"
+              :class="[
+                'mb-2 transition-all duration-200 w-12 h-12 xl:w-14 xl:h-14',
+                getValue(item.available)
+                  ? getIconColor(item.color)
+                  : 'text-gray-400',
+                getValue(item.available) && getIconHoverColor(item.color),
+              ]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -237,14 +193,61 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M12 4v16m8-8H4"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
+            <div
+              v-else
+              class="mb-2 transition-all duration-200 text-3xl xl:text-4xl"
+            >
+              {{ item.icon }}
+            </div>
+            <div
+              :class="[
+                'text-center px-1',
+                getValue(item.available)
+                  ? 'text-gray-600 font-medium'
+                  : 'text-gray-400',
+                'text-sm xl:text-base',
+              ]"
+            >
+              {{ getValue(item.name) }}
+            </div>
+            <div
+              v-if="!getValue(item.available)"
+              class="text-xs text-gray-400 mt-1"
+            >
+              Próximamente
+            </div>
           </div>
+
+          <!-- Botón "Más Apps" desktop -->
           <div
-            class="text-sm xl:text-base text-[#E35336] font-medium text-center px-1 group-hover:text-[#c2412b]"
+            class="group col-span-1 p-4 min-h-[140px] bg-white/80 rounded-lg shadow-sm border border-[#E35336]/20 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:bg-[#E35336]/5 hover:shadow-lg hover:border-[#E35336]/40"
+            @click="showBottomSheet = true"
           >
-            Más Apps
+            <div
+              class="mb-2 w-12 h-12 xl:w-14 xl:h-14 flex items-center justify-center"
+            >
+              <svg
+                class="w-8 h-8 xl:w-10 xl:h-10 text-[#E35336] transition-all duration-200 group-hover:text-[#c2412b]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </div>
+            <div
+              class="text-sm xl:text-base text-[#E35336] font-medium text-center px-1 group-hover:text-[#c2412b]"
+            >
+              Más Apps
+            </div>
           </div>
         </div>
       </div>
@@ -425,6 +428,7 @@ import {
   SoilAlt,
   Hourglass,
   SeaAndSun,
+  Wallet,
 } from "@iconoir/vue";
 import { useProgramStore } from "@/stores/programStore";
 import { useUserStore } from "@/stores/useUserStore";
@@ -568,6 +572,16 @@ const allMicroApps = ref([
     color: "teal",
     moduleKey: "inventory",
     industry: "cooperativa_agricola",
+  },
+  {
+    id: 12,
+    name: "Cuentas",
+    route: "/accounts",
+    available: true,
+    icon: Wallet,
+    isComponent: true,
+    color: "blue",
+    moduleKey: "accountsBalance",
   },
 ]);
 

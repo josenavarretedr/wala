@@ -267,11 +267,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useAccountsPayable } from "@/composables/useAccountsPayable";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import PaymentRegistrationModal from "@/components/AccountsPayable/PaymentRegistrationModal.vue";
 
+const route = useRoute();
+const router = useRouter();
 const transactionStore = useTransactionStore();
 const { pendingTransactions, totalPayable, payablesBySupplier } = useAccountsPayable();
 
@@ -279,16 +282,37 @@ const isLoading = ref(false);
 const showPaymentModal = ref(false);
 const selectedTransaction = ref(null);
 
+function checkAndOpenTargetTransaction() {
+  const targetId = route.query.transactionId;
+  if (!targetId || showPaymentModal.value) return;
+
+  const found = pendingTransactions.value.find(
+    t => t.uuid === targetId || t.id === targetId
+  ) || transactionStore.transactionsInStore.find(
+    t => t.uuid === targetId || t.id === targetId
+  );
+
+  if (found) {
+    console.log("🎯 [AccountsPayable] Transacción encontrada por query param, abriendo modal de pago:", targetId);
+    openPaymentModal(found);
+  }
+}
+
 onMounted(async () => {
   isLoading.value = true;
   try {
     await transactionStore.fetchPendingPayables();
+    checkAndOpenTargetTransaction();
   } catch (err) {
     console.error("Error al cargar transacciones:", err);
   } finally {
     isLoading.value = false;
   }
 });
+
+watch(pendingTransactions, () => {
+  checkAndOpenTargetTransaction();
+}, { deep: true });
 
 function openPaymentModal(transaction) {
   selectedTransaction.value = transaction;
@@ -298,6 +322,13 @@ function openPaymentModal(transaction) {
 function closePaymentModal() {
   showPaymentModal.value = false;
   selectedTransaction.value = null;
+  if (route.query.transactionId) {
+    router.replace({
+      name: 'AccountsPayable',
+      params: { businessId: route.params.businessId },
+      query: {}
+    });
+  }
 }
 
 function onPaymentRegistered() {

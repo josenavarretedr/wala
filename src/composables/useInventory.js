@@ -756,8 +756,8 @@ export function useInventory() {
         // ✅ Aplicar redondeo para evitar decimales excesivos
         newStock = addStock(itemData.stock, stockLog.quantity);
 
-        // Si es una compra y viene un nuevo costo, actualizarlo
-        if (stockLog.type === 'buy' && stockLog.cost !== undefined && stockLog.cost !== null) {
+        // Si es una compra y viene un nuevo costo, actualizarlo (excepto en acopios)
+        if (stockLog.type === 'buy' && !stockLog.isAcopio && stockLog.cost !== undefined && stockLog.cost !== null) {
           updateData.cost = Number(stockLog.cost);
           console.log(`💰 Actualizando costo del producto a: S/ ${stockLog.cost}`);
         }

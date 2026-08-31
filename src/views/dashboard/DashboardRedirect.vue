@@ -26,24 +26,23 @@
       </div>
     </div> -->
 
-    <!-- Micro Aplicaciones: ancho completo en desktop, centrado en móvil -->
-    <div class="max-w-2xl lg:max-w-none mx-auto space-y-6">
-      <div class="p-2 sm:p-4 lg:px-8 lg:py-0">
-        <div class="max-w-md lg:max-w-7xl xl:max-w-[1600px] mx-auto">
-          <TrialActivationBanner />
-        </div>
-      </div>
-      
-      <MicroApps
-        :business-id="businessId"
-        @navigate-to-app="handleNavigateToApp"
-      />
+    <!-- Banner de activación de prueba: ancho completo, centrado -->
+    <div class="max-w-2xl lg:max-w-7xl xl:max-w-[1600px] mx-auto">
+      <TrialActivationBanner />
     </div>
 
-    <!-- Contenedor con max-w-2xl para el resto del contenido -->
-    <div class="max-w-2xl mx-auto space-y-6">
-      <!-- Contenedor con max-w-2xl para el resto del contenido -->
-      <div class="max-w-2xl mx-auto space-y-6">
+    <!-- Grid de dos columnas en lg, stacked en móvil -->
+    <div class="max-w-2xl lg:max-w-7xl xl:max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <!-- Columna 1: MicroApps (con StreakWidget arriba y apps abajo) -->
+      <div class="space-y-6">
+        <MicroApps
+          :business-id="businessId"
+          @navigate-to-app="handleNavigateToApp"
+        />
+      </div>
+
+      <!-- Columna 2: Resumen del día e Historial de transacciones -->
+      <div class="space-y-6">
         <!-- ¿Cómo va el día? -->
         <Suspense>
           <template #default>
@@ -68,13 +67,13 @@
           </template>
         </Suspense>
       </div>
+    </div>
 
-      <!-- Botones principales fijos -->
-      <div
-        class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-2xl shadow-xl"
-      >
-        <MainBtns />
-      </div>
+    <!-- Botones principales fijos -->
+    <div
+      class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-2xl shadow-xl"
+    >
+      <MainBtns />
     </div>
 
     <!-- Modal de expiración de prueba gratuita -->

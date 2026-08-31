@@ -38,7 +38,7 @@
     <!-- Contenido Principal -->
     <div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
       <!-- Tarjetas de Estadísticas -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Total Operaciones -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
           <div>
@@ -54,10 +54,25 @@
           </div>
         </div>
 
+        <!-- Total Kg / Volumen Acopiado -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
+          <div>
+            <p class="text-xs sm:text-sm text-gray-500 mb-1">Total Acopiado</p>
+            <p class="text-2xl sm:text-3xl font-extrabold text-teal-700 tabular-nums">
+              {{ totalQuantityKg.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} <span class="text-sm font-semibold text-gray-500">Kg / Uni</span>
+            </p>
+          </div>
+          <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+            </svg>
+          </div>
+        </div>
+
         <!-- Deuda Activa -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center justify-between">
           <div>
-            <p class="text-xs sm:text-sm text-gray-500 mb-1">Deuda Pendiente de Acopios</p>
+            <p class="text-xs sm:text-sm text-gray-500 mb-1">Deuda Pendiente</p>
             <p class="text-2xl sm:text-3xl font-extrabold text-red-600 tabular-nums">
               S/ {{ pendingDebtTotal.toFixed(2) }}
             </p>
@@ -105,7 +120,8 @@
           <span class="text-xs text-gray-500">Filtrar:</span>
           <select v-model="statusFilter" class="border border-gray-200 rounded-lg p-2 text-xs bg-white focus:outline-none focus:border-teal-500">
             <option value="all">Todos los estados</option>
-            <option value="pending">Pendiente de Liquidar</option>
+            <option value="pending">Deuda Pendiente</option>
+            <option value="partial">Abono Parcial</option>
             <option value="completed">Liquidado</option>
           </select>
         </div>
@@ -162,10 +178,12 @@
                       'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border',
                       acopio.status === 'completed'
                         ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-red-50 text-red-700 border-red-200'
+                        : acopio.status === 'partial'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-red-50 text-red-700 border-red-200'
                     ]"
                   >
-                    {{ acopio.status === 'completed' ? 'Liquidado' : 'Deuda Pendiente' }}
+                    {{ acopio.status === 'completed' ? 'Liquidado' : (acopio.status === 'partial' ? 'Abono Parcial' : 'Deuda Pendiente') }}
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right space-x-2">
@@ -177,10 +195,10 @@
                   >
                     Ajustar Precio
                   </button>
-                  <!-- Pagar Deuda -->
+                  <!-- Pagar Deuda / Liquidar -->
                   <button
                     v-if="acopio.status !== 'completed'"
-                    @click="goToPayDebt"
+                    @click="goToPayDebt(acopio)"
                     class="text-purple-600 hover:text-purple-800 font-semibold text-xs py-1 px-2 border border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-lg transition-all"
                   >
                     Liquidar
@@ -289,6 +307,10 @@ onUnmounted(() => {
 // Computed Metrics
 const totalAcopiosCount = computed(() => acopioStore.acopios.length);
 
+const totalQuantityKg = computed(() => {
+  return acopioStore.acopios.reduce((sum, a) => sum + (Number(a.quantity) || 0), 0);
+});
+
 const pendingDebtTotal = computed(() => {
   return acopioStore.acopios
     .filter(a => a.status !== 'completed')
@@ -327,10 +349,11 @@ const goToWizard = () => {
   });
 };
 
-const goToPayDebt = () => {
+const goToPayDebt = (acopio) => {
   router.push({
     name: 'AccountsPayable',
-    params: { businessId: route.params.businessId }
+    params: { businessId: route.params.businessId },
+    query: acopio?.transactionId ? { transactionId: acopio.transactionId } : {}
   });
 };
 

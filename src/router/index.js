@@ -180,6 +180,12 @@ const routes = [
         component: () => import('@/views/AccountsBalanceApp/AccountBalanceAppWrapper.vue'),
         meta: { requiresAuth: true, moduleKey: 'accountsBalance', title: 'Balance de Cuentas' }
       },
+      {
+        path: 'accounts',
+        name: 'Accounts',
+        component: () => import('@/views/Accounts/AccountsView.vue'),
+        meta: { requiresAuth: true, moduleKey: 'accountsBalance', title: 'Cuentas' }
+      },
 
       // ✅ NUEVO: Cuentas por Cobrar
       {

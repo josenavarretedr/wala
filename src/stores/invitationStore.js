@@ -62,6 +62,19 @@ export const useInvitationStore = defineStore('invitation', () => {
       const docRef = doc(db, 'businesses', businessId, 'invitations', invitationId);
       await setDoc(docRef, invitationData);
 
+      // Crear también un registro de consulta directa por ID en 'invitations_by_token' (0 índices requeridos en Firestore)
+      try {
+        const lookupRef = doc(db, 'invitations_by_token', token);
+        await setDoc(lookupRef, {
+          businessId,
+          invitationId,
+          token,
+          createdAt: new Date()
+        });
+      } catch (lookupErr) {
+        console.warn('⚠️ No se pudo guardar el índice directo:', lookupErr);
+      }
+
       console.log('✅ Invitación creada exitosamente:', invitationData);
       return invitationData;
     } catch (err) {
@@ -115,21 +128,46 @@ export const useInvitationStore = defineStore('invitation', () => {
   }
 
   /**
-   * Busca una invitación activa por su token (usa Collection Group Query)
+   * Busca una invitación activa por su token
    */
   async function getInvitationByToken(token) {
     isLoading.value = true;
     error.value = null;
     try {
-      // Nota: En Firestore, para un collection group query de subcolecciones 'invitations',
-      // necesitamos buscar en toda la base de datos de subcolecciones 'invitations' con el token
-      // Para simplificar y evitar problemas si no hay índices definidos de antemano para Collection Groups,
-      // usaremos getDocs con una búsqueda en las invitaciones si tenemos el token.
-      // Firebase soporta collectionGroup(db, 'invitations') pero requiere habilitar el índice en la consola
-      // de Firebase. Para mayor robustez en desarrollo, buscaremos con collectionGroup.
+      // 1. Intento principal: Búsqueda directa por ID de documento en 'invitations_by_token' (no requiere índices)
+      try {
+        const lookupRef = doc(db, 'invitations_by_token', token);
+        const lookupSnap = await getDoc(lookupRef);
+        if (lookupSnap.exists()) {
+          const { businessId, invitationId } = lookupSnap.data();
+          const invRef = doc(db, 'businesses', businessId, 'invitations', invitationId);
+          const invSnap = await getDoc(invRef);
+          if (invSnap.exists()) {
+            const data = invSnap.data();
+            const invitation = {
+              ...data,
+              id: invSnap.id,
+              createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+              expiresAt: data.expiresAt?.toDate ? data.expiresAt.toDate() : data.expiresAt,
+            };
+            if (invitation.status === 'active') {
+              if (invitation.expiresAt < new Date()) {
+                await updateDoc(invRef, { status: 'expired' });
+                return null;
+              }
+              return invitation;
+            }
+            return null;
+          }
+        }
+      } catch (lookupErr) {
+        console.warn('⚠️ Fallback a collectionGroup query:', lookupErr);
+      }
+
+      // 2. Fallback: CollectionGroup Query (para invitaciones anteriores)
       const { collectionGroup } = await import('firebase/firestore');
       const invitationsRef = collectionGroup(db, 'invitations');
-      const q = query(invitationsRef, where('token', '==', token), where('status', '==', 'active'));
+      const q = query(invitationsRef, where('token', '==', token));
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
@@ -146,6 +184,10 @@ export const useInvitationStore = defineStore('invitation', () => {
           expiresAt: data.expiresAt?.toDate ? data.expiresAt.toDate() : data.expiresAt,
         };
       });
+
+      if (!invitation || invitation.status !== 'active') {
+        return null;
+      }
 
       // Verificar expiración
       if (invitation && invitation.expiresAt < new Date()) {

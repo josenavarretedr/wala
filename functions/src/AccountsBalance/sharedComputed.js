@@ -189,25 +189,30 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
 
       totalIngresos = addMoney(totalIngresos, amountReceived);
 
+      let effectiveAccountAmount = amountReceived;
+      if (tx.isSubjectToDetraction && tx.detractionAmount) {
+        const detraction = parseMoneyNumber(tx.detractionAmount || 0);
+        effectiveAccountAmount = parseMoneyNumber(tx.netAmount ?? Math.max(0, amountReceived - detraction));
+      }
+
       // Por cuenta (excluyendo ajustes de apertura)
       if (hasPayments && amountReceived > 0) {
         // Usar el método del primer pago
         const firstPayment = tx.payments[0];
-        const paymentAmount = parseMoneyNumber(firstPayment.amount || 0);
         const paymentAccount = firstPayment.account || firstPayment.method || 'cash';
 
         if (paymentAccount === 'cash') {
-          ingresosCash = addMoney(ingresosCash, paymentAmount);
+          ingresosCash = addMoney(ingresosCash, effectiveAccountAmount);
         } else if (paymentAccount === 'bank' || paymentAccount === 'yape' || paymentAccount === 'plin') {
-          ingresosBank = addMoney(ingresosBank, paymentAmount);
+          ingresosBank = addMoney(ingresosBank, effectiveAccountAmount);
         }
       } else {
         // Pago completo directo o pendiente (donde amountReceived es 0)
         if (account === 'cash' && subcategory !== 'opening_adjustment') {
-          ingresosCash = addMoney(ingresosCash, amountReceived);
+          ingresosCash = addMoney(ingresosCash, effectiveAccountAmount);
         }
         if ((account === 'bank' || account === 'yape' || account === 'plin') && subcategory !== 'opening_adjustment') {
-          ingresosBank = addMoney(ingresosBank, amountReceived);
+          ingresosBank = addMoney(ingresosBank, effectiveAccountAmount);
         }
       }
     }

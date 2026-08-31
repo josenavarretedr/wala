@@ -43,13 +43,19 @@
         </span>
       </div>
 
-      <!-- Contact details -->
-      <p v-if="supplier.phone" class="text-xs text-gray-400 mt-2.5 flex items-center gap-1.5">
-        <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-        </svg>
-        <span class="tabular-nums">{{ supplier.phone }}</span>
-      </p>
+      <!-- Contact and Document details -->
+      <div class="mt-2.5 space-y-1">
+        <p v-if="supplier.rucOrDni" class="text-xs text-gray-500 flex items-center gap-1.5 font-medium">
+          <span class="text-[10px] uppercase font-bold text-gray-400">DOC:</span>
+          <span class="tabular-nums">{{ supplier.rucOrDni }}</span>
+        </p>
+        <p v-if="supplier.phone" class="text-xs text-gray-400 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+          </svg>
+          <span class="tabular-nums">{{ supplier.phone }}</span>
+        </p>
+      </div>
     </div>
 
     <!-- Bottom Section: Metrics -->

@@ -37,8 +37,9 @@
             <div class="font-semibold text-gray-800">
               {{ selectedSupplier.name }}
             </div>
-            <div v-if="selectedSupplier.phone" class="text-xs text-gray-500">
-              📞 {{ selectedSupplier.phone }}
+            <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5 flex-wrap">
+              <span v-if="selectedSupplier.rucOrDni" class="font-medium text-purple-700">📄 {{ selectedSupplier.rucOrDni }}</span>
+              <span v-if="selectedSupplier.phone">📞 {{ selectedSupplier.phone }}</span>
             </div>
             <div
               v-if="selectedSupplier.pendingBalance > 0"
@@ -82,7 +83,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar proveedor por nombre o teléfono..."
+            placeholder="Buscar proveedor por nombre, RUC/DNI o teléfono..."
             class="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-purple-500 focus:outline-none"
           />
         </div>
@@ -105,8 +106,9 @@
                   Socio
                 </span>
               </div>
-              <div v-if="supplier.phone" class="text-xs text-gray-500 mt-0.5">
-                📞 {{ supplier.phone }}
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5 flex-wrap">
+                <span v-if="supplier.rucOrDni" class="font-medium text-purple-700">📄 {{ supplier.rucOrDni }}</span>
+                <span v-if="supplier.phone">📞 {{ supplier.phone }}</span>
               </div>
             </div>
             <svg
@@ -170,6 +172,19 @@
 
           <div>
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1"
+              >RUC o DNI</label
+            >
+            <input
+              v-model="newSupplier.rucOrDni"
+              type="text"
+              placeholder="Ej: 20601234567 / 45678901"
+              maxlength="11"
+              class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1"
               >Teléfono de contacto</label
             >
             <input
@@ -227,6 +242,7 @@ const selectedSupplier = ref(null);
 
 const newSupplier = ref({
   name: "",
+  rucOrDni: "",
   phone: "",
 });
 
@@ -275,13 +291,14 @@ async function registerNewSupplier() {
   try {
     const created = await supplierStore.createSupplier({
       name: newSupplier.value.name,
+      rucOrDni: newSupplier.value.rucOrDni,
       phone: newSupplier.value.phone,
     });
     
     success("Proveedor registrado con éxito");
     selectedSupplier.value = created;
     showCreateForm.value = false;
-    newSupplier.value = { name: "", phone: "" };
+    newSupplier.value = { name: "", rucOrDni: "", phone: "" };
   } catch (err) {
     error("Error al registrar proveedor: " + err.message);
   } finally {
@@ -296,20 +313,24 @@ watch(selectedSupplier, (supplier) => {
       addStockFlow.addStockData.supplierId = supplier.supplierId;
       addStockFlow.addStockData.supplierName = supplier.name;
       addStockFlow.addStockData.supplierPhone = supplier.phone;
+      addStockFlow.addStockData.supplierRucOrDni = supplier.rucOrDni || null;
     } else {
       addStockFlow.addStockData.supplierId = null;
       addStockFlow.addStockData.supplierName = null;
       addStockFlow.addStockData.supplierPhone = null;
+      addStockFlow.addStockData.supplierRucOrDni = null;
     }
   } else {
     if (supplier) {
       transactionStore.transactionToAdd.value.supplierId = supplier.supplierId;
       transactionStore.transactionToAdd.value.supplierName = supplier.name;
       transactionStore.transactionToAdd.value.supplierPhone = supplier.phone;
+      transactionStore.transactionToAdd.value.supplierRucOrDni = supplier.rucOrDni || null;
     } else {
       transactionStore.transactionToAdd.value.supplierId = null;
       transactionStore.transactionToAdd.value.supplierName = null;
       transactionStore.transactionToAdd.value.supplierPhone = null;
+      transactionStore.transactionToAdd.value.supplierRucOrDni = null;
     }
   }
   

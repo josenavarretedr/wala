@@ -160,15 +160,22 @@
       <!-- Footer -->
       <div class="px-6 py-4 border-t border-gray-100 flex gap-3 shrink-0">
         <button
+          type="button"
           @click="close"
           class="flex-1 py-2.5 px-4 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors text-sm"
         >
           Cancelar
         </button>
         <button
-          @click="submitPayment"
-          :disabled="isSubmitting || !!validationError || !selectedAccount"
-          class="flex-1 py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm flex items-center justify-center gap-2"
+          type="button"
+          @click.prevent="handlePaymentClick"
+          :disabled="isSubmitting || (hasOpeningToday && (!!validationError || !selectedAccount))"
+          :class="[
+            'flex-1 py-2.5 px-4 text-white font-semibold rounded-lg transition-colors text-sm flex items-center justify-center gap-2',
+            !hasOpeningToday
+              ? 'bg-purple-400 opacity-70 cursor-pointer'
+              : 'bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed'
+          ]"
         >
           <span v-if="isSubmitting" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
           <span>Registrar Pago</span>
@@ -179,8 +186,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import { useAccountsPayable } from "@/composables/useAccountsPayable";
+import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useToast } from "@/composables/useToast";
 import { useAcopioStore } from "@/stores/acopioStore";
 
@@ -194,9 +204,12 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "payment-registered"]);
 
+const route = useRoute();
 const { addPaymentToExpenseTransaction } = useAccountsPayable();
+const transactionStore = useTransactionStore();
+const accountsBalanceStore = useAccountsBalanceStore();
 const acopioStore = useAcopioStore();
-const { success, error } = useToast();
+const { success, error, warning } = useToast();
 
 const isSubmitting = ref(false);
 const selectedAccount = ref("cash"); // 'cash' | 'bank'
@@ -204,6 +217,105 @@ const paymentType = ref("complete"); // 'complete' | 'partial'
 const paymentAmount = ref(0);
 const notes = ref("");
 const validationError = ref("");
+
+// Estado de verificación de apertura de caja
+const hasOpeningToday = ref(true); // Default true mientras verifica para no bloquear falsamente
+const isCheckingOpening = ref(false);
+
+async function checkOpeningStatus() {
+  isCheckingOpening.value = true;
+  try {
+    // 1. Verificar en stores de memoria local
+    if (accountsBalanceStore.dailySummary?.hasOpening || accountsBalanceStore.openingTransaction) {
+      hasOpeningToday.value = true;
+      return;
+    }
+    const transactions = transactionStore.transactionsInStore?.value || transactionStore.transactionsInStore || [];
+    if (Array.isArray(transactions) && transactions.some((t) => t.type === "opening")) {
+      hasOpeningToday.value = true;
+      return;
+    }
+
+    // 2. Cargar dailySummary desde backend
+    const loaded = await accountsBalanceStore.loadFromDailySummary();
+    if (loaded && (accountsBalanceStore.dailySummary?.hasOpening || accountsBalanceStore.openingTransaction)) {
+      hasOpeningToday.value = true;
+      return;
+    }
+
+    // 3. Consulta de respaldo directa a Firestore
+    const { getFirestore, doc, getDoc, collection, query, where, getDocs, limit } = await import("firebase/firestore");
+    const db = getFirestore();
+    const businessId = route.params.businessId || transactionStore.businessId || (await import("@/stores/businessStore")).useBusinessStore().getBusinessId;
+
+    if (businessId) {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, "0");
+      const day = String(today.getDate()).padStart(2, "0");
+      const dayString = `${year}-${month}-${day}`;
+
+      const summaryRef = doc(db, `businesses/${businessId}/dailySummaries/${dayString}`);
+      const summarySnap = await getDoc(summaryRef);
+
+      if (summarySnap.exists() && (summarySnap.data().hasOpening || summarySnap.data().openingData)) {
+        hasOpeningToday.value = true;
+        return;
+      }
+
+      const q = query(
+        collection(db, `businesses/${businessId}/transactions`),
+        where("type", "==", "opening"),
+        limit(1)
+      );
+      const qSnap = await getDocs(q);
+      if (!qSnap.empty) {
+        hasOpeningToday.value = true;
+        return;
+      }
+    }
+
+    // Si ninguna fuente encontró apertura, la caja realmente no ha sido aperturada
+    hasOpeningToday.value = false;
+  } catch (err) {
+    console.warn("⚠️ Error al verificar apertura de caja:", err);
+    hasOpeningToday.value = true; // Permisivo en caso de error para no bloquear al usuario
+  } finally {
+    isCheckingOpening.value = false;
+  }
+}
+
+async function handlePaymentClick() {
+  if (!hasOpeningToday.value) {
+    warning("Debes aperturar la caja del día antes de registrar un pago o liquidación", { duration: 4000 });
+    return;
+  }
+  await submitPayment();
+}
+
+// Cierre del modal con la tecla Esc
+function handleKeyDown(e) {
+  if (e.key === "Escape" && props.show) {
+    close();
+  }
+}
+
+watch(
+  () => props.show,
+  (isShown) => {
+    if (isShown) {
+      checkOpeningStatus();
+      window.addEventListener("keydown", handleKeyDown);
+    } else {
+      window.removeEventListener("keydown", handleKeyDown);
+    }
+  },
+  { immediate: true }
+);
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleKeyDown);
+});
 
 // Estado para ajuste de precio de acopios
 const isAdjustingPrice = ref(false);
@@ -251,9 +363,14 @@ const newBalance = computed(() => {
 });
 
 // Validación en tiempo real
-watch([paymentType, paymentAmount, selectedAccount, remaining], () => {
+watch([paymentType, paymentAmount, selectedAccount, remaining, hasOpeningToday], () => {
   validationError.value = "";
   
+  if (!hasOpeningToday.value) {
+    validationError.value = "Debes aperturar la caja antes de registrar un pago o liquidación";
+    return;
+  }
+
   if (!selectedAccount.value) {
     validationError.value = "Debes seleccionar una cuenta (Efectivo/Banco)";
     return;
@@ -275,6 +392,8 @@ function validateAmount() {
 }
 
 async function submitPayment() {
+  if (!hasOpeningToday.value || validationError.value || !selectedAccount.value) return;
+
   if (validationError.value || !selectedAccount.value) return;
 
   isSubmitting.value = true;

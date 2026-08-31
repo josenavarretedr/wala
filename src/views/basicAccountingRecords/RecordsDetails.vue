@@ -288,8 +288,8 @@ watch(
 );
 
 function openDeleteModal() {
-  // Buscar payments relacionados si es una transacción income
-  if (transactionData.value?.type === "income") {
+  // Buscar payments relacionados si es una transacción income o expense
+  if (transactionData.value?.type === "income" || transactionData.value?.type === "expense") {
     // Asegurarse de que transactionsInStore sea un array antes de filtrar
     const transactions = Array.isArray(transactionStore.transactionsInStore)
       ? transactionStore.transactionsInStore
@@ -309,26 +309,26 @@ function openDeleteModal() {
 
 async function handleDeleteConfirm() {
   try {
-    // Si es un payment (transacción tipo 'payment'), eliminarlo del array de la venta original
+    // Si es un payment (transacción tipo 'payment'), eliminarlo del array de la venta o egreso original
     if (transactionData.value?.type === "payment") {
       console.log("🗑️ Eliminando payment:", {
         paymentUuid: transactionData.value.uuid,
         relatedTransactionId: transactionData.value.relatedTransactionId,
       });
 
-      // Usar la función específica para eliminar del array payments[]
-      const result = await transactionStore.deletePaymentFromIncomeTransaction(
+      // Usar la función genérica para eliminar del array payments[] y restaurar estados
+      const result = await transactionStore.deletePaymentFromTransaction(
         transactionData.value.uuid,
         transactionData.value.relatedTransactionId
       );
 
       if (result.success) {
-        console.log("✅ Payment eliminado del array exitosamente");
+        console.log("✅ Payment eliminado exitosamente");
         showDeleteModal.value = false;
         success(
-          `Pago de S/ ${transactionData.value.amount?.toFixed(2)} eliminado`
+          `Abono/Liquidación de S/ ${transactionData.value.amount?.toFixed(2)} eliminado`
         );
-        success(`Se actualizó la cuenta del cliente.`);
+        success(`Se restauró el saldo pendiente y el estado correspondiente.`);
         navigateToDashboard();
       }
     } else {

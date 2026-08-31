@@ -88,7 +88,7 @@
         <input
           v-model="searchQuery"
           type="text"
-          placeholder="Buscar cliente por nombre o teléfono..."
+          placeholder="Buscar cliente por nombre, RUC/DNI o teléfono..."
           class="w-full pl-10 pr-4 py-3 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
           @input="handleSearch"
         />
@@ -157,8 +157,9 @@
             </div>
             <div class="text-left">
               <div class="font-medium text-gray-800">{{ client.name }}</div>
-              <div v-if="client.phone" class="text-xs text-gray-500">
-                {{ client.phone }}
+              <div class="flex items-center gap-2 text-xs text-gray-500 mt-0.5 flex-wrap">
+                <span v-if="client.rucOrDni" class="font-medium text-blue-700">📄 {{ client.rucOrDni }}</span>
+                <span v-if="client.phone">📞 {{ client.phone }}</span>
               </div>
               <div
                 v-if="client.pendingBalance > 0"
@@ -251,8 +252,9 @@
               <div class="font-semibold text-gray-800">
                 {{ selectedClient.name }}
               </div>
-              <div v-if="selectedClient.phone" class="text-sm text-gray-600">
-                {{ selectedClient.phone }}
+              <div class="flex items-center gap-2 text-sm text-gray-600 flex-wrap">
+                <span v-if="selectedClient.rucOrDni" class="font-medium text-blue-700">📄 {{ selectedClient.rucOrDni }}</span>
+                <span v-if="selectedClient.phone">📞 {{ selectedClient.phone }}</span>
               </div>
               <div
                 v-if="selectedClient.pendingBalance > 0"
@@ -381,6 +383,19 @@
 
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">
+                RUC o DNI (opcional)
+              </label>
+              <input
+                v-model="newClient.rucOrDni"
+                type="text"
+                placeholder="Ej: 20601234567 / 45678901"
+                maxlength="11"
+                class="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
                 Teléfono (opcional)
               </label>
               <input
@@ -449,6 +464,7 @@ const deliveryAddress = ref(transactionStore.transactionToAdd.value.deliveryAddr
 
 const newClient = ref({
   name: "",
+  rucOrDni: "",
   phone: "",
 });
 
@@ -490,14 +506,15 @@ function selectAnonymousClient() {
   selectedClient.value = {
     uuid: ANONYMOUS_CLIENT_ID,
     name: "Cliente Anónimo",
+    rucOrDni: null,
   };
   searchQuery.value = "";
-  transactionStore.setClientInfo(ANONYMOUS_CLIENT_ID, "Cliente Anónimo");
+  transactionStore.setClientInfo(ANONYMOUS_CLIENT_ID, "Cliente Anónimo", null);
 }
 
 function selectClient(client) {
   selectedClient.value = client;
-  transactionStore.setClientInfo(client.uuid, client.name);
+  transactionStore.setClientInfo(client.uuid, client.name, client.rucOrDni || null);
   searchQuery.value = "";
   
   // Si el cliente tiene dirección guardada, pre-cargarla
@@ -509,7 +526,7 @@ function selectClient(client) {
 
 function clearSelectedClient() {
   selectedClient.value = null;
-  transactionStore.setClientInfo(null, null);
+  transactionStore.setClientInfo(null, null, null);
   deliveryAddress.value = "";
   transactionStore.transactionToAdd.value.deliveryAddress = "";
 
@@ -571,7 +588,7 @@ function handleEnterInPhone() {
 
 function closeCreateClientModal() {
   showCreateModal.value = false;
-  newClient.value = { name: "", phone: "" };
+  newClient.value = { name: "", rucOrDni: "", phone: "" };
   createError.value = "";
 }
 
@@ -610,7 +627,7 @@ onMounted(async () => {
   if (isClientRequired.value) {
     if (isAnonymousSelected.value) {
       selectedClient.value = null;
-      transactionStore.setClientInfo(null, null);
+      transactionStore.setClientInfo(null, null, null);
     } else {
       const tx = transactionStore.transactionToAdd.value;
       if (tx.clientId) {

@@ -62,6 +62,8 @@ const transactionToAdd = ref({
   balance: 0,             // Calculado automáticamente
   clientId: null,         // UUID del cliente o null para anónimo
   clientName: 'Cliente Anónimo', // Nombre denormalizado
+  clientRucOrDni: null,   // DNI o RUC del cliente denormalizado
+  supplierRucOrDni: null, // DNI o RUC del proveedor denormalizado
   // Campos para transacciones de egreso:
   description: null,
   category: null,
@@ -93,6 +95,12 @@ const transactionToAdd = ref({
   packagingItems: [],                 // Items de envase aplicados [{productId, description, quantity, unit, costPerUnit, subtotal}]
   packagingCost: 0,                   // Costo total de envases
   packagingStockLogs: [],             // StockLogs generados para envases
+  // Campos para Detracciones (SPOT SUNAT - Cooperativa Agrícola):
+  isSubjectToDetraction: false,
+  detractionRate: null,
+  detractionAmount: 0,
+  netAmount: 0,
+  detractionAccount: 'detraction',
 });
 
 const itemToAddInTransaction = ref({
@@ -319,6 +327,47 @@ export function useTransactionStore() {
       displayName: currentUser?.displayName || userStore.userProfile?.nombre || 'Desconocido',
       rol: userStore.currentRolNombre || 'Gerente'
     };
+
+    // ⚡ Pre-calcular monto y estado de pago ANTES de generar el snapshot optimista
+    if (transactionToAdd.value.type === 'income') {
+      const itemsTotal = (transactionToAdd.value.items || []).reduce((sum, item) => {
+        return addMoney(sum, multiplyMoney(item.price || 0, item.quantity || 0));
+      }, 0);
+      const packagingTotal = transactionToAdd.value.packagingCost || 0;
+      const isFree = transactionToAdd.value.isDeliveryFree === true;
+      const deliveryTotal = (transactionToAdd.value.salesChannel === 'DELIVERY' && transactionToAdd.value.deliveryPlatform === 'whatsapp' && !isFree) ? (transactionToAdd.value.deliveryCost || 0) : 0;
+      const calculatedAmount = addMoney(addMoney(itemsTotal, packagingTotal), deliveryTotal);
+      transactionToAdd.value.amount = calculatedAmount;
+
+      if (!transactionToAdd.value.payments || transactionToAdd.value.payments.length === 0) {
+        transactionToAdd.value.payments = [{
+          uuid: crypto.randomUUID(),
+          amount: calculatedAmount,
+          isInitial: true,
+          date: Timestamp.now(),
+          account: transactionToAdd.value.account || 'cash',
+          notes: 'Pago completo al registrar',
+          registeredBy: transactionToAdd.value.userId || 'unknown'
+        }];
+      }
+
+      const calculatedFields = calculatePaymentStatus({
+        ...transactionToAdd.value,
+        total: calculatedAmount,
+        amount: calculatedAmount
+      });
+
+      transactionToAdd.value.paymentStatus = calculatedFields.paymentStatus;
+      transactionToAdd.value.totalPaid = calculatedFields.totalPaid;
+      transactionToAdd.value.balance = calculatedFields.balance;
+    } else if (transactionToAdd.value.type === 'expense' && transactionToAdd.value.category === 'materials') {
+      const materialTotal = (transactionToAdd.value.materialItems || []).reduce((sum, material) => {
+        const cost = parseFloat(material.cost) || 0;
+        const quantity = parseFloat(material.quantity) || 0;
+        return sum + cost * quantity;
+      }, 0);
+      transactionToAdd.value.amount = materialTotal;
+    }
 
     // ⚡ FASE 3: OPTIMISTIC UI - Asignar UUID antes de optimistic update
     const transactionId = uuidv4();
@@ -736,6 +785,7 @@ export function useTransactionStore() {
             transactionSnapshot.payments = [{
               uuid: crypto.randomUUID(),
               amount: totalAmount,
+              isInitial: true,
               date: Timestamp.now(),
               account: transactionSnapshot.account || 'cash',
               notes: 'Pago completo al registrar',
@@ -782,6 +832,7 @@ export function useTransactionStore() {
             transactionSnapshot.payments = [{
               uuid: crypto.randomUUID(),
               amount: totalAmount,
+              isInitial: true,
               date: Timestamp.now(),
               account: transactionSnapshot.account || 'cash',
               notes: 'Pago completo al registrar',
@@ -1544,6 +1595,12 @@ export function useTransactionStore() {
       packagingItems: [],
       packagingCost: 0,
       packagingStockLogs: [],
+      // Campos para Detracciones:
+      isSubjectToDetraction: false,
+      detractionRate: null,
+      detractionAmount: 0,
+      netAmount: 0,
+      detractionAccount: 'detraction',
     };
 
     currentStepOfAddTransaction.value = getSteps()[0] === "CajaDiaria" ? 0 : 1;
@@ -2462,166 +2519,68 @@ export function useTransactionStore() {
 
   /**
    * Elimina un payment específico del array payments[] de una transacción income
-   * Sin eliminar la transacción payment completa de Firestore
+  /**
+   * Elimina un payment específico del array payments[] de una transacción (income o expense)
+   * Actualiza balances, estados de acopio, metadata de clientes/proveedores y elimina la transacción payment de Firestore
    * @param {string} paymentUuid - UUID del payment en el array payments[]
-   * @param {string} incomeTransactionId - UUID de la transacción income original
+   * @param {string} relatedTransactionId - UUID de la transacción original (venta o egreso/acopio)
    */
-  const deletePaymentFromIncomeTransaction = async (paymentUuid, incomeTransactionId) => {
+  const deletePaymentFromTransaction = async (paymentUuid, relatedTransactionId) => {
     const { useClientStore } = await import('@/stores/clientStore');
     const { useBusinessStore } = await import('@/stores/businessStore');
+    const { getFirestore, doc, updateDoc, serverTimestamp } = await import('firebase/firestore');
     const clientStore = useClientStore();
     const businessStore = useBusinessStore();
 
-    console.log('🗑️ [DELETE PAYMENT FROM ARRAY] Iniciando eliminación de payment:', {
+    console.log('🗑️ [DELETE PAYMENT] Iniciando eliminación de payment:', {
       paymentUuid,
-      incomeTransactionId
+      relatedTransactionId
     });
 
-    // 1. OBTENER TRANSACCIÓN INCOME ORIGINAL
-    let incomeTransaction = transactionsInStore.value.find(
-      t => t.uuid === incomeTransactionId
-    );
-
-    // Si no se encuentra por uuid, intentar buscar por id
-    if (!incomeTransaction) {
-      incomeTransaction = transactionsInStore.value.find(
-        t => t.id === incomeTransactionId
-      );
+    const businessId = businessStore.getBusinessId || businessStore.business?.id;
+    if (!businessId) {
+      throw new Error('❌ No se pudo obtener el businessId');
     }
 
-    // Si aún no se encuentra, buscar en Firestore
-    if (!incomeTransaction) {
-      console.log('⚠️ Transacción income no encontrada en store, buscando en Firestore...');
+    // 1. OBTENER TRANSACCIÓN ORIGINAL
+    let originalTransaction = (transactionsInStore.value || []).find(
+      t => t.uuid === relatedTransactionId || t.id === relatedTransactionId
+    );
 
-      const businessId = businessStore.business?.id;
-      if (!businessId) {
-        throw new Error('❌ No se pudo obtener el businessId');
-      }
-
+    // Si no se encuentra en store, buscar en Firestore
+    if (!originalTransaction) {
+      console.log('⚠️ Transacción original no encontrada en store, buscando en Firestore...');
       try {
         const db = getFirestore();
-        const transactionRef = doc(db, 'businesses', businessId, 'transactions', incomeTransactionId);
+        const transactionRef = doc(db, 'businesses', businessId, 'transactions', relatedTransactionId);
         const transactionSnap = await import('firebase/firestore').then(({ getDoc }) => getDoc(transactionRef));
 
         if (transactionSnap.exists()) {
           const data = transactionSnap.data();
-          incomeTransaction = {
+          originalTransaction = {
             id: transactionSnap.id,
             ...data,
-            // Convertir Timestamps si es necesario
             createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
             updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : data.updatedAt,
           };
-          console.log('✅ Transacción income cargada desde Firestore:', incomeTransaction.uuid || incomeTransaction.id);
+          console.log('✅ Transacción original cargada desde Firestore:', originalTransaction.uuid || originalTransaction.id);
         } else {
-          throw new Error('⚠️ Transacción income no encontrada en Firestore');
+          console.warn('⚠️ Transacción original no encontrada en Firestore, solo eliminando payment');
+          await deleteTransactionByID(paymentUuid);
+          return { success: true };
         }
       } catch (error) {
         console.error('❌ Error al cargar transacción desde Firestore:', error);
-        throw new Error('⚠️ No se pudo cargar la transacción income. Verifica que la venta original exista.');
+        await deleteTransactionByID(paymentUuid);
+        return { success: true };
       }
     }
 
-    console.log(`  📝 Transacción income encontrada: ${incomeTransaction.uuid}`);
-
-    // 2. ELIMINAR PAYMENT DEL ARRAY payments[]
-    const updatedPayments = (incomeTransaction.payments || []).filter(
-      p => p.uuid !== paymentUuid
-    );
-
-    console.log(`  🔄 Payments actualizados: ${incomeTransaction.payments?.length || 0} → ${updatedPayments.length}`);
-
-    // 3. RECALCULAR ESTADO DE PAGO
-    const updatedStatus = calculatePaymentStatus({
-      ...incomeTransaction,
-      payments: updatedPayments
-    });
-
-    console.log(`  💰 Estado recalculado:`, {
-      paymentStatus: updatedStatus.paymentStatus,
-      totalPaid: updatedStatus.totalPaid,
-      balance: updatedStatus.balance
-    });
-
-    // 4. ACTUALIZAR TRANSACCIÓN INCOME
-    await updateTransaction(incomeTransaction.uuid, {
-      payments: updatedPayments,
-      paymentStatus: updatedStatus.paymentStatus,
-      totalPaid: updatedStatus.totalPaid,
-      balance: updatedStatus.balance
-    });
-
-    console.log(`  ✅ Transacción income actualizada`);
-
-    // 4.5. ELIMINAR LA TRANSACCIÓN PAYMENT DE FIRESTORE
-    await deleteTransactionByID(paymentUuid);
-    console.log(`  🗑️ Payment eliminado de Firestore`);
-
-    // 5. ACTUALIZAR METADATA DEL CLIENTE
-    if (incomeTransaction.clientId && incomeTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
-      console.log(`  👤 Actualizando metadata del cliente ${incomeTransaction.clientId}`);
-      await clientStore.updateClientMetadata(incomeTransaction.clientId);
-    }
-
-    // 6. LOG DE TRAZABILIDAD
-    await logTransactionOperation('update', incomeTransaction.uuid, incomeTransaction, {
-      reason: 'payment_removed_from_array',
-      severity: 'high',
-      tags: ['payment_delete', 'income_updated', 'balance_recalculated'],
-      relatedEntities: [
-        {
-          type: 'payment',
-          id: paymentUuid,
-          relationship: 'removed_from_payments_array',
-          impact: 'high'
-        },
-        {
-          type: 'client',
-          id: incomeTransaction.clientId,
-          relationship: 'metadata_recalculated',
-          impact: 'medium'
-        }
-      ],
-      component: 'TransactionStore.deletePaymentFromIncomeTransaction'
-    });
-
-    console.log('✅ [DELETE PAYMENT FROM ARRAY] Payment eliminado del array exitosamente');
-
-    return {
-      success: true,
-      updatedTransaction: {
-        ...incomeTransaction,
-        payments: updatedPayments,
-        ...updatedStatus
-      }
-    };
-  };
-
-  /**
-   * Elimina una transacción tipo payment y actualiza la venta original
-   */
-  const deletePaymentTransaction = async (transactionToDelete) => {
-    const { useClientStore } = await import('@/stores/clientStore');
-    const clientStore = useClientStore();
-
-    console.log('🗑️ [DELETE PAYMENT] Iniciando eliminación de pago:', transactionToDelete.uuid);
-
-    // 1. OBTENER VENTA ORIGINAL
-    const originalTransaction = transactionsInStore.value.find(
-      t => t.uuid === transactionToDelete.relatedTransactionId
-    );
-
-    if (!originalTransaction) {
-      console.warn('⚠️ Venta original no encontrada, solo eliminando payment');
-      await deleteTransactionByID(transactionToDelete.uuid);
-      return;
-    }
-
-    console.log(`  📝 Venta original encontrada: ${originalTransaction.uuid}`);
+    console.log(`  📝 Transacción original encontrada: ${originalTransaction.uuid || originalTransaction.id}`);
 
     // 2. ELIMINAR PAYMENT DEL ARRAY payments[]
     const updatedPayments = (originalTransaction.payments || []).filter(
-      p => p.uuid !== transactionToDelete.uuid
+      p => p.uuid !== paymentUuid
     );
 
     console.log(`  🔄 Payments actualizados: ${originalTransaction.payments?.length || 0} → ${updatedPayments.length}`);
@@ -2638,7 +2597,7 @@ export function useTransactionStore() {
       balance: updatedStatus.balance
     });
 
-    // 4. ACTUALIZAR VENTA ORIGINAL
+    // 4. ACTUALIZAR TRANSACCIÓN ORIGINAL
     await updateTransaction(originalTransaction.uuid, {
       payments: updatedPayments,
       paymentStatus: updatedStatus.paymentStatus,
@@ -2646,39 +2605,98 @@ export function useTransactionStore() {
       balance: updatedStatus.balance
     });
 
-    // 5. ELIMINAR TRANSACCIÓN PAYMENT (ANTES de actualizar metadata)
-    await deleteTransactionByID(transactionToDelete.uuid);
-    console.log(`  🗑️ Payment eliminado de Firestore`);
+    console.log(`  ✅ Transacción original actualizada`);
 
-    // 6. ACTUALIZAR METADATA DEL CLIENTE (DESPUÉS de eliminar para que el recálculo sea correcto)
-    if (originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
-      console.log(`  👤 Actualizando metadata del cliente ${originalTransaction.clientId}`);
-      await clientStore.updateClientMetadata(originalTransaction.clientId);
+    // 4.1 SI ES UN ACOPIO, RESTAURAR EL ESTADO EN businesses/{businessId}/acopios/{acopioId}
+    if (originalTransaction.acopioId) {
+      try {
+        const db = getFirestore();
+        const acopioRef = doc(db, 'businesses', businessId, 'acopios', originalTransaction.acopioId);
+        const newAcopioStatus = updatedStatus.balance <= 0 ? 'completed' : (updatedStatus.totalPaid > 0 ? 'partial' : 'pending');
+        await updateDoc(acopioRef, {
+          status: newAcopioStatus,
+          updatedAt: serverTimestamp()
+        });
+        console.log(`  🌾 [DELETE PAYMENT] Estado de acopio ${originalTransaction.acopioId} restaurado a: ${newAcopioStatus}`);
+      } catch (acopioErr) {
+        console.error('❌ Error actualizando estado del acopio tras eliminar pago:', acopioErr);
+      }
     }
 
-    // 7. LOG DE TRAZABILIDAD
-    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
-      reason: 'user_payment_transaction_deletion',
+    // 4.5. ELIMINAR LA TRANSACCIÓN PAYMENT DE FIRESTORE
+    await deleteTransactionByID(paymentUuid);
+    console.log(`  🗑️ Payment eliminado de Firestore`);
+
+    // 5. ACTUALIZAR METADATA DEL CLIENTE O PROVEEDOR
+    if (originalTransaction.type === 'income' && originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
+      console.log(`  👤 Actualizando metadata del cliente ${originalTransaction.clientId}`);
+      await clientStore.updateClientMetadata(originalTransaction.clientId);
+    } else if (originalTransaction.type === 'expense' && originalTransaction.supplierId) {
+      const { useSupplierStore } = await import('@/stores/supplierStore');
+      const supplierStore = useSupplierStore();
+      await supplierStore.updateSupplierMetadata(originalTransaction.supplierId);
+      console.log(`  🏢 Actualizando metadata del proveedor/socio ${originalTransaction.supplierId}`);
+    }
+
+    // 6. LOG DE TRAZABILIDAD
+    await logTransactionOperation('update', originalTransaction.uuid, originalTransaction, {
+      reason: 'payment_removed_from_array',
       severity: 'high',
-      tags: ['transaction_delete', 'payment', 'income_recalculated'],
+      tags: ['payment_delete', `${originalTransaction.type}_updated`, 'balance_recalculated'],
       relatedEntities: [
         {
-          type: 'transaction',
-          id: transactionToDelete.relatedTransactionId,
-          relationship: 'payment_removed_balance_recalculated',
+          type: 'payment',
+          id: paymentUuid,
+          relationship: 'removed_from_payments_array',
           impact: 'high'
         },
-        {
+        ...(originalTransaction.clientId ? [{
           type: 'client',
           id: originalTransaction.clientId,
           relationship: 'metadata_recalculated',
           impact: 'medium'
-        }
+        }] : []),
+        ...(originalTransaction.supplierId ? [{
+          type: 'supplier',
+          id: originalTransaction.supplierId,
+          relationship: 'metadata_recalculated',
+          impact: 'medium'
+        }] : []),
+        ...(originalTransaction.acopioId ? [{
+          type: 'acopio',
+          id: originalTransaction.acopioId,
+          relationship: 'status_restored',
+          impact: 'high'
+        }] : [])
       ],
-      component: 'TransactionStore.deletePaymentTransaction'
+      component: 'TransactionStore.deletePaymentFromTransaction'
     });
 
-    console.log('✅ [DELETE PAYMENT] Pago eliminado exitosamente');
+    console.log('✅ [DELETE PAYMENT] Payment eliminado y balances/acopios restaurados exitosamente');
+
+    return {
+      success: true,
+      updatedTransaction: {
+        ...originalTransaction,
+        payments: updatedPayments,
+        ...updatedStatus
+      }
+    };
+  };
+
+  /**
+   * Alias de compatibilidad hacia atrás
+   */
+  const deletePaymentFromIncomeTransaction = async (paymentUuid, incomeTransactionId) => {
+    return await deletePaymentFromTransaction(paymentUuid, incomeTransactionId);
+  };
+
+  /**
+   * Elimina una transacción tipo payment y actualiza la venta/gasto original
+   */
+  const deletePaymentTransaction = async (transactionToDelete) => {
+    console.log('🗑️ [DELETE PAYMENT] Iniciando eliminación de pago:', transactionToDelete.uuid);
+    return await deletePaymentFromTransaction(transactionToDelete.uuid, transactionToDelete.relatedTransactionId);
   };
 
   /**
@@ -2963,27 +2981,45 @@ export function useTransactionStore() {
   /**
    * Establece la información del cliente para la transacción
    */
-  const setClientInfo = (clientId, clientName) => {
+  const setClientInfo = (clientId, clientName, clientRucOrDni = null) => {
     transactionToAdd.value.clientId = clientId;
     transactionToAdd.value.clientName = clientName;
+    transactionToAdd.value.clientRucOrDni = clientRucOrDni;
   };
 
   /**
    * Establece la información de pago para la transacción
    */
-  const setPaymentInfo = (paymentMethod, isPartialPayment, partialAmount = null) => {
+  const setPaymentInfo = (paymentMethod, isPartialPayment, partialAmount = null, detractionData = null) => {
     console.log('💰 setPaymentInfo called:', {
       paymentMethod,
       isPartialPayment,
       partialAmount,
+      detractionData,
       currentPaymentStatus: transactionToAdd.value.paymentStatus
     });
+
+    // Guardar información de detracción si aplica
+    if (detractionData && detractionData.isSubjectToDetraction) {
+      transactionToAdd.value.isSubjectToDetraction = true;
+      transactionToAdd.value.detractionRate = detractionData.detractionRate;
+      transactionToAdd.value.detractionAmount = detractionData.detractionAmount;
+      transactionToAdd.value.netAmount = detractionData.netAmount;
+      transactionToAdd.value.detractionAccount = detractionData.detractionAccount || 'detraction';
+    } else {
+      transactionToAdd.value.isSubjectToDetraction = false;
+      transactionToAdd.value.detractionRate = null;
+      transactionToAdd.value.detractionAmount = 0;
+      transactionToAdd.value.netAmount = 0;
+      transactionToAdd.value.detractionAccount = 'detraction';
+    }
 
     if (isPartialPayment && (partialAmount !== null && partialAmount !== undefined)) {
       // Pago parcial: crear payment con el monto parcial
       transactionToAdd.value.payments = [{
         uuid: crypto.randomUUID(),
         amount: partialAmount,
+        isInitial: true,
         date: Timestamp.now(),
         account: paymentMethod,
         notes: partialAmount === 0 ? 'Crédito total (sin abono)' : 'Pago inicial',
@@ -3015,7 +3051,10 @@ export function useTransactionStore() {
 
       console.log('✅ Pago completo establecido:', {
         paymentStatus: transactionToAdd.value.paymentStatus,
-        account: transactionToAdd.value.account
+        account: transactionToAdd.value.account,
+        isSubjectToDetraction: transactionToAdd.value.isSubjectToDetraction,
+        detractionAmount: transactionToAdd.value.detractionAmount,
+        netAmount: transactionToAdd.value.netAmount
       });
     }
   };
@@ -3052,6 +3091,41 @@ export function useTransactionStore() {
         amount: paymentData.amount,
         account: paymentData.account
       });
+
+      // Validar si existe apertura de caja activa
+      const { useAccountsBalanceStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceStore');
+      const accountsBalanceStore = useAccountsBalanceStore();
+      let hasOpening = (transactionsInStore.value || []).some(t => t.type === 'opening') ||
+                        Boolean(accountsBalanceStore.dailySummary?.hasOpening) ||
+                        Boolean(accountsBalanceStore.openingTransaction);
+
+      if (!hasOpening) {
+        try {
+          const loaded = await accountsBalanceStore.loadFromDailySummary();
+          if (loaded && (accountsBalanceStore.dailySummary?.hasOpening || accountsBalanceStore.openingTransaction)) {
+            hasOpening = true;
+          } else {
+            const { getFirestore, collection, query, where, getDocs, limit } = await import('firebase/firestore');
+            const db = getFirestore();
+            const q = query(
+              collection(db, `businesses/${businessId}/transactions`),
+              where('type', '==', 'opening'),
+              limit(1)
+            );
+            const qSnap = await getDocs(q);
+            if (!qSnap.empty) {
+              hasOpening = true;
+            }
+          }
+        } catch (e) {
+          console.warn('⚠️ Error al verificar apertura en backend, permitiendo transacción:', e);
+          hasOpening = true;
+        }
+      }
+
+      if (!hasOpening) {
+        throw new Error('Debes aperturar la caja antes de registrar un pago o liquidación.');
+      }
 
       // 1. Obtener la transacción original
       const originalTransaction = transactionsInStore.value.find(
@@ -3091,6 +3165,7 @@ export function useTransactionStore() {
       const newPaymentEntry = {
         uuid: paymentTransactionUuid,
         amount: paymentData.amount,
+        isInitial: false,
         date: Timestamp.now(),
         account: paymentData.account,
         notes: paymentData.notes || `Pago registrado el ${new Date().toLocaleDateString('es-PE')}`,
@@ -3176,6 +3251,17 @@ export function useTransactionStore() {
         balance: updatedStatus.balance,
         updatedAt: Timestamp.now()
       });
+
+      // Si la transacción proviene de un acopio, actualizar el estado del documento de acopio
+      if (originalTransaction.acopioId) {
+        const acopioRef = doc(db, 'businesses', businessId, 'acopios', originalTransaction.acopioId);
+        const newAcopioStatus = updatedStatus.balance <= 0 ? 'completed' : 'partial';
+        batch.update(acopioRef, {
+          status: newAcopioStatus,
+          updatedAt: Timestamp.now()
+        });
+        console.log(`📝 [PAYMENT] Actualizando acopio ${originalTransaction.acopioId} a status: ${newAcopioStatus}`);
+      }
 
       console.log('📝 [PAYMENT] Actualizando venta/compra original en batch:', {
         path: `businesses/${businessId}/transactions/${originalTransaction.uuid}`,
@@ -3591,7 +3677,9 @@ export function useTransactionStore() {
     setClientInfo,
     setPaymentInfo,
     createPaymentTransaction,
+    deletePaymentFromTransaction,
     deletePaymentFromIncomeTransaction,
+    deletePaymentTransaction,
     fetchPendingPayables
   };
 }

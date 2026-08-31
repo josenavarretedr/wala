@@ -48,6 +48,93 @@ export function calculatePaymentStatus(transaction) {
 }
 
 /**
+ * Determina si un pago específico fue el pago inicial al momento del registro
+ * @param {Object} payment - El pago dentro de transaction.payments
+ * @param {Object} tx - La transacción padre
+ * @returns {boolean}
+ */
+export function isInitialPayment(payment, tx) {
+  if (!payment || !tx) return false;
+  if (payment.isInitial !== undefined) return Boolean(payment.isInitial);
+
+  // Si tiene monto 0 y notas de crédito, es inicial
+  if (payment.amount === 0) return true;
+
+  let pTime = 0;
+  if (payment.date) {
+    if (typeof payment.date.toMillis === 'function') {
+      pTime = payment.date.toMillis();
+    } else if (payment.date.seconds) {
+      pTime = payment.date.seconds * 1000;
+    } else {
+      pTime = new Date(payment.date).getTime();
+    }
+  }
+
+  let txTime = 0;
+  if (tx.createdAt) {
+    if (typeof tx.createdAt.toMillis === 'function') {
+      txTime = tx.createdAt.toMillis();
+    } else if (tx.createdAt.seconds) {
+      txTime = tx.createdAt.seconds * 1000;
+    } else {
+      txTime = new Date(tx.createdAt).getTime();
+    }
+  } else if (tx.date) {
+    if (typeof tx.date.toMillis === 'function') {
+      txTime = tx.date.toMillis();
+    } else if (tx.date.seconds) {
+      txTime = tx.date.seconds * 1000;
+    } else {
+      txTime = new Date(tx.date).getTime();
+    }
+  }
+
+  if (!pTime || !txTime) return false;
+  return Math.abs(pTime - txTime) < 900000; // 15 minutos
+}
+
+/**
+ * Obtiene el monto del desembolso o abono inicial de una transacción padre
+ * Si la transacción fue a crédito / acopio sin abono inicial, retorna 0
+ * @param {Object} transaction
+ * @returns {number}
+ */
+export function getInitialPaymentAmount(transaction) {
+  if (!transaction) return 0;
+
+  // Si es una transacción tipo payment (liquidación posterior), su monto es el pago en sí
+  if (transaction.type === 'payment') {
+    return transaction.amount || 0;
+  }
+
+  // Si es un acopio sin pagos iniciales
+  if (transaction.acopioId && (!transaction.payments || transaction.payments.length === 0)) {
+    return 0;
+  }
+
+  const { payments = [] } = transaction;
+  if (Array.isArray(payments) && payments.length > 0) {
+    // Buscar explícitamente el pago marcado como inicial
+    const initialP = payments.find(p => p.isInitial === true);
+    if (initialP) {
+      return initialP.amount || 0;
+    }
+
+    // Verificar si el primer pago califica como inicial por tiempo
+    if (isInitialPayment(payments[0], transaction)) {
+      return payments[0].amount || 0;
+    }
+
+    // Si tiene pagos pero ninguno fue inicial (todos posteriores), el abono inicial fue 0
+    return 0;
+  }
+
+  // Si no tiene array de payments y no es acopio, se asume pago completo directo
+  return transaction.total || transaction.amount || 0;
+}
+
+/**
  * Agrupa pagos por método para reportes y cálculos de caja
  * @param {Array} payments - Array de pagos
  * @returns {{ cash: number, bank: number, yape: number, plin: number }}

@@ -3,6 +3,8 @@
  * @property {string} supplierId - ID único del proveedor
  * @property {string} name - Nombre completo o Razón Social del proveedor
  * @property {string|null} [phone] - Teléfono o número de contacto (opcional)
+ * @property {string|null} [rucOrDni] - RUC o DNI del proveedor o socio (opcional)
+ * @property {boolean} [isPartner] - Indica si es socio de acopio (opcional)
  * @property {import('firebase/firestore').Timestamp} createdAt - Fecha de creación
  * @property {import('firebase/firestore').Timestamp} updatedAt - Última actualización
  * 

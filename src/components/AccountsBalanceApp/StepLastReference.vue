@@ -174,7 +174,7 @@ const props = defineProps({
 
 const transactionStore = useTransactionStore();
 const accountsBalanceStore = useAccountsBalanceStore();
-const { getTodayDailySummary, getDailySummary } = useDailySummary();
+const { getTodayDailySummary, getDailySummary, getLastAvailableDailySummary } = useDailySummary();
 const { getTransactionByID } = useTransaccion();
 const flowStore = useAccountsBalanceFlowStore();
 
@@ -215,34 +215,22 @@ const formatDate = (timestamp) => {
 
 /**
  * Busca la referencia financiera más reciente para la apertura.
- * OPTIMIZADO: Busca primero en dailySummaries (más eficiente y preciso)
- * para resolver el problema de saldos desactualizados cuando hay
- * días sin cierre manual.
- * 
- * Estrategia:
- * 1. Buscar dailySummaries recientes (hasta 7 días atrás)
- * 2. Si encuentra un día cerrado → usar sus saldos finales ✅
- * 3. Si encuentra un día SIN cerrar → usar balances.actual (ya incluye txns) ✅
- * 4. Fallback: query directa de closure transactions
+ * OPTIMIZADO: Consulta 1 sola vez en dailySummaries ordenado por fecha descendente
+ * sin importar cuántos días hayan pasado desde la última actividad.
  */
 const findLastClosure = async () => {
   try {
-    const MAX_LOOKBACK = 7;
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const dayNum = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${dayNum}`;
 
-    for (let i = 1; i <= MAX_LOOKBACK; i++) {
-      const checkDate = new Date();
-      checkDate.setDate(checkDate.getDate() - i);
-      const year = checkDate.getFullYear();
-      const month = String(checkDate.getMonth() + 1).padStart(2, '0');
-      const dayNum = String(checkDate.getDate()).padStart(2, '0');
-      const dayStr = `${year}-${month}-${dayNum}`;
+    // ⚡ OPTIMIZACIÓN: 1 sola consulta a Firestore en lugar de bucle síncrono
+    const lastResult = await getLastAvailableDailySummary(todayStr);
 
-      const summary = await getDailySummary(dayStr);
-
-      if (!summary) {
-        // No hay dailySummary = no hubo actividad = seguir buscando
-        continue;
-      }
+    if (lastResult && lastResult.summary) {
+      const { day: dayStr, summary } = lastResult;
 
       if (summary.hasClosure) {
         // Día cerrado → saldos finales confiables
@@ -255,12 +243,8 @@ const findLastClosure = async () => {
           day: dayStr,
         };
         console.log(`✅ Cierre encontrado en dailySummary (${dayStr}):`, lastClosureData.value);
-        break;
-      }
-
-      if (summary.hasOpening && !summary.hasClosure) {
-        // Día con apertura pero SIN cierre → usar balances.actual
-        // (ya incluye todas las transacciones del día vía onTransactionWrite)
+      } else if (summary.hasOpening || summary.hasTxn) {
+        // Día con apertura o actividad pero SIN cierre → usar balances.actual
         lastClosureData.value = {
           cashAmount: summary.balances?.actual?.cash || 0,
           bankAmount: summary.balances?.actual?.bank || 0,
@@ -271,17 +255,16 @@ const findLastClosure = async () => {
           isUnclosed: true,
         };
         console.log(`⚠️ Día sin cerrar encontrado (${dayStr}) - usando saldos actuales:`, lastClosureData.value);
-        break;
       }
     }
 
-    // Fallback: si no se encontró nada en dailySummaries, usar query clásica
+    // Fallback: si no se encontró nada en dailySummaries, usar la query de transacciones
     if (!lastClosureData.value) {
-      console.log("🔄 Fallback: buscando en transacciones de cierre...");
+      console.log("🔄 Fallback: buscando en transacciones de referencia...");
       const closureTransactions = await transactionStore.getLastClosures(5);
       if (closureTransactions && closureTransactions.length > 0) {
         lastClosureData.value = closureTransactions[0];
-        console.log("Último cierre encontrado (fallback):", lastClosureData.value);
+        console.log("Último cierre / transacción de referencia encontrado (fallback):", lastClosureData.value);
       } else {
         console.log("No se encontraron referencias anteriores.");
         lastClosureData.value = null;

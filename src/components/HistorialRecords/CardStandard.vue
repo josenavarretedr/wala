@@ -280,8 +280,21 @@
           <span class="sm:hidden">Sync...</span>
         </div>
 
-        <!-- Badge de método de pago -->
+        <!-- Badge de método de pago o A Crédito/Por Pagar -->
         <div
+          v-if="isFullCredit(record)"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 shrink-0"
+        >
+          <CreditCard class="w-3 h-3 text-gray-500" />
+          <span class="hidden sm:inline">{{
+            record.type === "income" ? "Por cobrar" : "Por pagar"
+          }}</span>
+          <span class="sm:hidden">Crédito</span>
+        </div>
+
+        <!-- Badge de método de pago normal -->
+        <div
+          v-else
           :class="[
             'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium shrink-0',
             record.account === 'cash'
@@ -349,13 +362,12 @@
           <span class="hidden sm:inline">Pendiente</span>
         </div>
 
-        <!-- Badge de pago completado (con sistema de pagos) -->
+        <!-- Badge de pago completado (para transacciones originadas a crédito o con historial de abonos) -->
         <div
           v-if="
             (record.type === 'income' || record.type === 'expense') &&
             record.paymentStatus === 'completed' &&
-            record.payments &&
-            record.payments.length > 1
+            isCreditOrSplit(record)
           "
           class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700 border border-green-200 shrink-0"
         >
@@ -374,15 +386,24 @@
           </svg>
           <span class="hidden sm:inline">Saldado</span>
         </div>
+
+        <!-- Badge de detracción -->
+        <div
+          v-if="record.isSubjectToDetraction"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 shrink-0"
+        >
+          <span class="hidden sm:inline">Detracción {{ record.detractionRate || 1.5 }}% (-S/ {{ (record.detractionAmount || 0).toFixed(2) }})</span>
+          <span class="sm:hidden">Detrac. {{ record.detractionRate || 1.5 }}%</span>
+        </div>
       </div>
 
       <!-- Lado derecho: Monto y botón -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Monto para transacciones con sistema de pagos (parcial, pendiente o completado con historial) -->
+        <!-- Monto para transacciones que fueron a crédito o con abonos parciales -->
         <div
           v-if="
             (record.type === 'income' || record.type === 'expense') &&
-            (record.paymentStatus === 'pending' || record.paymentStatus === 'partial' || (record.payments && record.payments.length > 0))
+            isCreditOrSplit(record)
           "
           class="text-right"
         >
@@ -393,26 +414,33 @@
             ]"
           >
             {{ record.type === "income" ? "+" : "-" }}S/
-            {{ formatAmount(getDisplayAmount(record)) }}
+            {{ formatAmount(getInitialAmount(record)) }}
           </div>
-          <div
-            v-if="record.paymentStatus && (record.paymentStatus === 'pending' || record.paymentStatus === 'partial' || (record.payments && record.payments.length > 1))"
-            class="text-xs text-gray-500"
-          >
+          <div class="text-xs text-gray-500">
             de S/ {{ getTotal(record) }}
           </div>
         </div>
 
-        <!-- Monto normal para transacciones sin sistema de pagos -->
+        <!-- Monto normal para transacciones sin sistema de pagos / al contado -->
         <div
           v-else
-          :class="[
-            'text-base sm:text-lg font-bold tabular-nums',
-            record.type === 'income' ? 'text-blue-600' : 'text-red-600',
-          ]"
+          class="text-right"
         >
-          {{ record.type === "income" ? "+" : "-" }}S/
-          {{ formatAmount(record.amount) }}
+          <div
+            :class="[
+              'text-base sm:text-lg font-bold tabular-nums',
+              record.type === 'income' ? 'text-blue-600' : 'text-red-600',
+            ]"
+          >
+            {{ record.type === "income" ? "+" : "-" }}S/
+            {{ formatAmount(record.isSubjectToDetraction ? (record.netAmount ?? (record.amount - (record.detractionAmount || 0))) : record.amount) }}
+          </div>
+          <div
+            v-if="record.isSubjectToDetraction"
+            class="text-[11px] text-amber-700 font-medium"
+          >
+            Total: S/ {{ formatAmount(record.amount) }}
+          </div>
         </div>
 
         <!-- Botón de detalles -->
@@ -538,7 +566,9 @@ import {
   Coins,
   SmartphoneDevice,
   InfoCircle,
+  CreditCard,
 } from "@iconoir/vue";
+import { getInitialPaymentAmount } from "@/utils/paymentCalculator";
 
 const props = defineProps({
   record: {
@@ -556,12 +586,33 @@ function getTotal(record) {
   return (record.total || record.amount || 0).toFixed(2);
 }
 
-function getDisplayAmount(record) {
-  // Si payments existe y tiene elementos
-  if (record.payments && record.payments.length >= 1) {
-    return record.payments[0].amount || 0;
-  }
-  return 0; // Si no hay pagos registrados, el abono/pago inicial fue 0
+function getInitialAmount(record) {
+  return getInitialPaymentAmount(record);
+}
+
+function isFullCredit(record) {
+  if (record.type !== "income" && record.type !== "expense") return false;
+  const initial = getInitialPaymentAmount(record);
+  return (
+    initial === 0 &&
+    (Boolean(record.acopioId) ||
+      record.paymentStatus === "pending" ||
+      (record.balance !== undefined && record.balance > 0) ||
+      (record.payments && record.payments.length > 0))
+  );
+}
+
+function isCreditOrSplit(record) {
+  if (record.type !== "income" && record.type !== "expense") return false;
+  const initial = getInitialPaymentAmount(record);
+  const total = record.total || record.amount || 0;
+  return (
+    initial < total ||
+    Boolean(record.acopioId) ||
+    record.paymentStatus === "pending" ||
+    record.paymentStatus === "partial" ||
+    (record.payments && record.payments.length > 1)
+  );
 }
 
 function formatedDate(date) {

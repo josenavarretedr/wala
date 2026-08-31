@@ -18,7 +18,7 @@
 
     <!-- Botón Producir (Morado) - Solo si tiene capability de producción -->
     <div
-      v-if="capabilities.enableProduction"
+      v-if="capabilities.enableProduction && !isCooperativaAgricola"
       class="relative group w-full sm:flex-1 max-w-md sm:max-w-sm mx-auto sm:mx-0"
     >
       <button

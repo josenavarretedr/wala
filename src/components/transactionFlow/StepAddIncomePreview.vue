@@ -301,6 +301,42 @@
         </div>
       </div>
 
+      <!-- Información de Detracción SPOT para Cooperativas Agrícolas -->
+      <div
+        v-if="transactionStore.transactionToAdd.value.isSubjectToDetraction &&
+              transactionStore.transactionToAdd.value.items.length > 0"
+        class="p-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-emerald-50"
+      >
+        <div class="flex items-center gap-2 mb-3">
+          <div class="p-1.5 rounded-lg bg-amber-500 text-white shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <span class="font-semibold text-gray-800">
+            Afecta a Detracción SPOT ({{ transactionStore.transactionToAdd.value.detractionRate }}%)
+          </span>
+          <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-800">
+            SUNAT
+          </span>
+        </div>
+
+        <div class="space-y-1.5 text-sm">
+          <div class="flex justify-between text-gray-600">
+            <span>Retención a Cuenta de Detracciones:</span>
+            <span class="font-bold text-amber-900">
+              - S/ {{ (transactionStore.transactionToAdd.value.detractionAmount || 0).toFixed(2) }}
+            </span>
+          </div>
+          <div class="flex justify-between text-gray-600">
+            <span>Ingreso neto a {{ getAccountLabel }}:</span>
+            <span class="font-bold text-emerald-700">
+              + S/ {{ (transactionStore.transactionToAdd.value.netAmount || 0).toFixed(2) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
       <!-- Lista de productos -->
       <div
         v-if="transactionStore.transactionToAdd.value.items.length > 0"
@@ -346,7 +382,7 @@
         </div>
 
         <!-- Resumen final -->
-        <div class="mt-4 pt-4 border-t border-gray-200">
+        <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
           <div class="flex justify-between items-center">
             <div class="text-gray-600">
               {{ transactionStore.transactionToAdd.value.items.length }}
@@ -358,6 +394,20 @@
             </div>
             <div class="text-xl font-bold text-blue-600">
               S/ {{ getTotal().toFixed(2) }}
+            </div>
+          </div>
+
+          <div
+            v-if="transactionStore.transactionToAdd.value.isSubjectToDetraction"
+            class="pt-2 border-t border-dashed border-gray-200 space-y-1 text-xs"
+          >
+            <div class="flex justify-between text-amber-800 font-medium">
+              <span>Retención Detracción ({{ transactionStore.transactionToAdd.value.detractionRate }}%):</span>
+              <span>- S/ {{ (transactionStore.transactionToAdd.value.detractionAmount || 0).toFixed(2) }}</span>
+            </div>
+            <div class="flex justify-between text-emerald-800 font-bold text-sm">
+              <span>Neto a {{ getAccountLabel }}:</span>
+              <span>S/ {{ (transactionStore.transactionToAdd.value.netAmount || 0).toFixed(2) }}</span>
             </div>
           </div>
         </div>

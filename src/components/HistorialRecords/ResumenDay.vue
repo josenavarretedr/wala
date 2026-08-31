@@ -74,7 +74,7 @@
         <p class="text-xs text-gray-400">Saldo inicial + Resultado del día</p>
 
         <!-- Chips con desglose por cuenta -->
-        <div class="flex items-center justify-center gap-3 mt-3" v-if="opening">
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-3" v-if="opening">
           <div class="bg-gray-100 px-3 py-1 rounded-full">
             <span class="text-xs text-gray-600">
               Efectivo S/
@@ -85,6 +85,15 @@
             <span class="text-xs text-gray-600">
               Bancos S/
               {{ saldoActualBank.toFixed(2) }}
+            </span>
+          </div>
+          <div
+            v-if="showDetractionAccount"
+            class="bg-amber-100/80 px-3 py-1 rounded-full border border-amber-200"
+          >
+            <span class="text-xs text-amber-800 font-medium">
+              Detracciones S/
+              {{ saldoActualDetraction.toFixed(2) }}
             </span>
           </div>
         </div>
@@ -273,6 +282,8 @@ import { GraphUp, DatabaseExport, Cash, Eye, EyeClosed } from "@iconoir/vue";
 import { ref, computed, onMounted, watch, onBeforeUnmount } from "vue";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useAccountsBalanceFlowStore } from "@/stores/AccountsBalanceApp/accountsBalanceFlowStore";
+import { useBusinessStore } from "@/stores/businessStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/composables/useToast";
 import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
@@ -283,6 +294,8 @@ import { useTransactionStore } from "@/stores/transaction/transactionStore";
 
 const route = useRoute();
 const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
+const businessStore = useBusinessStore();
+const userStore = useUserStore();
 const { isPremium } = useSubscription();
 const { warning, success, premium } = useToast();
 
@@ -297,18 +310,49 @@ const transactionStore = useTransactionStore();
 // Los computed properties del store ya están configurados para usar
 // dailySummary cuando esté disponible (modo híbrido)
 
-const getEffectiveAmount = (tx) => {
+const getEffectiveAmount = (tx, targetAccount = null) => {
   if (tx.type === 'payment') {
     return tx.amount || 0;
   }
   if ((tx.type === 'income' || tx.type === 'expense') && tx.payments) {
     if (tx.payments.length > 0) {
-      return tx.payments[0].amount || 0;
+      const initial = tx.payments[0].amount || 0;
+      if (tx.type === "income" && tx.isSubjectToDetraction && targetAccount !== "detraction") {
+        return tx.netAmount ?? Math.max(0, initial - (tx.detractionAmount || 0));
+      }
+      return initial;
     }
     return 0; // Si el array de pagos está definido pero vacío, es 100% crédito y no ha salido dinero
   }
+  if (tx.type === "income" && tx.isSubjectToDetraction) {
+    if (targetAccount === "detraction") {
+      return tx.detractionAmount || 0;
+    }
+    return tx.netAmount ?? (tx.amount - (tx.detractionAmount || 0));
+  }
   return tx.amount || 0;
 };
+
+// Detección de Rubro / Transacciones con detracción
+const isCooperativaAgricola = computed(() => {
+  const industry = businessStore.business?.industry || userStore.currentBusiness?.industry;
+  return industry === "cooperativa_agricola";
+});
+
+const hasDetractionTransactions = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  return txs.some(
+    (tx) =>
+      tx.isSubjectToDetraction ||
+      tx.account === "detraction" ||
+      tx.toAccount === "detraction" ||
+      tx.fromAccount === "detraction"
+  );
+});
+
+const showDetractionAccount = computed(() => {
+  return isCooperativaAgricola.value || hasDetractionTransactions.value;
+});
 
 // Usar los cálculos del store (ahora híbrido con dailySummary)
 const opening = computed(() => accountsBalanceStore.openingTransaction);
@@ -321,7 +365,7 @@ const totalIngresos = computed(() => {
   }
   const incomes = txs
     .filter(tx => tx.type === 'income' && tx.category !== 'adjustment')
-    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+    .reduce((sum, tx) => sum + (tx.isSubjectToDetraction ? (tx.amount || 0) : getEffectiveAmount(tx)), 0);
   const clientPayments = txs
     .filter(tx => tx.type === 'payment' && (tx.clientId || tx.clientName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
@@ -361,7 +405,7 @@ const saldoActualCash = computed(() => {
   }
   const ingresosIn = txs
     .filter(tx => tx.type === 'income' && tx.account === 'cash' && tx.subcategory !== 'opening_adjustment')
-    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx, 'cash'), 0);
   const cobrosIn = txs
     .filter(tx => tx.type === 'payment' && tx.account === 'cash' && (tx.clientId || tx.clientName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
@@ -392,7 +436,7 @@ const saldoActualBank = computed(() => {
   }
   const ingresosIn = txs
     .filter(tx => tx.type === 'income' && tx.account === 'bank' && tx.subcategory !== 'opening_adjustment')
-    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx, 'bank'), 0);
   const cobrosIn = txs
     .filter(tx => tx.type === 'payment' && tx.account === 'bank' && (tx.clientId || tx.clientName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
@@ -416,12 +460,37 @@ const saldoActualBank = computed(() => {
   return inicial + ingresos - egresos - transfersOut + transfersIn;
 });
 
+const saldoActualDetraction = computed(() => {
+  const txs = transactionStore.transactionsInStore.value || [];
+  const fromIncomes = txs
+    .filter((tx) => tx.type === "income" && tx.isSubjectToDetraction)
+    .reduce((sum, tx) => sum + (tx.detractionAmount || 0), 0);
+  const directIncomes = txs
+    .filter((tx) => tx.type === "income" && tx.account === "detraction" && !tx.isSubjectToDetraction)
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const transfersIn = txs
+    .filter((tx) => tx.type === "transfer" && tx.toAccount === "detraction")
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+  const egresosOut = txs
+    .filter((tx) => tx.type === "expense" && tx.account === "detraction" && tx.category !== "adjustment")
+    .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const transfersOut = txs
+    .filter((tx) => tx.type === "transfer" && tx.fromAccount === "detraction")
+    .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+
+  return fromIncomes + directIncomes + transfersIn - egresosOut - transfersOut;
+});
+
 const saldoActual = computed(() => {
   const txs = transactionStore.transactionsInStore.value || [];
   if (txs.length === 0) {
     return accountsBalanceStore.saldoActual;
   }
-  return saldoActualCash.value + saldoActualBank.value;
+  return (
+    saldoActualCash.value +
+    saldoActualBank.value +
+    (showDetractionAccount.value ? saldoActualDetraction.value : 0)
+  );
 });
 
 // 🔄 Watch para detectar cambios en transacciones y recargar automáticamente

@@ -97,7 +97,8 @@ export function useSuppliers() {
     return suppliers.value.filter(supplier => {
       const nameMatch = supplier.name && normalizeText(supplier.name).includes(term);
       const phoneMatch = supplier.phone && supplier.phone.includes(term);
-      return nameMatch || phoneMatch;
+      const docMatch = supplier.rucOrDni && normalizeText(supplier.rucOrDni).includes(term);
+      return nameMatch || phoneMatch || docMatch;
     });
   });
 
@@ -144,6 +145,8 @@ export function useSuppliers() {
         supplierId: supplierId,
         name: supplierData.name.trim(),
         phone: supplierData.phone ? supplierData.phone.trim() : null,
+        rucOrDni: supplierData.rucOrDni ? supplierData.rucOrDni.trim() : null,
+        isPartner: supplierData.isPartner || false,
         businessId: currentBusinessId,
         isActive: true,
         totalExpenses: 0,

@@ -95,6 +95,7 @@ export const useSupplierStore = defineStore('supplierStore', () => {
         supplierId: supplierId,
         name: supplierData.name,
         phone: supplierData.phone || null,
+        rucOrDni: supplierData.rucOrDni ? supplierData.rucOrDni.trim() : null,
         isPartner: supplierData.isPartner || false,
         businessId,
         isActive: true,
@@ -148,7 +149,7 @@ export const useSupplierStore = defineStore('supplierStore', () => {
   }
 
   /**
-   * Busca proveedores por nombre o teléfono
+   * Busca proveedores por nombre, RUC/DNI o teléfono
    */
   function searchSuppliers(query) {
     if (!query || query.trim() === '') {
@@ -158,10 +159,11 @@ export const useSupplierStore = defineStore('supplierStore', () => {
     const searchTerm = query.toLowerCase().trim();
 
     return activeSuppliers.value.filter(supplier => {
-      const matchName = supplier.name.toLowerCase().includes(searchTerm);
+      const matchName = supplier.name && supplier.name.toLowerCase().includes(searchTerm);
       const matchPhone = supplier.phone && supplier.phone.includes(searchTerm);
+      const matchDoc = supplier.rucOrDni && supplier.rucOrDni.toLowerCase().includes(searchTerm);
 
-      return matchName || matchPhone;
+      return matchName || matchPhone || matchDoc;
     });
   }
 

@@ -12,7 +12,6 @@ import StepAddExpenseDetails from '@/components/transactionFlow/StepAddExpenseDe
 import StepAddIncomePreview from '@/components/transactionFlow/StepAddIncomePreview.vue';
 import StepAddExpensePreview from '@/components/transactionFlow/StepAddExpensePreview.vue';
 // import StepAddQuotePreview from '@/components/transactionFlow/StepAddQuotePreview.vue';
-import StepPaymentDecision from '@/components/transactionFlow/StepPaymentDecision.vue';
 import StepOrderPreview from '@/components/transactionFlow/StepOrderPreview.vue';
 // import StepSummary from '@/components/transactionFlow/StepSummary.vue';
 
@@ -20,6 +19,10 @@ import StepTransferDetails from '@/components/transactionFlow/StepTransferDetail
 import StepTransferPreview from '@/components/transactionFlow/StepTransferPreview.vue';
 import StepPaymentMethodExpense from '@/components/transactionFlow/StepPaymentMethodExpense.vue';
 import StepAttachSupplier from '@/components/transactionFlow/StepAttachSupplier.vue';
+
+import { useBusinessStore } from '@/stores/businessStore';
+import { useUserStore } from '@/stores/useUserStore';
+import { useTransactionStore } from '@/stores/transaction/transactionStore';
 
 export const useTransactionFlowStore = defineStore('transactionFlow', {
   state: () => ({
@@ -88,12 +91,37 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
       ];
 
       if (transactionType === 'income') {
-        // NUEVO FLUJO PARA INGRESOS CON PAGOS PARCIALES Y CLIENTES (AHORA PEDIDOS)
-        this.steps.push(
-          { label: 'Detalles pedido', component: StepAddIncomeDetails },
-          { label: 'Canal de venta', component: StepSalesChannel },
-          { label: 'Decisión de pago', component: StepPaymentDecision }
-        );
+        const businessStore = useBusinessStore();
+        const userStore = useUserStore();
+        const transactionStore = useTransactionStore();
+
+        const industry = businessStore.business?.industry || userStore.currentBusiness?.industry;
+        const isCooperativaAgricola = industry === 'cooperativa_agricola';
+
+        // Asegurar que el canal de venta sea LOCAL por defecto
+        if (transactionStore.transactionToAdd?.value) {
+          transactionStore.transactionToAdd.value.salesChannel = 'LOCAL';
+          transactionStore.transactionToAdd.value.paymentDecision = 'paid';
+          transactionStore.transactionToAdd.value.type = 'income';
+        }
+
+        if (isCooperativaAgricola) {
+          // Para cooperativa agrícola se omite el paso de Canal de venta
+          this.steps.push(
+            { label: 'Detalles pedido', component: StepAddIncomeDetails },
+            { label: 'Método de pago', component: StepPaymentMethod },
+            { label: 'Adjuntar cliente', component: StepAttachClient },
+            { label: 'Preview ingreso', component: StepAddIncomePreview }
+          );
+        } else {
+          this.steps.push(
+            { label: 'Detalles pedido', component: StepAddIncomeDetails },
+            { label: 'Canal de venta', component: StepSalesChannel },
+            { label: 'Método de pago', component: StepPaymentMethod },
+            { label: 'Adjuntar cliente', component: StepAttachClient },
+            { label: 'Preview ingreso', component: StepAddIncomePreview }
+          );
+        }
       } else if (transactionType === 'expense') {
         // NUEVO FLUJO PARA EGRESOS CON PROVEEDORES Y CUENTAS POR PAGAR
         this.steps.push(
@@ -113,27 +141,9 @@ export const useTransactionFlowStore = defineStore('transactionFlow', {
 
       console.log("✅ Pasos definidos:", this.steps.map(s => s.label));
       console.log("📍 Total de pasos:", this.steps.length);
-
-      // this.steps.push({ label: 'Resumen', component: StepSummary });
     },
     insertPaymentSteps(decision) {
-      console.log("⚡ insertPaymentSteps - decisión:", decision);
-      // Limpiar cualquier paso dinámico posterior a "Decisión de pago" (índice 3 es la decisión)
-      this.steps = this.steps.slice(0, 4);
-
-      if (decision === 'paid') {
-        this.steps.push(
-          { label: 'Método de pago', component: StepPaymentMethod },
-          { label: 'Adjuntar cliente', component: StepAttachClient },
-          { label: 'Preview ingreso', component: StepAddIncomePreview }
-        );
-      } else if (decision === 'order_only') {
-        this.steps.push(
-          { label: 'Adjuntar cliente', component: StepAttachClient },
-          { label: 'Preview pedido', component: StepOrderPreview }
-        );
-      }
-      console.log("✅ Pasos dinámicos actualizados:", this.steps.map(s => s.label));
+      console.log("⚡ insertPaymentSteps deprecado/sin efecto:", decision);
     }
   }
 });

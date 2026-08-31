@@ -59,6 +59,9 @@
               >
                 Al día
               </span>
+              <span v-if="supplier.rucOrDni" class="text-xs text-gray-600 font-medium">
+                📄 RUC/DNI: {{ supplier.rucOrDni }}
+              </span>
               <span v-if="supplier.phone" class="text-xs text-gray-500">
                 📞 {{ supplier.phone }}
               </span>

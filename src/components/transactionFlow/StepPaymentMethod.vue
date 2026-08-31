@@ -17,6 +17,71 @@
       </p>
     </div>
 
+    <!-- Banner de Detracción SPOT para Cooperativa Agrícola (> S/ 700) -->
+    <div
+      v-if="isSubjectToDetraction"
+      class="max-w-2xl mx-auto bg-gradient-to-br from-amber-50 via-emerald-50/40 to-amber-50/60 rounded-2xl border-2 border-amber-300/80 p-4 sm:p-5 shadow-sm space-y-4"
+    >
+      <div class="flex items-start gap-3">
+        <div class="p-2.5 rounded-xl bg-amber-500 text-white shadow-sm shrink-0">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2">
+            <h3 class="text-base font-bold text-gray-900">
+              Venta afecta a Detracción SPOT (> S/ 700.00)
+            </h3>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+              Cooperativa Agrícola
+            </span>
+          </div>
+          <p class="text-xs text-gray-600 mt-1">
+            Esta venta retiene un porcentaje para transferirse a la <strong>Cuenta de Detracciones (Banco de la Nación)</strong>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Configuración de Tasa de Detracción y Desglose -->
+      <div class="bg-white/80 rounded-xl p-3 sm:p-4 border border-amber-200/60 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <label class="text-xs font-semibold text-gray-700">
+            Tasa de detracción aplicable:
+          </label>
+          <div class="flex items-center gap-2">
+            <div class="relative w-28">
+              <input
+                v-model.number="detractionRate"
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="100"
+                class="w-full pl-3 pr-7 py-1.5 rounded-lg border border-amber-300 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 focus:outline-none text-sm font-bold text-gray-800 text-right"
+              />
+              <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-500">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desglose de Fondos -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-amber-100 text-center text-xs">
+          <div class="bg-gray-50 p-2 rounded-lg">
+            <p class="text-[10px] text-gray-500">Total Facturado</p>
+            <p class="font-bold text-gray-800 tabular-nums">S/ {{ totalAmount.toFixed(2) }}</p>
+          </div>
+          <div class="bg-amber-100/70 p-2 rounded-lg border border-amber-200">
+            <p class="text-[10px] text-amber-800 font-medium">A Cuenta Detracciones ({{ detractionRate }}%)</p>
+            <p class="font-bold text-amber-900 tabular-nums">- S/ {{ detractionAmount.toFixed(2) }}</p>
+          </div>
+          <div class="bg-emerald-100/70 p-2 rounded-lg border border-emerald-200">
+            <p class="text-[10px] text-emerald-800 font-medium">Neto a {{ selectedMethod ? methodLabels[selectedMethod] : 'Cuenta' }}</p>
+            <p class="font-bold text-emerald-900 tabular-nums">+ S/ {{ netAmount.toFixed(2) }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Opciones de método de pago -->
     <div class="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
       <!-- Efectivo -->
@@ -121,9 +186,17 @@
                 </div>
               </div>
             </div>
-            <span class="text-lg font-semibold text-green-600"
-              >S/ {{ totalAmount.toFixed(2) }}</span
-            >
+            <div class="text-right">
+              <span class="text-lg font-semibold text-green-600">
+                S/ {{ (isSubjectToDetraction ? netAmount : totalAmount).toFixed(2) }}
+              </span>
+              <span
+                v-if="isSubjectToDetraction"
+                class="block text-[11px] text-amber-700 font-medium"
+              >
+                (Detracción: S/ {{ detractionAmount.toFixed(2) }})
+              </span>
+            </div>
           </button>
 
           <!-- Abono / Pago Parcial -->
@@ -336,6 +409,8 @@
 <script setup>
 import { ref, computed, watch, nextTick } from "vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useBusinessStore } from "@/stores/businessStore";
+import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/composables/useToast";
 import { useSubscription } from "@/composables/useSubscription";
 import { useRoute } from "vue-router";
@@ -345,6 +420,8 @@ import { round2 } from "@/utils/mathUtils";
 const route = useRoute();
 
 const transactionStore = useTransactionStore();
+const businessStore = useBusinessStore();
+const userStore = useUserStore();
 const { isPremium } = useSubscription();
 
 const { warning, success, premium } = useToast();
@@ -355,6 +432,9 @@ const paymentType = ref("complete"); // 'complete' | 'partial' | 'credit'
 const partialAmount = ref(0);
 const validationError = ref("");
 const partialAmountInput = ref(null);
+
+// Detracción SPOT
+const detractionRate = ref(1.5); // Tasa por defecto 1.5%
 
 // Labels para mostrar
 const methodLabels = {
@@ -379,6 +459,26 @@ const totalAmount = computed(() => {
   }, 0);
 
   return round2(total);
+});
+
+const isCooperativaAgricola = computed(() => {
+  const industry = businessStore.business?.industry || userStore.currentBusiness?.industry;
+  return industry === 'cooperativa_agricola';
+});
+
+const isSubjectToDetraction = computed(() => {
+  return isCooperativaAgricola.value && totalAmount.value > 700;
+});
+
+const detractionAmount = computed(() => {
+  if (!isSubjectToDetraction.value) return 0;
+  const rate = Number(detractionRate.value) || 0;
+  return round2(totalAmount.value * (rate / 100));
+});
+
+const netAmount = computed(() => {
+  if (!isSubjectToDetraction.value) return totalAmount.value;
+  return round2(Math.max(0, totalAmount.value - detractionAmount.value));
 });
 
 const balance = computed(() => {
@@ -512,11 +612,19 @@ watch([partialAmount, paymentType], () => {
 
 // Al avanzar, guardar la información en el store
 watch(
-  [selectedMethod, paymentType, partialAmount],
+  [selectedMethod, paymentType, partialAmount, detractionRate, isSubjectToDetraction],
   () => {
     if (selectedMethod.value && paymentType.value) {
       const isPartial = paymentType.value === "partial" || paymentType.value === "credit";
       const amount = paymentType.value === "partial" ? partialAmount.value : (paymentType.value === "credit" ? 0 : null);
+
+      const detractionData = isSubjectToDetraction.value ? {
+        isSubjectToDetraction: true,
+        detractionRate: Number(detractionRate.value) || 0,
+        detractionAmount: detractionAmount.value,
+        netAmount: netAmount.value,
+        detractionAccount: 'detraction'
+      } : null;
 
       console.log("🔄 StepPaymentMethod watch triggered:", {
         selectedMethod: selectedMethod.value,
@@ -524,6 +632,7 @@ watch(
         isPartial,
         partialAmount: partialAmount.value,
         amount,
+        detractionData,
         validationError: validationError.value,
       });
 
@@ -533,7 +642,7 @@ watch(
         return;
       }
 
-      transactionStore.setPaymentInfo(selectedMethod.value, isPartial, amount);
+      transactionStore.setPaymentInfo(selectedMethod.value, isPartial, amount, detractionData);
     }
   },
   { deep: true },

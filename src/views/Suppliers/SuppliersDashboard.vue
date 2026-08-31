@@ -96,7 +96,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar proveedor por nombre o teléfono..."
+            placeholder="Buscar proveedor por nombre, RUC/DNI o teléfono..."
             class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-200 focus:border-purple-500 focus:outline-none text-sm transition-colors"
           />
         </div>
@@ -161,6 +161,17 @@
           </div>
 
           <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">RUC o DNI</label>
+            <input
+              v-model="newSupplierData.rucOrDni"
+              type="text"
+              placeholder="Ej: 20601234567 / 45678901"
+              maxlength="11"
+              class="w-full px-3 py-2 border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+            />
+          </div>
+
+          <div>
             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Teléfono de contacto</label>
             <input
               v-model="newSupplierData.phone"
@@ -216,6 +227,7 @@ const isSaving = ref(false);
 
 const newSupplierData = ref({
   name: "",
+  rucOrDni: "",
   phone: "",
 });
 
@@ -225,7 +237,7 @@ onMounted(async () => {
 
 function closeAddModal() {
   showAddModal.value = false;
-  newSupplierData.value = { name: "", phone: "" };
+  newSupplierData.value = { name: "", rucOrDni: "", phone: "" };
 }
 
 async function saveSupplier() {
@@ -235,6 +247,7 @@ async function saveSupplier() {
   try {
     await createSupplier({
       name: newSupplierData.value.name,
+      rucOrDni: newSupplierData.value.rucOrDni,
       phone: newSupplierData.value.phone,
     });
     success("Proveedor creado con éxito");

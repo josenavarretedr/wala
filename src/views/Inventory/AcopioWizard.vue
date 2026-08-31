@@ -121,6 +121,9 @@
                   <span class="text-gray-400 font-bold text-sm">S/</span>
                 </div>
               </div>
+              <p v-if="selectedProduct && selectedProduct.cost !== undefined && selectedProduct.cost !== null" class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                <span>💡</span> Costo base en inventario: <strong class="text-teal-700">S/ {{ Number(selectedProduct.cost).toFixed(2) }}</strong>
+              </p>
             </div>
           </div>
         </div>
@@ -167,7 +170,7 @@
               <input
                 v-model="supplierSearchQuery"
                 type="text"
-                placeholder="Buscar socio por nombre o teléfono..."
+                placeholder="Buscar socio por nombre, RUC/DNI o teléfono..."
                 class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-200 focus:outline-none transition-all"
               />
             </div>
@@ -182,7 +185,10 @@
               >
                 <div>
                   <div class="font-bold text-gray-800">{{ sup.name }}</div>
-                  <div v-if="sup.phone" class="text-xs text-gray-500 mt-0.5">📞 {{ sup.phone }}</div>
+                  <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <span v-if="sup.rucOrDni" class="text-xs text-teal-700 font-medium">📄 {{ sup.rucOrDni }}</span>
+                    <span v-if="sup.phone" class="text-xs text-gray-500">📞 {{ sup.phone }}</span>
+                  </div>
                 </div>
                 <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -215,6 +221,17 @@
                   v-model="newSupplier.name"
                   type="text"
                   placeholder="Ej: Juan Perez (Socio)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">RUC o DNI</label>
+                <input
+                  v-model="newSupplier.rucOrDni"
+                  type="text"
+                  placeholder="Ej: 45678901 / 20601234567"
+                  maxlength="11"
                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-teal-500 focus:ring-1 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
@@ -264,6 +281,7 @@
             <div>
               <p class="text-xs text-gray-500 uppercase font-semibold">Socio a cargo</p>
               <p class="text-lg font-bold text-gray-800">{{ selectedSupplier.name }}</p>
+              <p v-if="selectedSupplier.rucOrDni" class="text-xs text-teal-700 font-medium">Doc: {{ selectedSupplier.rucOrDni }}</p>
               <p v-if="selectedSupplier.phone" class="text-xs text-gray-500">Tel: {{ selectedSupplier.phone }}</p>
             </div>
             <div class="text-right">
@@ -377,6 +395,7 @@ const isProcessing = ref(false);
 
 const newSupplier = ref({
   name: '',
+  rucOrDni: '',
   phone: ''
 });
 
@@ -397,7 +416,11 @@ const filteredSuppliers = computed(() => {
   return supplierStore.suppliers.filter(s => 
     s.isActive && 
     s.isPartner === true && 
-    (s.name.toLowerCase().includes(query) || (s.phone && s.phone.includes(query)))
+    (
+      s.name.toLowerCase().includes(query) || 
+      (s.phone && s.phone.includes(query)) ||
+      (s.rucOrDni && s.rucOrDni.toLowerCase().includes(query))
+    )
   );
 });
 
@@ -405,6 +428,15 @@ const filteredSuppliers = computed(() => {
 const handleProductSelected = async (product) => {
   try {
     selectedProduct.value = await inventoryStore.getProductDetails(product.uuid);
+    if (
+      selectedProduct.value?.cost !== undefined &&
+      selectedProduct.value?.cost !== null &&
+      !isNaN(Number(selectedProduct.value.cost))
+    ) {
+      agreedPrice.value = Number(selectedProduct.value.cost);
+    } else {
+      agreedPrice.value = null;
+    }
     step.value = 2;
   } catch (err) {
     showError('Error al cargar detalles del producto');
@@ -427,13 +459,14 @@ const registerNewSupplier = async () => {
   try {
     const created = await supplierStore.createSupplier({
       name: newSupplier.value.name,
+      rucOrDni: newSupplier.value.rucOrDni,
       phone: newSupplier.value.phone,
       isPartner: true
     });
     success('Socio registrado y seleccionado con éxito');
     selectedSupplier.value = created;
     showCreateForm.value = false;
-    newSupplier.value = { name: '', phone: '' };
+    newSupplier.value = { name: '', rucOrDni: '', phone: '' };
   } catch (err) {
     showError('Error al registrar socio: ' + err.message);
   } finally {

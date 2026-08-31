@@ -1,5 +1,17 @@
 // useDailySummary.js
-import { getFirestore, doc, getDoc, onSnapshot } from 'firebase/firestore';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  onSnapshot,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  documentId,
+} from 'firebase/firestore';
 import appFirebase from '@/firebaseInit';
 import { ensureBusinessId } from '@/composables/useBusinessUtils';
 
@@ -109,6 +121,78 @@ export function useDailySummary() {
       return data;
     } catch (error) {
       console.error('❌ Error obteniendo dailySummary:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Obtiene el último dailySummary disponible anterior a una fecha dada (o la más reciente).
+   * Usa el campo almacenado 'day' ('YYYY-MM-DD') para consultas ordenadas en Firestore.
+   * @param {string} [beforeDayString] - Fecha límite superior 'yyyy-LL-dd' (opcional)
+   * @returns {Promise<{day: string, summary: Object}|null>}
+   */
+  const getLastAvailableDailySummary = async (beforeDayString = null) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) {
+        console.error('❌ businessId no disponible para getLastAvailableDailySummary');
+        return null;
+      }
+
+      const summariesColl = collection(db, `businesses/${businessId}/dailySummaries`);
+      
+      let snapshot;
+      try {
+        let q;
+        if (beforeDayString) {
+          q = query(
+            summariesColl,
+            where('day', '<', beforeDayString),
+            orderBy('day', 'desc'),
+            limit(1)
+          );
+        } else {
+          q = query(
+            summariesColl,
+            orderBy('day', 'desc'),
+            limit(1)
+          );
+        }
+        snapshot = await getDocs(q);
+      } catch (queryErr) {
+        console.warn('⚠️ Fallback query en getLastAvailableDailySummary:', queryErr.message);
+        // Fallback: consultar resúmenes recientes por orden de día desc
+        const fallbackQ = query(summariesColl, orderBy('day', 'desc'), limit(10));
+        snapshot = await getDocs(fallbackQ);
+      }
+
+      if (!snapshot || snapshot.empty) {
+        console.log('ℹ️ No se encontraron dailySummaries anteriores');
+        return null;
+      }
+
+      // Encontrar el primer documento con día anterior a beforeDayString
+      let targetDoc = null;
+      for (const docSnap of snapshot.docs) {
+        const docDay = docSnap.data()?.day || docSnap.id;
+        if (!beforeDayString || docDay < beforeDayString) {
+          targetDoc = docSnap;
+          break;
+        }
+      }
+
+      if (!targetDoc) {
+        console.log('ℹ️ No se encontró ningún dailySummary anterior a', beforeDayString);
+        return null;
+      }
+
+      const day = targetDoc.data()?.day || targetDoc.id;
+      const data = targetDoc.data();
+
+      console.log(`✅ Último DailySummary encontrado (${day}):`, data);
+      return { day, summary: data };
+    } catch (error) {
+      console.error('❌ Error obteniendo último dailySummary disponible:', error);
       return null;
     }
   };
@@ -572,6 +656,7 @@ export function useDailySummary() {
     // Métodos de obtención
     getTodayDailySummary,
     getDailySummary,
+    getLastAvailableDailySummary,
 
     // 🔥 NUEVO: Listeners en tiempo real
     watchTodayDailySummary,
