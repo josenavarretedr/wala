@@ -1,7 +1,23 @@
 import { Composition, Folder } from "remotion";
+import { z } from "zod";
 import { HelloWorld } from "./HelloWorld";
 import { Logo } from "./HelloWorld/Logo";
 import { Title } from "./HelloWorld/Title";
+
+const logoSchema = z.object({
+  logoColor1: z.string(),
+  logoColor2: z.string(),
+});
+
+const titleSchema = z.object({
+  titleText: z.string(),
+  titleColor: z.string(),
+});
+
+const helloWorldSchema = z.object({
+  titleText: z.string(),
+  titleColor: z.string(),
+});
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -16,6 +32,7 @@ export const RemotionRoot: React.FC = () => {
           fps={30}
           width={1920}
           height={1080}
+          schema={logoSchema}
           defaultProps={{
             logoColor1: "#91EAE4",
             logoColor2: "#86A8E7",
@@ -28,6 +45,7 @@ export const RemotionRoot: React.FC = () => {
           fps={30}
           width={1920}
           height={1080}
+          schema={titleSchema}
           defaultProps={{
             titleText: "Welcome to Remotion",
             titleColor: "#000000",
@@ -43,6 +61,7 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1920}
         height={1080}
+        schema={helloWorldSchema}
         // You can override these props for each render:
         // https://www.remotion.dev/docs/parametrized-rendering
         defaultProps={{
@@ -50,7 +69,6 @@ export const RemotionRoot: React.FC = () => {
           titleColor: "#000000",
         }}
       />
-
     </>
   );
 };
