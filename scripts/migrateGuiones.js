@@ -20,7 +20,10 @@ const __dirname = path.dirname(__filename);
 
 // Cargar service account usando createRequire
 const require = createRequire(import.meta.url);
-const serviceAccount = require('../wala-lat-firebase-adminsdk.json');
+const serviceAccountPath = fs.existsSync(path.join(__dirname, '../apps/functions/wala-lat-firebase-adminsdk.json'))
+  ? '../apps/functions/wala-lat-firebase-adminsdk.json'
+  : '../wala-lat-firebase-adminsdk.json';
+const serviceAccount = require(serviceAccountPath);
 
 // Inicializar Firebase Admin
 admin.initializeApp({
@@ -30,7 +33,9 @@ admin.initializeApp({
 const db = admin.firestore();
 
 // Configuración
-const GUIONES_DIR = path.join(__dirname, '../src/assets/guiones');
+const GUIONES_DIR = fs.existsSync(path.join(__dirname, '../apps/web/src/assets/guiones'))
+  ? path.join(__dirname, '../apps/web/src/assets/guiones')
+  : path.join(__dirname, '../src/assets/guiones');
 const COLLECTION_PATH = 'marketing/guiones/videos';
 
 /**

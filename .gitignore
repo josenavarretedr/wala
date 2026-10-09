@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+build
+out
 *.local
 
 # Editor directories and files
@@ -27,9 +29,12 @@ dist-ssr
 .env
 .env.local
 .env.*.local
-functions/.env
-functions/.env.local
-functions/.env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
+apps/*/.env
+apps/*/.env.local
+apps/*/.env.*.local
 
 # Archivos sensibles
 **/wala-lat-firebase-adminsdk.json

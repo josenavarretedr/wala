@@ -8,7 +8,7 @@
   },
   "functions": [
     {
-      "source": "functions",
+      "source": "apps/functions",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -22,7 +22,7 @@
   "hosting": [
     {
       "site": "wala-lat",
-      "public": "dist",
+      "public": "apps/web/dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {
@@ -33,7 +33,7 @@
     },
     {
       "site": "wala-content",
-      "public": "wala-content-spa/dist",
+      "public": "apps/content/dist",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         {

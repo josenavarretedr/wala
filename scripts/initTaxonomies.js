@@ -4,15 +4,19 @@
  */
 
 import admin from 'firebase-admin';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const serviceAccountFile = existsSync(join(__dirname, '../apps/functions/wala-lat-firebase-adminsdk.json'))
+  ? join(__dirname, '../apps/functions/wala-lat-firebase-adminsdk.json')
+  : join(__dirname, '../functions/wala-lat-firebase-adminsdk.json');
+
 const serviceAccount = JSON.parse(
-  readFileSync(join(__dirname, '../functions/wala-lat-firebase-adminsdk.json'), 'utf8')
+  readFileSync(serviceAccountFile, 'utf8')
 );
 
 admin.initializeApp({
