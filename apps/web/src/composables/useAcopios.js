@@ -4,8 +4,11 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocs,
   updateDoc,
+  deleteDoc,
   query,
+  where,
   orderBy,
   onSnapshot,
   serverTimestamp
@@ -16,6 +19,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useTransaccion } from "@/composables/useTransaction";
 import { useInventory } from "@/composables/useInventory";
 import { useSupplierStore } from "@/stores/supplierStore";
+import { useCashOpeningValidation } from "@/composables/useCashOpeningValidation";
 
 const db = getFirestore(appFirebase);
 
@@ -28,6 +32,13 @@ export function useAcopios() {
     try {
       const businessId = ensureBusinessId();
       if (!businessId) throw new Error('No hay negocio activo');
+
+      // 0. Validar apertura de caja obligatoria antes de registrar acopio
+      const { checkCashOpening } = useCashOpeningValidation();
+      const hasOpening = await checkCashOpening(businessId);
+      if (!hasOpening) {
+        throw new Error('Debes aperturar la caja primero antes de registrar un acopio');
+      }
 
       const acopioId = acopioData.uuid || uuidv4();
       const transactionId = acopioData.transactionId || uuidv4();
@@ -239,9 +250,249 @@ export function useAcopios() {
     }
   };
 
+  /**
+   * Elimina un acopio y revierte de forma integral todos los efectos generados:
+   * 1. Elimina la transacción de egreso y pagos en cascada asociados (vía transactionStore).
+   * 2. Revierte el stock del producto deduciendo la cantidad acopiada y borrando el stockLog.
+   * 3. Recalcula las cuentas por pagar y estadísticas del socio/proveedor (pendingBalance, totalExpenses).
+   * 4. Elimina el documento de acopio de businesses/{businessId}/acopios/{acopioId}.
+   * 5. El trigger onTransactionWrite recalcula automáticamente el dailySummary.
+   *
+   * @param {string} acopioId - UUID del acopio a eliminar
+   * @returns {Promise<boolean>} true si se eliminó con éxito
+   */
+  const deleteAcopio = async (acopioId) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) throw new Error('No hay negocio activo');
+
+      console.log(`🌾 [DELETE ACOPIO] Iniciando reversión y eliminación de acopio: ${acopioId}`);
+
+      // 1. Obtener documento de acopio
+      const acopioRef = doc(db, 'businesses', businessId, 'acopios', acopioId);
+      const acopioSnap = await getDoc(acopioRef);
+
+      let acopioData = null;
+      if (acopioSnap.exists()) {
+        acopioData = acopioSnap.data();
+      }
+
+      const transactionId = acopioData?.transactionId;
+      const supplierId = acopioData?.supplierId;
+      const productId = acopioData?.productId;
+      const quantity = Number(acopioData?.quantity || 0);
+
+      // Si el acopio ya fue liquidado o tiene abonos, no se puede eliminar directamente el acopio
+      if (acopioData?.status === 'completed' || acopioData?.status === 'partial') {
+        throw new Error('Este acopio cuenta con liquidaciones o pagos registrados. Debes anular la liquidación primero.');
+      }
+
+      // 2. Si tiene transacción enlazada, ejecutar eliminación con integridad mediante transactionStore
+      if (transactionId) {
+        const { useTransactionStore } = await import('@/stores/transaction/transactionStore');
+        const transactionStore = useTransactionStore();
+
+        try {
+          // Se pasa callback auto-aprobado porque la confirmación ya fue solicitada en el modal de usuario
+          await transactionStore.deleteOneTransactionByID(transactionId, () => Promise.resolve(true));
+          console.log(`✅ [DELETE ACOPIO] Transacción ${transactionId} y efectos asociados revertidos por transactionStore`);
+        } catch (txErr) {
+          console.warn(`⚠️ [DELETE ACOPIO] No se pudo delegar a transactionStore (posiblemente ya no existe):`, txErr);
+
+          // Reversión de contingencia del stock si la transacción estaba ausente
+          if (productId && quantity > 0) {
+            try {
+              const productRef = doc(db, `businesses/${businessId}/products`, productId);
+              const productDoc = await getDoc(productRef);
+              if (productDoc.exists()) {
+                const pData = productDoc.data();
+                const newStock = Math.max((pData.stock || 0) - quantity, 0);
+                await updateDoc(productRef, { stock: newStock });
+                console.log(`✅ [DELETE ACOPIO] Stock revertido manualmente de contingencia: ${pData.stock} - ${quantity} = ${newStock}`);
+              }
+            } catch (pErr) {
+              console.error('Error revirtiendo stock manualmente:', pErr);
+            }
+          }
+        }
+      }
+
+      // 3. Asegurar que el documento de acopio esté eliminado en Firestore
+      const freshAcopioSnap = await getDoc(acopioRef);
+      if (freshAcopioSnap.exists()) {
+        await deleteDoc(acopioRef);
+        console.log(`✅ [DELETE ACOPIO] Documento de acopio ${acopioId} eliminado físicamente`);
+      }
+
+      // 4. Recalcular metadata del socio/proveedor (saldo adeudado, transacciones, etc.)
+      if (supplierId) {
+        await supplierStore.updateSupplierMetadata(supplierId);
+        console.log(`✅ [DELETE ACOPIO] Metadata del socio ${supplierId} actualizada exitosamente`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error al eliminar acopio:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Anula la liquidación de un acopio sin eliminar el acopio ni modificar el inventario.
+   * - Requiere que la caja del día esté aperturada.
+   * - Elimina las transacciones de pago (type: 'payment'), reintegrando el dinero a Caja/Banco y actualizando DailySummary.
+   * - Restablece la cuenta por pagar (gasto original) a estado 'pending' con balance íntegro.
+   * - Actualiza el documento de acopio a status: 'pending'.
+   * - Recalcula la deuda del socio en supplierStore.
+   * - Mantiene el stock e inventario INTACTOS.
+   * 
+   * @param {string} acopioId - UUID del acopio cuya liquidación se revertirá
+   * @returns {Promise<boolean>}
+   */
+  const revertAcopioLiquidation = async (acopioId) => {
+    try {
+      const businessId = ensureBusinessId();
+      if (!businessId) throw new Error('No hay negocio activo');
+
+      // 0. Validar apertura de caja obligatoria antes de revertir liquidación
+      const { checkCashOpening, showOpeningRequiredToast } = useCashOpeningValidation();
+      const hasOpening = await checkCashOpening(businessId);
+      if (!hasOpening) {
+        showOpeningRequiredToast(businessId);
+        throw new Error('Debes aperturar la caja primero antes de anular una liquidación');
+      }
+
+      console.log(`🌾 [REVERT LIQUIDATION] Anulando liquidación de acopio: ${acopioId}`);
+
+      // 1. Obtener documento de acopio
+      const acopioRef = doc(db, 'businesses', businessId, 'acopios', acopioId);
+      const acopioSnap = await getDoc(acopioRef);
+      if (!acopioSnap.exists()) {
+        throw new Error('El acopio no existe');
+      }
+
+      const acopioData = acopioSnap.data();
+      const transactionId = acopioData.transactionId;
+      const supplierId = acopioData.supplierId;
+      const totalAmount = Number(acopioData.totalAmount || 0);
+
+      const { useTransactionStore } = await import('@/stores/transaction/transactionStore');
+      const transactionStore = useTransactionStore();
+
+      // 2. Localizar y eliminar las transacciones de pago asociadas (type: 'payment')
+      if (transactionId) {
+        const qPayments = query(
+          collection(db, 'businesses', businessId, 'transactions'),
+          where('type', '==', 'payment'),
+          where('relatedTransactionId', '==', transactionId)
+        );
+        const paymentsSnap = await getDocs(qPayments);
+
+        const storePayments = (transactionStore.transactionsInStore?.value || []).filter(
+          t => t.type === 'payment' && t.relatedTransactionId === transactionId
+        );
+
+        const paymentIdsToDelete = new Set();
+        paymentsSnap.forEach(docSnap => paymentIdsToDelete.add(docSnap.id));
+        storePayments.forEach(p => paymentIdsToDelete.add(p.uuid || p.id));
+
+        console.log(`🗑️ [REVERT LIQUIDATION] Eliminando ${paymentIdsToDelete.size} pagos asociados al acopio ${acopioId}`);
+
+        for (const paymentId of paymentIdsToDelete) {
+          try {
+            await deleteDoc(doc(db, 'businesses', businessId, 'transactions', paymentId));
+            console.log(`  ✅ [REVERT LIQUIDATION] Pago ${paymentId} eliminado de Firestore`);
+          } catch (pErr) {
+            console.error(`  ❌ Error al eliminar pago ${paymentId}:`, pErr);
+          }
+
+          // Eliminar del store local reactivo
+          if (Array.isArray(transactionStore.transactionsInStore?.value)) {
+            const pIdx = transactionStore.transactionsInStore.value.findIndex(
+              t => t.uuid === paymentId || t.id === paymentId
+            );
+            if (pIdx !== -1) {
+              transactionStore.transactionsInStore.value.splice(pIdx, 1);
+            }
+          }
+        }
+
+        // 3. Restaurar la transacción original de egreso a estado 'pending' con balance completo
+        const initialPaymentEntry = {
+          uuid: uuidv4(),
+          amount: 0,
+          isInitial: true,
+          date: new Date(),
+          account: 'cash',
+          notes: 'Acopio a crédito (liquidación anulada)'
+        };
+
+        const txRef = doc(db, 'businesses', businessId, 'transactions', transactionId);
+        const txSnap = await getDoc(txRef);
+        if (txSnap.exists()) {
+          await updateDoc(txRef, {
+            payments: [initialPaymentEntry],
+            totalPaid: 0,
+            balance: totalAmount,
+            paymentStatus: 'pending',
+            updatedAt: serverTimestamp()
+          });
+          console.log(`✅ [REVERT LIQUIDATION] Transacción ${transactionId} reabierta con balance S/ ${totalAmount}`);
+        }
+
+        // Actualizar en memoria en transactionStore
+        if (Array.isArray(transactionStore.transactionsInStore?.value)) {
+          const tIdx = transactionStore.transactionsInStore.value.findIndex(
+            t => t.uuid === transactionId || t.id === transactionId
+          );
+          if (tIdx !== -1) {
+            transactionStore.transactionsInStore.value[tIdx] = {
+              ...transactionStore.transactionsInStore.value[tIdx],
+              payments: [initialPaymentEntry],
+              totalPaid: 0,
+              balance: totalAmount,
+              paymentStatus: 'pending'
+            };
+          }
+        }
+      }
+
+      // 4. Actualizar el documento de acopio a estado 'pending'
+      await updateDoc(acopioRef, {
+        status: 'pending',
+        updatedAt: serverTimestamp()
+      });
+      console.log(`✅ [REVERT LIQUIDATION] Acopio ${acopioId} restaurado a status: pending`);
+
+      // 5. Recalcular metadata de deudas del socio
+      if (supplierId) {
+        await supplierStore.updateSupplierMetadata(supplierId);
+        console.log(`✅ [REVERT LIQUIDATION] Metadata del socio ${supplierId} actualizada`);
+      }
+
+      // 6. Recargar dailySummary / balance reactivo si está disponible
+      try {
+        const { useAccountsBalanceStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceStore');
+        const accountsBalanceStore = useAccountsBalanceStore();
+        if (accountsBalanceStore.loadFromDailySummary) {
+          await accountsBalanceStore.loadFromDailySummary();
+        }
+      } catch (balErr) {
+        console.warn('⚠️ No se pudo recargar accountsBalanceStore tras anular liquidación:', balErr);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error al anular liquidación del acopio:', error);
+      throw error;
+    }
+  };
+
   return {
     saveAcopio,
     getAcopiosListener,
-    updateAcopioPriceAndExpense
+    updateAcopioPriceAndExpense,
+    deleteAcopio,
+    revertAcopioLiquidation
   };
 }

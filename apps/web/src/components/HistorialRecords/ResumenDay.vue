@@ -344,6 +344,7 @@ const hasDetractionTransactions = computed(() => {
   return txs.some(
     (tx) =>
       tx.isSubjectToDetraction ||
+      (tx.detractionOut || 0) > 0 ||
       tx.account === "detraction" ||
       tx.toAccount === "detraction" ||
       tx.fromAccount === "detraction"
@@ -372,6 +373,24 @@ const totalIngresos = computed(() => {
   return incomes + clientPayments;
 });
 
+const getRefundOutflow = (tx, targetAccount = null) => {
+  if (!tx || tx.type !== 'refund') return 0;
+  const hasSplit =
+    tx.cashOut !== undefined || tx.bankOut !== undefined || tx.detractionOut !== undefined;
+  if (hasSplit) {
+    if (targetAccount === 'cash') return Number(tx.cashOut || 0);
+    if (targetAccount === 'bank') return Number(tx.bankOut || 0);
+    if (targetAccount === 'detraction') return Number(tx.detractionOut || 0);
+    return Number(tx.cashOut || 0) + Number(tx.bankOut || 0) + Number(tx.detractionOut || 0);
+  }
+  const amt = Number(tx.amount || 0);
+  if (!targetAccount) return amt;
+  if (targetAccount === 'cash' && tx.account === 'cash') return amt;
+  if (targetAccount === 'detraction' && tx.account === 'detraction') return amt;
+  if (targetAccount === 'bank' && (tx.account === 'bank' || tx.account === 'yape' || tx.account === 'plin')) return amt;
+  return 0;
+};
+
 const totalEgresos = computed(() => {
   const txs = transactionStore.transactionsInStore.value || [];
   if (txs.length === 0) {
@@ -383,7 +402,10 @@ const totalEgresos = computed(() => {
   const supplierPayments = txs
     .filter(tx => tx.type === 'payment' && (tx.supplierId || tx.supplierName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
-  return expenses + supplierPayments;
+  const refundsOut = txs
+    .filter(tx => tx.type === 'refund')
+    .reduce((sum, tx) => sum + getRefundOutflow(tx, null), 0);
+  return expenses + supplierPayments + refundsOut;
 });
 
 const totalAjustesCierre = computed(() => {
@@ -417,7 +439,10 @@ const saldoActualCash = computed(() => {
   const pagosOut = txs
     .filter(tx => tx.type === 'payment' && tx.account === 'cash' && (tx.supplierId || tx.supplierName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
-  const egresos = egresosOut + pagosOut;
+  const refundsCashOut = txs
+    .filter(tx => tx.type === 'refund')
+    .reduce((sum, tx) => sum + getRefundOutflow(tx, 'cash'), 0);
+  const egresos = egresosOut + pagosOut + refundsCashOut;
 
   const transfersOut = txs
     .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'cash')
@@ -448,7 +473,10 @@ const saldoActualBank = computed(() => {
   const pagosOut = txs
     .filter(tx => tx.type === 'payment' && tx.account === 'bank' && (tx.supplierId || tx.supplierName))
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
-  const egresos = egresosOut + pagosOut;
+  const refundsBankOut = txs
+    .filter(tx => tx.type === 'refund')
+    .reduce((sum, tx) => sum + getRefundOutflow(tx, 'bank'), 0);
+  const egresos = egresosOut + pagosOut + refundsBankOut;
 
   const transfersOut = txs
     .filter(tx => tx.type === 'transfer' && tx.fromAccount === 'bank')
@@ -474,11 +502,14 @@ const saldoActualDetraction = computed(() => {
   const egresosOut = txs
     .filter((tx) => tx.type === "expense" && tx.account === "detraction" && tx.category !== "adjustment")
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
+  const refundsDetractionOut = txs
+    .filter((tx) => tx.type === "refund")
+    .reduce((sum, tx) => sum + getRefundOutflow(tx, "detraction"), 0);
   const transfersOut = txs
     .filter((tx) => tx.type === "transfer" && tx.fromAccount === "detraction")
     .reduce((sum, tx) => sum + (tx.amount || 0), 0);
 
-  return fromIncomes + directIncomes + transfersIn - egresosOut - transfersOut;
+  return fromIncomes + directIncomes + transfersIn - egresosOut - refundsDetractionOut - transfersOut;
 });
 
 const saldoActual = computed(() => {

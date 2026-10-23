@@ -13,6 +13,18 @@ export function calculatePaymentStatus(transaction) {
   const total = transaction.total || transaction.amount || 0;
   const { payments = [] } = transaction;
 
+  // Si la venta fue anulada con una Nota de Devolución, no tiene saldo por cobrar
+  if (transaction.status === 'refunded' || transaction.paymentStatus === PaymentStatuses.REFUNDED) {
+    const refundedPaid = Array.isArray(payments) && payments.length > 0
+      ? payments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+      : (transaction.totalPaid !== undefined ? transaction.totalPaid : total);
+    return {
+      paymentStatus: PaymentStatuses.REFUNDED,
+      totalPaid: Math.min(refundedPaid, total),
+      balance: 0
+    };
+  }
+
   // Si no hay payments array o está vacío y no es un acopio, el pago está completo
   if ((!payments || payments.length === 0) && !transaction.acopioId) {
     return {
@@ -242,6 +254,11 @@ export function formatPaymentStatus(paymentStatus) {
       label: 'Pendiente',
       color: 'red',
       icon: '⏳'
+    },
+    [PaymentStatuses.REFUNDED]: {
+      label: 'Devuelta',
+      color: 'rose',
+      icon: '↩'
     }
   };
 

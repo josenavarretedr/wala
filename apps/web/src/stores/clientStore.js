@@ -246,10 +246,17 @@ export const useClientStore = defineStore('clientStore', () => {
       let totalPurchases = 0;
       let pendingBalance = 0;
       let lastPurchase = null;
-      const transactionCount = snapshot.size;
+      let transactionCount = 0;
 
       snapshot.docs.forEach(doc => {
         const transaction = doc.data();
+
+        // Ignorar ventas anuladas mediante Nota de Devolución
+        if (transaction.status === 'refunded' || transaction.paymentStatus === 'refunded') {
+          return;
+        }
+
+        transactionCount += 1;
 
         console.log(`  📝 Transacción ${doc.id}:`, {
           amount: transaction.amount,

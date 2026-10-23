@@ -70,6 +70,7 @@ function isInitialPayment(payment, tx) {
  *   ✅ income (category !== 'adjustment')
  *   ✅ expense (category !== 'adjustment')
  *   ✅ payment (cobros de ventas a crédito)
+ *   ✅ refund (notas de devolución de ventas)
  *   ❌ transfer (NO cuenta para racha)
  *   ❌ adjustment (NO cuenta para racha)
  *   ❌ opening (NO cuenta para racha)
@@ -79,10 +80,11 @@ function isInitialPayment(payment, tx) {
  * - 'opening': Apertura de caja
  * - 'closure': Cierre de caja
  * - 'income': Ingreso (venta)
- *   - paymentStatus: 'completed' | 'partial' | 'pending'
+ *   - paymentStatus: 'completed' | 'partial' | 'pending' | 'refunded'
  *   - totalPaid: monto efectivamente recibido
  *   - payments: array de pagos realizados
  * - 'expense': Egreso (gasto)
+ * - 'refund': Nota de devolución por anulación de venta de día cerrado
  * - 'transfer': Transferencia entre cuentas
  * - 'payment': Pago posterior de una venta a crédito
  */
@@ -140,6 +142,13 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
   let ajustesAperturaBank = 0;
   let ajustesCierreCash = 0;
   let ajustesCierreBank = 0;
+
+  // ===== DEVOLUCIONES (NOTAS DE DEVOLUCIÓN) =====
+  let refundsCash = 0;
+  let refundsBank = 0;
+  let refundsDetraction = 0;
+  let totalRefunds = 0;
+  let refundsCount = 0;
 
   // Procesar cada transacción (equivalente a accountsBalanceStore)
   allTransactions.forEach(tx => {
@@ -295,6 +304,44 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
       console.log(`  💸 Expense summary: ${amountPaid} of ${amount} [${account}] (${tx.uuid})`);
     }
 
+    // === DEVOLUCIONES / NOTAS DE DEVOLUCIÓN (tipo 'refund') ===
+    if (txType === 'refund') {
+      hasTxn = true;
+      refundsCount += 1;
+
+      const hasCashBankOut =
+        tx.cashOut !== undefined || tx.bankOut !== undefined || tx.detractionOut !== undefined;
+      let cashOut = 0;
+      let bankOut = 0;
+      let detractionOut = parseMoneyNumber(tx.detractionOut || 0);
+
+      if (hasCashBankOut) {
+        cashOut = parseMoneyNumber(tx.cashOut || 0);
+        bankOut = parseMoneyNumber(tx.bankOut || 0);
+      } else {
+        if (account === 'cash') {
+          cashOut = amount;
+        } else if (account === 'detraction') {
+          detractionOut = amount;
+        } else if (account === 'bank' || account === 'yape' || account === 'plin') {
+          bankOut = amount;
+        }
+      }
+
+      const refundTreasuryTotal = addMoney(cashOut, bankOut);
+      const refundTotal = addMoney(refundTreasuryTotal, detractionOut);
+      egresosCash = addMoney(egresosCash, cashOut);
+      egresosBank = addMoney(egresosBank, bankOut);
+      totalEgresos = addMoney(totalEgresos, refundTotal);
+
+      refundsCash = addMoney(refundsCash, cashOut);
+      refundsBank = addMoney(refundsBank, bankOut);
+      refundsDetraction = addMoney(refundsDetraction, detractionOut);
+      totalRefunds = addMoney(totalRefunds, refundTotal);
+
+      console.log(`  ↩️ Refund note: ${refundTotal} (Cash: ${cashOut}, Bank: ${bankOut}, Detraction: ${detractionOut}) (${tx.uuid})`);
+    }
+
     // === TRANSFERENCIAS ===
     // NOTA: Las transferencias NO cuentan para hasTxn (no afectan la racha)
     if (txType === 'transfer') {
@@ -400,7 +447,17 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
       expense: totalEgresos,
       net: resultadoOperacional,
       transfers: totalTransferencias,
-      adjustments: totalAjustes
+      adjustments: totalAjustes,
+      refunds: totalRefunds
+    },
+
+    // Devoluciones (Notas de devolución)
+    refunds: {
+      total: totalRefunds,
+      cash: refundsCash,
+      bank: refundsBank,
+      detraction: refundsDetraction,
+      count: refundsCount
     },
 
     // Desglose por cuenta
@@ -480,6 +537,7 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
   console.log(`📊 Detailed aggregates calculated:`);
   console.log(`   💰 Total Income: ${totalIngresos} (Cash: ${ingresosCash}, Bank: ${ingresosBank})`);
   console.log(`   💸 Total Expense: ${totalEgresos} (Cash: ${egresosCash}, Bank: ${egresosBank})`);
+  console.log(`   ↩️ Total Refunds: ${totalRefunds} (Cash: ${refundsCash}, Bank: ${refundsBank}, Count: ${refundsCount})`);
   console.log(`   🔄 Transfers: ${totalTransferencias}`);
   console.log(`   🔧 Adjustments: ${totalAjustes} (Opening: ${totalAjustesApertura}, Closure: ${totalAjustesCierre})`);
   console.log(`   💼 Operational Result: ${resultadoOperacional}`);

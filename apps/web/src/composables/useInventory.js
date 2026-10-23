@@ -496,6 +496,31 @@ export function useInventory() {
         }
       }
 
+      // Calcular quantityDeducted real antes de persistir el stockLog (evita inflar stock al revertir ventas con stock insuficiente)
+      const isOutflowLog = ['sell', 'waste', 'production_out', 'usage'].includes(typeStockLog);
+      if (isOutflowLog) {
+        const requestedForStock =
+          item.quantityForStock !== undefined && item.quantityForStock !== null
+            ? roundStock(Number(item.quantityForStock))
+            : roundStock(Number(item.quantity || 0));
+
+        if (productDoc.exists()) {
+          const pData = productDoc.data() || {};
+          let availableStock = roundStock(Number(pData.stock || 0));
+          if (item.variantId && Array.isArray(pData.variantCombos)) {
+            const matchedVariant = pData.variantCombos.find((v) => v.id === item.variantId);
+            availableStock = roundStock(Number(matchedVariant?.stock || 0));
+          }
+          stockLog.quantityDeducted = roundStock(
+            Math.min(Math.max(0, availableStock), Math.max(0, requestedForStock))
+          );
+        } else {
+          stockLog.quantityDeducted = 0;
+        }
+      } else {
+        stockLog.quantityDeducted = roundStock(Number(item.quantity || 0));
+      }
+
       // ✅ CREAR STOCKLOG EN SUBCOLLECTION (nueva estructura)
       const stockLogRef = doc(db, `businesses/${businessId}/products/${item.uuid}/stockLog`, stockLog.uuid);
       await setDoc(stockLogRef, {

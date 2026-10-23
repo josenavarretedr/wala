@@ -24,16 +24,15 @@ Función orquestadora que:
 
 ### 2. **Funciones Especializadas por Tipo**
 
-#### ✅ `deleteIncomeTransaction()` - Eliminar Ventas
+#### ✅ `deleteIncomeTransaction()` - Eliminar o Anular Ventas (`deleteSale` Cloud Function)
 
-**Qué hace:**
+> 📌 **Documentación detallada:** Ver [`SALE_DELETION_AND_REFUND_NOTE.md`](./SALE_DELETION_AND_REFUND_NOTE.md).
 
-1. ✅ **Revierte stock vendido** (suma cantidades al inventario)
-2. ✅ **Elimina stockLogs** de tipo `sell` del historial
-3. ✅ **Elimina payments asociados** (tipo `payment` que referencian la venta)
-4. ✅ **Actualiza metadata del cliente** (totalPurchases, pendingBalance, transactionCount, lastPurchase)
-5. ✅ **Elimina la transacción** de Firestore
-6. ✅ **Genera logs de trazabilidad** completos
+**Qué hace (vía Cloud Function transaccional `deleteSale`):**
+
+1. ✅ **Política Dual según estado de caja:**
+   - **`DIRECT_DELETE` (Día abierto actual):** Elimina físicamente la venta (`income`), sus pagos (`payment`), sus gastos de delivery vinculados (`expense`) y sus `stockLog` en subcolección, restaurando el stock (`quantityDeducted`) en productos simples, variantes (`variantCombos`), materiales de composición y empaques.
+   - **`REFUND_NOTE` (Día cerrado):** Exige que el día actual tenga apertura activa y sin cierre. Mantiene intacta la venta histórica del día cerrado marcándola como `status: 'refunded'` / `paymentStatus: 'refunded'` (`balance: 0`), crea una transacción `type: 'refund'` (Nota de Devolución) en la caja de hoy (`cashOut`, `bankOut`), restaura el inventario creando `stockLog` con `type: 'return'` hoy y recalcula `dailySummary` y metadata del cliente.
 
 **Ejemplo de reversión:**
 
@@ -129,44 +128,52 @@ Después de eliminar:
 
 ---
 
-#### ✅ `deletePaymentTransaction()` - Eliminar Pagos Individuales
+#### ✅ `deletePaymentTransaction()` - Eliminar Pagos y Liquidaciones Individuales
 
 **Qué hace:**
 
-1. ✅ **Busca la venta original** referenciada por el payment
-2. ✅ **Elimina el payment del array** `payments[]` de la venta
-3. ✅ **Recalcula estado de pago** (paymentStatus, totalPaid, balance)
-4. ✅ **Actualiza la venta original** con el nuevo estado
-5. ✅ **Actualiza metadata del cliente** (pendingBalance, totalPurchases)
-6. ✅ **Elimina la transacción** de Firestore
-7. ✅ **Genera logs de trazabilidad** completos
+1. ✅ **Busca la transacción original** (venta `income` o compra/acopio `expense`) referenciada por el payment (`relatedTransactionId`)
+2. ✅ **Elimina el payment del array** `payments[]` de la transacción original
+3. ✅ **Recalcula estado de pago** (`paymentStatus`, `totalPaid`, `balance`)
+4. ✅ **Actualiza la transacción original** en Firestore y en el store local en memoria (`transactionsInStore`)
+5. ✅ **Si la transacción original es un Acopio (`acopioId`):**
+   - Restaura el estado del acopio en `businesses/{businessId}/acopios/{acopioId}` a `'pending'` (o `'partial'`)
+   - Mantiene el inventario y stock físico intactos (no se descuenta stock)
+   - Reabre la cuenta por pagar en Cuentas por Pagar
+6. ✅ **Actualiza metadata del tercero:**
+   - Si es venta: metadata del cliente (`clientStore.updateClientMetadata`)
+   - Si es egreso/acopio: metadata de deudas del socio/proveedor (`supplierStore.updateSupplierMetadata`)
+7. ✅ **Elimina la transacción de pago** de Firestore (`deleteDoc`), lo que recalcula automáticamente el `dailySummary` reintegrando los fondos a Caja o Banco
+8. ✅ **Genera logs de trazabilidad** completos
 
-**Ejemplo de recalculación:**
+**Ejemplo de recalculación en Acopio / Compra:**
 
 ```
-Venta original:
-- Total: S/ 100
-- Pagado: S/ 100 (2 pagos: S/ 50 + S/ 50)
+Acopio original:
+- Total: S/ 4,000 (Liquidado al 100%)
+- Pagado: S/ 4,000
 - Balance: S/ 0
-- Status: 'completed'
+- Status Acopio: 'completed'
 
-Después de eliminar segundo pago:
-- Total: S/ 100
-- Pagado: S/ 50 (1 pago: S/ 50)
-- Balance: S/ 50
-- Status: 'partial'
+Después de anular liquidación (eliminar payment):
+- Total: S/ 4,000
+- Pagado: S/ 0
+- Balance: S/ 4,000
+- Status Acopio: 'pending' (Deuda reabierta, dinero retornado a caja/banco)
+- Stock en almacén: 100% INTACTO
 ```
 
 **Log de trazabilidad:**
 
 ```javascript
 {
-  operation: 'delete',
+  operation: 'update',
   severity: 'high',
-  tags: ['transaction_delete', 'payment', 'income_recalculated'],
+  tags: ['payment_delete', 'expense_updated', 'balance_recalculated'],
   relatedEntities: [
-    { type: 'transaction', id: '...', relationship: 'payment_removed_balance_recalculated' },
-    { type: 'client', id: '...', relationship: 'metadata_recalculated' }
+    { type: 'payment', id: '...', relationship: 'removed_from_payments_array' },
+    { type: 'acopio', id: '...', relationship: 'status_restored' },
+    { type: 'supplier', id: '...', relationship: 'metadata_recalculated' }
   ]
 }
 ```

@@ -102,6 +102,7 @@ import ExpenseDetails from "@/components/HistorialRecords/Details/ExpenseDetails
 import TransferDetails from "@/components/HistorialRecords/Details/TransferDetails.vue";
 import AccountsBalanceDetails from "@/components/HistorialRecords/Details/AccountsBalanceDetails.vue";
 import PaymentDetails from "@/components/HistorialRecords/Details/PaymentDetails.vue";
+import RefundDetails from "@/components/HistorialRecords/Details/RefundDetails.vue";
 
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
@@ -125,9 +126,21 @@ const hasClosureToday = computed(() => {
 const isDisabled = computed(() => {
   if (!transactionData.value) return true;
 
-  // Opening SIEMPRE bloqueado (inmutable)
-  if (transactionData.value.type === "opening") {
+  // Opening y Refund SIEMPRE bloqueados (inmutables)
+  if (
+    transactionData.value.type === "opening" ||
+    transactionData.value.type === "refund"
+  ) {
     return true;
+  }
+
+  // Ventas (income): bloquear solo si ya fueron devueltas anteriormente.
+  // Si es de un día cerrado, el botón abre el modal que evalúa la emisión de la Nota de Devolución hoy.
+  if (transactionData.value.type === "income") {
+    return (
+      transactionData.value.status === "refunded" ||
+      transactionData.value.paymentStatus === "refunded"
+    );
   }
 
   // Closure solo se puede eliminar si es del día actual
@@ -148,6 +161,19 @@ const deleteButtonLabel = computed(() => {
   if (!transactionData.value) return "Eliminar";
 
   switch (transactionData.value.type) {
+    case "income":
+      if (
+        transactionData.value.status === "refunded" ||
+        transactionData.value.paymentStatus === "refunded"
+      ) {
+        return "Venta ya devuelta";
+      }
+      return transactionStore.isTransactionFromToday(transactionData.value) &&
+        !hasClosureToday.value
+        ? "Eliminar Venta"
+        : "Anular / Nota de Devolución";
+    case "refund":
+      return "Nota de Devolución Registrada";
     case "payment":
       return "Eliminar Pago";
     case "opening":
@@ -179,6 +205,7 @@ const componentMap = {
   opening: AccountsBalanceDetails,
   closure: AccountsBalanceDetails,
   payment: PaymentDetails,
+  refund: RefundDetails,
 };
 
 // Configuración del botón cerrar
@@ -307,7 +334,7 @@ function openDeleteModal() {
   showDeleteModal.value = true;
 }
 
-async function handleDeleteConfirm() {
+async function handleDeleteConfirm(confirmPayload = {}) {
   try {
     // Si es un payment (transacción tipo 'payment'), eliminarlo del array de la venta o egreso original
     if (transactionData.value?.type === "payment") {
@@ -332,23 +359,30 @@ async function handleDeleteConfirm() {
         navigateToDashboard();
       }
     } else {
-      // Para otros tipos de transacciones, usar el flujo normal
+      // Para ventas (income) y otros tipos de transacciones
       const result = await transactionStore.deleteOneTransactionByID(
         route.params.registerId,
         // Callback que se resuelve inmediatamente porque ya confirmamos con el modal
-        () => Promise.resolve(true)
+        () => Promise.resolve(true),
+        { reason: confirmPayload?.reason || "" }
       );
 
       if (result.success) {
         showDeleteModal.value = false;
-        const typeLabels = {
-          income: "Venta",
-          expense: "Gasto",
-          transfer: "Transferencia",
-          closure: "Cierre",
-        };
-        const label = typeLabels[transactionData.value?.type] || "Transacción";
-        success(`${label} eliminada correctamente`);
+        if (result.mode === "REFUND_NOTE") {
+          success(
+            "Nota de devolución emitida en la caja de hoy. Inventario e historial de cliente actualizados."
+          );
+        } else {
+          const typeLabels = {
+            income: "Venta",
+            expense: "Gasto",
+            transfer: "Transferencia",
+            closure: "Cierre",
+          };
+          const label = typeLabels[transactionData.value?.type] || "Transacción";
+          success(`${label} eliminada correctamente`);
+        }
         navigateToDashboard();
       }
     }

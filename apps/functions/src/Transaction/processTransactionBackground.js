@@ -28,7 +28,8 @@ const db = admin.firestore();
 const ANONYMOUS_CLIENT_ID = 'anonymous';
 
 /**
- * Actualiza la metadata agregada de un cliente basándose en todas sus transacciones
+ * Actualiza la metadata agregada de un cliente basándose en todas sus transacciones activas
+ * (excluyendo ventas que fueron devueltas mediante Nota de Devolución: status === 'refunded').
  * @param {string} businessId - ID del negocio
  * @param {string} clientId - ID del cliente
  */
@@ -53,10 +54,17 @@ async function updateClientMetadata(businessId, clientId) {
     let totalPurchases = 0;
     let pendingBalance = 0;
     let lastPurchase = null;
-    const transactionCount = snapshot.size;
+    let transactionCount = 0;
 
     snapshot.docs.forEach(doc => {
       const transaction = doc.data();
+
+      // Ignorar ventas que fueron devueltas / anuladas mediante Nota de Devolución
+      if (transaction.status === 'refunded' || transaction.paymentStatus === 'refunded') {
+        return;
+      }
+
+      transactionCount += 1;
 
       // Sumar total de compras
       totalPurchases += transaction.amount || 0;
@@ -175,7 +183,11 @@ exports.processTransactionBackground = onDocumentCreated({
 
   try {
     // 1️⃣ ACTUALIZAR METADATA DEL CLIENTE (si aplica)
-    if (transaction.clientId && transaction.clientId !== ANONYMOUS_CLIENT_ID && transaction.type === 'income') {
+    if (
+      transaction.clientId &&
+      transaction.clientId !== ANONYMOUS_CLIENT_ID &&
+      (transaction.type === 'income' || transaction.type === 'refund')
+    ) {
       operations.push(
         updateClientMetadata(businessId, transaction.clientId)
           .then(() => ({ operation: 'updateClientMetadata', status: 'success' }))
@@ -254,3 +266,5 @@ exports.processTransactionBackground = onDocumentCreated({
     return { success: false, error: error.message };
   }
 });
+
+exports.updateClientMetadata = updateClientMetadata;

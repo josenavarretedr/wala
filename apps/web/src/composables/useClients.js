@@ -174,6 +174,9 @@ export function useClients() {
 
           transactionsSnapshot.docs.forEach(doc => {
             const transaction = doc.data();
+            if (transaction.status === 'refunded' || transaction.paymentStatus === 'refunded') {
+              return;
+            }
             totalPurchases += transaction.amount || 0;
             pendingBalance += transaction.balance || 0;
             transactionCount += 1;
@@ -464,6 +467,9 @@ export function useClientDetails(clientId) {
     const productMap = new Map();
 
     transactions.value.forEach(transaction => {
+      if (transaction.status === 'refunded' || transaction.paymentStatus === 'refunded') {
+        return;
+      }
       if (transaction.items && Array.isArray(transaction.items)) {
         transaction.items.forEach(item => {
           const key = item.productId || item.name;
@@ -508,12 +514,15 @@ export function useClientDetails(clientId) {
 
     // Agregar transacciones
     transactions.value.forEach(transaction => {
+      if (transaction.status === 'refunded' || transaction.paymentStatus === 'refunded') {
+        return;
+      }
       const date = transaction.createdAt?.toDate?.() || new Date(transaction.createdAt);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
       if (monthsMap.has(key)) {
         const month = monthsMap.get(key);
-        month.amount += transaction.total || 0;
+        month.amount += transaction.total || transaction.amount || 0;
         month.count += 1;
       }
     });

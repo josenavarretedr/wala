@@ -370,12 +370,14 @@ import { useToast } from '@/composables/useToast';
 import { useInventoryStore } from '@/stores/inventoryStore';
 import { useSupplierStore } from '@/stores/supplierStore';
 import { useAcopioStore } from '@/stores/acopioStore';
+import { useCashOpeningValidation } from '@/composables/useCashOpeningValidation';
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 
 const router = useRouter();
 const route = useRoute();
 const { success, error: showError } = useToast();
+const { checkCashOpening, showOpeningRequiredToast } = useCashOpeningValidation();
 
 const inventoryStore = useInventoryStore();
 const supplierStore = useSupplierStore();
@@ -399,10 +401,19 @@ const newSupplier = ref({
   phone: ''
 });
 
-// Cargar proveedores al inicio
+// Cargar proveedores al inicio y verificar apertura de caja
 onMounted(async () => {
   const businessId = route.params.businessId;
   if (businessId) {
+    const hasOpening = await checkCashOpening(businessId);
+    if (!hasOpening) {
+      showOpeningRequiredToast(businessId);
+      router.push({
+        name: 'InventoryAcopioDashboard',
+        params: { businessId }
+      });
+      return;
+    }
     await supplierStore.fetchSuppliers(businessId);
   }
 });
@@ -500,6 +511,13 @@ const canProceedNext = computed(() => {
 });
 
 const confirmAcopio = async () => {
+  const businessId = route.params.businessId;
+  const hasOpening = await checkCashOpening(businessId);
+  if (!hasOpening) {
+    showOpeningRequiredToast(businessId);
+    return;
+  }
+
   isProcessing.value = true;
   try {
     const acopioPayload = {
@@ -525,7 +543,11 @@ const confirmAcopio = async () => {
     });
   } catch (err) {
     console.error(err);
-    showError('Ocurrió un error al registrar el acopio');
+    if (err.message && err.message.includes('aperturar la caja primero')) {
+      showOpeningRequiredToast(businessId);
+    } else {
+      showError(err.message || 'Ocurrió un error al registrar el acopio');
+    }
   } finally {
     isProcessing.value = false;
   }

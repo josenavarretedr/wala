@@ -17,8 +17,9 @@ exports.scheduledAutoClose = require('./src/AccountsBalance/scheduledAutoClose')
 exports.onTransactionWrite = require('./src/AccountsBalance/onTransactionWrite');
 exports.lazyCloseIfNeeded = require('./src/AccountsBalance/lazyCloseIfNeeded');
 
-// 💰 TRANSACTIONS - Procesamiento en background
+// 💰 TRANSACTIONS - Procesamiento en background y eliminación/reversión de ventas
 exports.processTransactionBackground = require('./src/Transaction/processTransactionBackground').processTransactionBackground;
+exports.deleteSale = require('./src/Transaction/deleteSale').deleteSale;
 
 // 🤖 CLASIFICACIÓN IA - Sistema de 3 Capas
 exports.classifyProductRequest = require('./src/Inventory/classifyProductRequest').classifyProductRequest;
@@ -41,10 +42,10 @@ exports.initializeTaxonomies = require('./src/Setup/initializeTaxonomies').initi
 // ✨ PROGRAMAS (MÓDULO JUNTOS)
 exports.joinProgramByCode = require('./src/Programs/joinProgramByCode').joinProgramByCode;
 
-// � STORAGE - Procesamiento de archivos subidos
+// 📤 STORAGE - Procesamiento de archivos subidos
 exports.processFileUpload = require('./src/Storage/processFileUpload').processFileUpload;
 
-// �🖼️ SHARE - Renderizado de imágenes server-side (Gen2)
+// 🖼️ SHARE - Renderizado de imágenes server-side (Gen2)
 exports.renderToImageV2 = require('./src/Share/renderToImage').renderToImage;
 
 // 💳 PAYMENTS - Mercado Pago Integration
@@ -81,5 +82,3 @@ exports.adminEnrollBusinessInProgram = adminModule.adminEnrollBusinessInProgram;
 
 // 🎁 SUBSCRIPTIONS - Expiración de trials
 exports.checkTrialExpiration = require('./src/Subscriptions/trialExpiration');
-
-

@@ -292,6 +292,24 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     );
   });
 
+  const getRefundOutflow = (tx, targetAccount = null) => {
+    if (!tx || tx.type !== 'refund') return 0;
+    const hasSplit =
+      tx.cashOut !== undefined || tx.bankOut !== undefined || tx.detractionOut !== undefined;
+    if (hasSplit) {
+      if (targetAccount === 'cash') return Number(tx.cashOut || 0);
+      if (targetAccount === 'bank') return Number(tx.bankOut || 0);
+      if (targetAccount === 'detraction') return Number(tx.detractionOut || 0);
+      return Number(tx.cashOut || 0) + Number(tx.bankOut || 0) + Number(tx.detractionOut || 0);
+    }
+    const amt = Number(tx.amount || 0);
+    if (!targetAccount) return amt;
+    if (targetAccount === 'cash' && tx.account === 'cash') return amt;
+    if (targetAccount === 'detraction' && tx.account === 'detraction') return amt;
+    if (targetAccount === 'bank' && (tx.account === 'bank' || tx.account === 'yape' || tx.account === 'plin')) return amt;
+    return 0;
+  };
+
   /**
    * Ingresos por cuenta de detracciones
    */
@@ -311,7 +329,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   });
 
   const egresosDetraction = computed(() => {
-    return sumTransactionsWithPayments(
+    const baseDetractionExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.account === 'detraction' &&
@@ -319,6 +337,12 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
       ),
       'detraction'
     );
+    const refundDetractionOutflows = round2(
+      transactions.value
+        .filter(tx => tx.type === 'refund')
+        .reduce((acc, tx) => acc + getRefundOutflow(tx, 'detraction'), 0)
+    );
+    return addMoney(baseDetractionExpenses, refundDetractionOutflows);
   });
 
   const saldoActualDetraction = computed(() => {
@@ -328,7 +352,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
   // ===== CÁLCULOS DE EGRESOS =====
 
   /**
-   * Total de egresos operativos, excluyendo ajustes
+   * Total de egresos operativos, excluyendo ajustes (incluye notas de devolución `type === 'refund'`)
    * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const totalEgresos = computed(() => {
@@ -338,13 +362,19 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactionsWithPayments(
+    const baseExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
     );
+    const refundOutflows = round2(
+      transactions.value
+        .filter(tx => tx.type === 'refund')
+        .reduce((acc, tx) => acc + getRefundOutflow(tx, null), 0)
+    );
+    return addMoney(baseExpenses, refundOutflows);
   });
 
   /**
-   * Egresos por efectivo, excluyendo ajustes
+   * Egresos por efectivo, excluyendo ajustes (incluye `cashOut` de notas de devolución)
    * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const egresosCash = computed(() => {
@@ -354,17 +384,23 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactionsWithPayments(
+    const baseCashExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&
         tx.account === 'cash'
       )
     );
+    const refundCashOutflows = round2(
+      transactions.value
+        .filter(tx => tx.type === 'refund')
+        .reduce((acc, tx) => acc + getRefundOutflow(tx, 'cash'), 0)
+    );
+    return addMoney(baseCashExpenses, refundCashOutflows);
   });
 
   /**
-   * Egresos por banco/digital, excluyendo ajustes
+   * Egresos por banco/digital, excluyendo ajustes (incluye `bankOut` de notas de devolución)
    * 🚀 HÍBRIDO: Prioriza dailySummary, fallback a cálculo manual
    */
   const egresosBank = computed(() => {
@@ -374,13 +410,19 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     }
 
     // Fallback: Calcular manualmente
-    return sumTransactionsWithPayments(
+    const baseBankExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
         tx.type === 'expense' &&
         tx.category !== 'adjustment' &&
         tx.account === 'bank'
       )
     );
+    const refundBankOutflows = round2(
+      transactions.value
+        .filter(tx => tx.type === 'refund')
+        .reduce((acc, tx) => acc + getRefundOutflow(tx, 'bank'), 0)
+    );
+    return addMoney(baseBankExpenses, refundBankOutflows);
   });
 
   // ===== CÁLCULOS DE TRANSFERENCIAS =====

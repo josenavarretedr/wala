@@ -231,6 +231,95 @@
     </div>
   </div>
 
+  <!-- CARD PARA NOTAS DE DEVOLUCIÓN (TIPO 'REFUND') -->
+  <div
+    v-else-if="record.type === 'refund'"
+    class="bg-rose-50/70 rounded-xl shadow-sm border border-rose-200 p-3 sm:p-4 transition-all duration-200 hover:shadow-md hover:border-rose-300"
+  >
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <div class="flex items-center gap-2 flex-wrap flex-1 min-w-0">
+        <!-- Badge Nota de Devolución -->
+        <div
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-300 shrink-0"
+        >
+          <span>↩</span>
+          <span class="hidden sm:inline">Nota de Devolución</span>
+          <span class="sm:hidden">Devolución</span>
+        </div>
+
+        <!-- Desglose efectivo / digital -->
+        <div
+          v-if="(record.cashOut || 0) > 0"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
+        >
+          <Coins class="w-3 h-3" />
+          <span>Efectivo -S/ {{ formatAmount(record.cashOut) }}</span>
+        </div>
+        <div
+          v-if="(record.bankOut || 0) > 0"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+        >
+          <SmartphoneDevice class="w-3 h-3" />
+          <span>Digital -S/ {{ formatAmount(record.bankOut) }}</span>
+        </div>
+        <div
+          v-if="(record.detractionOut || 0) > 0"
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 shrink-0"
+        >
+          <span>Detracción -S/ {{ formatAmount(record.detractionOut) }}</span>
+        </div>
+      </div>
+
+      <!-- Monto y botón -->
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="text-base sm:text-lg font-bold text-rose-700 tabular-nums">
+          -S/ {{ formatAmount(record.amount) }}
+        </div>
+        <router-link
+          :to="{
+            name: 'DetailsRecords',
+            params: { registerId: record.uuid },
+          }"
+          class="p-1 text-rose-400 hover:text-rose-600 rounded-md transition-colors"
+          title="Ver detalles de la nota de devolución"
+        >
+          <InfoCircle class="w-4 h-4" />
+        </router-link>
+      </div>
+    </div>
+
+    <div class="space-y-1 text-xs text-rose-800">
+      <div v-if="record.clientName" class="font-medium truncate">
+        Cliente: {{ record.clientName }}
+      </div>
+      <div class="flex items-center gap-2 text-rose-700">
+        <span>
+          Anula Venta #{{ record.relatedTransactionNumber || (record.relatedTransactionId || '').slice(0, 8) }}
+          <template v-if="record.originalSaleDay"> ({{ record.originalSaleDay }})</template>
+        </span>
+        <router-link
+          v-if="record.relatedTransactionId"
+          :to="{
+            name: 'DetailsRecords',
+            params: { registerId: record.relatedTransactionId },
+          }"
+          class="underline font-semibold hover:text-rose-900"
+        >
+          Ver venta original
+        </router-link>
+      </div>
+      <div v-if="record.reason" class="text-gray-600 truncate">
+        Motivo: {{ record.reason }}
+      </div>
+    </div>
+
+    <div
+      class="flex items-center gap-1.5 text-rose-600 mt-2 pt-2 border-t text-xs border-rose-200"
+    >
+      <span class="truncate">{{ formatedDate(record.createdAt) }}</span>
+    </div>
+  </div>
+
   <!-- CARD PARA INGRESOS Y EGRESOS (EXISTENTE CON MEJORAS) -->
   <div
     v-else
@@ -309,6 +398,17 @@
           <span class="hidden sm:inline">{{
             record.account === "cash" ? "Efectivo" : "Digital"
           }}</span>
+        </div>
+
+        <!-- Badge de venta devuelta / anulada -->
+        <div
+          v-if="
+            record.type === 'income' &&
+            (record.status === 'refunded' || record.paymentStatus === 'refunded')
+          "
+          class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200 shrink-0"
+        >
+          <span>↩ Devuelta</span>
         </div>
 
         <!-- Badge de estado de pago parcial -->

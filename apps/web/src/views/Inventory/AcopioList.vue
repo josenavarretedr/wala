@@ -175,7 +175,7 @@
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
                     :class="[
-                      'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border',
+                       'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border',
                       acopio.status === 'completed'
                         ? 'bg-green-50 text-green-700 border-green-200'
                         : acopio.status === 'partial'
@@ -202,6 +202,23 @@
                     class="text-purple-600 hover:text-purple-800 font-semibold text-xs py-1 px-2 border border-purple-200 bg-purple-50 hover:bg-purple-100 rounded-lg transition-all"
                   >
                     Liquidar
+                  </button>
+                  <!-- Acción: Anular Liquidación o Eliminar Acopio -->
+                  <button
+                    v-if="acopio.status === 'completed' || acopio.status === 'partial'"
+                    @click="openDeleteModal(acopio)"
+                    class="text-amber-700 hover:text-amber-900 font-semibold text-xs py-1 px-2.5 border border-amber-300 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all"
+                    title="Anular la liquidación y reabrir la cuenta por pagar"
+                  >
+                    Anular Liquidación
+                  </button>
+                  <button
+                    v-else
+                    @click="openDeleteModal(acopio)"
+                    class="text-red-600 hover:text-red-800 font-semibold text-xs py-1 px-2 border border-red-200 bg-red-50 hover:bg-red-100 rounded-lg transition-all"
+                    title="Eliminar este acopio y revertir registros"
+                  >
+                    Eliminar
                   </button>
                 </td>
               </tr>
@@ -273,6 +290,116 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Confirmar Anulación de Liquidación o Eliminación de Acopio -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-gray-100 flex flex-col p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <!-- Icono dinámico según la acción -->
+          <div
+            v-if="isRevertingLiquidation"
+            class="w-12 h-12 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </div>
+          <div
+            v-else
+            class="w-12 h-12 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-bold text-gray-900 text-lg">
+              {{ isRevertingLiquidation ? '¿Anular Liquidación de este Acopio?' : '¿Eliminar este Acopio?' }}
+            </h3>
+            <p class="text-xs text-gray-500">
+              {{ isRevertingLiquidation ? 'Se revertirá la salida de dinero y se reabrirá la deuda con el socio' : 'Se revertirán todos los registros vinculados' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Ficha de detalles -->
+        <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm space-y-2">
+          <div class="flex justify-between text-gray-600">
+            <span>Producto:</span>
+            <span class="font-bold text-gray-900">{{ selectedAcopioForDelete?.productDescription }}</span>
+          </div>
+
+          <div v-if="isRevertingLiquidation" class="flex justify-between text-gray-600">
+            <span>Stock en inventario:</span>
+            <span class="font-bold text-teal-700">
+              {{ selectedAcopioForDelete?.quantity.toFixed(2) }} {{ selectedAcopioForDelete?.unit || 'uni' }} (Intacto)
+            </span>
+          </div>
+          <div v-else class="flex justify-between text-gray-600">
+            <span>Stock a descontar:</span>
+            <span class="font-bold text-red-600">-{{ selectedAcopioForDelete?.quantity.toFixed(2) }} {{ selectedAcopioForDelete?.unit || 'uni' }}</span>
+          </div>
+
+          <div class="flex justify-between text-gray-600">
+            <span>Socio / Productor:</span>
+            <span class="font-bold text-gray-900">{{ selectedAcopioForDelete?.supplierName }}</span>
+          </div>
+
+          <div class="flex justify-between text-gray-600">
+            <span>{{ isRevertingLiquidation ? 'Monto a reintegrar:' : 'Monto del Acopio:' }}</span>
+            <span :class="['font-bold', isRevertingLiquidation ? 'text-amber-700' : 'text-gray-900']">
+              S/ {{ selectedAcopioForDelete?.totalAmount.toFixed(2) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Explicación según acción -->
+        <div v-if="isRevertingLiquidation" class="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-2">
+          <p class="font-bold flex items-center gap-1.5">
+            <span>ℹ️</span> Al anular la liquidación:
+          </p>
+          <ul class="list-disc list-inside space-y-1 text-amber-800">
+            <li><strong>El inventario no se modificará:</strong> Los <strong>{{ selectedAcopioForDelete?.quantity.toFixed(2) }} {{ selectedAcopioForDelete?.unit || 'uni' }}</strong> se mantienen en tu almacén.</li>
+            <li><strong>Reversión del dinero:</strong> La salida de dinero se anulará y los fondos retornarán a tu Caja o Banco.</li>
+            <li><strong>Reapertura de la deuda:</strong> El acopio volverá a figurar con <strong>Deuda Pendiente</strong> para liquidarlo correctamente.</li>
+          </ul>
+        </div>
+        <div v-else class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800">
+          <p>
+            ℹ️ Se descontará la cantidad del inventario y se anulará la cuenta por pagar registrada a nombre del socio.
+          </p>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex gap-3 pt-2">
+          <button
+            @click="closeDeleteModal"
+            :disabled="isProcessingAction"
+            class="flex-1 py-2.5 px-4 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            v-if="isRevertingLiquidation"
+            @click="confirmAction"
+            :disabled="isProcessingAction"
+            class="flex-1 py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <span v-if="isProcessingAction" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+            <span>{{ isProcessingAction ? 'Anulando...' : 'Sí, anular liquidación' }}</span>
+          </button>
+          <button
+            v-else
+            @click="confirmAction"
+            :disabled="isProcessingAction"
+            class="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            <span v-if="isProcessingAction" class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+            <span>{{ isProcessingAction ? 'Eliminando...' : 'Sí, eliminar' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -280,12 +407,16 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAcopioStore } from '@/stores/acopioStore';
+import { useInventoryStore } from '@/stores/inventoryStore';
 import { useToast } from '@/composables/useToast';
+import { useCashOpeningValidation } from '@/composables/useCashOpeningValidation';
 
 const router = useRouter();
 const route = useRoute();
 const acopioStore = useAcopioStore();
+const inventoryStore = useInventoryStore();
 const { success, error: showError } = useToast();
+const { checkCashOpening, showOpeningRequiredToast } = useCashOpeningValidation();
 
 // State
 const searchQuery = ref('');
@@ -295,6 +426,15 @@ const showEditPriceModal = ref(false);
 const selectedAcopio = ref(null);
 const newPriceInputValue = ref(0);
 const isSubmittingPrice = ref(false);
+
+const showDeleteModal = ref(false);
+const selectedAcopioForDelete = ref(null);
+const isProcessingAction = ref(false);
+const isCheckingOpening = ref(false);
+
+const isRevertingLiquidation = computed(() => {
+  return selectedAcopioForDelete.value?.status === 'completed' || selectedAcopioForDelete.value?.status === 'partial';
+});
 
 onMounted(() => {
   acopioStore.fetchAcopios();
@@ -342,11 +482,26 @@ const filteredAcopios = computed(() => {
 });
 
 // Navigation
-const goToWizard = () => {
-  router.push({
-    name: 'InventoryAcopioWizard',
-    params: { businessId: route.params.businessId }
-  });
+const goToWizard = async () => {
+  if (isCheckingOpening.value) return;
+  isCheckingOpening.value = true;
+  try {
+    const businessId = route.params.businessId;
+    const hasOpening = await checkCashOpening(businessId);
+    if (!hasOpening) {
+      showOpeningRequiredToast(businessId);
+      return;
+    }
+    router.push({
+      name: 'InventoryAcopioWizard',
+      params: { businessId }
+    });
+  } catch (err) {
+    console.error('Error al verificar apertura de caja:', err);
+    showOpeningRequiredToast(route.params.businessId);
+  } finally {
+    isCheckingOpening.value = false;
+  }
 };
 
 const goToPayDebt = (acopio) => {
@@ -395,6 +550,63 @@ const saveNewPrice = async () => {
     showError('Error al ajustar el precio pactado');
   } finally {
     isSubmittingPrice.value = false;
+  }
+};
+
+// Delete Acopio Modal functions
+const openDeleteModal = (acopio) => {
+  selectedAcopioForDelete.value = acopio;
+  showDeleteModal.value = true;
+};
+
+const closeDeleteModal = () => {
+  selectedAcopioForDelete.value = null;
+  showDeleteModal.value = false;
+};
+
+const confirmAction = async () => {
+  if (!selectedAcopioForDelete.value) return;
+  isProcessingAction.value = true;
+
+  try {
+    const businessId = route.params.businessId;
+    const acopioId = selectedAcopioForDelete.value.uuid || selectedAcopioForDelete.value.id;
+
+    if (isRevertingLiquidation.value) {
+      // 1. Validar apertura de caja obligatoria antes de anular liquidación
+      const hasOpening = await checkCashOpening(businessId);
+      if (!hasOpening) {
+        showOpeningRequiredToast(businessId);
+        return;
+      }
+
+      // 2. Anular liquidación (reintegra dinero a caja/banco y reabre deuda sin tocar stock)
+      await acopioStore.revertLiquidation(acopioId);
+      success('Liquidación anulada exitosamente. El dinero fue reintegrado a caja/banco y la deuda quedó reabierta.');
+    } else {
+      // 1. Eliminar acopio pendiente (descuenta stock y elimina registros)
+      await acopioStore.deleteAcopio(acopioId);
+
+      // 2. Refrescar inventario local para reflejar la reducción de stock
+      try {
+        await inventoryStore.getItemsInInventory();
+      } catch (invErr) {
+        console.warn('Advertencia al refrescar inventario tras eliminar acopio:', invErr);
+      }
+
+      success('Acopio eliminado y registros revertidos exitosamente');
+    }
+
+    closeDeleteModal();
+  } catch (err) {
+    console.error('Error al procesar acción sobre acopio:', err);
+    if (err.message && err.message.includes('aperturar la caja primero')) {
+      showOpeningRequiredToast(route.params.businessId);
+    } else {
+      showError('Error: ' + (err.message || 'Error desconocido'));
+    }
+  } finally {
+    isProcessingAction.value = false;
   }
 };
 </script>

@@ -55,9 +55,11 @@ import { BounceRight, Plus, SoilAlt } from "@iconoir/vue";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
+import { useCashOpeningValidation } from "@/composables/useCashOpeningValidation";
 
 const route = useRoute();
 const router = useRouter();
+const { checkCashOpening, showOpeningRequiredToast } = useCashOpeningValidation();
 
 const businessStore = useBusinessStore();
 const userStore = useUserStore();
@@ -92,11 +94,17 @@ const handleProduce = () => {
   });
 };
 
-const handleAcopio = () => {
+const handleAcopio = async () => {
+  const businessId = route.params.businessId;
+  const hasOpening = await checkCashOpening(businessId);
+  if (!hasOpening) {
+    showOpeningRequiredToast(businessId);
+    return;
+  }
   router.push({
     name: "InventoryAcopioWizard",
     params: {
-      businessId: route.params.businessId,
+      businessId,
     },
   });
 };

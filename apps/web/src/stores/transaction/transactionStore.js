@@ -1994,9 +1994,21 @@ export function useTransactionStore() {
         break;
 
       case 'expense':
+        if (transaction.acopioId) {
+          warnings.push('🌾 Esta acción eliminará el registro de ACOPIO');
+        }
         if (transaction.category === 'materials') {
-          warnings.push('⚠️ Esta acción revertirá el stock de materiales');
+          warnings.push('⚠️ Esta acción revertirá el stock ingresado');
           warnings.push(`📦 Se restarán ${transaction.materialItems?.length || 0} productos del inventario`);
+        }
+        if (transaction.supplierName) {
+          warnings.push(`👤 Se actualizará la deuda y datos del socio/proveedor: ${transaction.supplierName}`);
+        }
+        const relatedExpensePayments = transactionsInStore.value.filter(
+          t => t.type === 'payment' && t.relatedTransactionId === transaction.uuid
+        );
+        if (relatedExpensePayments.length > 0) {
+          warnings.push(`🔗 Se eliminarán ${relatedExpensePayments.length} abonos/liquidaciones asociadas`);
         }
         warnings.push(`📊 Se eliminará el log del gasto: ${transaction.description || 'Sin descripción'}`);
         break;
@@ -2032,172 +2044,200 @@ export function useTransactionStore() {
   };
 
   /**
-   * Elimina una transacción tipo income y revierte todos sus efectos
+   * Elimina o revierte una transacción tipo income de forma atómica mediante la Cloud Function `deleteSale`.
+   * Soporta modo dual:
+   * - `DIRECT_DELETE`: Venta del día actual abierto -> eliminación física de venta, pagos, gastos delivery y stockLogs + restauración de stock.
+   * - `REFUND_NOTE`: Venta de día cerrado -> marca venta como `refunded`, crea transacción `type: 'refund'` hoy, crea `stockLog` `type: 'return'` hoy y actualiza caja de hoy.
    */
-  const deleteIncomeTransaction = async (transactionToDelete) => {
-    const { getFirestore, doc, updateDoc, getDoc } = await import('firebase/firestore');
+  const deleteIncomeTransaction = async (transactionToDelete, options = {}) => {
     const { useClientStore } = await import('@/stores/clientStore');
-    const { useInventory } = await import('@/composables/useInventory');
     const { useBusinessStore } = await import('@/stores/businessStore');
+    const { useAccountsBalanceStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceStore');
+    const { useSaleDeletion } = await import('@/composables/useSaleDeletion');
 
-    const db = getFirestore();
     const clientStore = useClientStore();
     const businessStore = useBusinessStore();
+    const accountsBalanceStore = useAccountsBalanceStore();
     const businessId = businessStore.getBusinessId;
-    const { getProductById } = useInventory();
+    const { executeSaleDeletion } = useSaleDeletion();
 
-    console.log('🗑️ [DELETE INCOME] Iniciando eliminación de venta:', transactionToDelete.uuid);
+    console.log('🗑️ [DELETE INCOME] Procesando eliminación/reversión de venta vía Cloud Function deleteSale:', transactionToDelete.uuid);
 
-    // 1. REVERTIR STOCK - ⚡ OPTIMIZACIÓN: Procesar items en paralelo
-    if (transactionToDelete.itemsAndStockLogs && transactionToDelete.itemsAndStockLogs.length > 0) {
-      console.log(`⚡ Revirtiendo ${transactionToDelete.itemsAndStockLogs.length} items en paralelo...`);
+    const result = await executeSaleDeletion({
+      businessId,
+      saleUuid: transactionToDelete.uuid,
+      reason: options.reason || '',
+    });
 
-      const revertPromises = transactionToDelete.itemsAndStockLogs.map(async (itemLog) => {
-        const { itemUuid, stockLogUuid } = itemLog;
+    // Sincronizar estado reactivo local en memoria
+    if (Array.isArray(transactionsInStore.value)) {
+      if (result.mode === 'DIRECT_DELETE') {
+        transactionsInStore.value = transactionsInStore.value.filter(
+          (t) =>
+            t.uuid !== transactionToDelete.uuid &&
+            t.id !== transactionToDelete.uuid &&
+            t.relatedTransactionId !== transactionToDelete.uuid
+        );
+      } else if (result.mode === 'REFUND_NOTE') {
+        transactionsInStore.value = transactionsInStore.value.map((t) => {
+          if (t.uuid === transactionToDelete.uuid || t.id === transactionToDelete.uuid) {
+            return {
+              ...t,
+              status: 'refunded',
+              paymentStatus: 'refunded',
+              balance: 0,
+              refundTransactionId: result.refundTransactionId,
+              refundReason: options.reason || 'Anulación de venta de día cerrado',
+            };
+          }
+          return t;
+        });
 
-        console.log(`  📦 Revirtiendo stock para producto ${itemUuid}, stockLog ${stockLogUuid}`);
+        if (
+          result.refundTransaction &&
+          !transactionsInStore.value.some((t) => t.uuid === result.refundTransaction.uuid)
+        ) {
+          transactionsInStore.value.unshift(result.refundTransaction);
+        }
+      }
+    }
+
+    // Refrescar resumen diario y metadata del cliente en background
+    Promise.allSettled([
+      accountsBalanceStore.loadFromDailySummary?.(),
+      transactionToDelete.clientId && transactionToDelete.clientId !== ANONYMOUS_CLIENT_ID
+        ? clientStore.updateClientMetadata(transactionToDelete.clientId)
+        : Promise.resolve(),
+    ]).catch((err) => console.warn('⚠️ [DELETE INCOME] Sync secundario post-deleteSale:', err));
+
+    console.log(`✅ [DELETE INCOME] Venta procesada exitosamente en modo ${result.mode}`);
+    return result;
+  };
+
+  /**
+   * Elimina una transacción tipo expense (materials) y revierte stock
+   */
+  const deleteMaterialExpenseTransaction = async (transactionToDelete) => {
+    const { getFirestore, doc, updateDoc, getDoc, deleteDoc, collection, query, where, getDocs } = await import('firebase/firestore');
+    const { useBusinessStore } = await import('@/stores/businessStore');
+    const { useExpenses } = await import('@/composables/useExpenses');
+
+    const db = getFirestore();
+    const businessStore = useBusinessStore();
+    const businessId = businessStore.getBusinessId;
+    const { getExpenseById, updateExpenseMetadata } = useExpenses();
+
+    console.log('🗑️ [DELETE MATERIAL EXPENSE] Iniciando eliminación de compra/acopio de materiales:', transactionToDelete.uuid);
+
+    // 1. REVERTIR STOCK DE MATERIALES - Restar lo que se compró/acopió
+    const stockLogsToRevert = transactionToDelete.materialItemsAndStockLogs && transactionToDelete.materialItemsAndStockLogs.length > 0
+      ? transactionToDelete.materialItemsAndStockLogs
+      : (transactionToDelete.materialItems || []).map(item => ({
+        itemUuid: item.productId || item.uuid,
+        stockLogUuid: item.stockLogId
+      })).filter(log => log.itemUuid);
+
+    console.log(`  📦 StockLogs a revertir: ${stockLogsToRevert.length}`, stockLogsToRevert);
+
+    if (stockLogsToRevert.length > 0) {
+      for (const materialLog of stockLogsToRevert) {
+        const { itemUuid, stockLogUuid } = materialLog;
+
+        console.log(`  📦 Revirtiendo stock de material ${itemUuid}, stockLog ${stockLogUuid || 'desconocido'}`);
 
         try {
-          // a) Obtener el producto
           const productRef = doc(db, `businesses/${businessId}/products`, itemUuid);
           const productDoc = await getDoc(productRef);
 
           if (!productDoc.exists()) {
             console.warn(`  ⚠️ Producto ${itemUuid} no encontrado, saltando...`);
-            return { success: false, itemUuid, error: 'Producto no encontrado' };
+            continue;
           }
 
           const productData = productDoc.data();
+          let quantityReverted = 0;
 
-          // b) Encontrar el stockLog específico
-          const stockLog = productData.stockLog?.find(log => log.uuid === stockLogUuid);
-
-          if (!stockLog) {
-            console.warn(`  ⚠️ StockLog ${stockLogUuid} no encontrado, saltando...`);
-            return { success: false, itemUuid, error: 'StockLog no encontrado' };
-          }
-
-          // c) Sumar la cantidad vendida al stock actual
-          const newStock = (productData.stock || 0) + (stockLog.quantity || 0);
-
-          // d) Eliminar el stockLog del array
-          const updatedStockLogs = productData.stockLog.filter(log => log.uuid !== stockLogUuid);
-
-          await updateDoc(productRef, {
-            stock: newStock,
-            stockLog: updatedStockLogs
-          });
-
-          console.log(`  ✅ Stock revertido: ${productData.stock} + ${stockLog.quantity} = ${newStock}`);
-
-          // e) Log de trazabilidad por item (fire-and-forget)
-          logInventoryOperation('revert', itemUuid, {
-            reason: 'income_transaction_deleted',
-            stockLogId: stockLogUuid,
-            quantityReverted: stockLog.quantity,
-            previousStock: productData.stock,
-            newStock
-          }).catch(err => console.warn('⚠️ Traceability log failed:', err));
-
-          // 🧩 OPTIMIZACIÓN: Revertir materiales en composición EN PARALELO
-          if (itemLog.materialStockLogs && itemLog.materialStockLogs.length > 0) {
-            console.log(`  🔄 Revirtiendo ${itemLog.materialStockLogs.length} materiales en paralelo...`);
-
-            const materialPromises = itemLog.materialStockLogs.map(async (materialLog) => {
-              const { materialId, stockLogUuid: materialStockLogUuid, description } = materialLog;
-
-              try {
-                console.log(`    📦 Revirtiendo material: ${description}`);
-
-                // a) Obtener el producto material
-                const materialRef = doc(db, `businesses/${businessId}/products`, materialId);
-                const materialDoc = await getDoc(materialRef);
-
-                if (!materialDoc.exists()) {
-                  console.warn(`    ⚠️ Material ${materialId} no encontrado, saltando...`);
-                  return { success: false, materialId, error: 'Material no encontrado' };
-                }
-
-                const materialData = materialDoc.data();
-
-                // b) Encontrar el stockLog específico del material
-                const materialStockLog = materialData.stockLog?.find(log => log.uuid === materialStockLogUuid);
-
-                if (!materialStockLog) {
-                  console.warn(`    ⚠️ StockLog ${materialStockLogUuid} no encontrado en material, saltando...`);
-                  return { success: false, materialId, error: 'StockLog no encontrado' };
-                }
-
-                // c) Sumar la cantidad usada al stock actual del material
-                const newMaterialStock = (materialData.stock || 0) + (materialStockLog.quantity || 0);
-
-                // d) Eliminar el stockLog del array
-                const updatedMaterialStockLogs = materialData.stockLog.filter(
-                  log => log.uuid !== materialStockLogUuid
-                );
-
-                await updateDoc(materialRef, {
-                  stock: newMaterialStock,
-                  stockLog: updatedMaterialStockLogs
-                });
-
-                console.log(`    ✅ Material revertido: ${materialData.stock} + ${materialStockLog.quantity} = ${newMaterialStock}`);
-
-                // e) Log de trazabilidad para el material (fire-and-forget)
-                logInventoryOperation('revert', materialId, {
-                  reason: 'income_transaction_deleted_composition_material',
-                  stockLogId: materialStockLogUuid,
-                  quantityReverted: materialStockLog.quantity,
-                  previousStock: materialData.stock,
-                  newStock: newMaterialStock,
-                  relatedProductId: itemUuid
-                }).catch(err => console.warn('⚠️ Traceability log failed:', err));
-
-                return { success: true, materialId };
-
-              } catch (materialError) {
-                console.error(`    ❌ Error revirtiendo material ${materialId}:`, materialError);
-                return { success: false, materialId, error: materialError.message };
-              }
-            });
-
-            // Ejecutar reversión de materiales en paralelo
-            const materialResults = await Promise.allSettled(materialPromises);
-            const failedMaterials = materialResults.filter(r => r.status === 'rejected' || r.value?.success === false);
-
-            if (failedMaterials.length > 0) {
-              console.warn(`  ⚠️ ${failedMaterials.length} materiales fallaron al revertir`);
-            } else {
-              console.log(`  ✅ Materiales de composición revertidos exitosamente`);
+          // a) Buscar en la subcolección products/{itemUuid}/stockLog/{stockLogUuid} (arquitectura moderna)
+          if (stockLogUuid) {
+            const stockLogRef = doc(db, `businesses/${businessId}/products/${itemUuid}/stockLog`, stockLogUuid);
+            const stockLogDoc = await getDoc(stockLogRef);
+            if (stockLogDoc.exists()) {
+              const subLog = stockLogDoc.data();
+              quantityReverted = Number(subLog.quantity || 0);
+              await deleteDoc(stockLogRef);
+              console.log(`  🗑️ StockLog ${stockLogUuid} eliminado de la subcolección`);
             }
           }
 
-          return { success: true, itemUuid };
+          // b) Buscar en el array legado del producto si existe
+          const legacyStockLog = productData.stockLog?.find(log => log.uuid === stockLogUuid);
+          if (legacyStockLog && !quantityReverted) {
+            quantityReverted = Number(legacyStockLog.quantity || 0);
+          }
 
+          // c) Fallback: Obtener cantidad del array materialItems si no se encontró en subcolección/array
+          if (!quantityReverted) {
+            const materialItem = (transactionToDelete.materialItems || []).find(
+              m => (m.productId === itemUuid || m.uuid === itemUuid)
+            );
+            if (materialItem && materialItem.quantity) {
+              quantityReverted = Number(materialItem.quantity);
+              console.log(`  ℹ️ Usando cantidad de materialItems como fallback: ${quantityReverted}`);
+            }
+          }
+
+          if (quantityReverted > 0) {
+            const currentStock = Number(productData.stock || 0);
+            const newStock = Math.max(currentStock - quantityReverted, 0);
+
+            const updatedStockLogs = (productData.stockLog || []).filter(log => log.uuid !== stockLogUuid);
+
+            await updateDoc(productRef, {
+              stock: newStock,
+              stockLog: updatedStockLogs
+            });
+
+            console.log(`  ✅ Stock revertido: ${currentStock} - ${quantityReverted} = ${newStock}`);
+
+            await logInventoryOperation('revert', itemUuid, {
+              reason: transactionToDelete.acopioId ? 'acopio_deleted' : 'material_expense_deleted',
+              stockLogId: stockLogUuid || null,
+              quantityReverted,
+              previousStock: currentStock,
+              newStock
+            });
+          } else {
+            console.warn(`  ⚠️ No se pudo determinar la cantidad a revertir para producto ${itemUuid}`);
+          }
         } catch (itemError) {
           console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
-          return { success: false, itemUuid, error: itemError.message };
         }
-      });
-
-      // Ejecutar reversión de todos los items en paralelo
-      const results = await Promise.allSettled(revertPromises);
-      const failedItems = results.filter(r => r.status === 'rejected' || r.value?.success === false);
-
-      if (failedItems.length > 0) {
-        console.warn(`⚠️ ${failedItems.length} items fallaron al revertir stock`);
-      } else {
-        console.log(`✅ Stock revertido exitosamente para ${transactionToDelete.itemsAndStockLogs.length} items`);
       }
     }
 
-    // 2. ⚡ OPTIMIZACIÓN: Eliminar pagos asociados EN PARALELO
-    const relatedPayments = transactionsInStore.value.filter(
+    // 2. ELIMINAR PAGOS ASOCIADOS (Abonos o liquidaciones de esta compra/acopio)
+    let relatedPayments = transactionsInStore.value.filter(
       t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
     );
 
+    try {
+      const paymentsQuery = query(
+        collection(db, 'businesses', businessId, 'transactions'),
+        where('type', '==', 'payment'),
+        where('relatedTransactionId', '==', transactionToDelete.uuid)
+      );
+      const paymentsSnap = await getDocs(paymentsQuery);
+      paymentsSnap.docs.forEach(pDoc => {
+        if (!relatedPayments.some(rp => rp.uuid === pDoc.id)) {
+          relatedPayments.push({ uuid: pDoc.id, ...pDoc.data() });
+        }
+      });
+    } catch (queryErr) {
+      console.warn('⚠️ Error consultando payments asociados en Firestore:', queryErr);
+    }
+
     if (relatedPayments.length > 0) {
-      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados en paralelo`);
+      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados en cascada`);
       const paymentPromises = relatedPayments.map(payment =>
         deleteTransactionByID(payment.uuid)
           .then(() => {
@@ -2209,113 +2249,114 @@ export function useTransactionStore() {
             return { success: false, paymentId: payment.uuid, error: err.message };
           })
       );
-
       await Promise.allSettled(paymentPromises);
     }
 
-    // 2.5. 🗑️ ELIMINACIÓN EN CASCADA: Gastos de comisión por delivery o costos de envío asociados
-    const relatedExpenses = transactionsInStore.value.filter(
-      t => t.type === 'expense' &&
-           t.relatedTransactionId === transactionToDelete.uuid &&
-           (t.isDeliveryCommission === true || t.isDeliveryCostExpense === true)
-    );
-
-    if (relatedExpenses.length > 0) {
-      console.log(`  🔗 Eliminando ${relatedExpenses.length} egresos enlazados (comisión/delivery) asociados en cascada`);
-      const { useExpenses } = await import('@/composables/useExpenses');
-      const { getExpenseById, updateExpenseMetadata } = useExpenses();
-
-      const expensePromises = relatedExpenses.map(async (linkedExpense) => {
-        try {
-          const expenseId = linkedExpense.expenseId;
-          if (expenseId) {
-            console.log(`    📊 Eliminando log del expense enlazado ${expenseId}`);
-            const expense = await getExpenseById(expenseId);
-            if (expense && expense.logs) {
-              const updatedLogs = expense.logs.filter(
-                log => log.transactionRef !== linkedExpense.uuid
-              );
-
-              const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
-
-              if (updatedLogs.length === 0) {
-                console.log(`    🗑️ No quedan logs de este gasto enlazado, eliminando expense completo`);
-                const { deleteDoc } = await import('firebase/firestore');
-                await deleteDoc(expenseRef);
-              } else {
-                await updateDoc(expenseRef, { logs: updatedLogs });
-                await updateExpenseMetadata(expenseId);
-              }
-            }
+    // 3. ELIMINAR LOG DEL EXPENSE (Si aplica a la colección expenses)
+    const expenseId = transactionToDelete.expenseId;
+    if (expenseId) {
+      console.log(`  📊 Eliminando log del expense ${expenseId}`);
+      try {
+        const expense = await getExpenseById(expenseId);
+        if (expense && expense.logs) {
+          const updatedLogs = expense.logs.filter(
+            log => log.transactionRef !== transactionToDelete.uuid
+          );
+          const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
+          if (updatedLogs.length === 0) {
+            console.log(`  🗑️ No quedan logs, eliminando expense completo`);
+            await deleteDoc(expenseRef);
+          } else {
+            await updateDoc(expenseRef, { logs: updatedLogs });
+            await updateExpenseMetadata(expenseId);
           }
-          // Eliminar la transacción de egreso de Firestore
-          await deleteTransactionByID(linkedExpense.uuid);
-          console.log(`    ✅ Transacción enlazada ${linkedExpense.uuid} eliminada`);
-          return { success: true, expenseId: linkedExpense.uuid };
-        } catch (err) {
-          console.error(`    ❌ Error eliminando transacción enlazada ${linkedExpense.uuid}:`, err);
-          return { success: false, expenseId: linkedExpense.uuid, error: err.message };
         }
-      });
-
-      await Promise.allSettled(expensePromises);
+      } catch (expenseError) {
+        console.error(`  ❌ Error actualizando expense ${expenseId}:`, expenseError);
+      }
     }
 
-    // 3. ELIMINAR LA TRANSACCIÓN (OPERACIÓN CRÍTICA)
+    // 4. SI ES UN ACOPIO, ELIMINAR EL DOCUMENTO DE ACOPIO EN businesses/{businessId}/acopios/{acopioId}
+    const acopioId = transactionToDelete.acopioId;
+    if (acopioId) {
+      try {
+        console.log(`  🌾 Eliminando documento de acopio sincronizado: ${acopioId}`);
+        const acopioRef = doc(db, 'businesses', businessId, 'acopios', acopioId);
+        const acopioSnap = await getDoc(acopioRef);
+        if (acopioSnap.exists()) {
+          await deleteDoc(acopioRef);
+          console.log(`  ✅ Acopio ${acopioId} eliminado de Firestore`);
+        }
+      } catch (acopioErr) {
+        console.warn(`  ⚠️ Error eliminando documento de acopio ${acopioId}:`, acopioErr);
+      }
+    }
+
+    // 5. ELIMINAR LA TRANSACCIÓN DE FIRESTORE
     await deleteTransactionByID(transactionToDelete.uuid);
-    console.log(`  🗑️ Transacción eliminada de Firestore`);
 
-    // 4. ⚡ OPERACIONES SECUNDARIAS EN BACKGROUND (fire-and-forget)
-    const secondaryOps = [];
-
-    // Actualizar metadata del cliente
-    if (transactionToDelete.clientId && transactionToDelete.clientId !== ANONYMOUS_CLIENT_ID) {
-      secondaryOps.push(
-        (async () => {
-          console.log(`  👤 Actualizando metadata del cliente ${transactionToDelete.clientId}`);
-          await clientStore.updateClientMetadata(transactionToDelete.clientId);
-          console.log('  ✅ Cliente metadata actualizada');
-        })()
-      );
+    // 6. ACTUALIZAR METADATA DEL PROVEEDOR / SOCIO
+    if (transactionToDelete.supplierId) {
+      try {
+        console.log(`  👤 Actualizando metadata del socio/proveedor ${transactionToDelete.supplierId}`);
+        const { useSupplierStore } = await import('@/stores/supplierStore');
+        const supplierStore = useSupplierStore();
+        await supplierStore.updateSupplierMetadata(transactionToDelete.supplierId);
+        console.log('  ✅ Proveedor/Socio metadata actualizada exitosamente');
+      } catch (supErr) {
+        console.warn('  ⚠️ Error actualizando metadata del proveedor:', supErr);
+      }
     }
 
-    // Log de trazabilidad
-    secondaryOps.push(
-      logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
-        reason: 'user_income_transaction_deletion',
-        severity: 'high',
-        tags: ['transaction_delete', 'income', 'stock_reverted', 'client_affected'],
-        relatedEntities: [
-          ...(transactionToDelete.itemsAndStockLogs || []).map(il => ({
-            type: 'stockLog',
-            id: il.stockLogUuid,
-            relationship: 'deleted',
-            impact: 'high'
-          })),
-          {
-            type: 'client',
-            id: transactionToDelete.clientId,
-            relationship: 'metadata_recalculated',
-            impact: 'medium'
-          }
-        ],
-        component: 'TransactionStore.deleteIncomeTransaction'
-      })
-    );
+    // 7. LOG DE TRAZABILIDAD
+    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
+      reason: transactionToDelete.acopioId ? 'user_acopio_transaction_deletion' : 'user_expense_transaction_deletion',
+      severity: 'high',
+      tags: [
+        'transaction_delete',
+        'expense',
+        'expense_materials',
+        'stock_reverted',
+        ...(transactionToDelete.acopioId ? ['acopio_delete', 'acopio_reverted'] : []),
+        ...(transactionToDelete.supplierId ? ['supplier_affected'] : [])
+      ],
+      relatedEntities: [
+        ...(expenseId ? [{
+          type: 'expense',
+          id: expenseId,
+          relationship: 'log_removed_metadata_updated',
+          impact: 'high'
+        }] : []),
+        ...(acopioId ? [{
+          type: 'acopio',
+          id: acopioId,
+          relationship: 'acopio_deleted',
+          impact: 'high'
+        }] : []),
+        ...(transactionToDelete.supplierId ? [{
+          type: 'supplier',
+          id: transactionToDelete.supplierId,
+          relationship: 'metadata_recalculated',
+          impact: 'high'
+        }] : []),
+        ...(transactionToDelete.materialItems || []).map(m => ({
+          type: 'product',
+          id: m.productId || m.uuid,
+          relationship: 'stock_reverted',
+          impact: 'high'
+        }))
+      ],
+      component: 'TransactionStore.deleteMaterialExpenseTransaction'
+    });
 
-    // Ejecutar operaciones secundarias sin bloquear
-    Promise.allSettled(secondaryOps)
-      .then(() => console.log('✅ [DELETE INCOME] Operaciones secundarias completadas'))
-      .catch(err => console.warn('⚠️ Error en operaciones secundarias:', err));
-
-    console.log('✅ [DELETE INCOME] Venta eliminada exitosamente');
+    console.log('✅ [DELETE MATERIAL EXPENSE] Compra/Acopio de materiales eliminado exitosamente');
   };
 
   /**
-   * Elimina una transacción tipo expense (materials) y revierte stock
+   * Elimina una transacción tipo expense (otros) sin stock
    */
-  const deleteMaterialExpenseTransaction = async (transactionToDelete) => {
-    const { getFirestore, doc, updateDoc, getDoc } = await import('firebase/firestore');
+  const deleteOtherExpenseTransaction = async (transactionToDelete) => {
+    const { getFirestore, doc, updateDoc, deleteDoc, collection, query, where, getDocs } = await import('firebase/firestore');
     const { useBusinessStore } = await import('@/stores/businessStore');
     const { useExpenses } = await import('@/composables/useExpenses');
 
@@ -2324,66 +2365,35 @@ export function useTransactionStore() {
     const businessId = businessStore.getBusinessId;
     const { getExpenseById, updateExpenseMetadata } = useExpenses();
 
-    console.log('🗑️ [DELETE MATERIAL EXPENSE] Iniciando eliminación de compra de materiales:', transactionToDelete.uuid);
+    console.log('🗑️ [DELETE OTHER EXPENSE] Iniciando eliminación de gasto:', transactionToDelete.uuid);
 
-    // 1. REVERTIR STOCK DE MATERIALES - Restar lo que se compró
-    // Usar materialItemsAndStockLogs si existe, sino usar materialItems (fallback para transacciones antiguas)
-    const stockLogsToRevert = transactionToDelete.materialItemsAndStockLogs && transactionToDelete.materialItemsAndStockLogs.length > 0
-      ? transactionToDelete.materialItemsAndStockLogs
-      : (transactionToDelete.materialItems || []).map(item => ({
-        itemUuid: item.productId,
-        stockLogUuid: item.stockLogId
-      })).filter(log => log.itemUuid && log.stockLogUuid);
+    // 1. ELIMINAR PAGOS ASOCIADOS EN CASCADA
+    let relatedPayments = transactionsInStore.value.filter(
+      t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
+    );
 
-    console.log(`  📦 StockLogs a revertir: ${stockLogsToRevert.length}`, stockLogsToRevert);
-
-    if (stockLogsToRevert.length > 0) {
-      for (const materialLog of stockLogsToRevert) {
-        const { itemUuid, stockLogUuid } = materialLog;
-
-        console.log(`  📦 Revirtiendo stock de material ${itemUuid}, stockLog ${stockLogUuid}`);
-
-        try {
-          const productRef = doc(db, `businesses/${businessId}/products`, itemUuid);
-          const productDoc = await getDoc(productRef);
-
-          if (!productDoc.exists()) {
-            console.warn(`  ⚠️ Producto ${itemUuid} no encontrado, saltando...`);
-            continue;
-          }
-
-          const productData = productDoc.data();
-          const stockLog = productData.stockLog?.find(log => log.uuid === stockLogUuid);
-
-          if (!stockLog) {
-            console.warn(`  ⚠️ StockLog ${stockLogUuid} no encontrado, saltando...`);
-            continue;
-          }
-
-          // Restar la cantidad comprada del stock actual
-          const newStock = Math.max((productData.stock || 0) - (stockLog.quantity || 0), 0);
-
-          // Eliminar el stockLog del array
-          const updatedStockLogs = productData.stockLog.filter(log => log.uuid !== stockLogUuid);
-
-          await updateDoc(productRef, {
-            stock: newStock,
-            stockLog: updatedStockLogs
-          });
-
-          console.log(`  ✅ Stock revertido: ${productData.stock} - ${stockLog.quantity} = ${newStock}`);
-
-          await logInventoryOperation('revert', itemUuid, {
-            reason: 'material_expense_deleted',
-            stockLogId: stockLogUuid,
-            quantityReverted: stockLog.quantity,
-            previousStock: productData.stock,
-            newStock
-          });
-        } catch (itemError) {
-          console.error(`  ❌ Error revirtiendo stock para ${itemUuid}:`, itemError);
+    try {
+      const paymentsQuery = query(
+        collection(db, 'businesses', businessId, 'transactions'),
+        where('type', '==', 'payment'),
+        where('relatedTransactionId', '==', transactionToDelete.uuid)
+      );
+      const paymentsSnap = await getDocs(paymentsQuery);
+      paymentsSnap.docs.forEach(pDoc => {
+        if (!relatedPayments.some(rp => rp.uuid === pDoc.id)) {
+          relatedPayments.push({ uuid: pDoc.id, ...pDoc.data() });
         }
-      }
+      });
+    } catch (queryErr) {
+      console.warn('⚠️ Error consultando payments asociados en Firestore:', queryErr);
+    }
+
+    if (relatedPayments.length > 0) {
+      console.log(`  🔗 Eliminando ${relatedPayments.length} pagos asociados en cascada`);
+      const paymentPromises = relatedPayments.map(payment =>
+        deleteTransactionByID(payment.uuid)
+      );
+      await Promise.allSettled(paymentPromises);
     }
 
     // 2. ELIMINAR LOG DEL EXPENSE
@@ -2396,83 +2406,6 @@ export function useTransactionStore() {
         const expense = await getExpenseById(expenseId);
 
         if (expense && expense.logs) {
-          // Filtrar el log que referencia esta transacción
-          const updatedLogs = expense.logs.filter(
-            log => log.transactionRef !== transactionToDelete.uuid
-          );
-
-          const expenseRef = doc(db, `businesses/${businessId}/expenses`, expenseId);
-
-          // Si no quedan logs, podríamos considerar eliminar el expense completo
-          if (updatedLogs.length === 0) {
-            console.log(`  🗑️ No quedan logs, eliminando expense completo`);
-            const { deleteDoc } = await import('firebase/firestore');
-            await deleteDoc(expenseRef);
-          } else {
-            await updateDoc(expenseRef, { logs: updatedLogs });
-
-            // 3. ACTUALIZAR METADATA DEL EXPENSE
-            await updateExpenseMetadata(expenseId);
-          }
-        }
-      } catch (expenseError) {
-        console.error(`  ❌ Error actualizando expense ${expenseId}:`, expenseError);
-      }
-    }
-
-    // 4. ELIMINAR LA TRANSACCIÓN
-    await deleteTransactionByID(transactionToDelete.uuid);
-
-    // 5. LOG DE TRAZABILIDAD
-    await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
-      reason: 'user_expense_transaction_deletion',
-      severity: 'high',
-      tags: ['transaction_delete', 'expense', 'expense_materials', 'stock_reverted'],
-      relatedEntities: [
-        {
-          type: 'expense',
-          id: expenseId,
-          relationship: 'log_removed_metadata_updated',
-          impact: 'high'
-        },
-        ...(transactionToDelete.materialItems || []).map(m => ({
-          type: 'product',
-          id: m.productId,
-          relationship: 'stock_reverted',
-          impact: 'high'
-        }))
-      ],
-      component: 'TransactionStore.deleteMaterialExpenseTransaction'
-    });
-
-    console.log('✅ [DELETE MATERIAL EXPENSE] Compra de materiales eliminada exitosamente');
-  };
-
-  /**
-   * Elimina una transacción tipo expense (otros) sin stock
-   */
-  const deleteOtherExpenseTransaction = async (transactionToDelete) => {
-    const { getFirestore, doc, updateDoc } = await import('firebase/firestore');
-    const { useBusinessStore } = await import('@/stores/businessStore');
-    const { useExpenses } = await import('@/composables/useExpenses');
-
-    const db = getFirestore();
-    const businessStore = useBusinessStore();
-    const businessId = businessStore.getBusinessId;
-    const { getExpenseById, updateExpenseMetadata } = useExpenses();
-
-    console.log('🗑️ [DELETE OTHER EXPENSE] Iniciando eliminación de gasto:', transactionToDelete.uuid);
-
-    // 1. ELIMINAR LOG DEL EXPENSE
-    const expenseId = transactionToDelete.expenseId;
-
-    if (expenseId) {
-      console.log(`  📊 Eliminando log del expense ${expenseId}`);
-
-      try {
-        const expense = await getExpenseById(expenseId);
-
-        if (expense && expense.logs) {
           const updatedLogs = expense.logs.filter(
             log => log.transactionRef !== transactionToDelete.uuid
           );
@@ -2481,12 +2414,11 @@ export function useTransactionStore() {
 
           if (updatedLogs.length === 0) {
             console.log(`  🗑️ No quedan logs, eliminando expense completo`);
-            const { deleteDoc } = await import('firebase/firestore');
             await deleteDoc(expenseRef);
           } else {
             await updateDoc(expenseRef, { logs: updatedLogs });
 
-            // 2. ACTUALIZAR METADATA
+            // ACTUALIZAR METADATA
             await updateExpenseMetadata(expenseId);
           }
         }
@@ -2498,7 +2430,18 @@ export function useTransactionStore() {
     // 3. ELIMINAR TRANSACCIÓN
     await deleteTransactionByID(transactionToDelete.uuid);
 
-    // 4. LOG DE TRAZABILIDAD
+    // 4. ACTUALIZAR METADATA DEL PROVEEDOR
+    if (transactionToDelete.supplierId) {
+      try {
+        const { useSupplierStore } = await import('@/stores/supplierStore');
+        const supplierStore = useSupplierStore();
+        await supplierStore.updateSupplierMetadata(transactionToDelete.supplierId);
+      } catch (supErr) {
+        console.warn('  ⚠️ Error actualizando metadata del proveedor:', supErr);
+      }
+    }
+
+    // 5. LOG DE TRAZABILIDAD
     await logTransactionOperation('delete', transactionToDelete.uuid, transactionToDelete, {
       reason: 'user_expense_transaction_deletion',
       severity: 'high',
@@ -2627,6 +2570,22 @@ export function useTransactionStore() {
     await deleteTransactionByID(paymentUuid);
     console.log(`  🗑️ Payment eliminado de Firestore`);
 
+    // 4.6. ACTUALIZAR ESTADO LOCAL EN MEMORIA
+    if (Array.isArray(transactionsInStore.value)) {
+      const pIdx = transactionsInStore.value.findIndex(t => t.uuid === paymentUuid || t.id === paymentUuid);
+      if (pIdx !== -1) {
+        transactionsInStore.value.splice(pIdx, 1);
+      }
+      const oIdx = transactionsInStore.value.findIndex(t => t.uuid === originalTransaction.uuid || t.id === originalTransaction.uuid);
+      if (oIdx !== -1) {
+        transactionsInStore.value[oIdx] = {
+          ...transactionsInStore.value[oIdx],
+          payments: updatedPayments,
+          ...updatedStatus
+        };
+      }
+    }
+
     // 5. ACTUALIZAR METADATA DEL CLIENTE O PROVEEDOR
     if (originalTransaction.type === 'income' && originalTransaction.clientId && originalTransaction.clientId !== ANONYMOUS_CLIENT_ID) {
       console.log(`  👤 Actualizando metadata del cliente ${originalTransaction.clientId}`);
@@ -2746,13 +2705,25 @@ export function useTransactionStore() {
    * @param {Function} confirmCallback - Función callback que devuelve una promesa de confirmación
    * @returns {Promise<Object>} Resultado de la operación: { success: true } o { cancelled: true }
    */
-  const deleteOneTransactionByID = async (transactionID, confirmCallback = null) => {
+  const deleteOneTransactionByID = async (transactionID, confirmCallback = null, options = {}) => {
     try {
       // 0. OBTENER TRANSACCIÓN
-      const transactionToDelete = transactionsInStore.value.find(t => t.uuid === transactionID);
+      let transactionToDelete = transactionsInStore.value.find(t => t.uuid === transactionID);
 
       if (!transactionToDelete) {
-        throw new Error(`Transaction with ID ${transactionID} not found in store`);
+        console.log(`🔍 Transacción ${transactionID} no encontrada en store local, buscando en Firestore...`);
+        const { getFirestore, doc, getDoc } = await import('firebase/firestore');
+        const { useBusinessStore } = await import('@/stores/businessStore');
+        const businessStore = useBusinessStore();
+        const businessId = businessStore.getBusinessId;
+        const db = getFirestore();
+        const txRef = doc(db, 'businesses', businessId, 'transactions', transactionID);
+        const txSnap = await getDoc(txRef);
+        if (txSnap.exists()) {
+          transactionToDelete = { ...txSnap.data(), uuid: txSnap.id, id: txSnap.id };
+        } else {
+          throw new Error(`Transaction with ID ${transactionID} not found in store or database`);
+        }
       }
 
       console.log('🗑️ [DELETE] Iniciando eliminación de transacción:', {
@@ -2784,8 +2755,8 @@ export function useTransactionStore() {
 
       // 2. MOSTRAR MODAL DE CONFIRMACIÓN (si se proporciona callback)
       if (confirmCallback) {
-        // Buscar payments relacionados para income
-        const relatedPayments = transactionToDelete.type === 'income'
+        // Buscar payments relacionados para income o expense
+        const relatedPayments = (transactionToDelete.type === 'income' || transactionToDelete.type === 'expense')
           ? transactionsInStore.value.filter(
             t => t.type === 'payment' && t.relatedTransactionId === transactionToDelete.uuid
           )
@@ -2804,10 +2775,11 @@ export function useTransactionStore() {
 
       // 3. EJECUTAR ELIMINACIÓN SEGÚN TIPO
       console.log(`🔄 Ejecutando eliminación para tipo: ${transactionToDelete.type}`);
+      let incomeDeletionResult = null;
 
       switch (transactionToDelete.type) {
         case 'income':
-          await deleteIncomeTransaction(transactionToDelete);
+          incomeDeletionResult = await deleteIncomeTransaction(transactionToDelete, options);
           break;
 
         case 'expense':
@@ -2856,7 +2828,10 @@ export function useTransactionStore() {
       // 6. EL dailySummary SE RECALCULARÁ AUTOMÁTICAMENTE
       // por el onTransactionWrite de Firebase Functions
 
-      return { success: true };
+      return {
+        success: true,
+        ...(incomeDeletionResult || {})
+      };
 
     } catch (error) {
       console.error('❌ [DELETE] Error deleting transaction: ', error);

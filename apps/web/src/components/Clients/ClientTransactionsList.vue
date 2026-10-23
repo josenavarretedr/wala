@@ -382,6 +382,7 @@ function getPaymentStatusLabel(status) {
     completed: "Pagado",
     partial: "Parcial",
     pending: "Pendiente",
+    refunded: "Devuelta",
   };
   return statuses[status] || status;
 }
@@ -392,6 +393,7 @@ function getPaymentStatusClass(status) {
     completed: "bg-green-50 text-green-700 border border-green-200",
     partial: "bg-amber-50 text-amber-700 border border-amber-200",
     pending: "bg-red-50 text-red-700 border border-red-200",
+    refunded: "bg-rose-100 text-rose-700 border border-rose-200",
   };
   return classes[status] || "bg-red-50 text-red-700 border border-red-200";
 }
@@ -403,6 +405,7 @@ function getPaymentStatusIcon(status) {
     partial:
       "M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z",
     pending: "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    refunded: "M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6",
   };
   return icons[status] || icons.pending;
 }

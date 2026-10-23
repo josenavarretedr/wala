@@ -25,12 +25,12 @@ export function useAccountsReceivable() {
     }
 
     return transactions
-      .filter(t => t.type === 'income')
+      .filter(t => t.type === 'income' && t.status !== 'refunded' && t.paymentStatus !== PaymentStatuses.REFUNDED)
       .map(t => ({
         ...t,
         ...calculatePaymentStatus(t)
       }))
-      .filter(t => t.paymentStatus !== PaymentStatuses.COMPLETED)
+      .filter(t => t.paymentStatus !== PaymentStatuses.COMPLETED && t.paymentStatus !== PaymentStatuses.REFUNDED)
       .sort((a, b) => {
         // Ordenar por fecha descendente (más recientes primero)
         const dateA = a.date?.toMillis ? a.date.toMillis() : 0;

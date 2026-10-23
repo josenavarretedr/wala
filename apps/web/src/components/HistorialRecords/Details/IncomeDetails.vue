@@ -36,23 +36,27 @@
         v-if="transactionData.items && transactionData.items.length > 0"
         :class="[
           'text-white p-6 text-center',
-          getPaymentStatus() === 'completed'
+          isRefunded
+            ? 'bg-gradient-to-r from-rose-500 to-rose-600'
+            : getPaymentStatus() === 'completed'
             ? 'bg-gradient-to-r from-blue-500 to-blue-600'
             : 'bg-gradient-to-r from-orange-500 to-orange-600',
         ]"
       >
-        <div class="text-3xl font-bold mb-1">
+        <div :class="['text-3xl font-bold mb-1', isRefunded ? 'line-through opacity-90' : '']">
           S/ {{ getTotal().toFixed(2) }}
         </div>
         <div
           :class="[
             'text-sm',
-            getPaymentStatus() === 'completed'
+            isRefunded
+              ? 'text-rose-100'
+              : getPaymentStatus() === 'completed'
               ? 'text-blue-100'
               : 'text-orange-100',
           ]"
         >
-          Total de la venta
+          {{ isRefunded ? "Venta anulada con Nota de Devolución" : "Total de la venta" }}
         </div>
         
         <!-- Badges Row (Payment Status + Sales Channel) -->
@@ -63,10 +67,13 @@
               'inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-semibold bg-white/20 backdrop-blur-md text-white border border-white/10',
             ]"
           >
-            <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" v-if="getPaymentStatus() === 'completed'"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-200" v-if="isRefunded"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-green-300 animate-pulse" v-else-if="getPaymentStatus() === 'completed'"></span>
             <span class="w-1.5 h-1.5 rounded-full bg-yellow-300" v-else></span>
             {{
-              getPaymentStatus() === "completed"
+              isRefunded
+                ? "Devuelta / Anulada"
+                : getPaymentStatus() === "completed"
                 ? "Pagado"
                 : getPaymentStatus() === "partial"
                 ? "Pago Parcial"
@@ -109,6 +116,34 @@
             }}
           </span>
         </div>
+      </div>
+
+      <!-- Banner de trazabilidad si la venta fue devuelta en un día posterior -->
+      <div
+        v-if="isRefunded"
+        class="p-4 bg-rose-50 border-b border-rose-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      >
+        <div class="space-y-0.5">
+          <div class="text-xs font-bold text-rose-800 uppercase tracking-wider">
+            ↩ Venta Anulada (Nota de Devolución)
+          </div>
+          <div class="text-xs text-rose-700">
+            El registro histórico de este día se mantiene intacto por cierre contable; el dinero y el inventario se revirtieron en la Nota de Devolución.
+          </div>
+          <div v-if="transactionData.refundReason" class="text-xs text-rose-600 font-medium mt-1">
+            Motivo: {{ transactionData.refundReason }}
+          </div>
+        </div>
+        <router-link
+          v-if="transactionData.refundTransactionId"
+          :to="{
+            name: 'DetailsRecords',
+            params: { registerId: transactionData.refundTransactionId },
+          }"
+          class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors shrink-0 no-share-item"
+        >
+          Ver Nota de Devolución
+        </router-link>
       </div>
 
       <!-- Información de tipo, cuenta y cliente -->
@@ -526,8 +561,18 @@ const getAccountIcon = computed(() => {
 });
 
 const getPaymentStatus = () => {
+  if (props.transactionData.status === "refunded" || props.transactionData.paymentStatus === "refunded") {
+    return "refunded";
+  }
   return props.transactionData.paymentStatus || "completed";
 };
+
+const isRefunded = computed(() => {
+  return (
+    props.transactionData.status === "refunded" ||
+    props.transactionData.paymentStatus === "refunded"
+  );
+});
 
 const getTotalPaid = () => {
   return props.transactionData.totalPaid || 0;

@@ -88,12 +88,14 @@ export const PaymentMethods = {
 export const PaymentStatuses = {
   PENDING: 'pending',
   PARTIAL: 'partial',
-  COMPLETED: 'completed'
+  COMPLETED: 'completed',
+  REFUNDED: 'refunded'
 };
 
 export const TransactionTypes = {
   INCOME: 'income',
   EXPENSE: 'expense',
   TRANSFER: 'transfer',
-  PAYMENT: 'payment'
+  PAYMENT: 'payment',
+  REFUND: 'refund'
 };

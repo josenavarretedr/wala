@@ -91,6 +91,7 @@ docs/
 | [CLOSURE_TRANSACTION_UNIFIED_STRUCTURE.md](transactions/CLOSURE_TRANSACTION_UNIFIED_STRUCTURE.md) | Estructura de transacciones de cierre | ✅ Activo |
 | [OPENING_TRANSACTION_UNIFIED_STRUCTURE.md](transactions/OPENING_TRANSACTION_UNIFIED_STRUCTURE.md) | Estructura de transacciones de apertura | ✅ Activo |
 | [TRANSACTION_DELETION_INTEGRITY.md](transactions/TRANSACTION_DELETION_INTEGRITY.md) | Integridad al eliminar transacciones | ✅ Activo |
+| [SALE_DELETION_AND_REFUND_NOTE.md](transactions/SALE_DELETION_AND_REFUND_NOTE.md) | Eliminación de ventas (`deleteSale`) y Notas de Devolución (`type: 'refund'`) | ✅ Activo |
 | [DELETE_TRANSACTION_MODAL_IMPLEMENTATION.md](transactions/DELETE_TRANSACTION_MODAL_IMPLEMENTATION.md) | Modal de eliminación | ✅ Activo |
 | [SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md](transactions/SISTEMA_PAGOS_PARCIALES_IMPLEMENTADO.md) | Pagos parciales en transacciones | ✅ Activo |
 | [ACCOUNTS_BALANCE_STORE_USAGE.md](transactions/ACCOUNTS_BALANCE_STORE_USAGE.md) | Guía de uso del balance | ✅ Activo |
@@ -105,6 +106,7 @@ docs/
 | Archivo | Descripción | Estado |
 |---------|-------------|--------|
 | [SISTEMA_ADICION_STOCK.md](inventory/SISTEMA_ADICION_STOCK.md) | Flujo de adición de stock | ✅ Activo |
+| [SISTEMA_ACOPIOS.md](inventory/SISTEMA_ACOPIOS.md) | Sistema integral de acopio de productos y liquidaciones | ✅ Activo |
 | [SISTEMA_REMOCION_STOCK.md](inventory/SISTEMA_REMOCION_STOCK.md) | Flujo de remoción de stock | ✅ Activo |
 | [SISTEMA_CONTEO_INVENTARIO.md](inventory/SISTEMA_CONTEO_INVENTARIO.md) | Conteo físico de inventario | ✅ Activo |
 | [SISTEMA_VENTA_STOCK_INSUFICIENTE.md](inventory/SISTEMA_VENTA_STOCK_INSUFICIENTE.md) | Ventas con stock insuficiente | ✅ Activo |
