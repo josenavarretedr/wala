@@ -53,6 +53,18 @@ const {
  * @param {string} businessId
  * @returns {Promise<Object>} Datos de membresía del usuario en el negocio
  */
+/**
+ * Verifica que el usuario autenticado tenga acceso activo al negocio y permiso para crear/eliminar movimientos.
+ * Soporta múltiples ubicaciones de membresía para máxima compatibilidad con esquemas históricos:
+ * 1. `users/{uid}/businesses/{businessId}` (ID de documento explícito)
+ * 2. Colección `users/{uid}/businesses` donde `businessId == businessId` (auto-ID)
+ * 3. Documento principal `businesses/{businessId}` donde `owner === uid`, `gerenteId === uid` o colaboradores
+ * 4. Documento de usuario `users/{uid}` con `businessId === businessId`
+ *
+ * @param {string} uid
+ * @param {string} businessId
+ * @returns {Promise<Object>} Datos de membresía del usuario en el negocio
+ */
 async function assertBusinessPermission(uid, businessId) {
   if (!uid) {
     throw new HttpsError('unauthenticated', 'Debes iniciar sesión para eliminar o anular una venta.');
@@ -61,17 +73,80 @@ async function assertBusinessPermission(uid, businessId) {
     throw new HttpsError('invalid-argument', 'El identificador del negocio (businessId) es obligatorio.');
   }
 
-  const membershipSnap = await db.doc(`users/${uid}/businesses/${businessId}`).get();
-  if (!membershipSnap.exists) {
+  let membership = null;
+
+  // 1. Intentar lectura directa por document ID
+  const directSnap = await db.doc(`users/${uid}/businesses/${businessId}`).get();
+  if (directSnap.exists) {
+    membership = directSnap.data() || {};
+  }
+
+  // 2. Si no existe, buscar por campo businessId dentro de la subcolección
+  if (!membership) {
+    const querySnap = await db
+      .collection(`users/${uid}/businesses`)
+      .where('businessId', '==', businessId)
+      .limit(1)
+      .get();
+    if (!querySnap.empty) {
+      membership = querySnap.docs[0].data() || {};
+    }
+  }
+
+  // 3. Fallback: Verificar si el usuario es el dueño o colaborador en `businesses/{businessId}`
+  const bizSnap = await db.doc(`businesses/${businessId}`).get();
+  const bizData = bizSnap.exists ? bizSnap.data() || {} : {};
+  const isOwner =
+    bizData.owner === uid ||
+    bizData.gerenteId === uid ||
+    bizData.userId === uid ||
+    bizData.createdBy === uid;
+  const isCollaborator = Array.isArray(bizData.collaborators) && bizData.collaborators.includes(uid);
+
+  // 4. Si aún no hay membresía pero es owner del negocio
+  if (!membership && isOwner) {
+    membership = {
+      businessId,
+      rol: 'gerente',
+      activo: true,
+      permissions: { admin: true, crearMovimientos: true },
+    };
+  }
+
+  // 5. Fallback adicional: verificar perfil del usuario `users/{uid}`
+  if (!membership) {
+    const userDocSnap = await db.doc(`users/${uid}`).get();
+    if (userDocSnap.exists) {
+      const uData = userDocSnap.data() || {};
+      if (uData.businessId === businessId || isCollaborator) {
+        membership = {
+          businessId,
+          rol: uData.rol || 'empleado',
+          activo: uData.activo !== false,
+          permissions: uData.permissions || {},
+        };
+      }
+    }
+  }
+
+  if (!membership) {
     throw new HttpsError('permission-denied', 'No tienes acceso a este negocio.');
   }
 
-  const membership = membershipSnap.data() || {};
-  if (membership.activo !== true) {
+  if (membership.activo === false) {
     throw new HttpsError('permission-denied', 'Tu acceso a este negocio no se encuentra activo.');
   }
 
-  const isManager = membership.rol === 'gerente' || membership.rol === 'admin';
+  const roleStr = String(membership.rol || '').toLowerCase();
+  const isManager =
+    isOwner ||
+    roleStr === 'gerente' ||
+    roleStr === 'admin' ||
+    roleStr === 'owner' ||
+    roleStr === 'business_owner' ||
+    roleStr === 'dueño' ||
+    membership.permissions?.admin === true;
+
   const canCreateMovements = membership.permissions?.crearMovimientos !== false;
 
   if (!isManager && !canCreateMovements) {
@@ -159,9 +234,12 @@ async function inspectDayStatus(businessId, day, tz = DEFAULT_TZ) {
  * @param {Map<string, Object>} productSnapshotsMap
  * @returns {Array<Object>}
  */
-function buildResolvedRestores(stockRefDescriptors, subcollectionLogSnaps, productSnapshotsMap) {
-  return stockRefDescriptors.map((desc, idx) => {
-    const subSnap = subcollectionLogSnaps[idx];
+function buildResolvedRestores(stockRefDescriptors = [], subcollectionLogSnaps = [], productSnapshotsMap = new Map()) {
+  const safeDescriptors = Array.isArray(stockRefDescriptors) ? stockRefDescriptors.filter(Boolean) : [];
+  const safeLogSnaps = Array.isArray(subcollectionLogSnaps) ? subcollectionLogSnaps : [];
+
+  return safeDescriptors.map((desc, idx) => {
+    const subSnap = safeLogSnaps[idx];
     const foundInSubcollection = Boolean(subSnap && subSnap.exists);
     let stockLogDoc = foundInSubcollection ? subSnap.data() : null;
     let foundInLegacyArray = false;
@@ -215,11 +293,15 @@ function buildImpactSummary({
   const stockItems = [];
   let totalCapitalRestored = 0;
 
-  for (const [productId, deltaEntry] of productDeltasMap.entries()) {
-    const productSnap = productSnapshotsMap.get(productId);
+  const safeDeltasMap = productDeltasMap || new Map();
+  const safeProductSnapshotsMap = productSnapshotsMap || new Map();
+
+  for (const [productId, deltaEntry] of safeDeltasMap.entries()) {
+    if (!productId || !deltaEntry) continue;
+    const productSnap = safeProductSnapshotsMap.get(productId);
     if (!productSnap || !productSnap.exists) continue;
 
-    const productData = productSnap.data() || {};
+    const productData = (productSnap && typeof productSnap.data === 'function' ? productSnap.data() : null) || {};
     const unitCost = parseMoneyNumber(productData.cost || 0);
     const variantDeltasObj = deltaEntry.variantDeltas || {};
     const variantDeltaSum = Object.values(variantDeltasObj).reduce(
@@ -312,17 +394,20 @@ const deleteSale = onCall(
     memory: '256MiB',
   },
   async (request) => {
-    const uid = request.auth?.uid;
-    const {
-      businessId,
-      saleUuid,
-      reason = '',
-      dryRun = false,
-    } = request.data || {};
+    try {
+      const uid = request.auth?.uid;
+      const {
+        businessId,
+        saleUuid,
+        reason = '',
+        dryRun = false,
+      } = request.data || {};
 
-    if (!saleUuid || typeof saleUuid !== 'string') {
-      throw new HttpsError('invalid-argument', 'El identificador de la venta (saleUuid) es obligatorio.');
-    }
+      console.log(`🔍 [deleteSale] Invocación: businessId="${businessId}", saleUuid="${saleUuid}", dryRun=${dryRun}, uid="${uid}"`);
+
+      if (!saleUuid || typeof saleUuid !== 'string') {
+        throw new HttpsError('invalid-argument', 'El identificador de la venta (saleUuid) es obligatorio.');
+      }
 
     // 1. Validar autenticación y permisos en el negocio
     await assertBusinessPermission(uid, businessId);
@@ -798,7 +883,18 @@ const deleteSale = onCall(
       today,
       impact: txResult.impact,
     };
+  } catch (err) {
+    console.error('❌ [deleteSale] Error no controlado en Cloud Function:', err);
+    if (err instanceof HttpsError) {
+      throw err;
+    }
+    throw new HttpsError('internal', `[deleteSale Error]: ${err.message || err}`, {
+      message: err.message,
+      name: err.name,
+      stack: err.stack,
+    });
   }
+}
 );
 
 module.exports = {

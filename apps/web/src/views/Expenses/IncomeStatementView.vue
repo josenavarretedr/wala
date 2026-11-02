@@ -244,6 +244,27 @@
         <div
           class="bg-white rounded-2xl border border-gray-200 shadow-2xs hover:shadow-xs hover:border-gray-300 transition-all duration-200 overflow-hidden"
         >
+          <!-- Alerta de Productos sin Costear (Visible siempre) -->
+          <div
+            v-if="uncostedSoldProducts.length > 0"
+            class="bg-amber-50 border-b border-amber-200 px-6 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div class="flex items-center gap-2">
+              <span class="text-base shrink-0">⚠️</span>
+              <p class="text-xs text-amber-900 leading-snug">
+                A este costo de materiales le falta actualizar a
+                <strong class="font-bold underline">{{ uncostedCount }} producto{{ uncostedCount > 1 ? 's' : '' }} vendido{{ uncostedCount > 1 ? 's' : '' }}</strong>
+                ({{ uncostedUnits }} unidades).
+              </p>
+            </div>
+            <button
+              @click="showUncostedModal = true"
+              class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg transition-colors shrink-0 shadow-xs flex items-center gap-1"
+            >
+              <span>Actualizar Costos</span>
+              <span class="text-xs">→</span>
+            </button>
+          </div>
           <div
             class="px-6 py-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 hover:bg-gray-50/20 transition-colors"
           >
@@ -425,31 +446,54 @@
 
         <!-- (=) GANANCIA BRUTA -->
         <div
-          class="bg-gradient-to-br from-amber-50/30 via-white to-amber-50/10 rounded-2xl border-2 border-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.12)] ring-4 ring-amber-100/70 hover:ring-amber-200 hover:border-amber-600 transition-all duration-300 relative overflow-hidden"
+          :class="[
+            'rounded-2xl border-2 transition-all duration-300 relative overflow-hidden',
+            totals.grossProfit < 0
+              ? 'bg-gradient-to-br from-rose-50/40 via-white to-rose-50/15 border-rose-500 shadow-[0_4px_20px_rgba(244,63,94,0.12)] ring-4 ring-rose-100/70'
+              : 'bg-gradient-to-br from-amber-50/30 via-white to-amber-50/10 border-amber-500 shadow-[0_4px_20px_rgba(245,158,11,0.12)] ring-4 ring-amber-100/70 hover:ring-amber-200 hover:border-amber-600',
+          ]"
         >
           <div class="px-6 py-5 flex items-center justify-between gap-3">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span
-                  class="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-extrabold rounded text-xs tracking-tight shrink-0"
+                  :class="[
+                    'px-1.5 py-0.5 font-extrabold rounded text-xs tracking-tight shrink-0',
+                    totals.grossProfit < 0
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-amber-100 text-amber-800',
+                  ]"
                   >(=)</span
                 >
-                <Coins class="w-5 h-5 text-amber-500 shrink-0" />
+                <Coins
+                  :class="[
+                    'w-5 h-5 shrink-0',
+                    totals.grossProfit < 0 ? 'text-rose-500' : 'text-amber-500',
+                  ]"
+                />
                 <h3
-                  class="font-black text-amber-700 text-sm uppercase tracking-wider"
+                  :class="[
+                    'font-black text-sm uppercase tracking-wider',
+                    totals.grossProfit < 0 ? 'text-rose-700' : 'text-amber-700',
+                  ]"
                 >
-                  GANANCIA BRUTA
+                  {{ totals.grossProfit < 0 ? "PÉRDIDA BRUTA" : "GANANCIA BRUTA" }}
                 </h3>
               </div>
-              <p class="text-[11px] text-gray-500 leading-relaxed max-w-2xl">
-                Primer termómetro de salud: Es lo que queda libre solo por el
-                producto. Si este número es muy chiquito, cobras muy barato o
-                los insumos te salen muy caros.
+              <p class="text-[11px] leading-relaxed max-w-2xl" :class="totals.grossProfit < 0 ? 'text-rose-900 font-medium' : 'text-gray-500'">
+                {{
+                  totals.grossProfit < 0
+                    ? "Alerta crítica: Los ingresos por ventas no cubren el costo de los insumos y la mano de obra directa. Estás perdiendo dinero al producir o vender tus productos."
+                    : "Primer termómetro de salud: Es lo que queda libre solo por el producto. Si este número es muy chiquito, cobras muy barato o los insumos te salen muy caros."
+                }}
               </p>
             </div>
             <div class="text-right shrink-0">
               <span
-                class="text-lg font-black text-amber-700 leading-tight block"
+                :class="[
+                  'text-lg font-black leading-tight block',
+                  totals.grossProfit < 0 ? 'text-rose-600' : 'text-amber-700',
+                ]"
                 >{{ formatCurrency(totals.grossProfit) }}</span
               >
             </div>
@@ -775,31 +819,54 @@
 
         <!-- (=) GANANCIA OPERATIVA -->
         <div
-          class="bg-gradient-to-br from-indigo-50/30 via-white to-indigo-50/10 rounded-2xl border-2 border-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.12)] ring-4 ring-indigo-100/70 hover:ring-indigo-200 hover:border-indigo-600 transition-all duration-300 relative overflow-hidden"
+          :class="[
+            'rounded-2xl border-2 transition-all duration-300 relative overflow-hidden',
+            totals.operatingProfit < 0
+              ? 'bg-gradient-to-br from-rose-50/40 via-white to-rose-50/15 border-rose-500 shadow-[0_4px_20px_rgba(244,63,94,0.12)] ring-4 ring-rose-100/70'
+              : 'bg-gradient-to-br from-indigo-50/30 via-white to-indigo-50/10 border-indigo-500 shadow-[0_4px_20px_rgba(99,102,241,0.12)] ring-4 ring-indigo-100/70 hover:ring-indigo-200 hover:border-indigo-600',
+          ]"
         >
           <div class="px-6 py-5 flex items-center justify-between gap-3">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span
-                  class="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 font-extrabold rounded text-xs tracking-tight shrink-0"
+                  :class="[
+                    'px-1.5 py-0.5 font-extrabold rounded text-xs tracking-tight shrink-0',
+                    totals.operatingProfit < 0
+                      ? 'bg-rose-100 text-rose-800'
+                      : 'bg-indigo-100 text-indigo-800',
+                  ]"
                   >(=)</span
                 >
-                <Coins class="w-5 h-5 text-indigo-600 shrink-0" />
+                <Coins
+                  :class="[
+                    'w-5 h-5 shrink-0',
+                    totals.operatingProfit < 0 ? 'text-rose-500' : 'text-indigo-600',
+                  ]"
+                />
                 <h3
-                  class="font-black text-indigo-600 text-sm uppercase tracking-wider"
+                  :class="[
+                    'font-black text-sm uppercase tracking-wider',
+                    totals.operatingProfit < 0 ? 'text-rose-700' : 'text-indigo-600',
+                  ]"
                 >
-                  GANANCIA OPERATIVA
+                  {{ totals.operatingProfit < 0 ? "PÉRDIDA OPERATIVA" : "GANANCIA OPERATIVA" }}
                 </h3>
               </div>
-              <p class="text-[11px] text-gray-500 leading-relaxed max-w-2xl">
-                Segundo termómetro: Demuestra si el negocio en sí mismo es
-                rentable y eficiente en su día a día operativo, sumando
-                fabricación, venta y oficinas.
+              <p class="text-[11px] leading-relaxed max-w-2xl" :class="totals.operatingProfit < 0 ? 'text-rose-900 font-medium' : 'text-gray-500'">
+                {{
+                  totals.operatingProfit < 0
+                    ? "Tus gastos operativos (alquiler, sueldos administrativos, publicidad) superan la ganancia bruta de tus ventas. La estructura operativa del negocio está en déficit."
+                    : "Segundo termómetro: Demuestra si el negocio en sí mismo es rentable y eficiente en su día a día operativo, sumando fabricación, venta y oficinas."
+                }}
               </p>
             </div>
             <div class="text-right shrink-0">
               <span
-                class="text-lg font-black text-indigo-600 leading-tight block"
+                :class="[
+                  'text-lg font-black leading-tight block',
+                  totals.operatingProfit < 0 ? 'text-rose-600' : 'text-indigo-600',
+                ]"
                 >{{ formatCurrency(totals.operatingProfit) }}</span
               >
             </div>
@@ -911,20 +978,38 @@
 
         <!-- (=) UTILIDAD ANTES DE IMPUESTOS -->
         <div
-          class="bg-gradient-to-br from-gray-50/20 to-white rounded-2xl border-2 border-gray-300 shadow-xs relative overflow-hidden transition-all duration-200"
+          :class="[
+            'rounded-2xl border-2 shadow-xs relative overflow-hidden transition-all duration-200',
+            totals.earningsBeforeTaxes < 0
+              ? 'bg-gradient-to-br from-rose-50/20 to-white border-rose-400'
+              : 'bg-gradient-to-br from-gray-50/20 to-white border-gray-300',
+          ]"
         >
           <div class="px-6 py-5 flex items-center justify-between gap-3">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span
-                  class="px-1.5 py-0.5 bg-gray-200 text-gray-700 font-extrabold rounded text-xs tracking-tight shrink-0"
+                  :class="[
+                    'px-1.5 py-0.5 font-extrabold rounded text-xs tracking-tight shrink-0',
+                    totals.earningsBeforeTaxes < 0
+                      ? 'bg-rose-100 text-rose-700'
+                      : 'bg-gray-200 text-gray-700',
+                  ]"
                   >(=)</span
                 >
-                <Coins class="w-5 h-5 text-gray-500 shrink-0" />
+                <Coins
+                  :class="[
+                    'w-5 h-5 shrink-0',
+                    totals.earningsBeforeTaxes < 0 ? 'text-rose-500' : 'text-gray-500',
+                  ]"
+                />
                 <h3
-                  class="font-black text-gray-700 text-sm uppercase tracking-wider"
+                  :class="[
+                    'font-black text-sm uppercase tracking-wider',
+                    totals.earningsBeforeTaxes < 0 ? 'text-rose-700' : 'text-gray-700',
+                  ]"
                 >
-                  UTILIDAD ANTES DE IMPUESTOS
+                  {{ totals.earningsBeforeTaxes < 0 ? "PÉRDIDA ANTES DE IMPUESTOS" : "UTILIDAD ANTES DE IMPUESTOS" }}
                 </h3>
               </div>
               <p class="text-[11px] text-gray-500 leading-relaxed max-w-2xl">
@@ -934,7 +1019,10 @@
             </div>
             <div class="text-right shrink-0">
               <span
-                class="text-lg font-black text-gray-700 leading-tight block"
+                :class="[
+                  'text-lg font-black leading-tight block',
+                  totals.earningsBeforeTaxes < 0 ? 'text-rose-600' : 'text-gray-700',
+                ]"
                 >{{ formatCurrency(totals.earningsBeforeTaxes) }}</span
               >
             </div>
@@ -1045,34 +1133,55 @@
 
         <!-- (=) GANANCIA (UTILIDAD) NETA -->
         <div
-          class="bg-gradient-to-br from-red-50/30 via-white to-red-50/10 rounded-2xl border-2 border-red-500 shadow-[0_4px_25px_rgba(239,68,68,0.18)] ring-4 ring-red-100 hover:ring-red-200 hover:border-red-600 transition-all duration-300 relative overflow-hidden"
+          :class="[
+            'rounded-2xl border-2 transition-all duration-300 relative overflow-hidden',
+            totals.netProfit < 0
+              ? 'bg-gradient-to-br from-rose-50/50 via-white to-rose-50/20 border-rose-600 shadow-[0_4px_25px_rgba(225,29,72,0.2)] ring-4 ring-rose-200'
+              : 'bg-gradient-to-br from-red-50/30 via-white to-red-50/10 border-red-500 shadow-[0_4px_25px_rgba(239,68,68,0.18)] ring-4 ring-red-100 hover:ring-red-200 hover:border-red-600',
+          ]"
         >
           <div class="px-6 py-5 flex items-center justify-between gap-3">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span
-                  class="px-1.5 py-0.5 bg-red-500 text-white font-extrabold rounded text-xs tracking-tight shrink-0"
+                  :class="[
+                    'px-1.5 py-0.5 text-white font-extrabold rounded text-xs tracking-tight shrink-0',
+                    totals.netProfit < 0 ? 'bg-rose-600' : 'bg-red-500',
+                  ]"
                   >(=)</span
                 >
                 <BrightCrown
-                  class="w-6 h-6 text-yellow-500 animate-pulse shrink-0"
+                  :class="[
+                    'w-6 h-6 shrink-0',
+                    totals.netProfit < 0 ? 'text-rose-400' : 'text-yellow-500 animate-pulse',
+                  ]"
                 />
                 <h3
-                  class="font-black text-red-600 text-sm uppercase tracking-wider"
+                  :class="[
+                    'font-black text-sm uppercase tracking-wider',
+                    totals.netProfit < 0 ? 'text-rose-700' : 'text-red-600',
+                  ]"
                 >
-                  GANANCIA (UTILIDAD) NETA
+                  {{ totals.netProfit < 0 ? "PÉRDIDA NETA DEL PERÍODO" : "GANANCIA (UTILIDAD) NETA" }}
                 </h3>
               </div>
-              <p class="text-[11px] text-red-950 leading-relaxed max-w-2xl">
-                <strong>¡El premio final!</strong> Este dinero ya no le debe
-                nada a nadie. Es 100% de la empresa, listo para llevar a tu
-                bolsillo (dividendos) o dejar guardado para reinvertir en
-                insumos.
+              <p
+                class="text-[11px] leading-relaxed max-w-2xl"
+                :class="totals.netProfit < 0 ? 'text-rose-950 font-medium' : 'text-red-950'"
+              >
+                {{
+                  totals.netProfit < 0
+                    ? "El resultado final de tu empresa en este período es deficitario. Tus costos de ventas, gastos fijos, comerciales y financieros superaron a los ingresos generados."
+                    : "¡El premio final! Este dinero ya no le debe nada a nadie. Es 100% de la empresa, listo para llevar a tu bolsillo (dividendos) o dejar guardado para reinvertir en insumos."
+                }}
               </p>
             </div>
             <div class="text-right shrink-0">
               <span
-                class="text-xl font-black text-red-600 leading-tight block"
+                :class="[
+                  'text-xl font-black leading-tight block',
+                  totals.netProfit < 0 ? 'text-rose-700' : 'text-red-600',
+                ]"
                 >{{ formatCurrency(totals.netProfit) }}</span
               >
             </div>
@@ -1097,6 +1206,99 @@
         </p>
       </div>
     </template>
+
+    <!-- Modal para Actualizar Costos de Productos Vendidos -->
+    <Transition name="fade">
+      <div
+        v-if="showUncostedModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+      >
+        <div
+          class="bg-white rounded-3xl max-w-xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-gray-100 overflow-hidden"
+        >
+          <!-- Header -->
+          <div
+            class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-amber-50/50"
+          >
+            <div>
+              <h3 class="text-base font-extrabold text-gray-900">
+                Actualizar Costos de Productos Vendidos
+              </h3>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Ingresa el costo unitario de insumos para calcular con exactitud tu Estado de Resultados.
+              </p>
+            </div>
+            <button
+              @click="showUncostedModal = false"
+              class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Xmark class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Lista de Productos -->
+          <div class="px-6 py-4 overflow-y-auto space-y-3 flex-1">
+            <div
+              v-for="item in uncostedSoldProducts"
+              :key="item.productId || item.description"
+              class="p-3.5 bg-gray-50 border border-gray-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            >
+              <div class="min-w-0 flex-1">
+                <h4 class="text-xs font-bold text-gray-900 truncate">
+                  {{ item.description }}
+                </h4>
+                <div
+                  class="flex items-center gap-2 mt-1 text-[11px] text-gray-500"
+                >
+                  <span
+                    class="bg-gray-200 px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-700"
+                  >
+                    {{ item.quantity }} unidades vendidas
+                  </span>
+                  <span>Precio venta: {{ formatCurrency(item.price) }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="text-xs text-gray-500 font-bold">Costo S/:</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0.00"
+                  v-model.number="item.newCost"
+                  class="w-24 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs font-bold text-gray-900 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div
+            class="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2 bg-gray-50/50"
+          >
+            <button
+              @click="showUncostedModal = false"
+              class="px-4 py-2 border border-gray-300 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              @click="handleSaveUncostedCosts"
+              :disabled="isUpdatingCosts"
+              class="px-5 py-2 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 flex items-center gap-2"
+            >
+              <span
+                v-if="isUpdatingCosts"
+                class="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"
+              ></span>
+              <span>{{
+                isUpdatingCosts ? "Guardando..." : "Guardar y Recalcular"
+              }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -1116,6 +1318,7 @@ import {
   Page,
   BrightCrown,
   Reports,
+  Xmark,
 } from "@iconoir/vue";
 
 // composables
@@ -1130,6 +1333,8 @@ const customStartDate = ref("");
 const customEndDate = ref("");
 const activeLineDetails = ref(null); // Línea del P&L activa para desglose
 const activeSubcategoryDetails = ref({}); // { [lineKey]: subcategoryKey }
+const showUncostedModal = ref(false);
+const isUpdatingCosts = ref(false);
 
 const rangeOptions = [
   { value: "this_month", label: "Este Mes" },
@@ -1177,6 +1382,9 @@ const hasData = computed(() => transactions.value.length > 0);
 const formatSubcategoryName = (subcat, category = "") => {
   if (!subcat) return "Otros conceptos";
   const names = {
+    packaging_revenue: "Cobro por Envases y Empaques (Facturado)",
+    delivery_revenue: "Cobro por Servicio de Envío / Delivery (Facturado)",
+    refunds: "Reembolsos y Devoluciones de Ventas",
     platform_commission: "Comisión de Plataformas (Rappi / PedidosYa)",
     delivery_cost: "Gastos de Envío / Delivery (WhatsApp Directo)",
     delivery_packaging_used: "Costo de Envases y Empaques (Pedidos)",
@@ -1236,6 +1444,15 @@ const getDynamicSubcategory = (tx) => {
     }
     if (subcatVal === "Servicios de Limpieza" || subcatVal === "Insumos de Limpieza" || subcatVal === "Limpieza e Higiene No Productiva") {
       return "mantenimiento_limpieza";
+    }
+    if (subcatVal.includes("Marketing") || subcatVal.includes("Publicidad")) {
+      return tx.subsubcategory || "Digital";
+    }
+    if (subcatVal.includes("Financiero") || subcatVal.includes("Bancario")) {
+      return tx.subsubcategory || "Banca y Cuentas";
+    }
+    if (subcatVal.includes("Impuesto") || subcatVal.includes("SUNAT") || subcatVal.includes("Tributo")) {
+      return "impuesto_renta";
     }
     return subcatVal;
   }
@@ -1322,6 +1539,83 @@ const comprasBrutasInsumos = computed(() => {
 // CÁLCULO DEL ESTADO DE RESULTADOS (P&L)
 // ==========================================
 
+// ==========================================
+// DETECCIÓN DE PRODUCTOS VENDIDOS SIN COSTEAR
+// ==========================================
+
+const uncostedSoldProducts = computed(() => {
+  const map = new Map();
+
+  transactions.value.forEach((tx) => {
+    if (tx.type === "income" && tx.status !== "refunded" && Array.isArray(tx.items)) {
+      tx.items.forEach((item) => {
+        const productId = item.productId || item.selectedProductUuid || item.uuid;
+        const quantity = Number(item.quantity || 0);
+        if (!productId || !quantity) return;
+
+        const product = inventoryStore.allItemsInInventory.value.find(
+          (p) => p.uuid === productId || p.id === productId,
+        );
+
+        const unitMaterials = Number(
+          item?.costStructure?.materials ??
+            item?.cost ??
+            product?.costStructure?.materials ??
+            product?.cost ??
+            item?.costPerUnit ??
+            0,
+        );
+
+        if (unitMaterials === 0) {
+          const key = productId || item.description || "general";
+          if (!map.has(key)) {
+            map.set(key, {
+              productId: productId || null,
+              description: item.description || product?.description || "Producto sin nombre",
+              quantity: 0,
+              price: Number(item.price || product?.price || 0),
+              newCost: null,
+            });
+          }
+          const entry = map.get(key);
+          entry.quantity += quantity;
+        }
+      });
+    }
+  });
+
+  return Array.from(map.values());
+});
+
+const uncostedCount = computed(() => uncostedSoldProducts.value.length);
+const uncostedUnits = computed(() =>
+  uncostedSoldProducts.value.reduce((sum, p) => sum + p.quantity, 0),
+);
+
+const handleSaveUncostedCosts = async () => {
+  isUpdatingCosts.value = true;
+  try {
+    for (const item of uncostedSoldProducts.value) {
+      if (item.productId && item.newCost !== null && item.newCost !== undefined && item.newCost >= 0) {
+        await inventoryStore.updateProduct(item.productId, {
+          cost: Number(item.newCost),
+          "costStructure.materials": Number(item.newCost),
+        });
+      }
+    }
+    await inventoryStore.getItemsInInventory();
+    showUncostedModal.value = false;
+  } catch (error) {
+    console.error("Error al actualizar costos de productos:", error);
+  } finally {
+    isUpdatingCosts.value = false;
+  }
+};
+
+// ==========================================
+// CÁLCULO DEL ESTADO DE RESULTADOS (P&L)
+// ==========================================
+
 const lines = computed(() => {
   const statement = {
     sales_revenue: 0,
@@ -1335,14 +1629,14 @@ const lines = computed(() => {
     tax: 0,
   };
 
-  // 1. Calcular Costo de Materiales, Mano de Obra y CIF basándose estrictamente en unidades vendidas
+  // 1. Calcular Costo de Materiales, Mano de Obra y CIF basándose en ventas
   let totalCogsMaterialsVendidos = 0;
   let totalCogsLaborVendido = 0;
   let totalCogsCifVendido = 0;
 
   transactions.value.forEach((tx) => {
-    // Ingresos por ventas brutas
-    if (tx.type === "income") {
+    // Ingresos por ventas brutas (excluyendo transacciones anuladas/reembolsadas)
+    if (tx.type === "income" && tx.status !== "refunded") {
       statement.sales_revenue += Number(tx.amount || 0);
 
       // Si la transacción tiene envases/empaques asociados para delivery/takeaway,
@@ -1359,29 +1653,46 @@ const lines = computed(() => {
           const quantity = Number(item.quantity || 0);
           if (!productId || !quantity) return;
 
-          // Buscar el producto en el inventario para extraer su costStructure
+          // Buscar el producto en el inventario para extraer su costStructure si no vino congelado
           const product = inventoryStore.allItemsInInventory.value.find(
             (p) => p.uuid === productId || p.id === productId,
           );
 
           const unitMaterials = Number(
-            product?.costStructure?.materials ??
+            item?.costStructure?.materials ??
+              item?.cost ??
+              product?.costStructure?.materials ??
               product?.cost ??
               item?.costPerUnit ??
               0,
           );
-          const unitLabor = Number(product?.costStructure?.mod ?? 0);
-          const unitCif = Number(product?.costStructure?.cif ?? 0);
+          const unitLabor = Number(
+            item?.costStructure?.mod ??
+              product?.costStructure?.mod ??
+              0,
+          );
+          const unitCif = Number(
+            item?.costStructure?.cif ??
+              product?.costStructure?.cif ??
+              0,
+          );
 
           totalCogsMaterialsVendidos += unitMaterials * quantity;
           totalCogsLaborVendido += unitLabor * quantity;
           totalCogsCifVendido += unitCif * quantity;
         });
       }
+    } else if (tx.type === "refund") {
+      // Devolución / Reembolso de ventas de días cerrados resta de las Ventas Totales
+      statement.sales_revenue -= Number(tx.amount || 0);
     } else if (tx.type === "expense") {
-      // Gastos y egresos operativos, fijos, de ventas, financieros, depreciación e impuestos
       const lineKey = tx.statementLine || classifyStatementLine(tx);
       const amount = Number(tx.amount || 0);
+
+      // Amortización de deuda y compra de activo fijo (CAPEX) no van a gastos operativos del P&L
+      if (lineKey === "loan_principal" || lineKey === "capex") {
+        return;
+      }
 
       if (lineKey === "mixed" && Array.isArray(tx.splits)) {
         // Gastos mixtos prorrateados
@@ -1397,81 +1708,55 @@ const lines = computed(() => {
         lineKey === "cogs_labor" ||
         lineKey === "cogs_cif"
       ) {
-        // Ignoramos la suma de egresos brutos en el cálculo final del P&L para estos tres
-        // puesto que ya se calculan arriba de forma rigurosa y devengada basándose en las ventas.
-        // Solo sumamos a statement si no se detectaron ventas, para evitar un P&L en cero si el usuario no usa el catálogo.
+        // Se procesan abajo de forma consolidada
       } else if (statement[lineKey] !== undefined) {
         statement[lineKey] += amount;
       }
     }
   });
 
-  // Si no se detectó ninguna venta de productos costeados en el catálogo (por ejemplo, el usuario registra ingresos genéricos),
-  // como fallback tomamos los egresos de producción en caliente del mes para que el P&L no se quede irrealmente en cero costeos.
-  if (totalCogsMaterialsVendidos === 0) {
-    let comprasFisicasInsumos = 0;
-    let egresosLaborFisicos = 0;
-    let egresosCifFisicos = 0;
+  // Egresos físicos reales de producción registrados en el período
+  let comprasFisicasInsumos = 0;
+  let egresosLaborFisicos = 0;
+  let egresosCifFisicos = 0;
 
-    transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
-        const lineKey = tx.statementLine || classifyStatementLine(tx);
-        const amount = Number(tx.amount || 0);
-        if (lineKey === "cogs_materials") {
-          comprasFisicasInsumos += amount;
-        } else if (lineKey === "cogs_labor") {
-          egresosLaborFisicos += amount;
-        } else if (lineKey === "cogs_cif") {
-          egresosCifFisicos += amount;
-        }
+  transactions.value.forEach((tx) => {
+    if (tx.type === "expense") {
+      const lineKey = tx.statementLine || classifyStatementLine(tx);
+      const amount = Number(tx.amount || 0);
+      if (lineKey === "cogs_materials") {
+        comprasFisicasInsumos += amount;
+      } else if (lineKey === "cogs_labor") {
+        egresosLaborFisicos += amount;
+      } else if (lineKey === "cogs_cif") {
+        egresosCifFisicos += amount;
       }
-    });
+    }
+  });
 
-    statement.cogs_materials = comprasFisicasInsumos;
-    statement.cogs_labor = egresosLaborFisicos;
-    statement.cogs_cif = egresosCifFisicos;
-  } else {
-    // 🔒 Devengado automatizado + incorporación de egresos reales del mes para sueldos de taller/producción y CIF real
-    let realProductionLaborExpenses = 0;
-    let realProductionCifExpenses = 0;
-
-    transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
-        const lineKey = tx.statementLine || classifyStatementLine(tx);
-        const amount = Number(tx.amount || 0);
-        if (lineKey === "cogs_labor") {
-          realProductionLaborExpenses += amount;
-        } else if (lineKey === "cogs_cif") {
-          realProductionCifExpenses += amount;
-        }
-      }
-    });
-
-    statement.cogs_materials = totalCogsMaterialsVendidos;
-    statement.cogs_labor = totalCogsLaborVendido;
-    // Sumamos estrictamente la planilla real de producción (ej: sueldo cocinero) y el CIF físico bajo Costos Indirectos de Producción, sin el CIF unitario del catálogo
-    statement.cogs_cif =
-      realProductionLaborExpenses + realProductionCifExpenses;
-  }
+  // Asignación de Costo de Ventas:
+  // Materiales: Prioriza el costo real de lo vendido; si no hay productos costeados, usa compras físicas
+  statement.cogs_materials = totalCogsMaterialsVendidos > 0 ? totalCogsMaterialsVendidos : comprasFisicasInsumos;
+  // MOD: Mano de obra directa de lo vendido, o sueldos a destajo físicos
+  statement.cogs_labor = totalCogsLaborVendido > 0 ? totalCogsLaborVendido : egresosLaborFisicos;
+  // CIF: Costos indirectos unitarios de lo vendido + egresos indirectos reales del taller/planta (SIN duplicar MOD)
+  statement.cogs_cif = totalCogsCifVendido > 0 ? (totalCogsCifVendido + egresosCifFisicos) : egresosCifFisicos;
 
   return statement;
 });
 
-// Cálculos de Totales y Márgenes Intermedios
+// Cálculos de Totales y Márgenes Intermedios (Soporta pérdidas reales sin clampiado a 0)
 const totals = computed(() => {
   const totalCogs =
     lines.value.cogs_materials + lines.value.cogs_labor + lines.value.cogs_cif;
-  const grossProfit = Math.max(0, lines.value.sales_revenue - totalCogs);
+  const grossProfit = lines.value.sales_revenue - totalCogs;
 
   const totalOpex =
     lines.value.opex_fixed + lines.value.opex_sales + lines.value.depreciation;
-  const operatingProfit = Math.max(0, grossProfit - totalOpex);
+  const operatingProfit = grossProfit - totalOpex;
 
-  const earningsBeforeTaxes = Math.max(
-    0,
-    operatingProfit - lines.value.financial,
-  );
-  const netProfit = Math.max(0, earningsBeforeTaxes - lines.value.tax);
+  const earningsBeforeTaxes = operatingProfit - lines.value.financial;
+  const netProfit = earningsBeforeTaxes - lines.value.tax;
 
   return {
     totalCogs,
@@ -1510,9 +1795,41 @@ const lineTransactions = computed(() => {
   const salesMap = new Map();
   let ventasGeneralesAmount = 0;
   const generalSalesTxs = [];
+  let packagingRevenueAmount = 0;
+  const packagingRevenueTxs = [];
+  let deliveryRevenueAmount = 0;
+  const deliveryRevenueTxs = [];
+  let refundsAmount = 0;
+  const refundsTxs = [];
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income") {
+    if (tx.type === "income" && tx.status !== "refunded") {
+      // Sumar packaging si se cobró
+      if (tx.packagingCost && Number(tx.packagingCost) > 0) {
+        packagingRevenueAmount += Number(tx.packagingCost);
+        packagingRevenueTxs.push({
+          uuid: tx.uuid + "_pack",
+          description: `${formatDate(tx.createdAt)} - Envase/Empaque cobrado`,
+          amount: Number(tx.packagingCost),
+        });
+      }
+
+      // Sumar delivery si se cobró por WhatsApp directo
+      if (
+        tx.deliveryCost &&
+        Number(tx.deliveryCost) > 0 &&
+        tx.salesChannel === "DELIVERY" &&
+        tx.deliveryPlatform === "whatsapp" &&
+        !tx.isDeliveryFree
+      ) {
+        deliveryRevenueAmount += Number(tx.deliveryCost);
+        deliveryRevenueTxs.push({
+          uuid: tx.uuid + "_del",
+          description: `${formatDate(tx.createdAt)} - Servicio de Envío / Delivery`,
+          amount: Number(tx.deliveryCost),
+        });
+      }
+
       if (Array.isArray(tx.items) && tx.items.length > 0) {
         tx.items.forEach((item) => {
           const productId =
@@ -1544,6 +1861,13 @@ const lineTransactions = computed(() => {
           createdAt: tx.createdAt,
         });
       }
+    } else if (tx.type === "refund") {
+      refundsAmount += Number(tx.amount || 0);
+      refundsTxs.push({
+        uuid: tx.uuid,
+        description: `${formatDate(tx.createdAt)} - ${tx.description || "Reembolso / Devolución"}`,
+        amount: -Number(tx.amount || 0),
+      });
     }
   });
 
@@ -1580,13 +1904,37 @@ const lineTransactions = computed(() => {
         .sort((a, b) => b.amount - a.amount),
     });
   }
+  if (packagingRevenueAmount > 0) {
+    result.sales_revenue.push({
+      key: "packaging_revenue",
+      name: "Cobro por Envases y Empaques",
+      amount: packagingRevenueAmount,
+      txs: packagingRevenueTxs,
+    });
+  }
+  if (deliveryRevenueAmount > 0) {
+    result.sales_revenue.push({
+      key: "delivery_revenue",
+      name: "Cobro por Servicio de Envío",
+      amount: deliveryRevenueAmount,
+      txs: deliveryRevenueTxs,
+    });
+  }
+  if (refundsAmount > 0) {
+    result.sales_revenue.push({
+      key: "refunds",
+      name: "Reembolsos y Devoluciones de Ventas",
+      amount: -refundsAmount,
+      txs: refundsTxs,
+    });
+  }
 
   // --- 2. AGRUPACIÓN DE COSTOS DE VENTAS (cogs) ---
   const cogsMap = new Map();
   let totalCogsMaterialsVendidos = 0;
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && Array.isArray(tx.items)) {
+    if (tx.type === "income" && tx.status !== "refunded" && Array.isArray(tx.items)) {
       tx.items.forEach((item) => {
         const productId =
           item.productId || item.selectedProductUuid || item.uuid;
@@ -1598,13 +1946,23 @@ const lineTransactions = computed(() => {
         );
 
         const unitMaterials = Number(
-          product?.costStructure?.materials ??
+          item?.costStructure?.materials ??
+            item?.cost ??
+            product?.costStructure?.materials ??
             product?.cost ??
             item?.costPerUnit ??
             0,
         );
-        const unitLabor = Number(product?.costStructure?.mod ?? 0);
-        const unitCif = Number(product?.costStructure?.cif ?? 0);
+        const unitLabor = Number(
+          item?.costStructure?.mod ??
+            product?.costStructure?.mod ??
+            0,
+        );
+        const unitCif = Number(
+          item?.costStructure?.cif ??
+            product?.costStructure?.cif ??
+            0,
+        );
 
         const totalMatCost = unitMaterials * quantity;
         const totalLabCost = unitLabor * quantity;
@@ -1680,6 +2038,21 @@ const lineTransactions = computed(() => {
         });
       }
     });
+    // Agregar egresos reales de mano de obra de producción
+    transactions.value.forEach((tx) => {
+      if (tx.type === "expense") {
+        const lineKey = tx.statementLine || classifyStatementLine(tx);
+        const amount = Number(tx.amount || 0);
+        if (lineKey === "cogs_labor") {
+          laborTxs.push({
+            uuid: tx.uuid,
+            description: `${formatDate(tx.createdAt)} - Mano de Obra: ${tx.description}`,
+            amount: amount,
+            detail: "Egreso por mano de obra / planilla de producción",
+          });
+        }
+      }
+    });
   } else {
     transactions.value.forEach((tx) => {
       if (tx.type === "expense") {
@@ -1695,67 +2068,45 @@ const lineTransactions = computed(() => {
     });
   }
 
-  // Generar txs para cogs_cif (solo planillas de producción y CIF real registradas como egreso)
+  // Generar txs para cogs_cif (Costos Indirectos de Producción)
   const cifTxs = [];
   if (!isFallback) {
-    // Agregar egresos reales de mano de obra de producción (como el sueldo del cocinero) y CIF real de egresos
-    transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
-        const lineKey = tx.statementLine || classifyStatementLine(tx);
-        const amount = Number(tx.amount || 0);
-        if (lineKey === "cogs_labor") {
-          cifTxs.push({
-            uuid: tx.uuid,
-            description: `${formatDate(tx.createdAt)} - Personal de Producción: ${tx.description}`,
-            amount: amount,
-            detail:
-              "Egresos directos por planilla de producción (sueldo fijo/cocinero)",
-          });
-        } else if (lineKey === "cogs_cif") {
-          cifTxs.push({
-            uuid: tx.uuid,
-            description: `${formatDate(tx.createdAt)} - ${tx.description}`,
-            amount: amount,
-            detail: "Costos indirectos de producción de taller registrados",
-          });
-        } else if (lineKey === "mixed" && Array.isArray(tx.splits)) {
-          tx.splits.forEach((split) => {
-            if (split.bucket === "MANUFACTURING_OH") {
-              cifTxs.push({
-                uuid: `${tx.uuid}_cif_split`,
-                description: `${formatDate(tx.createdAt)} - Prorrateo: ${tx.description}`,
-                amount: Number(split.amount || 0),
-                detail: "Costos indirectos de taller (prorrateados)",
-              });
-            }
-          });
-        }
-      }
-    });
-  } else {
-    transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
-        const lineKey = tx.statementLine || classifyStatementLine(tx);
-        if (lineKey === "cogs_cif") {
-          cifTxs.push({
-            uuid: tx.uuid,
-            description: `${formatDate(tx.createdAt)} - ${tx.description}`,
-            amount: Number(tx.amount || 0),
-          });
-        } else if (lineKey === "mixed" && Array.isArray(tx.splits)) {
-          tx.splits.forEach((split) => {
-            if (split.bucket === "MANUFACTURING_OH") {
-              cifTxs.push({
-                uuid: `${tx.uuid}_cif_split`,
-                description: `${formatDate(tx.createdAt)} - Prorrateo: ${tx.description}`,
-                amount: Number(split.amount || 0),
-              });
-            }
-          });
-        }
+    cogsMap.forEach((val, key) => {
+      if (val.totalCifCost > 0) {
+        cifTxs.push({
+          uuid: `${key}_cif`,
+          description: val.description,
+          amount: val.totalCifCost,
+          detail: `Consumo: ${val.quantity} unidades x ${formatCurrency(val.unitCif)} c/u de CIF unitario`,
+        });
       }
     });
   }
+  transactions.value.forEach((tx) => {
+    if (tx.type === "expense") {
+      const lineKey = tx.statementLine || classifyStatementLine(tx);
+      const amount = Number(tx.amount || 0);
+      if (lineKey === "cogs_cif") {
+        cifTxs.push({
+          uuid: tx.uuid,
+          description: `${formatDate(tx.createdAt)} - ${tx.description}`,
+          amount: amount,
+          detail: "Costos indirectos de producción de taller registrados",
+        });
+      } else if (lineKey === "mixed" && Array.isArray(tx.splits)) {
+        tx.splits.forEach((split) => {
+          if (split.bucket === "MANUFACTURING_OH") {
+            cifTxs.push({
+              uuid: `${tx.uuid}_cif_split`,
+              description: `${formatDate(tx.createdAt)} - Prorrateo: ${tx.description}`,
+              amount: Number(split.amount || 0),
+              detail: "Costos indirectos de taller (prorrateados)",
+            });
+          }
+        });
+      }
+    }
+  });
 
   // Agrupar en subcategorías de cogs
   result.cogs = [
@@ -1848,7 +2199,7 @@ const lineTransactions = computed(() => {
       } else if (lineKey === "tax") {
         taxTxs.push(tx);
       }
-    } else if (tx.type === "income" && tx.packagingCost > 0) {
+    } else if (tx.type === "income" && tx.status !== "refunded" && tx.packagingCost > 0) {
       // Agregar costo de envases virtuales a los gastos de ventas
       opexSalesTxs.push({
         uuid: `${tx.uuid}_pkg`,

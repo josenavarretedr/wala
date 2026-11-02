@@ -697,15 +697,30 @@ export function useTransactionStore() {
               await addLogToExpense(expenseId, logData);
               await updateExpenseMetadata(expenseId);
 
-              // 🌟 TRAZABILIDAD: Obtener subcategoría y subsubcategoría del expense existente
+              // 🌟 TRAZABILIDAD: Obtener subcategoría y clasificación contable del expense existente
               try {
                 const expenseDocData = await getExpenseById(expenseId);
                 if (expenseDocData) {
                   transactionSnapshot.subcategory = expenseDocData.subcategory || null;
                   transactionSnapshot.subsubcategory = expenseDocData.subsubcategory || null;
+                  if (!transactionSnapshot.paylabor && expenseDocData.paylabor) {
+                    transactionSnapshot.paylabor = expenseDocData.paylabor;
+                  }
+                  if (!transactionSnapshot.overheadUsage && expenseDocData.overheadUsage) {
+                    transactionSnapshot.overheadUsage = expenseDocData.overheadUsage;
+                  }
+                  if (!transactionSnapshot.statementLine && expenseDocData.statementLine) {
+                    transactionSnapshot.statementLine = expenseDocData.statementLine;
+                  }
+                  if (!transactionSnapshot.bucket && expenseDocData.bucket) {
+                    transactionSnapshot.bucket = expenseDocData.bucket;
+                  }
+                  if (!transactionSnapshot.splits && expenseDocData.splits) {
+                    transactionSnapshot.splits = expenseDocData.splits;
+                  }
                 }
               } catch (e) {
-                console.warn('⚠️ Error al copiar subcategoría del expense existente:', e);
+                console.warn('⚠️ Error al copiar clasificación contable del expense existente:', e);
               }
 
               console.log('✅ Log agregado y metadata actualizada para expense:', expenseId);
@@ -927,7 +942,23 @@ export function useTransactionStore() {
 
         // ⚡ Asegurar que arrays se conserven correctamente (preservar estructura)
         if (transactionSnapshot.items) {
-          cleanTransaction.items = [...transactionSnapshot.items];
+          cleanTransaction.items = transactionSnapshot.items.map(item => {
+            const cost = item.cost !== undefined && item.cost !== null ? Number(item.cost) : 0;
+            const costStructure = item.costStructure ? {
+              materials: Number(item.costStructure.materials ?? cost ?? 0),
+              mod: Number(item.costStructure.mod ?? 0),
+              cif: Number(item.costStructure.cif ?? 0),
+            } : {
+              materials: cost,
+              mod: 0,
+              cif: 0,
+            };
+            return {
+              ...item,
+              cost,
+              costStructure,
+            };
+          });
         }
         if (transactionSnapshot.payments) {
           cleanTransaction.payments = [...transactionSnapshot.payments];
@@ -1716,6 +1747,16 @@ export function useTransactionStore() {
     itemToAddInTransaction.value.description = product.description;
     itemToAddInTransaction.value.quantity = product.quantity;
     itemToAddInTransaction.value.price = product.price;
+    itemToAddInTransaction.value.cost = product.cost !== undefined && product.cost !== null ? Number(product.cost) : 0;
+    itemToAddInTransaction.value.costStructure = product.costStructure ? {
+      materials: Number(product.costStructure.materials ?? product.cost ?? 0),
+      mod: Number(product.costStructure.mod ?? 0),
+      cif: Number(product.costStructure.cif ?? 0),
+    } : {
+      materials: Number(product.cost ?? 0),
+      mod: 0,
+      cif: 0,
+    };
     itemToAddInTransaction.value.oldOrNewProduct = product.oldOrNewProduct;
     itemToAddInTransaction.value.selectedProductUuid = product.selectedProductUuid;
     itemToAddInTransaction.value.unit = product.unit;
@@ -1763,6 +1804,8 @@ export function useTransactionStore() {
       description: null,
       quantity: null,
       price: null,
+      cost: 0,
+      costStructure: null,
       oldOrNewProduct: null,
       selectedProductUuid: null,
       unit: null,
@@ -1859,11 +1902,29 @@ export function useTransactionStore() {
       });
     }
 
+    // ✅ Congelar costo y estructura de costos en el item vendido
+    item.cost = item.cost !== undefined && item.cost !== null ? Number(item.cost) : 0;
+    if (!item.costStructure) {
+      item.costStructure = {
+        materials: item.cost,
+        mod: 0,
+        cif: 0,
+      };
+    } else {
+      item.costStructure = {
+        materials: Number(item.costStructure.materials ?? item.cost ?? 0),
+        mod: Number(item.costStructure.mod ?? 0),
+        cif: Number(item.costStructure.cif ?? 0),
+      };
+    }
+
     transactionToAdd.value.items.push(item);
 
     // 🔍 DEBUG: Confirmar que el item se agregó
-    console.log('✅ [addItemToTransaction] Item agregado:', {
+    console.log('✅ [addItemToTransaction] Item agregado con costo congelado:', {
       item,
+      cost: item.cost,
+      costStructure: item.costStructure,
       totalItems: transactionToAdd.value.items.length,
       allItems: transactionToAdd.value.items
     });
@@ -1873,6 +1934,8 @@ export function useTransactionStore() {
       description: null,
       quantity: null,
       price: null,
+      cost: 0,
+      costStructure: null,
       oldOrNewProduct: null,
       selectedProductUuid: null,
       unit: null,

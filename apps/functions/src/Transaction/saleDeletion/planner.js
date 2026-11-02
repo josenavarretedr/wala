@@ -151,11 +151,14 @@ function collectStockRefs(sale = {}) {
     return (
       items.find(
         it =>
+          it &&
           (it.uuid === itemUuid || it.productId === itemUuid || it.selectedProductUuid === itemUuid) &&
           (!variantId || it.variantId === variantId)
       ) ||
       items.find(
-        it => it.uuid === itemUuid || it.productId === itemUuid || it.selectedProductUuid === itemUuid
+        it =>
+          it &&
+          (it.uuid === itemUuid || it.productId === itemUuid || it.selectedProductUuid === itemUuid)
       ) ||
       null
     );
@@ -163,6 +166,7 @@ function collectStockRefs(sale = {}) {
 
   if (itemsAndLogs.length > 0) {
     for (const itemLog of itemsAndLogs) {
+      if (!itemLog) continue;
       const productId = itemLog.itemUuid || itemLog.productId;
       if (productId) {
         const matchedItem = findMatchingItem(productId, itemLog.variantId);
@@ -186,6 +190,7 @@ function collectStockRefs(sale = {}) {
       // Materiales en composición
       if (Array.isArray(itemLog.materialStockLogs)) {
         for (const matLog of itemLog.materialStockLogs) {
+          if (!matLog) continue;
           const materialId = matLog.materialId || matLog.productId;
           if (!materialId) continue;
           const fallbackMatQty =
@@ -208,6 +213,7 @@ function collectStockRefs(sale = {}) {
   } else if (items.length > 0) {
     // Fallback para ventas antiguas sin itemsAndStockLogs
     for (const item of items) {
+      if (!item) continue;
       const productId = item.uuid || item.productId || item.selectedProductUuid;
       if (!productId || item.trackStock === false) continue;
       const fallbackQty = item.quantityForStock ?? item.actualQuantity ?? item.quantity ?? 0;
@@ -229,6 +235,7 @@ function collectStockRefs(sale = {}) {
   // Envases de delivery / takeaway
   const packagingLogs = Array.isArray(sale.packagingStockLogs) ? sale.packagingStockLogs : [];
   for (const pkgLog of packagingLogs) {
+    if (!pkgLog) continue;
     const pkgProductId = pkgLog.materialId || pkgLog.productId || pkgLog.uuid;
     if (!pkgProductId) continue;
     const fallbackPkgQty = pkgLog.quantityUsed ?? pkgLog.quantity ?? null;

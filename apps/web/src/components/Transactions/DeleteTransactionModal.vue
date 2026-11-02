@@ -393,7 +393,10 @@ watch(
     if (open && isIncome.value && saleUuid) {
       reason.value = "";
       try {
-        await previewSaleDeletion({ saleUuid });
+        await previewSaleDeletion({
+          businessId: props.transaction?.businessId,
+          saleUuid,
+        });
       } catch (err) {
         console.warn("⚠️ Error obteniendo preview de eliminación:", err);
       }

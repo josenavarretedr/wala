@@ -458,7 +458,11 @@ const totalAmount = computed(() => {
     return sum + price * quantity;
   }, 0);
 
-  return round2(total);
+  const packaging = Number(transactionStore.transactionToAdd.value?.packagingCost) || 0;
+  const isFree = transactionStore.transactionToAdd.value?.isDeliveryFree === true;
+  const isDeliveryWhatsapp = transactionStore.transactionToAdd.value?.salesChannel === 'DELIVERY' && transactionStore.transactionToAdd.value?.deliveryPlatform === 'whatsapp';
+  const delivery = (!isFree && isDeliveryWhatsapp) ? (Number(transactionStore.transactionToAdd.value?.deliveryCost) || 0) : 0;
+  return round2(total + packaging + delivery);
 });
 
 const isCooperativaAgricola = computed(() => {

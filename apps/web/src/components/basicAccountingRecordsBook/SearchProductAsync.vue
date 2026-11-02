@@ -307,6 +307,8 @@ onMounted(() => {
                 transactionStore.modifyItemToAddInTransaction({
                   description: selected.description,
                   price: selected.price,
+                  cost: selected.cost ?? 0,
+                  costStructure: selected.costStructure ?? null,
                   oldOrNewProduct: "old",
                   selectedProductUuid: selected.uuid,
                   unit: selected.unit || "uni",

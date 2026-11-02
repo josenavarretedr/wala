@@ -439,7 +439,7 @@
             @keyup.enter="addExpenseHandler"
             type="number"
             step="0.01"
-            :max="maxAmount"
+
             placeholder="0.00"
             class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-center font-medium text-gray-700 focus:border-red-500 focus:outline-none transition-colors"
           />
@@ -1020,6 +1020,32 @@ const handleExpenseSelected = (expenseData) => {
     transactionStore.setExpenseSubcategory(expenseData.subcategory);
   }
 
+  if (expenseData.subsubcategory) {
+    transactionStore.transactionToAdd.value.subsubcategory = expenseData.subsubcategory;
+  }
+
+  if (expenseData.paylabor) {
+    selectedPayLabor.value = expenseData.paylabor;
+    transactionStore.setPayLabor(expenseData.paylabor);
+  }
+
+  if (expenseData.overheadUsage) {
+    selectedOverheadUsage.value = expenseData.overheadUsage;
+    transactionStore.setOverheadUsage(expenseData.overheadUsage);
+  }
+
+  if (expenseData.statementLine) {
+    transactionStore.transactionToAdd.value.statementLine = expenseData.statementLine;
+  }
+
+  if (expenseData.bucket) {
+    transactionStore.setBucket(expenseData.bucket);
+  }
+
+  if (expenseData.splits) {
+    transactionStore.setSplits(expenseData.splits);
+  }
+
   console.log("✅ DEBUG - After Selection:", {
     description: description.value,
     expenseType: expenseType.value,
@@ -1089,7 +1115,7 @@ const canAddMaterial = computed(() => {
   const newItemTotal = (material.cost || 0) * (material.quantity || 0);
   const wouldExceedBalance = currentTotal + newItemTotal > maxAmount.value;
 
-  return !wouldExceedBalance;
+  return true;
 });
 
 /**
@@ -1400,7 +1426,7 @@ const isFormValid = computed(() => {
       transactionStore.transactionToAdd.value.materialItems.length > 0;
 
     const totalIsValid =
-      getMaterialsTotal() <= maxAmount.value && getMaterialsTotal() > 0;
+      getMaterialsTotal() > 0;
 
     return hasMaterials && totalIsValid;
   }
@@ -1411,7 +1437,7 @@ const isFormValid = computed(() => {
     description.value.trim() !== "" &&
     amount.value &&
     amount.value > 0 &&
-    amount.value <= maxAmount.value &&
+
     selectedCategory.value;
 
   if (!baseValid) return false;
@@ -1458,7 +1484,7 @@ watch(amount, (newAmount) => {
 
   if (newAmount && newAmount > maxAmount.value) {
     // Limitar automáticamente al máximo disponible
-    amount.value = maxAmount.value;
+    // Permite devengado sin recortar al saldo de caja
   }
   transactionStore.setExpenseAmount(amount.value);
   expensesStore.modifyExpenseToAddCost(amount.value);

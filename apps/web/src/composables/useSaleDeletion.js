@@ -51,9 +51,25 @@ export function useSaleDeletion() {
   const previewData = ref(null);
 
   const resolveBusinessId = (explicitBusinessId) => {
-    if (explicitBusinessId) return explicitBusinessId;
+    if (explicitBusinessId && explicitBusinessId !== 'null' && explicitBusinessId !== 'undefined') {
+      return explicitBusinessId;
+    }
     const businessStore = useBusinessStore();
-    return businessStore.getBusinessId || localStorage.getItem('currentBusinessId');
+    if (businessStore.getBusinessId) return businessStore.getBusinessId;
+
+    const fromLocal = localStorage.getItem('currentBusinessId');
+    if (fromLocal && fromLocal !== 'null' && fromLocal !== 'undefined') return fromLocal;
+
+    try {
+      const cached = localStorage.getItem('walla_current_business');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const bid = parsed?.businessId || parsed?.id;
+        if (bid) return bid;
+      }
+    } catch (_) {}
+
+    return null;
   };
 
   /**

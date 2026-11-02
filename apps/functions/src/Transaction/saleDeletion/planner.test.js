@@ -350,3 +350,42 @@ test('deleteSale pipeline: buildResolvedRestores + buildImpactSummary handles va
   assert.equal(impact.inventory.items[0].resultingStock, 10);
   assert.equal(impact.inventory.items[0].variants[0].variantId, 'var-1kg');
 });
+
+test('Preview flow handles sale with null elements, missing fields, and sparse data without throwing', () => {
+  const sale = {
+    uuid: 'sale-null-test',
+    transactionNumber: 'V-SPARSE',
+    type: 'income',
+    amount: 100,
+    items: [
+      {
+        uuid: 'prod-sparse-1',
+        description: 'Item Simple',
+        quantity: 1,
+        cost: 20,
+      },
+      null, // null element guard
+    ],
+    itemsAndStockLogs: [
+      null,
+      {
+        itemUuid: 'prod-sparse-1',
+        stockLogUuid: 'log-sparse-1',
+        quantity: 1,
+      }
+    ],
+    packagingStockLogs: [
+      null,
+      {
+        productId: 'pkg-mat-1',
+        stockLogUuid: 'log-pkg-1',
+        quantityUsed: 2,
+      }
+    ]
+  };
+
+  const refs = collectStockRefs(sale);
+  assert.equal(refs.length, 2);
+  assert.equal(refs[0].productId, 'prod-sparse-1');
+  assert.equal(refs[1].productId, 'pkg-mat-1');
+});
