@@ -41,5 +41,7 @@ apps/*/.env.*.local
 
 # Firebase Emulator Data
 emulator-data/
+firebase-export-*/
+scratch/
 
 .firebase/
