@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EmprendeApp PWA Data Schema",
+  "description": "Esquema NoSQL (Firestore / IndexedDB) para EmprendeApp PWA con soporte Offline-First, trazabilidad IA y costeo 'La Casera vs. El Plato'.",
+  "entities": {
+    "participants": {
+      "$id": "participants",
+      "type": "object",
+      "description": "Identifica al beneficiario mediante su documento de identidad y vincula los metadatos institucionales del programa.",
+      "example": {
+        "$id": "participants",
+        "dni": "45892134",
+        "documentType": "DNI",
+        "cohortId": "COHORTE-2026-CHICLAYO-01",
+        "organizationId": "ONG-MEDIOS-DE-VIDA-NORTE",
+        "personalInfo": {
+          "firstName": "María",
+          "lastName": "Flores Pérez",
+          "phone": "+51987654321",
+          "gender": "Femenino",
+          "location": {
+            "department": "Lambayeque",
+            "province": "Chiclayo",
+            "district": "José Leonardo Ortiz",
+            "address": "Av. México 450"
+          }
+        },
+        "businessBasicInfo": {
+          "commercialName": "Sabor Criollo de María",
+          "sector": "Gastronomía",
+          "subSector": "Comida rápida / Hamburguesas",
+          "operatingStatus": "en_marcha",
+          "monthsInOperation": 8
+        },
+        "programStatus": {
+          "currentSession": 6,
+          "overallProgressPercentage": 75.0,
+          "isFlaggedForReview": false,
+          "status": "activo"
+        },
+        "syncMetadata": {
+          "createdAt": "2026-09-01T08:30:00Z",
+          "updatedAt": "2026-09-11T12:45:00Z",
+          "lastSyncAt": "2026-09-11T12:50:00Z",
+          "localSyncStatus": "synced"
+        }
+      }
+    },
+    "session_progress": {
+      "$id": "session_progress",
+      "type": "object",
+      "description": "Gestiona el desbloqueo secuencial (Gatekeeping), los intentos del quiz de verdadero/falso y el ciclo de vida de cada sesión (1 a 8).",
+      "example": {
+        "$id": "session_progress",
+        "participantId": "45892134",
+        "sessionId": 2,
+        "sessionCode": "S2_PLANEAMIENTO_ESTRATEGICO",
+        "state": "completado",
+        "gatekeeping": {
+          "microlearningCompleted": true,
+          "microlearningCompletedAt": "2026-09-03T09:15:00Z",
+          "quizUnlocked": true,
+          "formUnlocked": true
+        },
+        "quizAssessment": {
+          "passed": true,
+          "maxAttemptsAllowed": null,
+          "totalAttempts": 2,
+          "bestScore": 100,
+          "lastAttemptAt": "2026-09-03T09:22:15Z",
+          "attemptsHistory": [
+            {
+              "attemptNumber": 1,
+              "score": 66.6,
+              "passed": false,
+              "answers": [
+                {
+                  "questionId": "Q2_01",
+                  "selectedOption": "V",
+                  "isCorrect": true
+                },
+                {
+                  "questionId": "Q2_02",
+                  "selectedOption": "F",
+                  "isCorrect": false,
+                  "feedbackGiven": "La misión describe lo que haces hoy, no tus sueños a 10 años."
+                },
+                {
+                  "questionId": "Q2_03",
+                  "selectedOption": "V",
+                  "isCorrect": true
+                }
+              ]
+            },
+            {
+              "attemptNumber": 2,
+              "score": 100.0,
+              "passed": true,
+              "answers": [
+                {
+                  "questionId": "Q2_01",
+                  "selectedOption": "V",
+                  "isCorrect": true
+                },
+                {
+                  "questionId": "Q2_02",
+                  "selectedOption": "V",
+                  "isCorrect": true
+                },
+                {
+                  "questionId": "Q2_03",
+                  "selectedOption": "V",
+                  "isCorrect": true
+                }
+              ]
+            }
+          ]
+        },
+        "formSubmission": {
+          "isCompleted": true,
+          "submittedAt": "2026-09-03T10:10:00Z"
+        }
+      }
+    },
+    "business_plan_sections": {
+      "$id": "business_plan_sections",
+      "type": "object",
+      "description": "Mantiene la trazabilidad entre el texto original del emprendedor, la transformación formal generada por la IA y la revisión final del consultor para cada campo cualitativo.",
+      "example": {
+        "$id": "business_plan_sections",
+        "participantId": "45892134",
+        "sessionId": 2,
+        "sectionKey": "planeamiento_estrategico",
+        "fields": {
+          "mision": {
+            "fieldLabel": "Misión del Negocio",
+            "rawInput": {
+              "text": "Yo preparo hamburguesas y sandwiches con pan recién horneado para los vecinos y trabajadores de la zona que quieren almorzar rico, rápido y barato.",
+              "capturedVia": "text",
+              "createdAt": "2026-09-03T09:45:00Z"
+            },
+            "aiRefinement": {
+              "model": "gemini-3.6-flash",
+              "refinedText": "Elaborar y comercializar productos de comida rápida y sándwiches artesanales con insumos frescos de panadería, brindando una alternativa accesible y de rápida atención orientada a trabajadores y familias del distrito.",
+              "generatedAt": "2026-09-03T09:45:30Z",
+              "confidenceScore": 0.94
+            },
+            "consultantReview": {
+              "status": "aprobado",
+              "finalApprovedText": "Elaborar y comercializar comida rápida y sándwiches artesanales con insumos frescos, brindando una alternativa accesible y de atención rápida a trabajadores y familias de José Leonardo Ortiz.",
+              "reviewedBy": "consultor_jnavarrete",
+              "reviewedAt": "2026-09-03T11:05:00Z",
+              "feedbackNotes": "Se precisó la ubicación geográfica en la redacción final."
+            }
+          },
+          "vision": {
+            "fieldLabel": "Visión a 3 Años",
+            "rawInput": {
+              "text": "Quiero comprar mi carrito sanguchero de acero inoxidable y tener dos personas trabajando conmigo para repartir a empresas.",
+              "capturedVia": "text",
+              "createdAt": "2026-09-03T09:55:00Z"
+            },
+            "aiRefinement": {
+              "model": "gemini-3.6-flash",
+              "refinedText": "Consolidar un punto de venta móvil equipado con estándares sanitarios y expandir el canal de distribución corporativo mediante reparto directo en el ámbito local para 2029.",
+              "generatedAt": "2026-09-03T09:55:20Z",
+              "confidenceScore": 0.91
+            },
+            "consultantReview": {
+              "status": "pendiente_revision",
+              "finalApprovedText": null,
+              "reviewedBy": null,
+              "reviewedAt": null,
+              "feedbackNotes": null
+            }
+          }
+        },
+        "canvasModel": {
+          "description": "Estructura de los 9 bloques del Modelo de Negocio Canvas (Sesión 5) optimizado para interacción móvil y precarga inteligente.",
+          "blocks": {
+            "valueProposition": {
+              "title": "Propuesta de Valor",
+              "group": "oferta",
+              "text": "Hamburguesas artesanales con panes recién horneados y salsas caseras exclusivas a precio accesible.",
+              "isAutoFilled": true,
+              "sourceSession": 3,
+              "status": "completado"
+            },
+            "customerSegments": {
+              "title": "Segmento de Clientes",
+              "group": "mercado",
+              "text": "Trabajadores y comerciantes de José Leonardo Ortiz que buscan almorzar rápido y sabroso.",
+              "isAutoFilled": true,
+              "sourceSession": 3,
+              "status": "completado"
+            },
+            "channels": {
+              "title": "Canales",
+              "group": "mercado",
+              "text": "Puesto de venta físico y pedidos rápidos por WhatsApp con delivery directo.",
+              "isAutoFilled": true,
+              "sourceSession": 4,
+              "status": "completado"
+            },
+            "customerRelationships": {
+              "title": "Relación con Clientes",
+              "group": "mercado",
+              "text": "Atención cálida, rapidez en el despacho y promociones de fidelización para clientes frecuentes.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            },
+            "keyActivities": {
+              "title": "Actividades Clave",
+              "group": "operaciones",
+              "text": "Adquisición diaria de insumos frescos, preparación higiénica de alimentos y atención en punto de venta.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            },
+            "keyResources": {
+              "title": "Recursos Clave",
+              "group": "operaciones",
+              "text": "Plancha freidora a gas, utensilios de cocina en acero inoxidable, congeladora y capital de trabajo.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            },
+            "keyPartners": {
+              "title": "Socios Clave",
+              "group": "operaciones",
+              "text": "Proveedores mayoristas de carnes y verduras del mercado local y panadería aliada del sector.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            },
+            "costStructure": {
+              "title": "Estructura de Costos",
+              "group": "finanzas",
+              "text": "Costo de compra de insumos directos (panes, carne, aderezos), gas doméstico, envases y transporte.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            },
+            "revenueStreams": {
+              "title": "Fuentes de Ingresos",
+              "group": "finanzas",
+              "text": "Venta directa de combos de hamburguesas y bebidas, cobro en efectivo, Yape y Plin.",
+              "isAutoFilled": false,
+              "sourceSession": null,
+              "status": "completado"
+            }
+          }
+        }
+      }
+    },
+    "costing_module": {
+      "$id": "costing_module",
+      "type": "object",
+      "description": "Implementa la separación conceptual entre el consumo de insumos por lote de preparación (El Plato) y la unidad comercial de adquisición en el mercado (La Casera), calculando márgenes y costos unitarios de forma automática.",
+      "example": {
+        "$id": "costing_module",
+        "participantId": "45892134",
+        "currency": "PEN",
+        "products": [
+          {
+            "productId": "PROD-001",
+            "productName": "Hamburguesa Royal",
+            "batchConfig": {
+              "batchSize": 30,
+              "batchUnit": "unidad",
+              "productionFrequency": "semanal",
+              "batchesPerMonth": 4
+            },
+            "commercialization": {
+              "currentSalePrice": 7.0,
+              "estimatedMonthlySalesVolume": 120,
+              "targetCoverageWeeks": 4
+            },
+            "ingredients": [
+              {
+                "ingredientId": "ING-01",
+                "name": "Huevos frescos",
+                "recipeConsumption": {
+                  "quantityUsed": 30.0,
+                  "unit": "unidades"
+                },
+                "marketPurchase": {
+                  "packageUnitName": "jaba",
+                  "quantityInPackage": 32.0,
+                  "packageCost": 12.0
+                },
+                "automatedMath": {
+                  "unitCostFromMarket": 0.375,
+                  "costIncurredInBatch": 11.25,
+                  "unitCostPerProduct": 0.375,
+                  "leftoverQuantityInStock": 2.0,
+                  "leftoverUnit": "unidades"
+                }
+              },
+              {
+                "ingredientId": "ING-02",
+                "name": "Pan para hamburguesa",
+                "recipeConsumption": {
+                  "quantityUsed": 30.0,
+                  "unit": "unidades"
+                },
+                "marketPurchase": {
+                  "packageUnitName": "paquete",
+                  "quantityInPackage": 20.0,
+                  "packageCost": 6.0
+                },
+                "automatedMath": {
+                  "unitCostFromMarket": 0.3,
+                  "costIncurredInBatch": 9.0,
+                  "unitCostPerProduct": 0.3,
+                  "leftoverQuantityInStock": 10.0,
+                  "leftoverUnit": "unidades"
+                }
+              },
+              {
+                "ingredientId": "ING-03",
+                "name": "Carne molida especial",
+                "recipeConsumption": {
+                  "quantityUsed": 3.0,
+                  "unit": "kg"
+                },
+                "marketPurchase": {
+                  "packageUnitName": "kilo",
+                  "quantityInPackage": 1.0,
+                  "packageCost": 18.0
+                },
+                "automatedMath": {
+                  "unitCostFromMarket": 18.0,
+                  "costIncurredInBatch": 54.0,
+                  "unitCostPerProduct": 1.8,
+                  "leftoverQuantityInStock": 0.0,
+                  "leftoverUnit": "kg"
+                }
+              }
+            ],
+            "financialSummary": {
+              "totalBatchDirectCost": 74.25,
+              "directCostPerUnit": 2.475,
+              "grossProfitPerUnit": 4.525,
+              "grossMarginPercentage": 64.64,
+              "monthlyGrossProfitEstimate": 543.0
+            }
+          }
+        ],
+        "seedCapitalInvestmentPlan": {
+          "seedCapitalCeiling": 3000.0,
+          "totalBusinessInvestment": 4050.0,
+          "allocatedTotal": 2850.0,
+          "allocatedSeedCapital": 2850.0,
+          "remainingBudget": 150.0,
+          "isBudgetCompliant": true,
+          "investmentItems": [
+            {
+              "itemId": "INV-01",
+              "category": "Maquinaria y Equipo",
+              "rubro": "rubro_a",
+              "description": "Plancha freidora a gas de 3 quemadores en acero inoxidable",
+              "quantity": 1,
+              "unitPriceEstimated": 1400.0,
+              "totalPrice": 1400.0,
+              "priority": "alta",
+              "financedBySeedCapital": true,
+              "source": "capital_semilla",
+              "isAutoDerivedFromS6": false
+            },
+            {
+              "itemId": "INV-02",
+              "category": "Insumos y Capital de Trabajo",
+              "rubro": "rubro_b",
+              "description": "Stock inicial de carnes, panes, aceites y empaques compostables (4 tandas/mes)",
+              "quantity": 1,
+              "unitPriceEstimated": 1450.0,
+              "totalPrice": 1450.0,
+              "priority": "alta",
+              "financedBySeedCapital": true,
+              "source": "capital_semilla",
+              "isAutoDerivedFromS6": true
+            },
+            {
+              "itemId": "INV-03",
+              "category": "Mano de Obra Propia",
+              "rubro": "rubro_c",
+              "description": "Mano de obra y dedicación del emprendedor (1 mes de arranque)",
+              "quantity": 1,
+              "unitPriceEstimated": 1200.0,
+              "totalPrice": 1200.0,
+              "priority": "media",
+              "financedBySeedCapital": false,
+              "source": "propio",
+              "isLaborContribution": true
+            }
+          ]
+        }
+      }
+    }
+  },
+  "validationRules": {
+    "typesAndRanges": {
+      "dni": "Cadena numérica exacta de 8 dígitos (o alfanumérica de hasta 12 para cédulas extranjeras).",
+      "batchConfig.batchSize": "Entero estricto mayor a 0 (>0).",
+      "marketPurchase.packageCost": "Número de coma flotante positivo (>0).",
+      "marketPurchase.quantityInPackage": "Número de coma flotante positivo (>0)."
+    },
+    "formulas": {
+      "unitCostFromMarket": "packageCost / quantityInPackage",
+      "costIncurredInBatch": "quantityUsed * unitCostFromMarket",
+      "directCostPerUnit": "totalBatchDirectCost / batchSize"
+    },
+    "budgetRule": {
+      "totalBusinessInvestment": "sum(totalPrice de todos los ítems)",
+      "allocatedTotal": "sum(totalPrice de ítems con financedBySeedCapital === true)",
+      "complianceCondition": "allocatedTotal <= seedCapitalCeiling",
+      "isBudgetCompliant": "boolean (true si allocatedTotal <= seedCapitalCeiling; false bloquea la exportación del plan)."
+    },
+    "canvasRule": {
+      "minimumCharactersPerBlock": 15,
+      "requiredBlocksCount": 9,
+      "completionCondition": "Todos los 9 bloques deben tener text.trim().length >= 15 para marcar la Sesión 5 como completada y desbloquear la Sesión 6."
+    }
+  }
+}

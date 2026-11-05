@@ -140,6 +140,13 @@ const hasPermission = (permission) => {
 // Función para manejar navegación de microaplicaciones
 const handleNavigateToApp = (app) => {
   if (app.available && businessId.value) {
+    if (app.id === 13 || app.isExternal) {
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const baseUrl = isDev ? 'http://localhost:5175' : 'https://plan.wala.lat';
+      const targetUrl = `${baseUrl}?businessId=${businessId.value}&source=wala_dashboard`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
     const targetRoute = `/business/${businessId.value}${app.route}`;
     router.push(targetRoute);
   } else if (!app.available) {

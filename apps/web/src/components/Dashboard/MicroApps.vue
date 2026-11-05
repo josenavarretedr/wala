@@ -583,6 +583,17 @@ const allMicroApps = ref([
     color: "blue",
     moduleKey: "accountsBalance",
   },
+  {
+    id: 13,
+    name: "Plan de Negocio",
+    route: "/plan-de-negocio",
+    available: true,
+    icon: ClipboardCheck,
+    isComponent: true,
+    color: "purple",
+    moduleKey: "businessPlan",
+    isExternal: true,
+  },
 ]);
 
 // Función helper para obtener la clase de color del icono

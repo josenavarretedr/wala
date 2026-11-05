@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  }
+
+  /* Evitar zoom automático en inputs en iOS Safari */
+  input, select, textarea {
+    font-size: 16px;
+  }
+}
+
+@layer utilities {
+  /* Soporte de área segura para notch y barra de navegación en iOS/Android PWA */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 1rem);
+  }
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 1rem);
+  }
+}

@@ -67,6 +67,7 @@ exports.grokProxy = require('./src/AI/grokProxy').grokProxy;
 const onboarding = require('./src/Onboarding/index');
 exports.onBusinessCreatedOnboarding = onboarding.onBusinessCreatedOnboarding;
 exports.onStreakUpdated = onboarding.onStreakUpdated;
+exports.activateBusinessFromPlan = onboarding.activateBusinessFromPlan;
 
 // FUNCIÓN DE PRUEBA (remover en producción)
 // exports.testScheduledAutoClose = require('./src/AccountsBalance/testScheduledAutoClose');

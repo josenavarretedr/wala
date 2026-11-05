@@ -15,8 +15,10 @@ const { onBusinessCreatedOnboarding } = require('./onBusinessCreatedOnboarding')
 
 // Fase 2: Emails reactivos al streak
 const { onStreakUpdated } = require('./onStreakUpdated');
+const { activateBusinessFromPlan } = require('./activateBusinessFromPlan');
 
 module.exports = {
   onBusinessCreatedOnboarding,
   onStreakUpdated,
+  activateBusinessFromPlan,
 };
