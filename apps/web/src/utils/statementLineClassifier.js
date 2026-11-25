@@ -26,6 +26,9 @@ export function classifyStatementLine(tx) {
       'tax',
       'loan_principal',
       'capex',
+      'owner_draw',
+      'inventory_shrinkage',
+      'opex_bad_debt',
       'mixed',
     ].includes(tx.statementLine)
   ) {
@@ -40,6 +43,29 @@ export function classifyStatementLine(tx) {
   // 2. Egresos
   if (tx.type === 'expense') {
     const category = tx.category;
+
+    // Mermas, bajas y faltantes de conteo de inventario (no monetario en Caja, sí resta en P&L)
+    if (category === 'inventory_loss') {
+      return 'inventory_shrinkage';
+    }
+
+    // Castigo de cuentas por cobrar incobrables (no monetario en Caja, sí resta en P&L)
+    if (category === 'bad_debt') {
+      return 'opex_bad_debt';
+    }
+
+    // Retiro personal del dueño (va a Flujo de Caja, NO al P&L operativo)
+    if (category === 'owner_draw' || tx.subcategory === 'personal_withdrawal') {
+      return 'owner_draw';
+    }
+
+    // Salario del dueño o salario a familiares (sí va al P&L operativo según rol)
+    if (tx.subcategory === 'owner_salary' || tx.subcategory === 'family_salary') {
+      if (tx.paylabor === 'DIRECT_SERVICE' || tx.paylabor === 'PRODUCTION_SUPPORT') {
+        return 'cogs_labor';
+      }
+      return 'opex_fixed';
+    }
     
     // Costo de Ventas - Materiales e Insumos
     if (category === 'materials') {

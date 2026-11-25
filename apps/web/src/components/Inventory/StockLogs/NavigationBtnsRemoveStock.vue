@@ -28,8 +28,10 @@
         :class="[
           'w-full py-2 px-3 sm:py-2.5 sm:px-4 text-xs sm:text-sm font-semibold rounded-lg sm:rounded-xl shadow-sm transition-all duration-200 transform flex items-center justify-center gap-2',
           canProceed && !isLoading
-            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.99]'
-            : 'bg-gray-200 text-gray-400 cursor-not-allowed',
+            ? (flow.isLastStep
+                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:shadow-lg hover:shadow-green-500/30 hover:scale-[1.01] active:scale-[0.99]'
+                : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg hover:shadow-blue-500/30 hover:scale-[1.01] active:scale-[0.99]')
+            : 'bg-gradient-to-r from-gray-300 to-gray-400 text-gray-500 cursor-not-allowed',
         ]"
       >
         <component
@@ -45,6 +47,19 @@
           {{ flow.isLastStep ? "FINALIZAR" : "CONTINUAR" }}
         </span>
       </button>
+
+      <!-- Tooltip rojo de validación (estándar NavigationBtnBARB) -->
+      <div
+        v-if="!canProceed && !isLoading"
+        class="absolute z-20 w-56 px-3 py-2 text-xs text-white bg-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 -top-14 left-1/2 transform -translate-x-1/2 pointer-events-none"
+      >
+        <div class="text-center">
+          <strong>{{ validationMessage }}</strong>
+        </div>
+        <div
+          class="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-600"
+        ></div>
+      </div>
     </div>
   </div>
 </template>
@@ -81,6 +96,23 @@ const LoadingSpinner = {
 // Computed para validar si se puede proceder
 const canProceed = computed(() => {
   return flow.canProceedToNextStep();
+});
+
+const validationMessage = computed(() => {
+  const label = flow.currentStepConfig?.label;
+  if (label === "Tipo de salida") {
+    if (flow.removeStockData.stockLogType === "waste" && !flow.removeStockData.wasteReason) {
+      return "Selecciona el motivo de la merma";
+    }
+    return "Selecciona un tipo de salida";
+  }
+  if (label === "Cantidad") {
+    return "Ingresa una cantidad válida mayor a 0";
+  }
+  if (label === "Método de pago") {
+    return "Selecciona el método de pago";
+  }
+  return "Completa los campos requeridos";
 });
 
 // Manejar retroceso

@@ -518,6 +518,20 @@ export function useInventory() {
         stockLog.acopioId = item.acopioId;
       }
 
+      // Campos de mermas, bajas e incidencias (BA Área 4 y Área 3)
+      if (item.wasteReason) {
+        stockLog.wasteReason = String(item.wasteReason);
+      }
+      if (item.wasteResolution) {
+        stockLog.wasteResolution = String(item.wasteResolution).trim();
+      }
+      if (item.estimatedLossCost !== undefined && item.estimatedLossCost !== null) {
+        stockLog.estimatedLossCost = Number(item.estimatedLossCost);
+      }
+      if (item.linkedTxId) {
+        stockLog.linkedTxId = String(item.linkedTxId);
+      }
+
       // Para conteos de inventario, agregar campos adicionales
       if (typeStockLog === 'count') {
         if (item.physicalStock !== undefined && item.physicalStock !== null) {
@@ -595,7 +609,7 @@ export function useInventory() {
       }
 
       // Calcular quantityDeducted real antes de persistir el stockLog (evita inflar stock al revertir ventas con stock insuficiente)
-      const isOutflowLog = ['sell', 'waste', 'production_out', 'usage'].includes(typeStockLog);
+      const isOutflowLog = ['sell', 'waste', 'production_out', 'usage', 'return_to_supplier'].includes(typeStockLog);
       if (isOutflowLog) {
         const requestedForStock =
           item.quantityForStock !== undefined && item.quantityForStock !== null
@@ -641,7 +655,7 @@ export function useInventory() {
         const currentVariant = currentVariants[variantIndex];
         let newVariantStock = Number(currentVariant.stock || 0);
 
-        if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out') {
+        if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out' || stockLog.type === 'return_to_supplier') {
           const quantityToDeduct = item.quantityForStock !== undefined
             ? Number(item.quantityForStock)
             : Number(stockLog.quantity || 0);
@@ -672,6 +686,7 @@ export function useInventory() {
           stock: computeTotalStockFromVariants(currentVariants),
           stockSummary: buildVariantStockSummary(currentVariants),
           updatedAt: serverTimestamp(),
+          ...(stockLog.type === 'sell' ? { lastSaleAt: serverTimestamp() } : {}),
         };
 
         if (stockLog.type === 'buy' && !stockLog.isAcopio && stockLog.cost !== undefined && stockLog.cost !== null) {
@@ -872,7 +887,10 @@ export function useInventory() {
       let newStock = null;
       const updateData = {};
 
-      if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out') {
+      if (stockLog.type === 'sell' || stockLog.type === 'waste' || stockLog.type === 'production_out' || stockLog.type === 'return_to_supplier') {
+        if (stockLog.type === 'sell') {
+          updateData.lastSaleAt = serverTimestamp();
+        }
         // Usar quantityForStock si está disponible (venta con stock insuficiente)
         // De lo contrario, usar la cantidad del stockLog
         const quantityToDeduct = quantityForStock !== undefined ? quantityForStock : stockLog.quantity;

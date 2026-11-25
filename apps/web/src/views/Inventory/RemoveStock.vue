@@ -76,6 +76,9 @@ import { Package } from "@iconoir/vue";
 import { useRemoveStockFlowStore } from "@/stores/Inventory/RemoveStockFlow.js";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
+import { useToast } from "@/composables/useToast";
+import { round2 } from "@/utils/mathUtils";
+import { recordInventoryLossTx } from "@/utils/nonCashAccounting";
 import NavigationBtnsRemoveStock from "@/components/Inventory/StockLogs/NavigationBtnsRemoveStock.vue";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 import CloseBtn from "@/components/ui/CloseBtn.vue";
@@ -94,6 +97,7 @@ const router = useRouter();
 const flow = useRemoveStockFlowStore();
 const transactionStore = useTransactionStore();
 const inventoryStore = useInventoryStore();
+const { warning: toastWarning } = useToast();
 
 // State
 const loading = ref(true);
@@ -193,15 +197,49 @@ const finalizarRegistro = async () => {
 
       console.log("✅ Venta registrada exitosamente");
     } else if (stockLogType === "waste") {
-      // Si es merma/desperdicio, solo crear el stock log
+      // Si es merma/desperdicio, crear el stock log con motivo y valorización
+      const unitCost = Number(
+        productData.value.costStructure?.total || productData.value.cost || 0
+      );
+      const estimatedLossCost = round2(Number(quantity || 0) * unitCost);
+      const wasteReason = flow.removeStockData.wasteReason || "loss";
+      const wasteResolution = flow.removeStockData.wasteResolution || "";
+
       const stockLog = {
         uuid: productId,
         quantity: quantity,
-        price: price, // Registrar el precio del producto (referencia)
-        cost: productData.value.cost || 0, // ✅ Registrar el cost (para valorización)
+        price: price,
+        cost: unitCost,
+        wasteReason,
+        wasteResolution,
+        estimatedLossCost,
       };
 
       await inventoryStore.addStockLogInInventory(stockLog, "waste");
+
+      if (estimatedLossCost > 0) {
+        await recordInventoryLossTx({
+          businessId: route.params.businessId,
+          productId,
+          productDescription: productData.value.description,
+          quantity,
+          unit: productData.value.unit || "uni",
+          unitCost,
+          wasteReason,
+          notes: wasteResolution || null,
+        });
+
+        toastWarning(
+          `Merma de S/ ${estimatedLossCost.toFixed(2)} registrada en el Estado de Resultados. Ver Estado de Resultados`,
+          {
+            duration: 4500,
+            actionLink: {
+              text: "Ver Estado de Resultados",
+              route: `/business/${route.params.businessId}/income-statement`,
+            },
+          }
+        );
+      }
 
       console.log("✅ Merma registrada exitosamente");
     }

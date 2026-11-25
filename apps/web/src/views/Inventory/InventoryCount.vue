@@ -84,36 +84,87 @@
             </div>
           </div>
 
-          <div class="space-y-3">
-            <label
-              for="min-stock-input"
-              class="block text-sm font-semibold text-gray-700"
-            >
-              Stock Mínimo
-            </label>
-            <div class="relative">
-              <input
-                id="min-stock-input"
-                v-model.number="localMinStock"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Ej: 5"
-                class="w-full text-2xl font-bold py-3 px-5 rounded-xl border-2 transition-all duration-200 tabular-nums focus:outline-none"
-                :class="minStockInputClass"
-                @input="onMinStockChange"
-              />
-              <div
-                class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400"
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="space-y-3">
+              <label
+                for="min-stock-input"
+                class="block text-sm font-semibold text-gray-700"
               >
-                {{ flow.countData.productData?.unit || "uni" }}
+                Stock Mínimo (Punto de reposición)
+              </label>
+              <div class="relative">
+                <input
+                  id="min-stock-input"
+                  v-model.number="localMinStock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Ej: 5"
+                  class="w-full text-2xl font-bold py-3 px-5 rounded-xl border-2 transition-all duration-200 tabular-nums focus:outline-none"
+                  :class="minStockInputClass"
+                  @input="onMinStockChange"
+                />
+                <div
+                  class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400"
+                >
+                  {{ flow.countData.productData?.unit || "uni" }}
+                </div>
               </div>
+              <p class="text-xs text-gray-500">
+                Alerta cuando el stock sea igual o menor a este valor.
+              </p>
             </div>
-            <p class="text-xs text-gray-500">
-              Se mostrará una alerta cuando el stock sea igual o menor a este
-              valor.
-            </p>
+
+            <div class="space-y-3">
+              <label
+                for="safety-stock-input"
+                class="block text-sm font-semibold text-gray-700"
+              >
+                Stock de Seguridad (Colchón extra)
+              </label>
+              <div class="relative">
+                <input
+                  id="safety-stock-input"
+                  v-model.number="localSafetyStock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="Ej: 2"
+                  class="w-full text-2xl font-bold py-3 px-5 rounded-xl border-2 transition-all duration-200 tabular-nums focus:outline-none"
+                  :class="safetyStockInputClass"
+                />
+                <div
+                  class="absolute right-5 top-1/2 transform -translate-y-1/2 text-lg font-semibold text-gray-400"
+                >
+                  {{ flow.countData.productData?.unit || "uni" }}
+                </div>
+              </div>
+              <p class="text-xs text-gray-500">
+                Respaldo ante retrasos del proveedor o picos de demanda.
+              </p>
+            </div>
           </div>
+        </div>
+
+        <!-- Opción de impacto al Estado de Resultados cuando hay faltante físico -->
+        <div
+          v-if="hasShortageDifference"
+          class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3"
+        >
+          <input
+            id="record-shortage-loss"
+            v-model="recordShortageAsLoss"
+            type="checkbox"
+            class="mt-1 w-4 h-4 text-amber-600 border-amber-300 rounded focus:ring-amber-500"
+          />
+          <label for="record-shortage-loss" class="text-xs sm:text-sm text-amber-900 cursor-pointer">
+            <span class="font-bold block">
+              Registrar faltante ({{ Math.abs(Number(flow.countData.difference || 0)) }} {{ flow.countData.productData?.unit || "uni" }}) como merma en el Estado de Resultados
+            </span>
+            <span class="text-xs text-amber-800">
+              No altera tus saldos de Caja/Banco, pero refleja la pérdida real en tu Ganancia Neta.
+            </span>
+          </label>
         </div>
 
         <!-- Botón Guardar (se activa si hay cambios en stock físico o minStock) -->
@@ -180,17 +231,29 @@ import StepInventoryCountQuantity from "@/components/Inventory/StockLogs/StepInv
 import { useInventoryCountFlowStore } from "@/stores/Inventory/InventoryCountFlow";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useToast } from "@/composables/useToast";
+import { recordInventoryLossTx } from "@/utils/nonCashAccounting";
 
 const route = useRoute();
 const router = useRouter();
 const flow = useInventoryCountFlowStore();
 const inventoryStore = useInventoryStore();
-const { success, error: showError } = useToast();
+const { success, warning: toastWarning, error: showError } = useToast();
 
 const loading = ref(false);
 const saving = ref(false);
 const localMinStock = ref(null);
 const originalMinStock = ref(null);
+const localSafetyStock = ref(null);
+const originalSafetyStock = ref(null);
+const recordShortageAsLoss = ref(true);
+
+const hasShortageDifference = computed(() => {
+  return (
+    flow.countData.hasUserInput &&
+    flow.countData.physicalStock !== null &&
+    Number(flow.countData.difference || 0) < -0.0001
+  );
+});
 
 // Descripción del producto para el header
 const productDescription = computed(
@@ -224,14 +287,22 @@ const hasChanges = computed(() => {
       variantStockChanged.value);
 
   const minStockChanged = localMinStock.value !== originalMinStock.value;
+  const safetyStockChanged = localSafetyStock.value !== originalSafetyStock.value;
 
-  return stockChanged || minStockChanged;
+  return stockChanged || minStockChanged || safetyStockChanged;
 });
 
 // Clases del input de minStock
 const minStockInputClass = computed(() => {
   if (localMinStock.value !== originalMinStock.value) {
     return "border-orange-400 bg-orange-50 text-orange-700 ring-2 ring-orange-200";
+  }
+  return "border-gray-300 bg-gray-50 text-gray-700";
+});
+
+const safetyStockInputClass = computed(() => {
+  if (localSafetyStock.value !== originalSafetyStock.value) {
+    return "border-blue-400 bg-blue-50 text-blue-700 ring-2 ring-blue-200";
   }
   return "border-gray-300 bg-gray-50 text-gray-700";
 });
@@ -265,6 +336,8 @@ const loadProductData = async () => {
     flow.setProductData(route.params.productId, productData);
     localMinStock.value = productData.minStock;
     originalMinStock.value = productData.minStock;
+    localSafetyStock.value = state.safetyStock ?? null;
+    originalSafetyStock.value = state.safetyStock ?? null;
     console.log("⚡ Datos de conteo cargados desde route state:", productData);
     return;
   }
@@ -285,6 +358,8 @@ const loadProductData = async () => {
     flow.setProductData(productId, productData);
     localMinStock.value = productData.minStock ?? null;
     originalMinStock.value = productData.minStock ?? null;
+    localSafetyStock.value = productData.safetyStock ?? null;
+    originalSafetyStock.value = productData.safetyStock ?? null;
     console.log("✅ Producto cargado desde BD:", productData);
   } catch (err) {
     console.error("❌ Error cargando producto:", err);
@@ -317,11 +392,51 @@ const handleSave = async () => {
         hasVariants: Boolean(flow.countData.hasVariants),
         variantCounts: flow.countData.variantCounts || [],
       });
+
+      // Si hubo faltante físico y está activo el registro como merma en P&L
+      const diff = Number(flow.countData.difference || 0);
+      if (diff < -0.0001 && recordShortageAsLoss.value) {
+        let prodDetails = flow.countData.productData;
+        if (prodDetails?.cost === undefined && prodDetails?.costStructure === undefined) {
+          prodDetails = (await inventoryStore.getProductDetails(productId)) || prodDetails;
+        }
+        const unitCost = Number(
+          prodDetails?.costStructure?.total || prodDetails?.cost || 0
+        );
+        const shortageQty = Math.abs(diff);
+        if (unitCost > 0) {
+          const lossRes = await recordInventoryLossTx({
+            businessId: route.params.businessId,
+            productId,
+            productDescription: prodDetails?.description || "Producto",
+            quantity: shortageQty,
+            unit: prodDetails?.unit || "uni",
+            unitCost,
+            wasteReason: "count_shortage",
+            notes: "Faltante detectado en conteo físico de inventario",
+          });
+          if (lossRes?.amount > 0) {
+            toastWarning(
+              `Faltante de S/ ${lossRes.amount.toFixed(2)} cargado a Mermas en P&L. Ver Estado de Resultados`,
+              {
+                duration: 4500,
+                actionLink: {
+                  text: "Ver Estado de Resultados",
+                  route: `/business/${route.params.businessId}/income-statement`,
+                },
+              }
+            );
+          }
+        }
+      }
     }
 
-    // Si hay cambio en minStock
+    // Si hay cambio en minStock o safetyStock
     if (localMinStock.value !== originalMinStock.value) {
       updates.minStock = localMinStock.value;
+    }
+    if (localSafetyStock.value !== originalSafetyStock.value) {
+      updates.safetyStock = localSafetyStock.value;
     }
 
     if (Object.keys(updates).length > 0) {
@@ -333,6 +448,9 @@ const handleSave = async () => {
     // Actualizar original para resetear el estado de "con cambios"
     if (updates.minStock !== undefined) {
       originalMinStock.value = localMinStock.value;
+    }
+    if (updates.safetyStock !== undefined) {
+      originalSafetyStock.value = localSafetyStock.value;
     }
 
     setTimeout(() => {

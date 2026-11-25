@@ -26,6 +26,9 @@ export const useRemoveStockFlowStore = defineStore('removeStockFlow', {
       priceConfirmed: false, // Si el precio fue confirmado
       // Para ventas (cuando stockLogType === 'sell')
       account: null, // 'cash' o 'bank'
+      // Para mermas (cuando stockLogType === 'waste')
+      wasteReason: null, // 'damaged' | 'expired' | 'obsolete' | 'loss'
+      wasteResolution: '',
     }
   }),
   getters: {
@@ -87,6 +90,8 @@ export const useRemoveStockFlowStore = defineStore('removeStockFlow', {
         price: 0,
         priceConfirmed: false,
         account: null,
+        wasteReason: null,
+        wasteResolution: '',
       };
     },
     // Definir pasos dinámicos según el tipo de salida
@@ -139,6 +144,12 @@ export const useRemoveStockFlowStore = defineStore('removeStockFlow', {
       this.removeStockData.account = account;
       console.log('💳 Método de pago establecido:', account);
     },
+    setWasteReason(reason) {
+      this.removeStockData.wasteReason = reason;
+    },
+    setWasteResolution(resolution) {
+      this.removeStockData.wasteResolution = resolution;
+    },
     // Validaciones
     canProceedToNextStep() {
       const currentStepConfig = this.steps[this.currentStep];
@@ -148,6 +159,9 @@ export const useRemoveStockFlowStore = defineStore('removeStockFlow', {
 
       switch (label) {
         case 'Tipo de salida':
+          if (this.removeStockData.stockLogType === 'waste') {
+            return Boolean(this.removeStockData.wasteReason);
+          }
           return this.removeStockData.stockLogType !== null;
         case 'Cantidad':
           // Para ventas, validar cantidad Y precio

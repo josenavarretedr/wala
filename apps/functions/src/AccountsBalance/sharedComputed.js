@@ -252,8 +252,13 @@ async function getDayAggregates(db, businessId, day, tz = 'America/Lima') {
       }
     }
 
-    // === EGRESOS (excluyendo ajustes) ===
-    if (txType === 'expense' && category !== 'adjustment') {
+    // === EGRESOS (excluyendo ajustes y asientos contables no monetarios como mermas/incobrables) ===
+    const isNonCashExpense =
+      Boolean(tx.isNonCash) ||
+      tx.account === 'non_cash' ||
+      category === 'inventory_loss' ||
+      category === 'bad_debt';
+    if (txType === 'expense' && category !== 'adjustment' && !isNonCashExpense) {
       hasTxn = true;
 
       let amountPaid = amount;

@@ -328,12 +328,18 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     return round2(fromIncomes + direct);
   });
 
+  const isCashExpenseTx = (tx) => {
+    if (!tx || tx.type !== 'expense') return false;
+    if (tx.isNonCash === true || tx.account === 'non_cash') return false;
+    if (['adjustment', 'inventory_loss', 'bad_debt'].includes(tx.category)) return false;
+    return true;
+  };
+
   const egresosDetraction = computed(() => {
     const baseDetractionExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
-        tx.type === 'expense' &&
-        tx.account === 'detraction' &&
-        tx.category !== 'adjustment'
+        isCashExpenseTx(tx) &&
+        tx.account === 'detraction'
       ),
       'detraction'
     );
@@ -363,7 +369,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
 
     // Fallback: Calcular manualmente
     const baseExpenses = sumTransactionsWithPayments(
-      transactions.value.filter(tx => tx.type === 'expense' && tx.category !== 'adjustment')
+      transactions.value.filter(tx => isCashExpenseTx(tx))
     );
     const refundOutflows = round2(
       transactions.value
@@ -386,8 +392,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     // Fallback: Calcular manualmente
     const baseCashExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
-        tx.type === 'expense' &&
-        tx.category !== 'adjustment' &&
+        isCashExpenseTx(tx) &&
         tx.account === 'cash'
       )
     );
@@ -412,8 +417,7 @@ export const useAccountsBalanceStore = defineStore('accountsBalance', () => {
     // Fallback: Calcular manualmente
     const baseBankExpenses = sumTransactionsWithPayments(
       transactions.value.filter(tx =>
-        tx.type === 'expense' &&
-        tx.category !== 'adjustment' &&
+        isCashExpenseTx(tx) &&
         tx.account === 'bank'
       )
     );

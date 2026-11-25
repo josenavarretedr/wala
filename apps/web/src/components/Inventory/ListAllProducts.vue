@@ -1,13 +1,87 @@
 <template>
   <div class="list-all-products-container">
     <!-- Header -->
-    <div class="header-section mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">
-        Inventario de Productos
-      </h1>
-      <p class="text-sm text-gray-600">
-        Total de productos: {{ filteredProducts.length }}
-      </p>
+    <div class="header-section mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">
+          Inventario de Productos
+        </h1>
+        <p class="text-sm text-gray-600">
+          Total de productos: {{ filteredProducts.length }}
+        </p>
+      </div>
+      <button
+        type="button"
+        @click="openWasteSummaryModal"
+        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-rose-600 text-rose-600 bg-white hover:bg-rose-600 hover:text-white text-xs font-semibold transition-all shadow-xs self-start sm:self-auto"
+      >
+        <span>📉</span>
+        <span>Resumen de Mermas (Mes)</span>
+      </button>
+    </div>
+
+    <!-- Barra de Cobertura de Costeo (Área 3 - Costos) -->
+    <div
+      v-if="costingStats.total > 0"
+      class="mb-4 bg-white border border-gray-200 rounded-xl p-3.5 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+    >
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center justify-between text-xs mb-1.5">
+          <span class="font-semibold text-gray-700">
+            Cobertura de costeo: {{ costingStats.complete }} de {{ costingStats.total }} productos completos
+          </span>
+          <span
+            :class="[
+              'font-bold tabular-nums',
+              costingStats.pct >= 80 ? 'text-emerald-600' : 'text-amber-600',
+            ]"
+          >
+            {{ costingStats.pct }}%
+          </span>
+        </div>
+        <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            class="h-full rounded-full transition-all duration-500"
+            :class="costingStats.pct >= 80 ? 'bg-emerald-500' : 'bg-amber-500'"
+            :style="{ width: `${costingStats.pct}%` }"
+          ></div>
+        </div>
+      </div>
+      <button
+        v-if="costingStats.incomplete > 0"
+        type="button"
+        @click="activeFilter = 'uncosted'"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-600 text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white text-xs font-semibold transition-colors shrink-0"
+      >
+        <span>Completar costeo ({{ costingStats.incomplete }}) →</span>
+      </button>
+    </div>
+
+    <!-- Filtros rápidos (Mermas, Stock Mínimo, Costeo) -->
+    <div class="flex flex-wrap gap-2 mb-4">
+      <button
+        v-for="pill in quickFilters"
+        :key="pill.value"
+        type="button"
+        @click="activeFilter = pill.value"
+        :class="[
+          'px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all',
+          activeFilter === pill.value
+            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+            : 'bg-white text-gray-700 border-gray-200 hover:border-blue-400 hover:text-blue-600',
+        ]"
+      >
+        {{ pill.label }}
+        <span
+          v-if="pill.count !== undefined"
+          :class="[
+            'ml-1 px-1.5 py-0.5 rounded-full text-[10px]',
+            activeFilter === pill.value ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600',
+          ]"
+        >
+          {{ pill.count }}
+        </span>
+      </button>
     </div>
 
     <!-- Autocomplete Search -->
@@ -117,18 +191,91 @@
         />
       </div>
     </div>
+
+    <!-- Modal Resumen de Mermas del Mes -->
+    <Teleport to="body">
+      <div
+        v-if="showWasteModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="showWasteModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Resumen de Mermas del Mes</h3>
+              <p class="text-xs text-gray-500">
+                Pérdidas no monetarias registradas en Inventario y Conteos Físicos.
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="showWasteModal = false"
+              class="text-gray-400 hover:text-gray-600 text-sm font-bold px-2 py-1"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div v-if="loadingWaste" class="py-8 text-center text-sm text-gray-500">
+            Cargando resumen de mermas...
+          </div>
+          <div v-else-if="wasteSummary.count === 0" class="py-8 text-center text-sm text-gray-500">
+            No se registraron mermas ni bajas de inventario este mes.
+          </div>
+          <template v-else>
+            <div class="grid grid-cols-2 gap-3">
+              <div class="bg-rose-50 border border-rose-200 rounded-xl p-3">
+                <p class="text-[11px] font-semibold text-rose-700 uppercase">Pérdida Total</p>
+                <p class="text-xl font-black text-rose-800">S/ {{ wasteSummary.total.toFixed(2) }}</p>
+              </div>
+              <div class="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                <p class="text-[11px] font-semibold text-gray-600 uppercase">Eventos</p>
+                <p class="text-xl font-black text-gray-900">{{ wasteSummary.count }}</p>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <p class="text-xs font-bold text-gray-700 uppercase">Por Motivo</p>
+              <div
+                v-for="row in wasteSummary.byReason"
+                :key="row.reason"
+                class="flex items-center justify-between text-xs bg-gray-50 px-3 py-2 rounded-lg"
+              >
+                <span class="font-medium text-gray-700">{{ row.label }} ({{ row.count }})</span>
+                <span class="font-bold text-rose-700">S/ {{ row.amount.toFixed(2) }}</span>
+              </div>
+            </div>
+
+            <div class="space-y-1.5">
+              <p class="text-xs font-bold text-gray-700 uppercase">Últimos Registros</p>
+              <div
+                v-for="item in wasteSummary.items.slice(0, 8)"
+                :key="item.uuid"
+                class="flex items-center justify-between text-xs border-b border-gray-100 py-1.5"
+              >
+                <span class="text-gray-700 truncate mr-2">{{ item.description }}</span>
+                <span class="font-bold text-gray-900 shrink-0">S/ {{ Number(item.amount || 0).toFixed(2) }}</span>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebaseInit";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import CardProduct from "@/components/Inventory/CardProduct.vue";
 import { useSubscription } from "@/composables/useSubscription";
 import { useToast } from "@/composables/useToast";
+import { WASTE_REASON_LABELS } from "@/utils/nonCashAccounting";
 
 // Suscripción
 const { isPremium } = useSubscription();
@@ -150,6 +297,10 @@ const searchQuery = ref("");
 const showDropdown = ref(false);
 const loading = ref(true);
 const index = ref([]);
+const activeFilter = ref("all");
+const showWasteModal = ref(false);
+const loadingWaste = ref(false);
+const wasteTransactions = ref([]);
 
 // ===== NORMALIZACIÓN Y INDEXADO =====
 function normalize(s = "") {
@@ -160,32 +311,139 @@ function normalize(s = "") {
 }
 
 function buildIndex(items) {
-  index.value = items.map(
-    (p) => (
-      console.log("Indexando producto:", p),
-      {
-        uuid: p.uuid,
-        description: p.description,
-        description_lc: normalize(p.description || ""),
-        price: p.price,
-        cost: p.cost, // ✅ Agregado: campo cost
-        stock: p.stock,
-        unit: p.unit || "uni",
-        type: p.type ? p.type : "MERCH",
-        trackStock: p.trackStock ? p.trackStock : false,
-        isPerishable: Boolean(p.isPerishable),
-        expirationDate: p.expirationDate || null,
-        hasVariants: Boolean(p.hasVariants),
-        variantSchema: p.variantSchema || { combineAttributes: false },
-        variantCombos: Array.isArray(p.variantCombos) ? p.variantCombos : [],
-        stockSummary: p.stockSummary || null,
-      }
-    ),
+  index.value = items.map((p) => ({
+    uuid: p.uuid,
+    description: p.description,
+    description_lc: normalize(p.description || ""),
+    price: p.price,
+    cost: p.cost,
+    stock: p.stock,
+    unit: p.unit || "uni",
+    type: p.type ? p.type : "MERCH",
+    trackStock: p.trackStock ? p.trackStock : false,
+    minStock: p.minStock ?? null,
+    safetyStock: p.safetyStock ?? null,
+    costStructure: p.costStructure || null,
+    lastSaleAt: p.lastSaleAt || null,
+    updatedAt: p.updatedAt || null,
+    isPerishable: Boolean(p.isPerishable),
+    expirationDate: p.expirationDate || null,
+    hasVariants: Boolean(p.hasVariants),
+    variantSchema: p.variantSchema || { combineAttributes: false },
+    variantCombos: Array.isArray(p.variantCombos) ? p.variantCombos : [],
+    stockSummary: p.stockSummary || null,
+  }));
+}
+
+function isLowStockItem(item) {
+  if (!item.trackStock) return false;
+  const threshold = item.safetyStock ?? item.minStock;
+  if (threshold === null || threshold === undefined || threshold === "") return false;
+  return Number(item.stock || 0) <= Number(threshold);
+}
+
+function isStagnantItem(item) {
+  if (!item.trackStock || Number(item.stock || 0) <= 0) return false;
+  const refTs = item.lastSaleAt || item.updatedAt;
+  if (!refTs) return false;
+  const ms = refTs.toMillis ? refTs.toMillis() : new Date(refTs).getTime();
+  if (!Number.isFinite(ms)) return false;
+  return (Date.now() - ms) > 14 * 24 * 60 * 60 * 1000;
+}
+
+function hasCompleteCosting(item) {
+  if (Number(item.cost || 0) > 0) return true;
+  const cs = item.costStructure;
+  if (!cs) return false;
+  return (
+    Number(cs.materials || 0) > 0 ||
+    Number(cs.mod || 0) > 0 ||
+    Number(cs.labor || 0) > 0 ||
+    Number(cs.cif || 0) > 0 ||
+    Number(cs.total || 0) > 0
   );
+}
+
+const costingStats = computed(() => {
+  const costables = index.value.filter((i) => i.type !== "RAW_MATERIAL");
+  const complete = costables.filter(hasCompleteCosting).length;
+  const total = costables.length;
+  return {
+    total,
+    complete,
+    incomplete: Math.max(0, total - complete),
+    pct: total > 0 ? Math.round((complete / total) * 100) : 0,
+  };
+});
+
+const quickFilters = computed(() => [
+  { value: "all", label: "Todos", count: index.value.length },
+  { value: "low_stock", label: "Bajo stock mínimo", count: index.value.filter(isLowStockItem).length },
+  { value: "stagnant_14d", label: "Sin movimiento >14d", count: index.value.filter(isStagnantItem).length },
+  { value: "uncosted", label: "Costeo incompleto", count: costingStats.value.incomplete },
+  { value: "costed", label: "Costeo completo", count: costingStats.value.complete },
+]);
+
+const wasteSummary = computed(() => {
+  const map = {};
+  let total = 0;
+  wasteTransactions.value.forEach((tx) => {
+    const amt = Number(tx.amount || 0);
+    total += amt;
+    const reason = tx.subcategory || "other";
+    if (!map[reason]) {
+      map[reason] = {
+        reason,
+        label: WASTE_REASON_LABELS[reason] || reason,
+        count: 0,
+        amount: 0,
+      };
+    }
+    map[reason].count += 1;
+    map[reason].amount += amt;
+  });
+  return {
+    total,
+    count: wasteTransactions.value.length,
+    byReason: Object.values(map).sort((a, b) => b.amount - a.amount),
+    items: wasteTransactions.value,
+  };
+});
+
+async function openWasteSummaryModal() {
+  showWasteModal.value = true;
+  const businessId = route.params.businessId || businessStore.business?.id;
+  if (!businessId) return;
+  loadingWaste.value = true;
+  try {
+    const q = query(
+      collection(db, "businesses", businessId, "transactions"),
+      where("category", "==", "inventory_loss")
+    );
+    const snap = await getDocs(q);
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const items = [];
+    snap.forEach((docSnap) => {
+      const data = docSnap.data();
+      const ts = data.createdAt?.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt || 0).getTime();
+      if (ts >= startOfMonth) {
+        items.push({ uuid: docSnap.id, ...data });
+      }
+    });
+    wasteTransactions.value = items;
+  } catch (err) {
+    console.warn("⚠️ Error cargando resumen de mermas:", err);
+  } finally {
+    loadingWaste.value = false;
+  }
 }
 
 // Cargar inventario inicial
 onMounted(async () => {
+  if (route.query.filter && ["all", "low_stock", "stagnant_14d", "uncosted", "costed"].includes(String(route.query.filter))) {
+    activeFilter.value = String(route.query.filter);
+  }
   loading.value = true;
   try {
     await inventoryStore.getItemsInInventory();
@@ -225,8 +483,18 @@ const filteredProducts = computed(() => {
     ? index.value.filter((i) => i.description_lc.includes(q))
     : index.value;
 
+  if (activeFilter.value === "low_stock") {
+    filtered = filtered.filter(isLowStockItem);
+  } else if (activeFilter.value === "stagnant_14d") {
+    filtered = filtered.filter(isStagnantItem);
+  } else if (activeFilter.value === "uncosted") {
+    filtered = filtered.filter((i) => i.type !== "RAW_MATERIAL" && !hasCompleteCosting(i));
+  } else if (activeFilter.value === "costed") {
+    filtered = filtered.filter((i) => i.type !== "RAW_MATERIAL" && hasCompleteCosting(i));
+  }
+
   // Ordenar alfabéticamente por descripción
-  return filtered.sort((a, b) =>
+  return [...filtered].sort((a, b) =>
     a.description.localeCompare(b.description, "es", { sensitivity: "base" }),
   );
 });

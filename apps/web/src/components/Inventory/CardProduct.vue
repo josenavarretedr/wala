@@ -189,6 +189,16 @@
           </svg>
           <span>{{ expirationBadgeLabel }}</span>
         </div>
+
+        <!-- Badge / Acceso directo: Costeo Incompleto -->
+        <button
+          v-if="needsCosting"
+          type="button"
+          @click.stop="goToEconomicInfo"
+          class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors"
+        >
+          <span>⚠️ Sin costeo · Completar →</span>
+        </button>
       </div>
     </div>
   </div>
@@ -196,6 +206,8 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useBusinessStore } from "@/stores/businessStore";
 
 // Props
 const props = defineProps({
@@ -215,6 +227,35 @@ const props = defineProps({
 
 // Emits
 const emit = defineEmits(["click"]);
+const router = useRouter();
+const route = useRoute();
+const businessStore = useBusinessStore();
+
+const needsCosting = computed(() => {
+  if ((props.product.type || "MERCH") === "RAW_MATERIAL") return false;
+  if (Number(props.product.cost || 0) > 0) return false;
+  const cs = props.product.costStructure;
+  if (
+    cs &&
+    (Number(cs.materials || 0) > 0 ||
+      Number(cs.mod || 0) > 0 ||
+      Number(cs.labor || 0) > 0 ||
+      Number(cs.cif || 0) > 0 ||
+      Number(cs.total || 0) > 0)
+  ) {
+    return false;
+  }
+  return true;
+});
+
+function goToEconomicInfo() {
+  const businessId = route.params.businessId || businessStore.business?.id;
+  if (!businessId || !props.product.uuid) return;
+  router.push({
+    name: "InventoryEditProductEconomicInfo",
+    params: { businessId, productId: props.product.uuid },
+  });
+}
 
 // Computed: Tipo de producto
 const productType = computed(() => {
