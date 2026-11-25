@@ -233,17 +233,25 @@ export function useInventoryStore() {
         }
 
         // Crear stockLog con type: 'buy' para registrar la compra
+        const isPres = Boolean(material.conversionFactor && material.conversionFactor > 1);
+        const baseQty = Number(material.baseQuantity || (isPres ? material.quantity * material.conversionFactor : material.quantity));
+        const baseCost = Number(material.baseUnitCost || (isPres ? material.cost / material.conversionFactor : material.cost));
+
         const stockLogData = {
-          uuid: productId, // UUID del producto (requerido por createStockLog)
-          productId: productId, // También mantener productId para referencia
-          quantity: material.quantity,
-          type: 'buy', // Tipo de operación: compra
-          cost: material.cost,
-          totalCost: material.cost * material.quantity,
+          uuid: productId,
+          productId: productId,
+          quantity: baseQty, // ¡Siempre en unidad base!
+          type: 'buy',
+          cost: baseCost,    // ¡Costo por unidad base para cálculo CPP!
+          totalCost: material.totalCost || (material.cost * material.quantity),
           unit: material.unit,
-          description: `Compra: ${material.description}`,
+          description: isPres ? `Compra (${material.quantity} ${material.presentationName}): ${material.description}` : `Compra: ${material.description}`,
           createdAt: new Date(),
-          ...(transactionId && { transactionId }), // Agregar transactionId si existe
+          ...(material.presentationId && { presentationId: material.presentationId }),
+          ...(material.presentationName && { presentationName: material.presentationName }),
+          ...(material.conversionFactor && { conversionFactor: material.conversionFactor }),
+          ...(isPres && { presentationQty: material.quantity }),
+          ...(transactionId && { transactionId }),
           ...(material.variantId && { variantId: material.variantId }),
           ...(material.variantLabel && { variantLabel: material.variantLabel }),
           ...(material.variantSku && { variantSku: material.variantSku }),

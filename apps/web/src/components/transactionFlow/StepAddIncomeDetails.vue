@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <!-- Título mejorado -->
+    <!-- Título -->
     <div class="text-center space-y-2">
       <h1 class="text-2xl sm:text-3xl font-bold text-gray-800">
         Agregar Productos/Servicios
@@ -44,29 +44,23 @@
       class="space-y-3"
       v-if="transactionStore.itemToAddInTransaction.value.description"
     >
-      <label class="text-lg font-semibold text-gray-800"
-        >Producto Seleccionado</label
-      >
+      <label class="text-lg font-semibold text-gray-800">Producto Seleccionado</label>
       <div class="relative">
-        <!-- Badge de estado con transición -->
         <Transition name="badge">
           <div
             v-if="transactionStore.itemToAddInTransaction.value.oldOrNewProduct"
             class="absolute -top-2 -right-2 px-2 py-1 rounded-lg text-xs font-medium shadow-sm z-10"
             :class="{
               'bg-blue-50 text-blue-700 border border-blue-200':
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct === 'old',
+                transactionStore.itemToAddInTransaction.value.oldOrNewProduct === 'old',
               'bg-green-50 text-green-700 border border-green-200':
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct === 'new',
+                transactionStore.itemToAddInTransaction.value.oldOrNewProduct === 'new',
             }"
           >
             {{
-              transactionStore.itemToAddInTransaction.value.oldOrNewProduct ===
-              "old"
-                ? "Existente"
-                : "Nuevo"
+              transactionStore.itemToAddInTransaction.value.oldOrNewProduct === 'old'
+                ? 'Existente'
+                : 'Nuevo'
             }}
           </div>
         </Transition>
@@ -76,7 +70,7 @@
           type="text"
           disabled
           placeholder="Selecciona un producto arriba"
-          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 transition-all duration-200"
+          class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-500 transition-all duration-200 font-semibold"
         />
 
         <div
@@ -101,20 +95,91 @@
         </Transition>
       </div>
     </div>
+
+    <!-- Panel de configuración del ítem a agregar -->
     <Transition name="slide-fade">
-      <div v-if="transactionStore.itemToAddInTransaction.value.description">
-        <!-- Cantidad, Unidad y Precio - Layout optimizado -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <!-- Cantidad -->
+      <div v-if="transactionStore.itemToAddInTransaction.value.description" class="space-y-4">
+        
+        <!-- SELECTOR DE PRESENTACIONES (si tiene presentaciones) -->
+        <div v-if="sellPresentations.length > 1" class="space-y-1.5 bg-gray-50/70 p-3 rounded-2xl border border-gray-100">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-gray-700">Presentación a vender:</span>
+            <span class="text-gray-400">Selecciona el empaque</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1">
+            <button
+              v-for="pres in sellPresentations"
+              :key="pres.id"
+              type="button"
+              @click="selectPresentation(pres)"
+              class="p-2.5 text-left rounded-xl border-2 transition-all flex flex-col justify-between"
+              :class="[
+                currentPresentation?.id === pres.id
+                  ? 'border-blue-600 bg-blue-50/80 shadow-xs ring-1 ring-blue-200'
+                  : 'border-gray-200 bg-white hover:border-blue-200 text-gray-700'
+              ]"
+            >
+              <div class="font-bold text-xs sm:text-sm text-gray-900">{{ pres.name }}</div>
+              <div class="flex items-center justify-between mt-1 text-[11px] text-gray-500">
+                <span>x{{ pres.factor }} {{ baseUnit }}</span>
+                <span class="font-bold text-blue-700">S/ {{ Number(pres.price || 0).toFixed(2) }}</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- MODO DE VENTA: Por cantidad vs Por monto (Granel) -->
+        <div v-if="isGranelAllowed" class="flex items-center justify-between p-2.5 bg-indigo-50/60 border border-indigo-100 rounded-xl">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-indigo-900">Modo de venta a granel:</span>
+          </div>
+          <div class="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-indigo-200">
+            <button
+              type="button"
+              @click="setSellMode('quantity')"
+              class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors"
+              :class="sellMode === 'quantity' ? 'bg-indigo-600 text-white font-bold' : 'text-gray-600 hover:text-gray-900'"
+            >
+              Por {{ baseUnit }}
+            </button>
+            <button
+              type="button"
+              @click="setSellMode('amount')"
+              class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors"
+              :class="sellMode === 'amount' ? 'bg-indigo-600 text-white font-bold' : 'text-gray-600 hover:text-gray-900'"
+            >
+              Por dinero (S/)
+            </button>
+          </div>
+        </div>
+
+        <!-- Inputs: Cantidad y Precio -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Campo 1: Cantidad o Monto según sellMode -->
           <div class="space-y-2">
-            <label class="text-sm font-medium text-gray-700">Cantidad</label>
+            <label class="text-sm font-medium text-gray-700">
+              {{ sellMode === 'amount' ? 'Monto a vender (S/)' : 'Cantidad' }}
+            </label>
             <div class="relative">
               <input
-                ref="quantityInput"
-                v-model="transactionStore.itemToAddInTransaction.value.quantity"
+                v-if="sellMode === 'amount'"
+                v-model.number="montoTarget"
+                @input="onMontoTargetInput"
                 type="number"
+                step="0.10"
+                min="0.10"
+                placeholder="5.00"
+                class="w-full px-4 py-3 border border-indigo-300 rounded-xl text-center font-bold text-indigo-900 focus:border-indigo-500 focus:outline-none transition-colors"
+              />
+              <input
+                v-else
+                ref="quantityInput"
+                v-model.number="transactionStore.itemToAddInTransaction.value.quantity"
+                type="number"
+                :step="quantityStep"
+                :min="quantityStep"
                 placeholder="0"
-                min="0"
                 @keydown.enter="focusPriceInput"
                 class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-blue-500 focus:outline-none transition-colors"
                 :class="{
@@ -128,99 +193,186 @@
                   'bg-blue-500': !hasStockWarning || proceedAnyway,
                 }"
               ></div>
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-gray-400">
+                {{ sellMode === 'amount' ? 'S/' : (currentPresentation?.name || baseUnit) }}
+              </div>
+            </div>
+            <p v-if="sellMode === 'amount' && transactionStore.itemToAddInTransaction.value.quantity > 0" class="text-xs text-indigo-700 font-medium">
+              = {{ transactionStore.itemToAddInTransaction.value.quantity }} {{ baseUnit }} a S/ {{ Number(transactionStore.itemToAddInTransaction.value.price || 0).toFixed(2) }}/{{ baseUnit }}
+            </p>
+          </div>
+
+          <!-- Campo 2: Unidad / Presentación -->
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-700">Empaque / Unidad</label>
+            <div class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 font-semibold text-center text-sm truncate">
+              {{ currentPresentation?.name || baseUnit }} (x{{ currentPresentation?.factor || 1 }})
             </div>
           </div>
 
-          <!-- Unidad -->
+          <!-- Campo 3: Precio Neto Cobrado (Inalterable para productos existentes) -->
           <div class="space-y-2">
-            <label class="text-sm font-medium text-gray-700">Unidad</label>
-            <select
-              v-model="transactionStore.itemToAddInTransaction.value.unit"
-              :disabled="
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct === 'old'
-              "
-              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 focus:border-blue-500 focus:outline-none transition-colors disabled:opacity-50 disabled:bg-gray-50"
-            >
-              <option value="uni">Unidad</option>
-              <option value="kg">Kilogramo</option>
-              <option value="lt">Litro</option>
-              <option value="m">Metro</option>
-              <option value="porcion">Porción</option>
-              <option value="service">Servicio</option>
-            </select>
-          </div>
-
-          <!-- Precio -->
-          <div class="space-y-2 col-span-2 sm:col-span-1">
-            <label class="text-sm font-medium text-gray-700">Precio (S/)</label>
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-sm font-medium text-gray-700 flex items-center gap-1">
+                Precio (S/)
+              </label>
+              <button
+                v-if="transactionStore.itemToAddInTransaction.value.oldOrNewProduct !== 'new'"
+                type="button"
+                @click="showDiscountPanel = !showDiscountPanel"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-colors border"
+                :class="
+                  showDiscountPanel || transactionStore.itemToAddInTransaction.value.discount
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                    : 'bg-gray-50 text-gray-600 border-gray-200 hover:text-gray-800 hover:bg-gray-100'
+                "
+              >
+                <span>{{ showDiscountPanel ? 'Cerrar' : 'Dscto %' }}</span>
+              </button>
+            </div>
             <div class="relative">
               <input
                 ref="priceInput"
-                v-model="transactionStore.itemToAddInTransaction.value.price"
+                v-model.number="transactionStore.itemToAddInTransaction.value.price"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
+                :readonly="isPriceLocked"
                 @keydown.enter="handleAddProductOnEnter"
-                class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-green-500 focus:outline-none transition-colors"
+                class="w-full px-4 py-3 border rounded-xl text-center font-bold transition-colors focus:outline-none"
+                :class="[
+                  isPriceLocked
+                    ? 'bg-gray-50 border-gray-200 text-gray-800 cursor-default select-none'
+                    : 'bg-white border-gray-200 text-gray-800 focus:border-green-500',
+                ]"
               />
               <div
-                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-green-500 rounded-full"
+                class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full"
+                :class="transactionStore.itemToAddInTransaction.value.discount ? 'bg-amber-500' : 'bg-green-500'"
               ></div>
+              <span
+                v-if="isPriceLocked"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                title="Precio oficial de catálogo. Usa Dscto % para aplicar descuento."
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </span>
             </div>
-          </div>
-
-          <!-- Indicador de stock disponible -->
-          <div class="col-span-2 sm:col-span-2 flex flex-col gap-1">
-            <p class="text-xs text-gray-500">Ingresa la cantidad a vender</p>
-            <p
-              v-if="
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct !== 'new' &&
-                transactionStore.itemToAddInTransaction.value.trackStock &&
-                selectedAvailableStock > 0
-              "
-              class="text-xs text-blue-600 font-medium"
+            <div
+              v-if="transactionStore.itemToAddInTransaction.value.discount && !showDiscountPanel"
+              class="flex items-center justify-between text-[11px] text-amber-700 font-medium px-1"
             >
-              📦 Stock disponible:
-              {{ selectedAvailableStock }}
-              {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }}
-            </p>
-            <p
-              v-else-if="
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct !== 'new' &&
-                transactionStore.itemToAddInTransaction.value.trackStock &&
-                selectedAvailableStock <= 0
-              "
-              class="text-xs text-amber-600 font-medium"
-            >
-              ⚠️ No hay stock disponible
-            </p>
-            <p
-              v-if="hasStockWarning && !proceedAnyway"
-              class="text-xs text-red-600 font-medium"
-            >
-              ⛔ La cantidad excede el stock disponible ({{
-                selectedAvailableStock
-              }}
-              {{ transactionStore.itemToAddInTransaction.value.unit || "uni" }})
-            </p>
-            <!-- Info tooltip sobre composición faltante -->
-            <p
-              v-if="
-                needsCompositionSetup &&
-                transactionStore.itemToAddInTransaction.value
-                  .oldOrNewProduct !== 'new'
-              "
-              class="text-xs text-purple-600 font-medium"
-            >
-              💡 Este producto aún no tiene composición de materiales definida
-            </p>
+              <span>
+                Dscto aplicado (Lista: S/ {{ Number(currentListPrice).toFixed(2) }})
+              </span>
+              <button
+                type="button"
+                @click="clearDiscount"
+                class="text-amber-800 hover:text-red-600 underline"
+              >
+                Quitar
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Checkbox "Proceder de todos modos" - Solo si hay advertencia de stock -->
+        <!-- PANEL DE DESCUENTO Y REGATEO (Plegable) -->
+        <Transition name="slide-fade">
+          <div v-if="showDiscountPanel" class="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-amber-900 uppercase tracking-wide">Descuento de Línea / Precio Negociado</span>
+              <button type="button" @click="clearDiscount" class="text-xs text-amber-700 hover:text-red-600 underline">
+                Restablecer a lista (S/ {{ Number(currentListPrice).toFixed(2) }})
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-amber-900 mb-1">Porcentaje (%)</label>
+                <input
+                  v-model.number="discountPctInput"
+                  @input="onDiscountPctInput"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  placeholder="Ej: 5"
+                  class="w-full px-3 py-2 text-sm border border-amber-300 rounded-xl bg-white focus:outline-none text-center font-semibold"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-amber-900 mb-1">Monto de Descuento (S/)</label>
+                <input
+                  v-model.number="discountAmtInput"
+                  @input="onDiscountAmtInput"
+                  type="number"
+                  min="0"
+                  step="0.10"
+                  placeholder="Ej: 8.00"
+                  class="w-full px-3 py-2 text-sm border border-amber-300 rounded-xl bg-white focus:outline-none text-center font-semibold"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-amber-900 mb-1">Precio Final Negociado (S/)</label>
+                <input
+                  v-model.number="directNegotiatedPrice"
+                  @input="onDirectNegotiatedPriceInput"
+                  type="number"
+                  min="0"
+                  step="0.10"
+                  placeholder="Ej: 192.00"
+                  class="w-full px-3 py-2 text-sm border border-amber-300 rounded-xl bg-white focus:outline-none text-center font-bold text-gray-900"
+                />
+              </div>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- PROTECCIÓN DE MARGEN: Componente MarginGuard -->
+        <MarginGuard
+          :evaluation="marginEvaluation"
+          :action="pricingPolicy.belowFloorAction"
+          :canBypass="canBypassMargin"
+        />
+
+        <!-- Indicador de stock disponible -->
+        <div class="space-y-1 text-xs">
+          <div
+            v-if="
+              transactionStore.itemToAddInTransaction.value.oldOrNewProduct !== 'new' &&
+              transactionStore.itemToAddInTransaction.value.trackStock &&
+              selectedAvailableStock > 0
+            "
+            class="text-blue-600 font-medium"
+          >
+            📦 Stock en almacén:
+            <strong>{{ selectedAvailableStock }} {{ baseUnit }}</strong>
+            <span v-if="currentPresentation?.factor > 1" class="text-blue-800 ml-1">
+              (Equivale a ≈ {{ Math.floor(selectedAvailableStock / currentPresentation.factor) }} {{ currentPresentation.name }})
+            </span>
+          </div>
+
+          <p
+            v-else-if="
+              transactionStore.itemToAddInTransaction.value.oldOrNewProduct !== 'new' &&
+              transactionStore.itemToAddInTransaction.value.trackStock &&
+              selectedAvailableStock <= 0
+            "
+            class="text-amber-600 font-medium"
+          >
+            ⚠️ No hay stock disponible en almacén
+          </p>
+
+          <p v-if="hasStockWarning && !proceedAnyway" class="text-red-600 font-medium">
+            ⛔ La cantidad requerida ({{ currentBaseQtyRequired }} {{ baseUnit }}) excede el stock disponible ({{ selectedAvailableStock }} {{ baseUnit }})
+          </p>
+        </div>
+
+        <!-- Checkbox "Proceder de todos modos" -->
         <div
           v-if="hasStockWarning"
           class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3"
@@ -232,54 +384,11 @@
               class="mt-0.5 w-4 h-4 text-amber-600 bg-white border-amber-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer"
             />
             <div class="flex-1">
-              <span
-                class="text-sm font-medium text-amber-900 group-hover:text-amber-950"
-              >
-                Vender igual
+              <span class="text-sm font-medium text-amber-900 group-hover:text-amber-950">
+                Vender igual con stock insuficiente
               </span>
-
-              <!-- Mensaje para stock del producto -->
-              <p
-                v-if="hasProductStockWarning"
-                class="text-xs text-amber-700 mt-1"
-              >
-                ⚠️ <strong>Stock del producto:</strong> Te quedan solo
-                {{ selectedAvailableStock }}
-                {{
-                  transactionStore.itemToAddInTransaction.value.unit || "uni"
-                }}
-                en stock. Si vendes
-                {{ transactionStore.itemToAddInTransaction.value.quantity }},
-                Wala ajustará automáticamente.
-              </p>
-
-              <!-- Mensaje para stock de materiales -->
-              <div v-if="hasCompositionStockWarning" class="mt-2">
-                <p class="text-xs text-amber-700 font-medium">
-                  ⚠️ <strong>Materiales insuficientes:</strong>
-                </p>
-                <ul class="mt-1 ml-4 space-y-1">
-                  <li
-                    v-for="material in insufficientMaterialsDetails"
-                    :key="material.productId"
-                    class="text-xs text-amber-700"
-                  >
-                    • <strong>{{ material.description }}</strong
-                    >: necesitas {{ material.needed.toFixed(2) }}
-                    {{ material.unit }}, solo tienes
-                    {{ material.available.toFixed(2) }} {{ material.unit }}
-                    <span class="text-red-600 font-semibold"
-                      >(faltan {{ material.missing.toFixed(2) }}
-                      {{ material.unit }})</span
-                    >
-                  </li>
-                </ul>
-              </div>
-
-              <!-- Nota sobre proceder de todos modos -->
-              <p class="text-xs text-amber-600 mt-2 italic">
-                Al marcar esta opción, Wala registrará la venta con el stock
-                disponible actual.
+              <p class="text-xs text-amber-700 mt-1">
+                Se registrará la venta y se descontará el stock hasta agotar las existencias disponibles.
               </p>
             </div>
           </label>
@@ -291,81 +400,59 @@
     <button
       @click="handleAddProduct"
       :disabled="!canAddProduct"
-      class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
+      class="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl shadow-sm disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
     >
       <template v-if="isValidatingComposition">
-        <div
-          class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-        ></div>
+        <div class="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
         Validando materiales...
       </template>
       <template v-else>
-        <KeyframePlus class="w-5 h-5" />
-        Agregar Producto
+        <span v-if="isBlockedByPolicy">⛔ Venta bloqueada por margen</span>
+        <span v-else>Agregar a la venta</span>
       </template>
     </button>
 
-    <!-- Lista de productos agregados -->
-    <div
-      class="space-y-4"
-      v-if="transactionStore.transactionToAdd.value.items.length > 0"
-    >
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold text-gray-800">Productos Agregados</h3>
-        <Transition name="fade-scale">
-          <div
-            v-if="transactionStore.transactionToAdd.value.items.length > 0"
-            class="text-sm text-gray-500"
-          >
-            {{ transactionStore.transactionToAdd.value.items.length }}
-            producto{{
-              transactionStore.transactionToAdd.value.items.length !== 1
-                ? "s"
-                : ""
-            }}
-          </div>
-        </Transition>
-      </div>
+    <!-- Lista de Items en la Transacción -->
+    <div class="space-y-4">
+      <h3 class="text-lg font-semibold text-gray-800">
+        Items en la venta ({{ transactionStore.transactionToAdd.value.items.length }})
+      </h3>
 
-      <!-- Lista de items con TransitionGroup -->
       <TransitionGroup name="list" tag="div" class="space-y-3">
-        <template
-          v-if="transactionStore.transactionToAdd.value.items.length > 0"
-        >
+        <template v-if="transactionStore.transactionToAdd.value.items.length > 0">
           <div
             v-for="item in transactionStore.transactionToAdd.value.items"
             :key="item.uuid"
-            class="bg-gray-50 rounded-xl p-4 flex items-center gap-3"
-            :class="{
-              'border-2 border-amber-300 bg-amber-50': item.proceedAnyway,
-            }"
+            class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-xs"
           >
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold text-gray-900 truncate mb-1">
+            <div class="flex-1 min-w-0 pr-4">
+              <div class="font-semibold text-gray-900 truncate">
                 {{ item.description }}
               </div>
-              <div v-if="item.variantLabel" class="mb-1">
+              <div class="text-sm text-gray-600 flex flex-wrap items-center gap-2 mt-0.5">
+                <span>
+                  {{ item.quantity }} {{ item.presentationName || item.unit || "uni" }}
+                  × S/ {{ Number(item.price || 0).toFixed(2) }}
+                </span>
                 <span
-                  class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200"
+                  v-if="item.conversionFactor > 1"
+                  class="text-[11px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded font-semibold"
                 >
-                  {{ item.variantLabel }}
+                  (= {{ item.baseQuantity }} {{ item.unit || 'uni' }})
+                </span>
+                <span
+                  v-if="item.discount && item.discount.amountPerUnit > 0"
+                  class="text-[11px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold line-through text-gray-400"
+                >
+                  S/ {{ Number(item.listPrice || item.price).toFixed(2) }}
+                </span>
+                <span
+                  v-if="item.discount && item.discount.amountPerUnit > 0"
+                  class="text-[11px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-semibold"
+                >
+                  -{{ item.discount.discountPct }}%
                 </span>
               </div>
-              <div class="text-sm text-gray-600">
-                {{ item.quantity }} {{ item.unit || "uni" }} × S/
-                {{ item.price }}
-              </div>
-              <!-- Advertencia de stock insuficiente -->
-              <!-- <div
-                v-if="
-                  item.proceedAnyway &&
-                  item.requestedQuantity > item.actualQuantity
-                "
-                class="mt-2 text-xs text-amber-700 font-medium"
-              >
-                ⚠️ Stock insuficiente: Se vendió {{ item.actualQuantity }} de
-                {{ item.requestedQuantity }} solicitadas
-              </div> -->
             </div>
 
             <div class="text-right">
@@ -376,27 +463,29 @@
 
             <button
               @click="transactionStore.removeItemToTransaction(item.uuid)"
-              class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+              class="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-2"
             >
               <Xmark class="w-4 h-4" />
             </button>
           </div>
 
-          <!-- Total con key único -->
-          <div
-            key="total"
-            class="bg-blue-50 rounded-xl p-4 border border-blue-200"
-          >
+          <!-- Total de la venta -->
+          <div key="total" class="bg-blue-50 rounded-xl p-4 border border-blue-200">
             <div class="flex justify-between items-center">
-              <span class="font-semibold text-gray-800">Total</span>
+              <div>
+                <span class="font-semibold text-gray-800">Total</span>
+                <span
+                  v-if="totalDiscountAccumulated > 0"
+                  class="text-xs text-emerald-700 block font-medium"
+                >
+                  Ahorro total aplicado: S/ {{ totalDiscountAccumulated.toFixed(2) }}
+                </span>
+              </div>
               <span class="text-xl font-bold text-blue-600">
                 S/
                 {{
                   transactionStore.transactionToAdd.value.items
-                    .reduce(
-                      (total, item) => total + item.quantity * item.price,
-                      0,
-                    )
+                    .reduce((total, item) => total + (item.quantity * item.price), 0)
                     .toFixed(2)
                 }}
               </span>
@@ -404,19 +493,12 @@
           </div>
         </template>
 
-        <!-- Estado vacío con key único -->
         <div v-else key="empty-state" class="text-center py-8">
-          <div
-            class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4"
-          >
+          <div class="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
             <KeyframePlus class="w-6 h-6 text-gray-400" />
           </div>
-          <h3 class="font-semibold text-gray-600 mb-1">
-            No hay productos agregados
-          </h3>
-          <p class="text-sm text-gray-500">
-            Empieza buscando un producto arriba.
-          </p>
+          <h3 class="font-semibold text-gray-600 mb-1">No hay productos agregados</h3>
+          <p class="text-sm text-gray-500">Empieza buscando un producto arriba.</p>
         </div>
       </TransitionGroup>
     </div>
@@ -427,52 +509,275 @@
 import { ref, computed, watch } from "vue";
 import { KeyframePlus, Xmark } from "@iconoir/vue";
 import SearchProductAsync from "@/components/basicAccountingRecordsBook/SearchProductAsync.vue";
+import MarginGuard from "@/components/transactionFlow/MarginGuard.vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { useBusinessStore } from "@/stores/businessStore";
 import { useCompositionStockValidation } from "@/composables/useCompositionStockValidation";
+import {
+  getPresentations,
+  isFractionalUnit,
+  quantityFromAmount,
+  applyDiscount,
+  evaluateMargin,
+  resolveMinMargin,
+  toBaseQuantity,
+} from "@/utils/presentationMath";
 
 const transactionStore = useTransactionStore();
+const businessStore = useBusinessStore();
 const { validateProductAndCompositionStock } = useCompositionStockValidation();
 
-// Referencias a los inputs
 const quantityInput = ref(null);
 const priceInput = ref(null);
-
-// Estado local para "proceder de todos modos"
 const proceedAnyway = ref(false);
 
-// Estado para validación de composición (se actualizará reactivamente)
+const sellMode = ref("quantity"); // 'quantity' | 'amount'
+const montoTarget = ref(0);
+
+const showDiscountPanel = ref(false);
+const discountPctInput = ref(null);
+const discountAmtInput = ref(null);
+const directNegotiatedPrice = ref(null);
+
 const compositionValidationResult = ref(null);
 const isValidatingComposition = ref(false);
 
-/**
- * Watch: Validar stock de composición cuando cambie la cantidad o el producto
- */
+const baseUnit = computed(() => {
+  return transactionStore.itemToAddInTransaction.value.unit || "uni";
+});
+
+const sellPresentations = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (!item.hasPresentations || !Array.isArray(item.presentations)) {
+    return [];
+  }
+  return item.presentations.filter((p) => p && p.isActive !== false && (!p.usage || p.usage.includes("sell")));
+});
+
+const currentPresentation = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const pId = item.presentationId;
+  const pres = sellPresentations.value;
+  return pres.find((p) => p.id === pId) || pres[0] || {
+    id: "pres_base",
+    name: (item.unit || "UNIDAD").toUpperCase(),
+    factor: 1,
+    price: item.price || 0,
+    allowSellByAmount: isFractionalUnit(item.unit),
+  };
+});
+
+const isGranelAllowed = computed(() => {
+  return Boolean(currentPresentation.value?.allowSellByAmount);
+});
+
+const quantityStep = computed(() => {
+  if (currentPresentation.value?.factor === 1 && isFractionalUnit(baseUnit.value)) {
+    return 0.01;
+  }
+  return 1;
+});
+
+const isPriceLocked = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  return item.oldOrNewProduct !== "new" && Number(currentListPrice.value) > 0;
+});
+
+const currentListPrice = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  return Number(item.listPrice ?? item.price ?? 0);
+});
+
+const selectedAvailableStock = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (item.variantId) {
+    return parseFloat(item.variantStock) || 0;
+  }
+  return parseFloat(item.stock) || 0;
+});
+
+const currentBaseQtyRequired = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const factor = Number(item.conversionFactor || 1);
+  return toBaseQuantity(item.quantity, factor);
+});
+
+// Política de precios del negocio
+const pricingPolicy = computed(() => {
+  const businessConfig = businessStore.business?.settings?.config?.pricing;
+  return {
+    minMarginPct: businessConfig?.minMarginPct ?? 20,
+    belowFloorAction: businessConfig?.belowFloorAction ?? "warn",
+    allowBelowCost: businessConfig?.allowBelowCost ?? false,
+  };
+});
+
+const canBypassMargin = computed(() => {
+  return businessStore.isCurrentUserManager || businessStore.hasPermission("manage_pricing");
+});
+
+const marginEvaluation = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (!item.description || !item.price || !item.baseUnitCost) return null;
+
+  const minMargin = resolveMinMargin(currentPresentation.value, pricingPolicy.value);
+  return evaluateMargin({
+    netPrice: item.price,
+    baseCost: item.baseUnitCost,
+    factor: item.conversionFactor || 1,
+    minMarginPct: minMargin,
+    allowBelowCost: pricingPolicy.value.allowBelowCost || canBypassMargin.value,
+  });
+});
+
+const isBlockedByPolicy = computed(() => {
+  if (!marginEvaluation.value) return false;
+  if (marginEvaluation.value.isBlocked) return true;
+
+  if (
+    marginEvaluation.value.status === "below_floor" &&
+    pricingPolicy.value.belowFloorAction === "require_manager" &&
+    !canBypassMargin.value
+  ) {
+    return true;
+  }
+
+  if (
+    marginEvaluation.value.status === "below_floor" &&
+    pricingPolicy.value.belowFloorAction === "block"
+  ) {
+    return true;
+  }
+
+  return false;
+});
+
+const totalDiscountAccumulated = computed(() => {
+  return (transactionStore.transactionToAdd.value.items || []).reduce((sum, it) => {
+    return sum + (it.discount?.total || 0);
+  }, 0);
+});
+
+// Selección de presentación
+const selectPresentation = (pres) => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  item.presentationId = pres.id;
+  item.presentationName = pres.name;
+  item.conversionFactor = Number(pres.factor || 1);
+  const newPrice = Number(pres.price || item.price || 0);
+  item.price = newPrice;
+  item.listPrice = newPrice;
+
+  // Limpiar descuentos previos
+  clearDiscount();
+};
+
+const setSellMode = (mode) => {
+  sellMode.value = mode;
+  if (mode === "amount") {
+    montoTarget.value = 5.0;
+    onMontoTargetInput();
+  }
+};
+
+const onMontoTargetInput = () => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const unitP = Number(item.listPrice || item.price || 1);
+  const result = quantityFromAmount({ amount: montoTarget.value, unitPrice: unitP });
+  item.quantity = result.quantity;
+  item.price = result.adjustedPrice;
+  item.soldByAmount = result.targetAmount;
+};
+
+// Manejo de descuentos
+const onDiscountPctInput = () => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const listP = currentListPrice.value;
+  const res = applyDiscount({ listPrice: listP, type: "percent", value: discountPctInput.value });
+  item.price = res.netPrice;
+  discountAmtInput.value = res.amountPerUnit;
+  directNegotiatedPrice.value = res.netPrice;
+  item.discount = {
+    type: "percent",
+    value: discountPctInput.value,
+    amountPerUnit: res.amountPerUnit,
+    discountPct: res.discountPct,
+  };
+};
+
+const onDiscountAmtInput = () => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const listP = currentListPrice.value;
+  const res = applyDiscount({ listPrice: listP, type: "amount", value: discountAmtInput.value });
+  item.price = res.netPrice;
+  discountPctInput.value = res.discountPct;
+  directNegotiatedPrice.value = res.netPrice;
+  item.discount = {
+    type: "amount",
+    value: discountAmtInput.value,
+    amountPerUnit: res.amountPerUnit,
+    discountPct: res.discountPct,
+  };
+};
+
+const onDirectNegotiatedPriceInput = () => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  const listP = currentListPrice.value;
+  const targetP = Math.max(0, Number(directNegotiatedPrice.value) || 0);
+  const diff = Math.max(0, listP - targetP);
+  discountAmtInput.value = diff;
+  onDiscountAmtInput();
+};
+
+const clearDiscount = () => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  item.price = currentListPrice.value;
+  discountPctInput.value = null;
+  discountAmtInput.value = null;
+  directNegotiatedPrice.value = null;
+  item.discount = null;
+};
+
+// Validación de stock
+const hasProductStockWarning = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (item.oldOrNewProduct === "new" || !item.trackStock || !item.quantity) return false;
+  return currentBaseQtyRequired.value > selectedAvailableStock.value;
+});
+
+const hasCompositionStockWarning = computed(() => {
+  return Boolean(compositionValidationResult.value?.hasCompositionStockIssue);
+});
+
+const hasStockWarning = computed(() => {
+  return hasProductStockWarning.value || hasCompositionStockWarning.value;
+});
+
+const canAddProduct = computed(() => {
+  const item = transactionStore.itemToAddInTransaction.value;
+  if (!item.description || !item.quantity || Number(item.quantity) <= 0) return false;
+  if (!item.price && !item.cost) return false;
+  if (isBlockedByPolicy.value) return false;
+  if (hasStockWarning.value && !proceedAnyway.value) return false;
+  return true;
+});
+
+// Watch: Composición
 watch(
   () => [
     transactionStore.itemToAddInTransaction.value.quantity,
+    transactionStore.itemToAddInTransaction.value.conversionFactor,
     transactionStore.itemToAddInTransaction.value.selectedProductUuid,
-    transactionStore.itemToAddInTransaction.value.variantId,
   ],
-  async ([quantity, productId]) => {
-    // Solo validar si hay producto, cantidad, y composición
+  async ([quantity, factor, productId]) => {
     const item = transactionStore.itemToAddInTransaction.value;
-
-    if (
-      !item.composition ||
-      !quantity ||
-      !productId ||
-      item.oldOrNewProduct === "new"
-    ) {
+    if (!item.composition || !quantity || !productId || item.oldOrNewProduct === "new") {
       compositionValidationResult.value = null;
-      isValidatingComposition.value = false;
       return;
     }
-
-    // Iniciar validación
     isValidatingComposition.value = true;
-
     try {
-      // Validar stock de composición de forma reactiva
+      const baseQty = toBaseQuantity(quantity, factor || 1);
       const result = await validateProductAndCompositionStock(
         {
           uuid: productId,
@@ -480,335 +785,54 @@ watch(
           stock: selectedAvailableStock.value,
           composition: item.composition,
         },
-        parseFloat(quantity),
+        baseQty
       );
-
       compositionValidationResult.value = result;
-    } catch (error) {
-      console.error("Error validando composición:", error);
+    } catch (e) {
+      console.error("Error validando composición:", e);
       compositionValidationResult.value = null;
     } finally {
       isValidatingComposition.value = false;
     }
-  },
-  { immediate: true },
+  }
 );
 
-/**
- * Computed: Verifica si hay advertencia de stock del producto final
- * Solo aplica si el producto tiene trackStock = true
- */
-const hasProductStockWarning = computed(() => {
-  if (transactionStore.itemToAddInTransaction.value.oldOrNewProduct === "new") {
-    return false;
-  }
-
-  const item = transactionStore.itemToAddInTransaction.value;
-
-  // Si no hay producto o cantidad seleccionada
-  if (!item.description || !item.quantity) return false;
-
-  // Si el producto NO tiene seguimiento de stock, no hay advertencia
-  if (!item.trackStock) return false;
-
-  // Si la cantidad excede el stock disponible
-  const quantity = parseFloat(item.quantity) || 0;
-  const stock = selectedAvailableStock.value;
-
-  return quantity > stock;
-});
-
-/**
- * Computed: Verifica si hay advertencia de stock de materiales en composición
- */
-const hasCompositionStockWarning = computed(() => {
-  if (!compositionValidationResult.value) return false;
-  return compositionValidationResult.value.hasCompositionStockIssue;
-});
-
-/**
- * Computed: Advertencia combinada de stock (producto + composición)
- */
-const hasStockWarning = computed(() => {
-  return hasProductStockWarning.value || hasCompositionStockWarning.value;
-});
-
-/**
- * Computed: Tipo de advertencia de stock
- */
-const stockWarningType = computed(() => {
-  if (hasProductStockWarning.value && hasCompositionStockWarning.value)
-    return "both";
-  if (hasProductStockWarning.value) return "product";
-  if (hasCompositionStockWarning.value) return "materials";
-  return null;
-});
-
-/**
- * Computed: Lista detallada de materiales insuficientes
- */
-const insufficientMaterialsDetails = computed(() => {
-  if (!compositionValidationResult.value?.compositionValidation) return [];
-  return (
-    compositionValidationResult.value.compositionValidation
-      .insufficientMaterials || []
-  );
-});
-
-const selectedAvailableStock = computed(() => {
-  const item = transactionStore.itemToAddInTransaction.value;
-  if (item.variantId) {
-    return Number(item.variantStock || 0);
-  }
-  return Number(item.stock || 0);
-});
-
-const requiresVariantSelection = computed(() => {
-  const item = transactionStore.itemToAddInTransaction.value;
-  return (
-    item.oldOrNewProduct === "old" &&
-    Boolean(item.hasVariants) &&
-    !item.variantId
-  );
-});
-
-/**
- * Computed: Información de que el producto no tiene composición definida
- */
-const needsCompositionSetup = computed(() => {
-  const item = transactionStore.itemToAddInTransaction.value;
-
-  // Solo para productos tipo PRODUCT o SERVICE
-  if (!["PRODUCT", "SERVICE"].includes(item.type)) return false;
-
-  // Si no tiene composición definida
-  return !item.composition || item.composition.length === 0;
-});
-
-/**
- * Computed: Determina si se puede agregar el producto
- */
-const canAddProduct = computed(() => {
-  const item = transactionStore.itemToAddInTransaction.value;
-
-  // Validaciones básicas
-  if (!item.description || !item.quantity || !item.price || !item.unit) {
-    return false;
-  }
-
-  if (requiresVariantSelection.value) {
-    return false;
-  }
-
-  // Si está validando composición, deshabilitar
-  if (isValidatingComposition.value) {
-    return false;
-  }
-
-  // Si hay advertencia de stock y NO se ha marcado "proceder de todos modos"
-  if (hasStockWarning.value && !proceedAnyway.value) {
-    return false;
-  }
-
-  return true;
-});
-
-/**
- * Maneja el agregado del producto y resetea el estado
- */
 const handleAddProduct = () => {
-  // Pasar el flag proceedAnyway al item antes de agregarlo
-  transactionStore.itemToAddInTransaction.value.proceedAnyway =
-    proceedAnyway.value;
+  if (!canAddProduct.value) return;
+
+  const item = transactionStore.itemToAddInTransaction.value;
+  item.proceedAnyway = proceedAnyway.value;
+
+  if (marginEvaluation.value) {
+    item.marginCheck = {
+      floorPrice: marginEvaluation.value.floorPrice,
+      minMarginPct: resolveMinMargin(currentPresentation.value, pricingPolicy.value),
+      status: marginEvaluation.value.status,
+      authorizedBy: canBypassMargin.value ? (businessStore.currentUser?.uid || "gerente") : null,
+    };
+  }
 
   transactionStore.addItemToTransaction();
-
-  // Resetear el checkbox
+  transactionStore.resetItemToAddInTransaction();
   proceedAnyway.value = false;
+  showDiscountPanel.value = false;
+  clearDiscount();
 };
 
-/**
- * Maneja el reset del producto seleccionado
- */
 const handleResetProduct = () => {
   transactionStore.resetItemToAddInTransaction();
-  // Resetear el checkbox
   proceedAnyway.value = false;
+  showDiscountPanel.value = false;
+  clearDiscount();
 };
 
-/**
- * Enfoca el input de precio cuando se presiona Enter en cantidad
- */
 const focusPriceInput = () => {
-  if (priceInput.value) {
-    priceInput.value.focus();
-  }
+  priceInput.value?.focus();
 };
 
-/**
- * Maneja el Enter en el input de precio
- */
 const handleAddProductOnEnter = () => {
   if (canAddProduct.value) {
     handleAddProduct();
   }
 };
 </script>
-
-<style scoped>
-/* Prevent zoom on iOS inputs */
-@media screen and (max-width: 480px) {
-  input[type="number"],
-  input[type="text"],
-  select {
-    font-size: 16px;
-  }
-}
-
-/* Loading animation */
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* ===== TRANSICIONES SUTILES ===== */
-
-/* Transición Badge (aparece/desaparece con escala) */
-.badge-enter-active,
-.badge-leave-active {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.badge-enter-from {
-  opacity: 0;
-  transform: scale(0.8) translateY(4px);
-}
-
-.badge-leave-to {
-  opacity: 0;
-  transform: scale(0.8) translateY(-4px);
-}
-
-/* Transición Fade + Scale (botón X, contador) */
-.fade-scale-enter-active,
-.fade-scale-leave-active {
-  transition: all 0.2s ease;
-}
-
-.fade-scale-enter-from,
-.fade-scale-leave-to {
-  opacity: 0;
-  transform: scale(0.85);
-}
-
-/* Transición Slide + Fade (sección de cantidad/precio) */
-.slide-fade-enter-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-fade-leave-active {
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-fade-enter-from {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-/* TransitionGroup para lista de productos */
-.list-move,
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.list-enter-from {
-  opacity: 0;
-  transform: translateX(-20px) scale(0.95);
-}
-
-.list-leave-to {
-  opacity: 0;
-  transform: translateX(20px) scale(0.95);
-}
-
-/* Asegurar que los elementos que salen no afecten el layout */
-.list-leave-active {
-  position: absolute;
-  width: 100%;
-}
-
-/* Animación suave para el total cuando cambia */
-.text-xl {
-  transition: all 0.2s ease;
-}
-
-/* Hover effects mejorados */
-button:not(:disabled) {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
-
-button:not(:disabled):active {
-  transform: translateY(0);
-}
-
-/* Focus states mejorados */
-input:focus,
-select:focus {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-/* Animación sutil de los indicadores de color */
-.bg-blue-500,
-.bg-green-500 {
-  animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse-soft {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-/* Transición suave para inputs disabled */
-input:disabled,
-select:disabled {
-  transition: all 0.3s ease;
-}
-
-/* Mejora visual al agregar producto (feedback) */
-@keyframes success-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
-  }
-}
-
-/* Aplicar animación al agregar (opcional, requiere clase dinámica) */
-.item-added {
-  animation: success-pulse 0.6s ease-out;
-}
-</style>

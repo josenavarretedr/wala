@@ -156,6 +156,7 @@ import BackBtn from "@/components/ui/BackBtn.vue";
 
 import NavigationBtnProductDetails from "@/components/Inventory/ProductDetails/NavigationBtnProductDetails.vue";
 import { useAcopioStore } from "@/stores/acopioStore";
+import { useProductCache } from "@/composables/useProductCache";
 
 // Router
 const route = useRoute();
@@ -163,6 +164,7 @@ const router = useRouter();
 
 // Composables
 const { getProductById } = useInventory();
+const { removeFromCache } = useProductCache();
 const acopioStore = useAcopioStore();
 
 // State
@@ -185,6 +187,7 @@ const loadProduct = async () => {
       return;
     }
 
+    removeFromCache(productId);
     const productData = await getProductById(productId);
     console.log("🔍 [ProductDetails] ProductData recibido:", productData);
     console.log(

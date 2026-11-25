@@ -31,10 +31,12 @@
       <!-- Detalles de la compra -->
       <div class="space-y-3 border-t pt-3">
         <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Cantidad comprada:</span>
+          <span class="text-sm text-gray-600">Presentación comprada:</span>
           <span class="font-semibold text-gray-900">
-            {{ flow.addStockData.quantity }}
-            {{ flow.addStockData.productData?.unit || "uni" }}
+            {{ flow.addStockData.quantity }} {{ flow.addStockData.presentationName || flow.addStockData.productData?.unit || "uni" }}
+            <span v-if="flow.addStockData.conversionFactor > 1" class="text-xs text-green-700 block text-right font-normal">
+              (= {{ flow.addStockData.baseQuantity }} {{ flow.addStockData.productData?.unit || "uni" }})
+            </span>
           </span>
         </div>
 

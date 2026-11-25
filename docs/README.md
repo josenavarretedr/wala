@@ -105,6 +105,7 @@ docs/
 
 | Archivo | Descripción | Estado |
 |---------|-------------|--------|
+| [SISTEMA_PRESENTACIONES.md](inventory/SISTEMA_PRESENTACIONES.md) | Sistema de presentaciones, venta a granel, CPP y descuentos | ✅ Activo |
 | [SISTEMA_ADICION_STOCK.md](inventory/SISTEMA_ADICION_STOCK.md) | Flujo de adición de stock | ✅ Activo |
 | [SISTEMA_ACOPIOS.md](inventory/SISTEMA_ACOPIOS.md) | Sistema integral de acopio de productos y liquidaciones | ✅ Activo |
 | [SISTEMA_REMOCION_STOCK.md](inventory/SISTEMA_REMOCION_STOCK.md) | Flujo de remoción de stock | ✅ Activo |

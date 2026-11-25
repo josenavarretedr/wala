@@ -630,6 +630,17 @@
         </div>
       </div>
 
+      <!-- SECCIÓN: Presentaciones / Multi-empaque (No para SERVICE) -->
+      <div v-if="localFormData.type !== 'SERVICE'" class="pt-4 border-t border-gray-100">
+        <PresentationsEditor
+          v-model="localFormData.presentations"
+          :baseUnit="localFormData.unit || 'uni'"
+          :basePrice="localFormData.price || 0"
+          :baseCost="localFormData.cost || 0"
+          @update:basePrice="localFormData.price = $event"
+        />
+      </div>
+
       <!-- Advertencia: Al menos precio o costo -->
       <div
         v-if="mode === 'create' && !localFormData.price && !localFormData.cost"
@@ -742,6 +753,7 @@
 import { ref, computed, watch } from "vue";
 import { useBusinessStore } from "@/stores/businessStore";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
+import PresentationsEditor from "@/components/Inventory/Presentations/PresentationsEditor.vue";
 
 // Props
 const props = defineProps({
@@ -896,7 +908,9 @@ const previousStep = () => {
 // Método para enviar el formulario
 const handleSubmit = () => {
   if (isFormValid.value) {
-    emit("submit", { ...localFormData.value });
+    const payload = { ...localFormData.value };
+    payload.hasPresentations = Boolean(payload.presentations && payload.presentations.length > 0);
+    emit("submit", payload);
   }
 };
 

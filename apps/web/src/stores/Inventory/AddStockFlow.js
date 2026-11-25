@@ -22,8 +22,13 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
       productId: null,
       productData: null, // Datos completos del producto
       quantity: 0,
-      cost: 0, // Costo de compra
-      priceConfirmed: false, // Si el costo fue confirmado
+      cost: 0, // Costo de compra por presentación
+      priceConfirmed: false,
+      presentationId: null,
+      presentationName: null,
+      conversionFactor: 1,
+      baseQuantity: 0,
+      baseUnitCost: 0,
       account: null, // 'cash' o 'bank'
       paymentType: 'complete', // 'complete' o 'partial'
       paidAmount: 0,
@@ -84,6 +89,11 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
         quantity: 0,
         cost: 0,
         priceConfirmed: false,
+        presentationId: null,
+        presentationName: null,
+        conversionFactor: 1,
+        baseQuantity: 0,
+        baseUnitCost: 0,
         account: null,
         paymentType: 'complete',
         paidAmount: 0,
@@ -95,17 +105,47 @@ export const useAddStockFlowStore = defineStore('addStockFlow', {
       };
     },
     // Actualizar datos del flujo
+    setPresentation(pres) {
+      if (!pres) return;
+      this.addStockData.presentationId = pres.id;
+      this.addStockData.presentationName = pres.name;
+      this.addStockData.conversionFactor = Number(pres.factor || 1);
+      this.computeBaseEquivalents();
+    },
+    computeBaseEquivalents() {
+      const factor = Number(this.addStockData.conversionFactor || 1);
+      const qty = Number(this.addStockData.quantity || 0);
+      const cost = Number(this.addStockData.cost || 0);
+      this.addStockData.baseQuantity = Math.round((qty * factor + Number.EPSILON) * 100) / 100;
+      this.addStockData.baseUnitCost = factor > 0 ? Math.round(((cost / factor) + Number.EPSILON) * 100) / 100 : cost;
+    },
     setProductData(productId, productData) {
       this.addStockData.productId = productId;
       this.addStockData.productData = productData;
+      // Configurar presentación por defecto
+      const presentations = Array.isArray(productData?.presentations) ? productData.presentations.filter(p => p && p.isActive !== false) : [];
+      const buyPres = presentations.filter(p => !p.usage || p.usage.includes('buy'));
+      const defaultPres = buyPres.find(p => p.isBase) || buyPres[0] || (presentations.length > 0 ? presentations[0] : null);
+      if (defaultPres) {
+        this.addStockData.presentationId = defaultPres.id;
+        this.addStockData.presentationName = defaultPres.name;
+        this.addStockData.conversionFactor = Number(defaultPres.factor || 1);
+      } else {
+        this.addStockData.presentationId = 'pres_base';
+        this.addStockData.presentationName = (productData?.unit || 'UNIDAD').toUpperCase();
+        this.addStockData.conversionFactor = 1;
+      }
+      this.computeBaseEquivalents();
       console.log('📦 Producto establecido:', { productId, productData });
     },
     setQuantity(quantity) {
       this.addStockData.quantity = quantity;
+      this.computeBaseEquivalents();
       console.log('📊 Cantidad establecida:', quantity);
     },
     setCost(cost) {
       this.addStockData.cost = cost;
+      this.computeBaseEquivalents();
       console.log('💰 Costo establecido:', cost);
     },
     setPriceConfirmed(confirmed) {

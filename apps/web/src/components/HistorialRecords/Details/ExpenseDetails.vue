@@ -224,9 +224,24 @@
                       {{ material.variantLabel }}
                     </span>
                   </div>
-                  <div class="text-sm text-gray-600">
-                    {{ material.quantity }} {{ material.unit || "uni" }} × S/
-                    {{ material.cost.toFixed(2) }}
+                  <div class="flex flex-wrap items-center gap-1.5 text-sm text-gray-600">
+                    <span class="font-medium text-gray-800">
+                      {{ material.quantity }}
+                      {{ material.presentationName || material.unit || "uni" }}
+                    </span>
+                    <span
+                      v-if="material.conversionFactor > 1"
+                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    >
+                      = {{ material.baseQuantity || (material.quantity * material.conversionFactor) }} {{ material.unit || "uni" }}
+                    </span>
+                    <span>× S/ {{ Number(material.cost || 0).toFixed(2) }}</span>
+                  </div>
+                  <div
+                    v-if="material.conversionFactor > 1"
+                    class="text-xs text-gray-500 mt-0.5"
+                  >
+                    Costo base: S/ {{ Number(material.baseUnitCost ?? (material.cost / material.conversionFactor)).toFixed(2) }} / {{ material.unit || "uni" }}
                   </div>
                 </div>
                 <div class="text-right">

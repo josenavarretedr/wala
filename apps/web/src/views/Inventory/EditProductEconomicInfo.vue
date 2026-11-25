@@ -79,8 +79,11 @@ const saving = ref(false);
 const productData = ref({
   description: "",
   type: "MERCH",
+  unit: "uni",
   price: 0,
   cost: null,
+  hasPresentations: false,
+  presentations: [],
 });
 
 const loadProductData = async () => {
@@ -95,11 +98,14 @@ const loadProductData = async () => {
     productData.value = {
       description: product.description || "",
       type: product.type || "MERCH",
+      unit: product.unit || "uni",
       price: product.price || 0,
       cost: product.cost || null,
       costStructure: product.costStructure ?? null,
       deliveryConfig: product.deliveryConfig ?? null,
       deliveryEnabled: product.deliveryEnabled ?? false,
+      hasPresentations: Boolean(product.hasPresentations),
+      presentations: Array.isArray(product.presentations) ? product.presentations : [],
     };
     console.log(
       "✅ Información económica cargada desde BD:",
@@ -119,7 +125,16 @@ const handleSave = async (payload) => {
   try {
     saving.value = true;
     const productId = route.params.productId;
-    await inventoryStore.updateProduct(productId, payload.changes);
+    const changesToPersist = {
+      ...(payload.changes || {}),
+      ...(payload.presentations !== undefined
+        ? {
+            presentations: payload.presentations,
+            hasPresentations: Boolean(payload.hasPresentations),
+          }
+        : {}),
+    };
+    await inventoryStore.updateProduct(productId, changesToPersist);
     console.log("✅ Información económica actualizada:", payload.changes);
     success("Información económica actualizada correctamente");
     setTimeout(() => {

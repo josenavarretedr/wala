@@ -4,7 +4,7 @@
 > Es la fuente de verdad rápida, técnica y operativa del proyecto. Para especificaciones exhaustivas por módulo, consulta [`docs/README.md`](docs/README.md).
 
 **Última actualización:** Noviembre 2026 (Monorepo Workspaces + Wala Coop/Acopios + Remotion Motion Suite + P&L Devengado + Reversión Segura de Ventas)  
-**Dominio Web:** [wala.lat](https://wala.lat) | **Hosting Contenido:** `wala-content`  
+**Dominio Web:** [wala.lat](https://wala.lat) | **Dominio Plan:** [plan.wala.lat](https://plan.wala.lat) | **Hosting Contenido:** `wala-content` | **Hosting Plan:** `wala-plan`  
 **Firebase Project ID:** `wala-lat`  
 **Arquitectura:** Monorepo con `npm workspaces` (`apps/*`, `packages/*`)
 
@@ -49,7 +49,19 @@
 | **Validación** | Zod | 4.5.4 | Esquemas de tipado y props para Remotion Studio |
 | **Composiciones** | Vertical 9:16 (1080x1920) & HUDs | 60 fps | Spots para bodegas, ferreterías, cooperativas y LowerThirds |
 
-### 1.4 `apps/functions` (Backend Serverless)
+### 1.4 `apps/plan` (Plan Seed / Formulación de Plan de Negocio y Capital Semilla)
+
+| Capa | Tecnología | Versión | Propósito |
+|------|-----------|---------|-----------|
+| **Framework** | Vue 3 (Composition API) + VitePWA | ^3.5.13 | PWA Offline-First para formulación de planes y costeo |
+| **State** | Pinia | ^2.3.1 | Manejo de estado reactivo, costeo y sincronización |
+| **Routing** | Vue Router 4 | ^4.5.0 | Enrutamiento con vistas de emprendedor y consola de facilitador |
+| **Offline Engine**| IndexedDB (`idb`) + SyncQueue | ^8.0.2 | Persistencia offline estricta y sincronización FIFO |
+| **AI Assist** | Grok (xAI) + Gemini | API | Redacción y formalización de respuestas de participantes |
+| **Exportación** | `docx` + `jszip` + `xlsx` | ^9.7.1 / ^3.10.2 | Generación de expedientes DOCX y paquetes ZIP de cohorte |
+| **Subdominio** | `plan.wala.lat` | Hosting `wala-plan` | Subdominio dedicado con integración fluida hacia Wala ERP |
+
+### 1.5 `apps/functions` (Backend Serverless)
 
 | Capa | Tecnología | Versión | Propósito |
 |------|-----------|---------|-----------|
@@ -62,20 +74,22 @@
 | **AI Engine** | OpenAI SDK (Proxy Grok/xAI + GPT) | ^6.3.0 | Clasificación en 3 capas de inventario y gastos |
 | **Manipulación** | Sharp | ^0.33.2 | Optimización y compresión de archivos multimedia |
 
-### 1.5 Comandos Principales del Monorepo
+### 1.6 Comandos Principales del Monorepo
 
 ```bash
 # Desarrollo local
 npm run dev              # Inicia apps/web (puerto 5173)
 npm run dev:web          # Alias explícito de apps/web
 npm run dev:content      # Inicia apps/content (puerto 5173 o siguiente)
+npm run dev:plan         # Inicia apps/plan (puerto 5175)
 npm run dev:video        # Abre Remotion Studio para edición de video
 
 # Compilación y builds
-npm run build            # Compila apps/web y apps/content
+npm run build            # Compila apps/web, apps/content y apps/plan
 npm run build:all        # Compila todos los workspaces
 npm run build:web        # Compila apps/web -> apps/web/dist
 npm run build:content    # Compila apps/content -> apps/content/dist
+npm run build:plan       # Compila apps/plan -> apps/plan/dist
 npm run build:video      # Bundle de producción de Remotion
 
 # Emuladores locales de Firebase
@@ -83,7 +97,10 @@ npm run emulators:start  # Inicia emuladores (Auth:9099, Firestore:8080, Functio
 npm run emulators:export # Guarda el estado de pruebas en ./emulator-data
 
 # Despliegue
-npm run deploy           # Compila web y sube hosting
+npm run deploy           # Compila y sube los 3 sitios de hosting
+npm run deploy:web       # Compila y despliega apps/web a hosting wala-lat
+npm run deploy:content   # Compila y despliega apps/content a hosting wala-content
+npm run deploy:plan      # Compila y despliega apps/plan a hosting wala-plan (plan.wala.lat)
 npm run deploy:functions # Despliega solo Cloud Functions
 npm run deploy:full      # Compila y despliega Hosting, Functions, Rules e Indexes
 

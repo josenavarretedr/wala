@@ -25,6 +25,12 @@ import { useBusinessStore } from "@/stores/businessStore";
 import { ensureBusinessId } from "@/composables/useBusinessUtils";
 import { v4 as uuidv4 } from 'uuid';
 import { round2, addMoney, roundStock, subtractStock, addStock } from '@/utils/mathUtils';
+import {
+  computeWeightedAverageCost,
+  getPresentations,
+  getBasePresentation,
+  isFractionalUnit,
+} from '@/utils/presentationMath';
 
 const db = getFirestore(appFirebase);
 
@@ -174,6 +180,80 @@ const validateUniqueVariantLabel = (variantCombos = []) => {
   }
 };
 
+const normalizePresentations = (presentations = [], baseUnit = 'uni', basePrice = 0) => {
+  if (!Array.isArray(presentations)) {
+    return [];
+  }
+
+  const normalized = [];
+  const factors = new Set();
+  const names = new Set();
+
+  for (const pres of presentations) {
+    if (!pres || pres.isActive === false) continue;
+    const factor = Math.max(1, Math.round(Number(pres.factor) || 1));
+    const name = String(pres.name || '').trim();
+    if (!name) continue;
+
+    const lowerName = name.toLowerCase();
+    if (factors.has(factor)) {
+      throw new Error(`Factor de presentación duplicado: ${factor}`);
+    }
+    if (names.has(lowerName)) {
+      throw new Error(`Nombre de presentación duplicado: ${name}`);
+    }
+
+    factors.add(factor);
+    names.add(lowerName);
+
+    normalized.push({
+      id: pres.id || createLocalId('pres'),
+      name,
+      factor,
+      price: pres.price !== undefined && pres.price !== null ? Number(pres.price) : 0,
+      minMarginPct:
+        pres.minMarginPct !== null && pres.minMarginPct !== undefined && !isNaN(Number(pres.minMarginPct))
+          ? Number(pres.minMarginPct)
+          : null,
+      usage: Array.isArray(pres.usage) && pres.usage.length > 0 ? pres.usage : ['buy', 'sell'],
+      isBase: Boolean(pres.isBase) || factor === 1,
+      isActive: pres.isActive !== false,
+      sku: (pres.sku || '').trim() || null,
+      allowSellByAmount: Boolean(pres.allowSellByAmount),
+    });
+  }
+
+  let basePres = normalized.find((p) => p.factor === 1);
+  if (!basePres) {
+    basePres = {
+      id: createLocalId('pres'),
+      name: (baseUnit || 'Unidad').toUpperCase(),
+      factor: 1,
+      price: Number(basePrice) || 0,
+      isBase: true,
+      isActive: true,
+      usage: ['buy', 'sell'],
+      minMarginPct: null,
+      sku: null,
+      allowSellByAmount: isFractionalUnit(baseUnit),
+    };
+    normalized.unshift(basePres);
+  } else {
+    basePres.isBase = true;
+    if (basePrice !== undefined && basePrice !== null) {
+      basePres.price = Number(basePrice);
+    }
+  }
+
+  for (const p of normalized) {
+    if (p !== basePres) {
+      p.isBase = false;
+    }
+  }
+
+  return normalized;
+};
+
 export function useInventory() {
   const businessStore = useBusinessStore();
 
@@ -311,6 +391,11 @@ export function useInventory() {
           : { combineAttributes: false, attributes: [] },
         variantCombos: hasVariants ? normalizedVariantCombos : [],
         stockSummary: hasVariants ? buildVariantStockSummary(normalizedVariantCombos) : null,
+        hasPresentations: Boolean(productData.hasPresentations),
+        presentations: productData.hasPresentations
+          ? normalizePresentations(productData.presentations, productData.unit, productData.price)
+          : [],
+        costMethod: 'weighted_average',
         stockLog: [], // Historial de stock vacío al crear
         createdAt: serverTimestamp(),
       };
@@ -384,6 +469,19 @@ export function useInventory() {
 
       if (item.variantSku) {
         stockLog.variantSku = String(item.variantSku).trim();
+      }
+
+      if (item.presentationId) {
+        stockLog.presentationId = String(item.presentationId);
+      }
+      if (item.presentationName) {
+        stockLog.presentationName = String(item.presentationName);
+      }
+      if (item.presentationQty !== undefined && item.presentationQty !== null) {
+        stockLog.presentationQty = Number(item.presentationQty);
+      }
+      if (item.conversionFactor !== undefined && item.conversionFactor !== null) {
+        stockLog.conversionFactor = Number(item.conversionFactor);
       }
 
       // Siempre registrar cost y price para todos los movimientos
@@ -569,12 +667,29 @@ export function useInventory() {
           updatedAt: new Date().toISOString(),
         };
 
-        await updateDoc(productRef, {
+        const variantProductUpdates = {
           variantCombos: currentVariants,
           stock: computeTotalStockFromVariants(currentVariants),
           stockSummary: buildVariantStockSummary(currentVariants),
           updatedAt: serverTimestamp(),
-        });
+        };
+
+        if (stockLog.type === 'buy' && !stockLog.isAcopio && stockLog.cost !== undefined && stockLog.cost !== null) {
+          const currentTotalStock = Number(productData.stock || 0);
+          const newCPP = computeWeightedAverageCost({
+            currentStock: currentTotalStock,
+            currentCost: Number(productData.cost || 0),
+            inQty: Number(stockLog.quantity || 0),
+            inUnitCost: Number(stockLog.cost || 0),
+          });
+          variantProductUpdates.cost = newCPP;
+          variantProductUpdates.costMethod = 'weighted_average';
+          if (productData.type === 'MERCH' || productData.type === 'RAW_MATERIAL') {
+            variantProductUpdates['costStructure.materials'] = newCPP;
+          }
+        }
+
+        await updateDoc(productRef, variantProductUpdates);
 
         console.log('✅ Stock de variante actualizado:', {
           variantId: item.variantId,
@@ -781,10 +896,29 @@ export function useInventory() {
         // ✅ Aplicar redondeo para evitar decimales excesivos
         newStock = addStock(itemData.stock, stockLog.quantity);
 
-        // Si es una compra y viene un nuevo costo, actualizarlo (excepto en acopios)
+        // Si es una compra y viene un nuevo costo, recalcular con CPP (excepto en acopios)
         if (stockLog.type === 'buy' && !stockLog.isAcopio && stockLog.cost !== undefined && stockLog.cost !== null) {
-          updateData.cost = Number(stockLog.cost);
-          console.log(`💰 Actualizando costo del producto a: S/ ${stockLog.cost}`);
+          const incomingUnitCost = Number(stockLog.cost);
+          const incomingQty = Number(stockLog.quantity);
+          const currentStock = Number(itemData.stock || 0);
+          const currentCost = Number(itemData.cost || 0);
+
+          const newCPP = computeWeightedAverageCost({
+            currentStock,
+            currentCost,
+            inQty: incomingQty,
+            inUnitCost: incomingUnitCost,
+          });
+
+          updateData.cost = newCPP;
+          updateData.costMethod = 'weighted_average';
+          console.log(`💰 [CPP] Actualizando costo promedio ponderado a: S/ ${newCPP} (previo: S/ ${currentCost}, stock: ${currentStock}, entrante: ${incomingQty} @ S/ ${incomingUnitCost})`);
+
+          const prodType = itemData.type || 'MERCH';
+          if (prodType === 'MERCH' || prodType === 'RAW_MATERIAL') {
+            updateData['costStructure.materials'] = newCPP;
+            updateData['costStructure.updatedAt'] = serverTimestamp();
+          }
         }
       }
 
@@ -982,6 +1116,18 @@ export function useInventory() {
         updatePayload.defaultYieldFactor = updatedData.defaultYieldFactor === null 
           ? null 
           : Number(updatedData.defaultYieldFactor);
+      }
+
+      // Actualizar si tiene presentaciones
+      if (updatedData.hasPresentations !== undefined) {
+        updatePayload.hasPresentations = Boolean(updatedData.hasPresentations);
+      }
+
+      // Actualizar presentaciones
+      if (updatedData.presentations !== undefined) {
+        const unitForPres = updatedData.unit || productDoc.data()?.unit || 'uni';
+        const priceForPres = updatedData.price !== undefined ? Number(updatedData.price) : (productDoc.data()?.price || 0);
+        updatePayload.presentations = normalizePresentations(updatedData.presentations, unitForPres, priceForPres);
       }
 
       // Actualizar si tiene variantes

@@ -423,6 +423,58 @@
       </p>
     </div>
 
+    <!-- Presentaciones y Multi-empaque (Resumen y enlace directo) -->
+    <div
+      v-if="localFormData.type !== 'SERVICE'"
+      class="border border-indigo-100 bg-indigo-50/40 rounded-xl p-4 space-y-3"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 class="text-sm font-semibold text-indigo-950 flex items-center gap-2">
+            Presentaciones / Empaques
+            <span class="text-[11px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-medium">
+              Unidad base: {{ localFormData.unit || "uni" }}
+            </span>
+          </h4>
+          <p class="text-xs text-indigo-800/80 mt-0.5">
+            Configura presentaciones adicionales (cajas, six-packs, sacos) y sus precios de venta en Información Económica.
+          </p>
+        </div>
+        <router-link
+          :to="{
+            name: 'InventoryEditProductEconomicInfo',
+            params: {
+              businessId: $route.params.businessId,
+              productId: $route.params.productId,
+            },
+          }"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-indigo-700 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors shadow-xs"
+        >
+          Configurar precios y empaques →
+        </router-link>
+      </div>
+
+      <div
+        v-if="localFormData.presentations && localFormData.presentations.length > 0"
+        class="flex flex-wrap gap-2 pt-1"
+      >
+        <div
+          v-for="pres in localFormData.presentations"
+          :key="pres.id"
+          class="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white border border-indigo-100 text-xs shadow-2xs"
+        >
+          <span class="font-semibold text-gray-800">{{ pres.name }}</span>
+          <span class="text-gray-400">•</span>
+          <span class="text-indigo-600 font-medium">x{{ pres.factor }} {{ localFormData.unit || "uni" }}</span>
+          <span class="text-gray-400">•</span>
+          <span class="font-bold text-emerald-700">S/ {{ Number(pres.price || 0).toFixed(2) }}</span>
+        </div>
+      </div>
+      <div v-else class="text-xs text-indigo-700/70 italic">
+        Actualmente opera solo en unidad base ({{ localFormData.unit || "uni" }}).
+      </div>
+    </div>
+
     <!-- Variantes -->
     <div
       class="border border-gray-200 rounded-lg p-4 space-y-4"

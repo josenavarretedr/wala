@@ -202,7 +202,13 @@
                   <div>
                     <span class="text-gray-500 block">Cantidad Acopiada:</span>
                     <span class="font-bold text-gray-800 text-sm">
-                      {{ item.quantity }} {{ item.unit || "uni" }}
+                      {{ item.quantity }} {{ item.presentationName || item.unit || "uni" }}
+                    </span>
+                    <span
+                      v-if="item.conversionFactor > 1"
+                      class="block text-xs text-emerald-700 font-medium"
+                    >
+                      (= {{ item.baseQuantity || (item.quantity * item.conversionFactor) }} {{ item.unit || "uni" }})
                     </span>
                   </div>
                   <div>

@@ -137,6 +137,14 @@ const itemToAddInExpenseMaterial = ref({
   variantLabel: null,
   variantSku: null,
   variantStock: null,
+  hasPresentations: false,
+  presentations: [],
+  presentationId: null,
+  presentationName: null,
+  conversionFactor: 1,
+  baseQuantity: null,
+  baseUnitCost: null,
+  baseCost: null,
 });
 
 
@@ -313,7 +321,7 @@ export function useTransactionStore() {
     console.log(`✅ [SYSTEM] Transacción guardada: ${transaction.type} (uuid: ${transaction.uuid})`);
   };
 
-  const addTransaction = async () => {
+  const addTransaction = async (options = {}) => {
     const { useAuthStore } = await import('@/stores/authStore');
     const { useUserStore } = await import('@/stores/useUserStore');
     const authStore = useAuthStore();
@@ -449,21 +457,28 @@ export function useTransactionStore() {
             }).catch(err => console.warn('⚠️ Traceability log failed:', err));
 
             // Agregar transactionId al item para registrarlo en el stockLog
+            const isPres = Boolean(item.conversionFactor && item.conversionFactor > 1);
+            const baseQty = Number(item.baseQuantity || (isPres ? item.quantity * item.conversionFactor : item.quantity));
+            const baseUnitCost = Number(item.baseUnitCost ?? (isPres ? item.cost / item.conversionFactor : item.cost) ?? 0);
+            const baseUnitPrice = (item.price || 0) / (item.conversionFactor || 1);
+
             const itemWithTransaction = {
               ...item,
               transactionId: transactionId,
-              // IMPORTANTE: quantity siempre es la cantidad solicitada por el usuario
-              // El ajuste de stock se hace en updateStock() de useInventory
-              quantity: item.quantity,
-              // Pasar también la cantidad máxima disponible para el ajuste
-              quantityForStock: item.quantityForStock,
-              // ✅ CAMPOS NECESARIOS PARA CREAR PRODUCTO NUEVO AUTOMÁTICAMENTE
+              // En el stockLog, la cantidad siempre va en UNIDAD BASE
+              quantity: baseQty,
+              quantityForStock: item.quantityForStock !== undefined ? item.quantityForStock : baseQty,
+              cost: baseUnitCost,
+              price: baseUnitPrice,
+              presentationId: item.presentationId || null,
+              presentationName: item.presentationName || null,
+              conversionFactor: item.conversionFactor || 1,
+              presentationQty: item.quantity,
               oldOrNewProduct: item.oldOrNewProduct,
               description: item.description,
               unit: item.unit,
-              price: item.price,
-              trackStock: item.trackStock !== undefined ? item.trackStock : true, // ✅ true para MERCH
-              productType: 'MERCH' // Tipo por defecto para productos de venta
+              trackStock: item.trackStock !== undefined ? item.trackStock : true,
+              productType: 'MERCH'
             };
 
             console.log('📦 Procesando item para stockLog:', {
@@ -492,7 +507,7 @@ export function useTransactionStore() {
             console.log('🔍 Procesando stockLog y composición en paralelo para:', itemUuid);
             const [stockLogUuid, materialStockLogs] = await Promise.all([
               createStockLog(itemWithTransaction),
-              processCompositionStockLogs(itemUuid, item.quantity, transactionId, item.variantId)
+              processCompositionStockLogs(itemUuid, baseQty, transactionId, item.variantId)
             ]);
 
             if (materialStockLogs.length > 0) {
@@ -1279,7 +1294,8 @@ export function useTransactionStore() {
         entityType: 'transaction',
         description: transactionToAdd.value.type === 'income'
           ? 'Registrar venta'
-          : 'Registrar gasto'
+          : 'Registrar gasto',
+        awaitRemote: Boolean(options?.awaitRemote)
       }
     );
 
@@ -1773,6 +1789,36 @@ export function useTransactionStore() {
       product.variantStock !== undefined && product.variantStock !== null
         ? Number(product.variantStock)
         : null;
+
+    // Configurar presentaciones
+    itemToAddInTransaction.value.hasPresentations = Boolean(product.hasPresentations);
+    itemToAddInTransaction.value.presentations = product.presentations || [];
+
+    const presentations = Array.isArray(product.presentations)
+      ? product.presentations.filter((p) => p && p.isActive !== false)
+      : [];
+    const sellPres = presentations.filter((p) => !p.usage || p.usage.includes('sell'));
+    const defaultPres = sellPres.find((p) => p.isBase) || sellPres[0] || (presentations.length > 0 ? presentations[0] : null);
+
+    if (defaultPres) {
+      itemToAddInTransaction.value.presentationId = defaultPres.id;
+      itemToAddInTransaction.value.presentationName = defaultPres.name;
+      itemToAddInTransaction.value.conversionFactor = Number(defaultPres.factor || 1);
+      const chosenPrice = defaultPres.price !== undefined && defaultPres.price !== null ? Number(defaultPres.price) : Number(product.price || 0);
+      itemToAddInTransaction.value.price = chosenPrice;
+      itemToAddInTransaction.value.listPrice = chosenPrice;
+    } else {
+      itemToAddInTransaction.value.presentationId = 'pres_base';
+      itemToAddInTransaction.value.presentationName = (product.unit || 'UNIDAD').toUpperCase();
+      itemToAddInTransaction.value.conversionFactor = 1;
+      itemToAddInTransaction.value.price = Number(product.price || 0);
+      itemToAddInTransaction.value.listPrice = Number(product.price || 0);
+    }
+
+    itemToAddInTransaction.value.baseUnitCost = Number(product.cost || 0);
+    itemToAddInTransaction.value.discount = null;
+    itemToAddInTransaction.value.soldByAmount = null;
+    itemToAddInTransaction.value.marginCheck = null;
   }
 
   const modifyItemToAddInExpenseMaterial = (material) => {
@@ -1797,6 +1843,14 @@ export function useTransactionStore() {
       material.variantStock !== undefined && material.variantStock !== null
         ? Number(material.variantStock)
         : null;
+    itemToAddInExpenseMaterial.value.hasPresentations = Boolean(material.hasPresentations);
+    itemToAddInExpenseMaterial.value.presentations = material.presentations || [];
+    itemToAddInExpenseMaterial.value.presentationId = material.presentationId ?? null;
+    itemToAddInExpenseMaterial.value.presentationName = material.presentationName ?? null;
+    itemToAddInExpenseMaterial.value.conversionFactor = Number(material.conversionFactor || 1);
+    itemToAddInExpenseMaterial.value.baseQuantity = material.baseQuantity ?? null;
+    itemToAddInExpenseMaterial.value.baseUnitCost = material.baseUnitCost ?? null;
+    itemToAddInExpenseMaterial.value.baseCost = material.cost ?? null;
   }
 
   const resetItemToAddInTransaction = () => {
@@ -1810,7 +1864,7 @@ export function useTransactionStore() {
       selectedProductUuid: null,
       unit: null,
       stock: null,
-      trackStock: true, // ✅ true por defecto para productos MERCH
+      trackStock: true,
       proceedAnyway: false,
       composition: null,
       compositionStockValidation: null,
@@ -1820,6 +1874,17 @@ export function useTransactionStore() {
       variantLabel: null,
       variantSku: null,
       variantStock: null,
+      hasPresentations: false,
+      presentations: [],
+      presentationId: null,
+      presentationName: null,
+      conversionFactor: 1,
+      baseQuantity: null,
+      baseUnitCost: null,
+      listPrice: null,
+      discount: null,
+      soldByAmount: null,
+      marginCheck: null,
     };
   }
 
@@ -1838,6 +1903,14 @@ export function useTransactionStore() {
       variantLabel: null,
       variantSku: null,
       variantStock: null,
+      hasPresentations: false,
+      presentations: [],
+      presentationId: null,
+      presentationName: null,
+      conversionFactor: 1,
+      baseQuantity: null,
+      baseUnitCost: null,
+      baseCost: null,
     };
   }
 
@@ -1863,47 +1936,40 @@ export function useTransactionStore() {
   const addItemToTransaction = () => {
     const item = { ...itemToAddInTransaction.value };
 
-    // ✅ GENERAR UUID PARA PRODUCTOS NUEVOS
     if (item.oldOrNewProduct === 'new' && !item.selectedProductUuid) {
       item.uuid = uuidv4();
-      item.selectedProductUuid = item.uuid; // Mantener consistencia
-      console.log('🆕 UUID generado para producto nuevo:', {
-        description: item.description,
-        uuid: item.uuid
-      });
+      item.selectedProductUuid = item.uuid;
     } else if (item.oldOrNewProduct === 'old' && item.selectedProductUuid) {
-      // Para productos existentes, usar el UUID del producto seleccionado
       item.uuid = item.selectedProductUuid;
     }
 
-    // Si el producto tiene seguimiento de stock y se marcó "proceder de todos modos"
+    // Cálculos de presentación y cantidad base
+    const factor = Number(item.conversionFactor || 1);
+    const presQty = Number(item.quantity || 0);
+    const baseQuantity = Math.round((presQty * factor + Number.EPSILON) * 100) / 100;
+    item.baseQuantity = baseQuantity;
+
+    // Si el producto tiene seguimiento de stock
     if (item.trackStock && item.proceedAnyway) {
-      const requestedQuantity = parseFloat(item.quantity) || 0;
+      const requestedBaseQuantity = baseQuantity;
       const availableStock = item.variantId
         ? parseFloat(item.variantStock) || 0
         : parseFloat(item.stock) || 0;
 
-      // Calcular la cantidad real que se puede vender
-      const actualQuantity = Math.min(requestedQuantity, availableStock);
+      const actualBaseQuantity = Math.min(requestedBaseQuantity, availableStock);
 
-      // Guardar la cantidad solicitada original y la cantidad real
-      item.requestedQuantity = requestedQuantity;
-      item.actualQuantity = actualQuantity;
-
-      // La cantidad que se registrará en el stock es la real
-      item.quantityForStock = actualQuantity;
-
-      console.log('📊 Agregando item con stock insuficiente:', {
-        descripcion: item.description,
-        cantidadSolicitada: requestedQuantity,
-        stockDisponible: availableStock,
-        cantidadReal: actualQuantity,
-        stockFinal: availableStock - actualQuantity
-      });
+      item.requestedQuantity = presQty;
+      item.actualQuantity = factor > 0 ? Math.round((actualBaseQuantity / factor + Number.EPSILON) * 100) / 100 : actualBaseQuantity;
+      item.quantityForStock = actualBaseQuantity;
+    } else if (item.trackStock) {
+      item.quantityForStock = baseQuantity;
     }
 
-    // ✅ Congelar costo y estructura de costos en el item vendido
-    item.cost = item.cost !== undefined && item.cost !== null ? Number(item.cost) : 0;
+    // Congelar costo por presentación para P&L y reportes
+    const baseUnitCost = Number(item.baseUnitCost ?? item.cost ?? 0);
+    item.baseUnitCost = baseUnitCost;
+    item.cost = Math.round((baseUnitCost * factor + Number.EPSILON) * 100) / 100;
+
     if (!item.costStructure) {
       item.costStructure = {
         materials: item.cost,
@@ -1912,10 +1978,15 @@ export function useTransactionStore() {
       };
     } else {
       item.costStructure = {
-        materials: Number(item.costStructure.materials ?? item.cost ?? 0),
-        mod: Number(item.costStructure.mod ?? 0),
-        cif: Number(item.costStructure.cif ?? 0),
+        materials: Math.round(((Number(item.costStructure.materials ?? baseUnitCost) * factor) + Number.EPSILON) * 100) / 100,
+        mod: Math.round(((Number(item.costStructure.mod ?? 0) * factor) + Number.EPSILON) * 100) / 100,
+        cif: Math.round(((Number(item.costStructure.cif ?? 0) * factor) + Number.EPSILON) * 100) / 100,
       };
+    }
+
+    // Calcular total de descuento de la línea
+    if (item.discount && item.discount.amountPerUnit) {
+      item.discount.total = Math.round((item.discount.amountPerUnit * presQty + Number.EPSILON) * 100) / 100;
     }
 
     transactionToAdd.value.items.push(item);
@@ -1964,6 +2035,12 @@ export function useTransactionStore() {
     }
 
     // Homogeneizar estructura con campos consistentes
+    const factor = Number(material.conversionFactor || 1);
+    const qty = Number(material.quantity || 0);
+    const unitCost = Number(material.cost || 0);
+    const baseQty = material.baseQuantity ?? (qty * factor);
+    const baseUnitCost = material.baseUnitCost ?? (factor > 1 ? unitCost / factor : unitCost);
+
     const materialItem = {
       uuid: itemUuid,
       productId: productId, // ID del producto en la collection 'products'
@@ -1971,10 +2048,16 @@ export function useTransactionStore() {
       quantity: material.quantity,
       unit: material.unit,
       cost: material.cost,
+      totalCost: qty * unitCost,
       oldOrNewProduct: material.oldOrNewProduct,
       variantId: material.variantId || null,
       variantLabel: material.variantLabel || null,
       variantSku: material.variantSku || null,
+      presentationId: material.presentationId || null,
+      presentationName: material.presentationName || null,
+      conversionFactor: factor,
+      baseQuantity: baseQty,
+      baseUnitCost: baseUnitCost,
       stockLogId: null, // Se asignará después de crear el stockLog
     };
 
@@ -1996,21 +2079,7 @@ export function useTransactionStore() {
     });
 
     // Resetear el item
-    itemToAddInExpenseMaterial.value = {
-      description: null,
-      quantity: null,
-      cost: null,
-      oldOrNewProduct: null,
-      selectedProductUuid: null,
-      unit: null,
-      stock: null,
-      trackStock: true,
-      hasVariants: false,
-      variantId: null,
-      variantLabel: null,
-      variantSku: null,
-      variantStock: null,
-    };
+    resetItemToAddInExpenseMaterial();
   }
 
   const removeItemToTransaction = (uuid) => {
@@ -2107,6 +2176,24 @@ export function useTransactionStore() {
   };
 
   /**
+   * Normaliza Timestamps serializados provenientes de Cloud Functions (`_seconds`, ISO, etc.)
+   * a una instancia real de `Timestamp` de Firestore Web SDK.
+   */
+  const normalizeCallableTimestamp = (ts) => {
+    if (!ts) return Timestamp.now();
+    if (ts instanceof Timestamp) return ts;
+    if (typeof ts?.toMillis === 'function') return Timestamp.fromMillis(ts.toMillis());
+    if (typeof ts?._seconds === 'number') {
+      return new Timestamp(ts._seconds, ts._nanoseconds || 0);
+    }
+    if (typeof ts?.seconds === 'number') {
+      return new Timestamp(ts.seconds, ts.nanoseconds || 0);
+    }
+    const parsed = new Date(ts);
+    return Number.isNaN(parsed.getTime()) ? Timestamp.now() : Timestamp.fromDate(parsed);
+  };
+
+  /**
    * Elimina o revierte una transacción tipo income de forma atómica mediante la Cloud Function `deleteSale`.
    * Soporta modo dual:
    * - `DIRECT_DELETE`: Venta del día actual abierto -> eliminación física de venta, pagos, gastos delivery y stockLogs + restauración de stock.
@@ -2116,19 +2203,22 @@ export function useTransactionStore() {
     const { useClientStore } = await import('@/stores/clientStore');
     const { useBusinessStore } = await import('@/stores/businessStore');
     const { useAccountsBalanceStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceStore');
+    const { useAccountsBalanceFlowStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceFlowStore');
     const { useSaleDeletion } = await import('@/composables/useSaleDeletion');
 
     const clientStore = useClientStore();
     const businessStore = useBusinessStore();
     const accountsBalanceStore = useAccountsBalanceStore();
+    const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
     const businessId = businessStore.getBusinessId;
     const { executeSaleDeletion } = useSaleDeletion();
+    const saleUuid = transactionToDelete.uuid || transactionToDelete.id;
 
-    console.log('🗑️ [DELETE INCOME] Procesando eliminación/reversión de venta vía Cloud Function deleteSale:', transactionToDelete.uuid);
+    console.log('🗑️ [DELETE INCOME] Procesando eliminación/reversión de venta vía Cloud Function deleteSale:', saleUuid);
 
     const result = await executeSaleDeletion({
       businessId,
-      saleUuid: transactionToDelete.uuid,
+      saleUuid,
       reason: options.reason || '',
     });
 
@@ -2137,13 +2227,13 @@ export function useTransactionStore() {
       if (result.mode === 'DIRECT_DELETE') {
         transactionsInStore.value = transactionsInStore.value.filter(
           (t) =>
-            t.uuid !== transactionToDelete.uuid &&
-            t.id !== transactionToDelete.uuid &&
-            t.relatedTransactionId !== transactionToDelete.uuid
+            t.uuid !== saleUuid &&
+            t.id !== saleUuid &&
+            t.relatedTransactionId !== saleUuid
         );
       } else if (result.mode === 'REFUND_NOTE') {
         transactionsInStore.value = transactionsInStore.value.map((t) => {
-          if (t.uuid === transactionToDelete.uuid || t.id === transactionToDelete.uuid) {
+          if (t.uuid === saleUuid || t.id === saleUuid) {
             return {
               ...t,
               status: 'refunded',
@@ -2153,6 +2243,14 @@ export function useTransactionStore() {
               refundReason: options.reason || 'Anulación de venta de día cerrado',
             };
           }
+          if (t.type === 'payment' && t.relatedTransactionId === saleUuid) {
+            return {
+              ...t,
+              status: 'refunded',
+              paymentStatus: 'refunded',
+              refundTransactionId: result.refundTransactionId,
+            };
+          }
           return t;
         });
 
@@ -2160,10 +2258,17 @@ export function useTransactionStore() {
           result.refundTransaction &&
           !transactionsInStore.value.some((t) => t.uuid === result.refundTransaction.uuid)
         ) {
-          transactionsInStore.value.unshift(result.refundTransaction);
+          transactionsInStore.value.unshift({
+            ...result.refundTransaction,
+            createdAt: normalizeCallableTimestamp(result.refundTransaction.createdAt),
+            updatedAt: normalizeCallableTimestamp(result.refundTransaction.updatedAt),
+          });
         }
       }
     }
+
+    // Invalidar caché del flujo de apertura/cierre para leer el dailySummary recalculado
+    accountsBalanceFlowStore.resetDataLoadedFlag();
 
     // Refrescar resumen diario y metadata del cliente en background
     Promise.allSettled([
@@ -2244,7 +2349,8 @@ export function useTransactionStore() {
               m => (m.productId === itemUuid || m.uuid === itemUuid)
             );
             if (materialItem && materialItem.quantity) {
-              quantityReverted = Number(materialItem.quantity);
+              const factor = Number(materialItem.conversionFactor || 1);
+              quantityReverted = Number(materialItem.baseQuantity ?? (materialItem.quantity * factor));
               console.log(`  ℹ️ Usando cantidad de materialItems como fallback: ${quantityReverted}`);
             }
           }
@@ -2771,7 +2877,9 @@ export function useTransactionStore() {
   const deleteOneTransactionByID = async (transactionID, confirmCallback = null, options = {}) => {
     try {
       // 0. OBTENER TRANSACCIÓN
-      let transactionToDelete = transactionsInStore.value.find(t => t.uuid === transactionID);
+      let transactionToDelete = transactionsInStore.value.find(
+        t => t.uuid === transactionID || t.id === transactionID
+      );
 
       if (!transactionToDelete) {
         console.log(`🔍 Transacción ${transactionID} no encontrada en store local, buscando en Firestore...`);
@@ -2783,7 +2891,8 @@ export function useTransactionStore() {
         const txRef = doc(db, 'businesses', businessId, 'transactions', transactionID);
         const txSnap = await getDoc(txRef);
         if (txSnap.exists()) {
-          transactionToDelete = { ...txSnap.data(), uuid: txSnap.id, id: txSnap.id };
+          const txData = txSnap.data();
+          transactionToDelete = { ...txData, uuid: txData?.uuid || txSnap.id, id: txData?.uuid || txSnap.id };
         } else {
           throw new Error(`Transaction with ID ${transactionID} not found in store or database`);
         }
@@ -2885,8 +2994,15 @@ export function useTransactionStore() {
 
       console.log('✅ [DELETE] Transaction deleted successfully with data integrity maintained');
 
-      // 5. REFRESCAR STORE LOCAL
-      await getTransactions();
+      // 5. REFRESCAR STORE LOCAL (solo transacciones de hoy para mantener limpio ResumenDay)
+      await getTransactionsToday();
+
+      try {
+        const { useAccountsBalanceFlowStore } = await import('@/stores/AccountsBalanceApp/accountsBalanceFlowStore');
+        useAccountsBalanceFlowStore().resetDataLoadedFlag();
+      } catch (flowErr) {
+        console.warn('⚠️ No se pudo resetear dataAlreadyLoaded en accountsBalanceFlowStore:', flowErr);
+      }
 
       // 6. EL dailySummary SE RECALCULARÁ AUTOMÁTICAMENTE
       // por el onTransactionWrite de Firebase Functions

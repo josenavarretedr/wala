@@ -75,6 +75,37 @@
       </div>
     </div>
 
+    <!-- Presentaciones Configuradas -->
+    <div
+      v-if="productData?.hasPresentations && productData?.presentations?.length > 0"
+      class="mt-3 pt-3 border-t border-gray-100 space-y-2"
+    >
+      <div class="flex items-center justify-between text-xs font-semibold text-gray-700">
+        <span>Presentaciones ({{ productData.presentations.length }})</span>
+        <span class="text-[11px] text-gray-400 font-normal">PVP por empaque</span>
+      </div>
+      <div class="space-y-1.5">
+        <div
+          v-for="pres in productData.presentations"
+          :key="pres.id"
+          class="flex items-center justify-between p-2 rounded-lg bg-gray-50 text-xs border border-gray-100"
+        >
+          <div class="flex items-center gap-2">
+            <span class="font-medium text-gray-800">{{ pres.name }}</span>
+            <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold">
+              x{{ pres.factor }} {{ productData.unit || 'uni' }}
+            </span>
+          </div>
+          <div class="text-right">
+            <span class="font-bold text-gray-900">S/ {{ Number(pres.price || 0).toFixed(2) }}</span>
+            <span class="text-[10px] text-gray-400 block">
+              S/ {{ (Number(pres.price || 0) / Number(pres.factor || 1)).toFixed(2) }}/{{ productData.unit || 'uni' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Grid de Información Financiera - Mobile First -->
     <div class="space-y-2">
       <!-- Precio de Venta (NO mostrar para RAW_MATERIAL) -->

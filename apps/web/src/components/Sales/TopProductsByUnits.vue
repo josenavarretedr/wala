@@ -176,7 +176,7 @@ const buildAggFromTransactions = (txs) => {
       const key = (it?.[K_UUID] ?? it?.[K_DESC] ?? "").toString().trim();
       if (!key) continue;
 
-      const qty = Number(it?.[K_QTY] ?? 0);
+      const qty = Number(it?.baseQuantity ?? it?.[K_QTY] ?? 0);
       if (!Number.isFinite(qty) || qty <= 0) continue;
 
       // 🔄 Obtener nombre actualizado del inventario

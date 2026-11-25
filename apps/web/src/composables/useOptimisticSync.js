@@ -37,6 +37,12 @@ export function useOptimisticSync() {
       await localUpdate()
 
       // 2️⃣ AGREGAR A COLA DE SINCRONIZACIÓN
+      let resolveRemote, rejectRemote
+      const remotePromise = new Promise((resolve, reject) => {
+        resolveRemote = resolve
+        rejectRemote = reject
+      })
+
       const operation = {
         id: operationId,
         remoteUpdate,
@@ -46,16 +52,22 @@ export function useOptimisticSync() {
         attempts: 0,
         createdAt: new Date(),
         lastAttemptAt: null,
-        error: null
+        error: null,
+        resolveRemote,
+        rejectRemote
       }
 
       syncQueue.value.push(operation)
       console.log(`📋 [OPTIMISTIC] Operación agregada a cola (total: ${syncQueue.value.length})`)
 
-      // 3️⃣ PROCESAR EN BACKGROUND (no await)
+      // 3️⃣ PROCESAR EN BACKGROUND (o esperar si awaitRemote es true)
       processSyncQueue().catch(err => {
         console.error('❌ [OPTIMISTIC] Error en processSyncQueue:', err)
       })
+
+      if (metadata?.awaitRemote) {
+        await remotePromise
+      }
 
       return { success: true, operationId }
 
@@ -106,6 +118,7 @@ export function useOptimisticSync() {
         // Marcar como completada y remover de la cola
         operation.status = 'completed'
         syncQueue.value.shift()
+        operation.resolveRemote?.({ success: true })
 
         console.log(`✅ [OPTIMISTIC] Operación sincronizada: ${operation.metadata.type}`)
 
@@ -137,6 +150,7 @@ export function useOptimisticSync() {
           operation.status = 'failed'
           failedOperations.value.push(operation)
           syncQueue.value.shift()
+          operation.rejectRemote?.(error)
 
           console.log(`📊 [OPTIMISTIC] Operaciones fallidas: ${failedOperations.value.length}`)
 

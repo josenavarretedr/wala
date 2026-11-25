@@ -158,14 +158,18 @@ const productData = ref({
   variantSchema: { attributes: [] },
   variantCombos: [],
   defaultYieldFactor: null,
+  hasPresentations: false,
+  presentations: [],
+  price: 0,
+  cost: null,
 });
 
 // Cargar datos — desde state de ruta o fallback a BD
 const loadProductData = async () => {
   const state = history.state;
 
-  // Si venimos de ProductDetails vía router-link con state, usarlo directamente
-  if (state?.description !== undefined && state?.hasVariants !== undefined) {
+  // Si venimos de ProductDetails vía router-link con state, usarlo directamente (solo si incluye presentaciones)
+  if (state?.description !== undefined && state?.hasVariants !== undefined && state?.presentations !== undefined) {
     productData.value = {
       uuid: route.params.productId,
       description: state.description || "",
@@ -184,6 +188,10 @@ const loadProductData = async () => {
         ? Number(state.defaultYieldFactor)
         : null,
       deliveryEnabled: Boolean(state.deliveryEnabled),
+      hasPresentations: Boolean(state.hasPresentations),
+      presentations: Array.isArray(state.presentations) ? state.presentations : [],
+      price: Number(state.price || 0),
+      cost: state.cost ?? null,
     };
     console.log(
       "⚡ Datos de info general cargados desde route state:",
@@ -219,6 +227,10 @@ const loadProductData = async () => {
         ? Number(product.defaultYieldFactor)
         : null,
       deliveryEnabled: Boolean(product.deliveryEnabled),
+      hasPresentations: Boolean(product.hasPresentations),
+      presentations: Array.isArray(product.presentations) ? product.presentations : [],
+      price: Number(product.price || 0),
+      cost: product.cost ?? null,
     };
     console.log("✅ Información general cargada desde BD:", productData.value);
   } catch (err) {

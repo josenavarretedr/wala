@@ -553,6 +553,17 @@
       </div>
     </div>
 
+    <!-- ÁREA: Presentaciones de Venta y Compra (Multi-empaque) -->
+    <div v-if="localFormData.type !== 'SERVICE'" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 space-y-6">
+      <PresentationsEditor
+        v-model="localFormData.presentations"
+        :baseUnit="localFormData.unit || 'uni'"
+        :basePrice="localFormData.price || 0"
+        :baseCost="localFormData.cost || 0"
+        @update:basePrice="localFormData.price = $event"
+      />
+    </div>
+
     <!-- Botones de Acción de Guardado/Navegación -->
     <NavigationBtnEditProduct
       :localData="localFormData"
@@ -573,6 +584,7 @@ import { useToast } from "@/composables/useToast";
 import { useProductMetricsStore } from "@/stores/Inventory/productMetricsStore";
 import { useProductCostingStore } from "@/stores/productCostingStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import PresentationsEditor from "@/components/Inventory/Presentations/PresentationsEditor.vue";
 import { getBusinessCapabilities } from "@/utils/businessCapabilities";
 import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
 import NavigationBtnEditProduct from "./NavigationBtnEditProduct.vue";
@@ -661,8 +673,12 @@ const getPackagingCost = computed(() => {
 watch(
   () => props.initialData,
   (newData) => {
-    localFormData.value = { ...newData };
-    originalData.value = { ...newData };
+    const cloned = JSON.parse(JSON.stringify(newData || {}));
+    if (!Array.isArray(cloned.presentations)) {
+      cloned.presentations = [];
+    }
+    localFormData.value = JSON.parse(JSON.stringify(cloned));
+    originalData.value = JSON.parse(JSON.stringify(cloned));
 
     // Sincronizar store
     const productId = route.params.productId;
@@ -809,7 +825,12 @@ const formatNumber = (value) => {
 const handleSave = (payload) => {
   applyPriceValidation();
   syncMarginFromCurrentPrice();
-  emit("save", payload);
+  const fullPayload = {
+    ...payload,
+    presentations: localFormData.value.presentations || [],
+    hasPresentations: Boolean(localFormData.value.presentations && localFormData.value.presentations.length > 0),
+  };
+  emit("save", fullPayload);
 };
 </script>
 

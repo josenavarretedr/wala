@@ -74,6 +74,12 @@
             >{{ stock }} {{ unitLabelShort }}</span
           >
           <span class="text-gray-500">en stock</span>
+          <span
+            v-if="stockInPresentationsText"
+            class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md font-medium"
+          >
+            ({{ stockInPresentationsText }})
+          </span>
         </div>
 
         <!-- Separador -->
@@ -724,6 +730,17 @@ const confidenceEmoji = computed(() => {
   } else {
     return "⚠️"; // Baja confianza
   }
+});
+
+const stockInPresentationsText = computed(() => {
+  if (!props.productData?.hasPresentations || !props.productData?.presentations?.length) {
+    return null;
+  }
+  return describeStockInPresentations(
+    props.stock,
+    props.productData.presentations,
+    props.unit || 'uni'
+  );
 });
 </script>
 

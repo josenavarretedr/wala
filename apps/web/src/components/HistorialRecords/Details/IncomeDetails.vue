@@ -224,9 +224,17 @@
                     {{ item.variantLabel }}
                   </span>
                 </div>
-                <div class="text-sm text-gray-600">
-                  {{ item.quantity }} {{ item.unit || "uni" }} × S/
-                  {{ item.price.toFixed(2) }}
+                <div class="text-sm text-gray-600 flex flex-wrap items-center gap-1.5">
+                  <span>
+                    {{ item.quantity }} {{ item.presentationName || item.unit || "uni" }} × S/
+                    {{ item.price.toFixed(2) }}
+                  </span>
+                  <span
+                    v-if="item.discount && item.discount.amountPerUnit > 0"
+                    class="text-[11px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.2 rounded font-medium"
+                  >
+                    -{{ item.discount.discountPct }}% (era S/ {{ Number(item.listPrice || item.price).toFixed(2) }})
+                  </span>
                 </div>
               </div>
               <div class="text-right">
@@ -242,6 +250,13 @@
         <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
           <!-- Si no hay costos extra ni detracción, mostrar solo el total simple de siempre -->
           <template v-if="!transactionData.packagingCost && !transactionData.platformCommissionAmount && !transactionData.deliveryCost && !transactionData.isSubjectToDetraction">
+            <div
+              v-if="transactionData.discountTotal > 0"
+              class="flex justify-between items-center text-xs text-emerald-700 font-semibold pb-1"
+            >
+              <span>Descuento total aplicado:</span>
+              <span>- S/ {{ Number(transactionData.discountTotal).toFixed(2) }}</span>
+            </div>
             <div class="flex justify-between items-center">
               <div class="text-gray-600 font-medium">
                 {{ transactionData.items.length }}

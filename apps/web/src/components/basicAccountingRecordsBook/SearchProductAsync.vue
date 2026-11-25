@@ -314,6 +314,8 @@ onMounted(() => {
                   unit: selected.unit || "uni",
                   stock: selected.stock ?? 0,
                   trackStock: selected.trackStock ?? false,
+                  hasPresentations: Boolean(selected.hasPresentations),
+                  presentations: selected.presentations || [],
                   composition: selected.composition ?? null, // ✅ Incluir composición del producto
                   type: selected.type || "MERCH", // ✅ Incluir tipo de producto
                   hasVariants: Boolean(selected.hasVariants),

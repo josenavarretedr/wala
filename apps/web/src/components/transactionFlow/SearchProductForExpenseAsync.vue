@@ -199,6 +199,8 @@ onMounted(() => {
                   ? Number(item.variantStock || 0)
                   : (selected.stock ?? 0),
                 trackStock: selected.trackStock ?? false,
+                hasPresentations: Boolean(selected.hasPresentations),
+                presentations: selected.presentations || [],
                 hasVariants: Boolean(selected.hasVariants),
                 variantId: item.variantId || null,
                 variantLabel: item.variantLabel || null,

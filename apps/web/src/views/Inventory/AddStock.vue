@@ -76,6 +76,8 @@ import { Package } from "@iconoir/vue";
 import { useAddStockFlowStore } from "@/stores/Inventory/AddStockFlow.js";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
+import { useToast } from "@/composables/useToast";
+import { useProductCache } from "@/composables/useProductCache";
 import NavigationBtnsAddStock from "@/components/Inventory/StockLogs/NavigationBtnsAddStock.vue";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 import CloseBtn from "@/components/ui/CloseBtn.vue";
@@ -94,6 +96,8 @@ const router = useRouter();
 const flow = useAddStockFlowStore();
 const transactionStore = useTransactionStore();
 const inventoryStore = useInventoryStore();
+const toast = useToast();
+const { removeFromCache } = useProductCache();
 
 // State
 const loading = ref(true);
@@ -201,20 +205,23 @@ const finalizarRegistro = async () => {
     // 🔥 CREAR MATERIALITEMS ARRAY - Requerido para el flujo de transactionStore
     const materialItem = {
       uuid: productId,
-      selectedProductUuid: productId, // También incluir este campo
+      selectedProductUuid: productId,
       description: product.description,
       quantity: quantity,
       cost: cost,
       unit: product.unit || "uni",
-      oldOrNewProduct: "old", // El producto ya existe en inventario
+      oldOrNewProduct: "old",
       trackStock: product.trackStock ?? true,
-      // Campos adicionales que pueden ser útiles
       code: product.code,
       type: product.type || "MERCH",
       totalCost: quantity * cost,
-      // Asociar proveedor directo al item
       supplierId: supplierId || null,
       supplierName: supplierName || null,
+      presentationId: flow.addStockData.presentationId || null,
+      presentationName: flow.addStockData.presentationName || null,
+      conversionFactor: flow.addStockData.conversionFactor || 1,
+      baseQuantity: flow.addStockData.baseQuantity || quantity,
+      baseUnitCost: flow.addStockData.baseUnitCost || cost,
     };
 
     // Asignar materialItems al transactionToAdd
@@ -235,7 +242,10 @@ const finalizarRegistro = async () => {
     //    - Llamará a inventoryStore.addMaterialItemsToInventoryForPurchase()
     //    - Creará los stockLogs automáticamente
     //    - Actualizará materialItemsAndStockLogs
-    await transactionStore.addTransaction();
+    const purchasedQty = quantity;
+    const purchasedPres = flow.addStockData.presentationName || product.unit || "uni";
+
+    await transactionStore.addTransaction({ awaitRemote: true });
     const transactionId = transactionStore.transactionToAdd.value.uuid;
 
     console.log(
@@ -246,6 +256,15 @@ const finalizarRegistro = async () => {
         materialItemsAndStockLogs:
           transactionStore.transactionToAdd.value.materialItemsAndStockLogs,
       }
+    );
+
+    // Invalidar caché local del producto para garantizar lectura fresca
+    removeFromCache(productId);
+
+    // Mostrar notificación de éxito al usuario
+    toast.success(
+      `Stock actualizado: +${purchasedQty} ${purchasedPres} de ${product.description}`,
+      { duration: 3500 }
     );
 
     // Resetear el flujo
@@ -271,6 +290,7 @@ const finalizarRegistro = async () => {
   } catch (err) {
     console.error("❌ Error finalizando registro:", err);
     error.value = "Error al finalizar el registro";
+    toast.error("No se pudo registrar la compra de stock. Intenta nuevamente.");
   } finally {
     loading.value = false;
   }

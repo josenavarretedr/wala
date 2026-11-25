@@ -128,24 +128,65 @@
         </div>
       </div>
 
+      <!-- Selector de Presentación para Compra (si tiene múltiples) -->
+      <div
+        v-if="
+          transactionStore.itemToAddInExpenseMaterial.value.description &&
+          availablePresentations.length > 1
+        "
+        class="space-y-2"
+      >
+        <label class="block text-sm font-semibold text-gray-700">
+          Presentación comprada:
+        </label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <button
+            v-for="pres in availablePresentations"
+            :key="pres.id"
+            type="button"
+            @click="selectMaterialPresentation(pres)"
+            class="p-3 text-left rounded-xl border-2 transition-all flex flex-col justify-between"
+            :class="[
+              currentMaterialPresentation?.id === pres.id
+                ? 'border-orange-500 bg-orange-50 shadow-sm'
+                : 'border-gray-200 bg-white hover:border-orange-200 hover:bg-orange-50/20',
+            ]"
+          >
+            <div class="font-bold text-xs sm:text-sm text-gray-800">
+              {{ pres.name }}
+            </div>
+            <div class="text-[11px] text-gray-500 mt-1">
+              x{{ pres.factor }} {{ baseMaterialUnit }}
+            </div>
+          </button>
+        </div>
+      </div>
+
       <!-- Formulario: Cantidad, Unidad y Costo -->
       <Transition name="slide-fade">
         <div
           v-if="transactionStore.itemToAddInExpenseMaterial.value.description"
+          class="space-y-3"
         >
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <!-- Cantidad -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">Cantidad</label>
+              <label class="text-sm font-medium text-gray-700">
+                Cantidad
+                <span v-if="currentMaterialPresentation?.factor > 1" class="text-xs text-orange-600 font-semibold">
+                  ({{ currentMaterialPresentation.name }})
+                </span>
+              </label>
               <div class="relative">
                 <input
                   ref="quantityInputMaterial"
-                  v-model="
+                  v-model.number="
                     transactionStore.itemToAddInExpenseMaterial.value.quantity
                   "
                   type="number"
                   placeholder="0"
-                  min="0"
+                  :min="isFractionalMaterialPres ? 0.01 : 0"
+                  :step="isFractionalMaterialPres ? 0.01 : 1"
                   @keydown.enter="focusCostInput"
                   class="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-medium focus:border-orange-500 focus:outline-none transition-colors"
                 />
@@ -153,13 +194,34 @@
                   class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-orange-500 rounded-full"
                 ></div>
               </div>
-              <p class="text-xs text-gray-500">Ingresa la cantidad comprada</p>
+              <p
+                v-if="
+                  currentMaterialPresentation?.factor > 1 &&
+                  transactionStore.itemToAddInExpenseMaterial.value.quantity > 0
+                "
+                class="text-xs text-emerald-700 font-medium"
+              >
+                ✓ Equivale a {{ equivalentMaterialBaseQty }} {{ baseMaterialUnit }} en almacén
+              </p>
+              <p v-else class="text-xs text-gray-500">Ingresa la cantidad comprada</p>
             </div>
 
-            <!-- Unidad -->
+            <!-- Unidad / Presentación -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700">Unidad</label>
+              <label class="text-sm font-medium text-gray-700">
+                {{ availablePresentations.length > 1 ? "Presentación" : "Unidad" }}
+              </label>
+              <div
+                v-if="availablePresentations.length > 1"
+                class="w-full px-4 py-3 border border-orange-200 bg-orange-50/50 rounded-xl text-orange-900 font-semibold text-sm flex items-center justify-between"
+              >
+                <span>{{ currentMaterialPresentation?.name }}</span>
+                <span class="text-xs text-orange-700 font-normal">
+                  x{{ currentMaterialPresentation?.factor }} {{ baseMaterialUnit }}
+                </span>
+              </div>
               <select
+                v-else
                 v-model="transactionStore.itemToAddInExpenseMaterial.value.unit"
                 :disabled="
                   transactionStore.itemToAddInExpenseMaterial.value
@@ -178,15 +240,18 @@
               </select>
             </div>
 
-            <!-- Costo por unidad -->
+            <!-- Costo por presentación o unidad -->
             <div class="space-y-2">
-              <label class="text-sm font-medium text-gray-700"
-                >Costo (S/)</label
-              >
+              <label class="text-sm font-medium text-gray-700">
+                Costo (S/)
+                <span v-if="currentMaterialPresentation?.factor > 1" class="text-xs text-gray-500 font-normal">
+                  por {{ currentMaterialPresentation.name }}
+                </span>
+              </label>
               <div class="relative">
                 <input
                   ref="costInputMaterial"
-                  v-model="
+                  v-model.number="
                     transactionStore.itemToAddInExpenseMaterial.value.cost
                   "
                   type="number"
@@ -199,7 +264,16 @@
                   class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-orange-500 rounded-full"
                 ></div>
               </div>
-              <p class="text-xs text-gray-500">Costo por unidad</p>
+              <p
+                v-if="
+                  currentMaterialPresentation?.factor > 1 &&
+                  transactionStore.itemToAddInExpenseMaterial.value.cost > 0
+                "
+                class="text-xs text-blue-700 font-medium"
+              >
+                Costo base: S/ {{ equivalentMaterialUnitCost.toFixed(2) }} / {{ baseMaterialUnit }}
+              </p>
+              <p v-else class="text-xs text-gray-500">Costo por unidad</p>
             </div>
           </div>
         </div>
@@ -280,24 +354,28 @@
                       Nuevo
                     </span>
                   </div>
-                  <div class="flex items-center gap-4 text-sm text-gray-600">
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-600">
+                    <span class="font-medium text-gray-800">
+                      {{ material.quantity }}
+                      {{ material.presentationName || material.unit || "uni" }}
+                    </span>
                     <span
-                      >{{ material.quantity }}
-                      {{ material.unit || "uni" }}</span
+                      v-if="material.conversionFactor > 1"
+                      class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
                     >
+                      = {{ material.baseQuantity || (material.quantity * material.conversionFactor) }} {{ material.unit || "uni" }}
+                    </span>
                     <span>•</span>
-                    <span
-                      >S/ {{ material.cost?.toFixed(2) || "0.00" }}/uni</span
-                    >
+                    <span>
+                      S/ {{ material.cost?.toFixed(2) || "0.00" }}/{{ material.presentationName || material.unit || "uni" }}
+                      <span v-if="material.conversionFactor > 1" class="text-xs text-gray-500">
+                        (S/ {{ (material.baseUnitCost ?? (material.cost / material.conversionFactor)).toFixed(2) }}/{{ material.unit }})
+                      </span>
+                    </span>
                     <span>•</span>
-                    <span class="font-semibold text-gray-900"
-                      >Total: S/
-                      {{
-                        (
-                          (material.cost || 0) * (material.quantity || 0)
-                        ).toFixed(2)
-                      }}</span
-                    >
+                    <span class="font-semibold text-gray-900">
+                      Total: S/ {{ ((material.cost || 0) * (material.quantity || 0)).toFixed(2) }}
+                    </span>
                   </div>
                 </div>
                 <button
@@ -907,6 +985,12 @@ import { ref, computed, watch, onMounted } from "vue";
 import SearchExpenseAsync from "./SearchExpenseAsync.vue";
 import SearchProductForExpenseAsync from "./SearchProductForExpenseAsync.vue";
 import {
+  getPresentations,
+  isFractionalUnit,
+  toBaseQuantity,
+  toBaseUnitCost,
+} from "@/utils/presentationMath";
+import {
   getVisiblePayLaborRoles,
   classifyPayroll,
   classifyMaterials,
@@ -1121,7 +1205,92 @@ const canAddMaterial = computed(() => {
 /**
  * Maneja el agregado del material
  */
+// ========================================
+// PRESENTACIONES EN COMPRA DE MATERIALES
+// ========================================
+const baseMaterialUnit = computed(
+  () => transactionStore.itemToAddInExpenseMaterial.value.unit || "uni"
+);
+
+const availablePresentations = computed(() => {
+  const mat = transactionStore.itemToAddInExpenseMaterial.value;
+  if (!mat || !mat.description) return [];
+  const pres = getPresentations({
+    unit: mat.unit || "uni",
+    price: 0,
+    hasPresentations: Boolean(mat.hasPresentations),
+    presentations: mat.presentations || [],
+  });
+  return pres.filter((p) => !p.usage || p.usage.includes("buy"));
+});
+
+const currentMaterialPresentation = computed(() => {
+  const mat = transactionStore.itemToAddInExpenseMaterial.value;
+  const pId = mat.presentationId;
+  return (
+    availablePresentations.value.find((p) => p.id === pId) ||
+    availablePresentations.value[0] || {
+      id: "pres_base",
+      name: baseMaterialUnit.value.toUpperCase(),
+      factor: 1,
+    }
+  );
+});
+
+const isFractionalMaterialPres = computed(() => {
+  return (
+    currentMaterialPresentation.value.factor === 1 &&
+    isFractionalUnit(baseMaterialUnit.value)
+  );
+});
+
+const equivalentMaterialBaseQty = computed(() => {
+  const qty = Number(transactionStore.itemToAddInExpenseMaterial.value.quantity || 0);
+  return toBaseQuantity(qty, currentMaterialPresentation.value.factor);
+});
+
+const equivalentMaterialUnitCost = computed(() => {
+  const costVal = Number(transactionStore.itemToAddInExpenseMaterial.value.cost || 0);
+  return toBaseUnitCost(costVal, currentMaterialPresentation.value.factor);
+});
+
+const selectMaterialPresentation = (pres) => {
+  const mat = transactionStore.itemToAddInExpenseMaterial.value;
+  mat.presentationId = pres.id;
+  mat.presentationName = pres.name;
+  mat.conversionFactor = Number(pres.factor || 1);
+
+  const baseCost = Number(mat.baseCost || 0);
+  if (baseCost > 0) {
+    mat.cost = Math.round((baseCost * mat.conversionFactor + Number.EPSILON) * 100) / 100;
+  }
+};
+
+watch(
+  () => transactionStore.itemToAddInExpenseMaterial.value.selectedProductUuid,
+  (newUuid) => {
+    if (!newUuid) return;
+    const presList = availablePresentations.value;
+    const initial = presList.find((p) => p.isBase) || presList[0];
+    if (initial) {
+      const mat = transactionStore.itemToAddInExpenseMaterial.value;
+      mat.presentationId = initial.id;
+      mat.presentationName = initial.name;
+      mat.conversionFactor = Number(initial.factor || 1);
+    }
+  }
+);
+
 const handleAddMaterial = () => {
+  const mat = transactionStore.itemToAddInExpenseMaterial.value;
+  const pres = currentMaterialPresentation.value;
+  if (pres) {
+    mat.presentationId = pres.id;
+    mat.presentationName = pres.name;
+    mat.conversionFactor = Number(pres.factor || 1);
+    mat.baseQuantity = equivalentMaterialBaseQty.value;
+    mat.baseUnitCost = equivalentMaterialUnitCost.value;
+  }
   transactionStore.addMaterialItemToExpense();
 };
 
