@@ -184,6 +184,7 @@ initApp();
 const transformToUppercase = (event) => {
   if (event.isComposing) return;
   const target = event.target;
+  if (target?.dataset?.preserveCase === 'true') return;
   if (
     target &&
     target.tagName === 'INPUT' &&

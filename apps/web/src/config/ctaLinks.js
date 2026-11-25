@@ -9,6 +9,9 @@ export const DEFAULT_DIAGNOSTICO_MESSAGE =
 export const DEFAULT_SOPORTE_MESSAGE =
   'Hola José, vi la página de WALA y tengo una consulta.';
 
+export const DEFAULT_ETAPA0_CONSULTA_MESSAGE =
+  'Hola José, vi wala.lat/diagnostico. Aún estoy empezando mi negocio y tengo una consulta rápida sobre WALA.';
+
 export function buildWhatsAppUrl(message = DEFAULT_DIAGNOSTICO_MESSAGE) {
-  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }

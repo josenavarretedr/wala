@@ -20,65 +20,49 @@
       <span
         class="inline-block px-4 py-1.5 bg-orange-50 border border-orange-100 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full"
       >
-        Toma Acción
+        Empieza Hoy
       </span>
 
       <h2
         class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight max-w-2xl mx-auto"
       >
-        Tu negocio ya tiene suficiente trabajo.
+        Tu negocio ya exige suficiente trabajo.
         <span class="text-[#E35336]">WALA pone la claridad</span>.
       </h2>
 
       <p
-        class="text-base sm:text-lg text-gray-500 font-semibold max-w-lg mx-auto leading-relaxed"
+        class="text-base sm:text-lg text-gray-600 font-medium max-w-lg mx-auto leading-relaxed"
       >
-        El primer paso hacia la tranquilidad financiera no te cuesta nada.
-        Comienza tu diagnóstico gratuito hoy mismo.
+        Empieza hoy gratis con la herramienta o reserva tu diagnóstico de 30 minutos.
       </p>
 
       <!-- CTA Buttons -->
       <div
         class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2"
       >
-        <button
-          class="w-full sm:w-auto bg-[#E35336] hover:bg-[#c2412b] text-white px-8 py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-[#E35336]/20 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
-          @click="openWhatsApp"
+        <router-link
+          :to="REGISTER_PATH"
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#E35336] hover:bg-[#c2412b] text-white px-8 py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-[#E35336]/20 transition-all duration-300 hover:-translate-y-0.5"
         >
-          <span class="inline-flex items-center gap-2">
-            <Rocket class="w-5 h-5" />
-            Diagnóstico gratuito!
-          </span>
-        </button>
+          <Rocket class="w-5 h-5" />
+          <span>Crear cuenta gratis</span>
+        </router-link>
 
-        <button
-          class="w-full sm:w-auto border-2 border-[#E35336] text-[#E35336] px-8 py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 hover:bg-[#E35336]/10 hover:-translate-y-0.5 cursor-pointer"
-          @click="goToSignup"
+        <router-link
+          :to="DIAGNOSTICO_PATH"
+          class="w-full sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-[#E35336] text-[#E35336] px-8 py-4 rounded-xl font-semibold text-base sm:text-lg transition-all duration-300 hover:bg-[#E35336]/10 hover:-translate-y-0.5"
         >
-          <span class="inline-flex items-center gap-2">
-            Herramienta gratis!
-            <ArrowRight class="w-5 h-5" />
-          </span>
-        </button>
+          <span>Ver diagnóstico 1:1</span>
+          <ArrowRight class="w-5 h-5" />
+        </router-link>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
 import { ArrowRight, Rocket } from "@iconoir/vue";
-import { buildWhatsAppUrl, REGISTER_PATH } from "@/config/ctaLinks";
-
-const router = useRouter();
-
-const openWhatsApp = () => {
-  window.open(buildWhatsAppUrl(), "_blank", "noopener,noreferrer");
-};
-
-const goToSignup = () => {
-  router.push(REGISTER_PATH);
-};
+import { DIAGNOSTICO_PATH, REGISTER_PATH } from "@/config/ctaLinks";
 </script>
 
 <style scoped>

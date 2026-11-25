@@ -7,7 +7,7 @@
       <div
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6 mb-10"
       >
-        <!-- 1️⃣ BLOQUE MARCA -->
+        <!-- BLOQUE MARCA -->
         <div class="lg:col-span-2">
           <div class="flex items-center gap-3 mb-4">
             <div
@@ -18,53 +18,57 @@
             <span class="text-xl font-semibold text-gray-900">WALA</span>
           </div>
           <p class="text-sm text-gray-600 leading-relaxed mb-3">
-            Mi copiloto empresarial para emprendedores latinoamericanos.
+            Software y metodología de claridad financiera y operativa para negocios en Latinoamérica.
           </p>
           <p class="text-sm text-gray-700 font-medium">
             Construimos inclusión financiera desde abajo.
           </p>
         </div>
 
-        <!-- 2️⃣ BLOQUE SECCIONES -->
+        <!-- BLOQUE SECCIONES -->
         <div>
-          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Secciones</h4>
+          <h4 class="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">
+            Secciones
+          </h4>
           <nav class="space-y-2.5">
             <router-link
-              :to="{ path: '/', hash: '#hero-section' }"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              :to="{ path: '/', hash: '#producto' }"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
-              Inicio
+              La App
             </router-link>
             <router-link
-              :to="{ path: '/', hash: '#pain-section' }"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              :to="{ path: '/', hash: '#escalera' }"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
-              Síntomas de caos
-            </router-link>
-            <router-link
-              :to="{ path: '/', hash: '#testimonials-section' }"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Testimonios
-            </router-link>
-            <router-link
-              :to="{ path: '/', hash: '#routes-section' }"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
-            >
-              Elige tu camino
+              Planes y Método
             </router-link>
             <router-link
               :to="{ path: '/', hash: '#how-section' }"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Cómo funciona
+            </router-link>
+            <router-link
+              :to="{ path: '/', hash: '#faq-section' }"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
+            >
+              Preguntas frecuentes
+            </router-link>
+            <router-link
+              :to="DIAGNOSTICO_PATH"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
+            >
+              Diagnóstico 1:1
             </router-link>
           </nav>
         </div>
 
-        <!-- 3️⃣ BLOQUE SOPORTE Y CONTACTO -->
+        <!-- BLOQUE SOPORTE Y CONTACTO -->
         <div>
-          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Contacto</h4>
+          <h4 class="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">
+            Contacto
+          </h4>
           <nav class="space-y-2.5">
             <a
               href="mailto:hola@wala.lat"
@@ -74,7 +78,7 @@
             </a>
             <router-link
               :to="DIAGNOSTICO_PATH"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Diagnóstico 30 min
             </router-link>
@@ -82,22 +86,24 @@
               :href="soporteWhatsAppUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Soporte por WhatsApp
             </a>
             <router-link
               :to="LOGIN_PATH"
-              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+              class="block text-sm text-gray-600 hover:text-[#E35336] transition-colors duration-200"
             >
               Iniciar sesión
             </router-link>
           </nav>
         </div>
 
-        <!-- 4️⃣ BLOQUE LEGAL -->
+        <!-- BLOQUE LEGAL -->
         <div>
-          <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Legal</h4>
+          <h4 class="font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">
+            Legal
+          </h4>
           <nav class="space-y-2.5">
             <router-link
               to="/legal/politica-privacidad"
@@ -122,9 +128,15 @@
       </div>
 
       <!-- BLOQUE SOPORTE (ANCHO COMPLETO) -->
-      <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-6 mb-8 text-center relative overflow-hidden">
-        <div class="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm">
-          <span class="text-gray-500 font-semibold">¿Necesitas soporte técnico o estratégico? Escríbenos a:</span>
+      <div
+        class="bg-white rounded-3xl border border-gray-100 shadow-[0_15px_50px_-20px_rgba(0,0,0,0.06)] p-6 mb-8 text-center relative overflow-hidden"
+      >
+        <div
+          class="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-2 text-sm"
+        >
+          <span class="text-gray-500 font-semibold">
+            ¿Necesitas soporte técnico o estratégico? Escríbenos a:
+          </span>
           <a
             href="mailto:hola@wala.lat"
             class="text-[#E35336] hover:text-[#c2412b] font-black tracking-wide transition-colors duration-200"
@@ -140,7 +152,7 @@
         <div
           class="flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-gray-500"
         >
-          <p>© 2025 WALA. Todos los derechos reservados.</p>
+          <p>© 2026 WALA. Todos los derechos reservados.</p>
           <p>Hecho con ❤️ en Perú para Latinoamérica</p>
         </div>
       </div>
@@ -165,7 +177,7 @@ const soporteWhatsAppUrl = buildWhatsAppUrl(DEFAULT_SOPORTE_MESSAGE);
 }
 
 /* Transiciones suaves */
-a, router-link {
+a {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

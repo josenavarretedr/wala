@@ -294,7 +294,7 @@ const whatsappMsg = computed(() => {
     return `Hola ${name}. Soy José, el de WALA. Te comparto lo que te comenté: nuestro copiloto te ayuda a ordenar tu negocio, entender tus números y tomar mejores decisiones. Te paso el acceso para probarlo gratis 7 días. ¿Me confirmas si pudiste ingresar?`;
   }
   if (formData.value.resultadoVisita === "diagnostico_hablado") {
-    return `Hola ${name}. Soy José, el de WALA. Me dio gusto conversar contigo. Como te comentaba, te propongo hacer un diagnóstico gratuito de 20 minutos de tu negocio. Avísame qué día te queda mejor esta semana.`;
+    return `Hola ${name}. Soy José, el de WALA. Me dio gusto conversar contigo. Como te comentaba, te propongo hacer un diagnóstico gratuito de 30 minutos de tu negocio. Avísame qué día te queda mejor esta semana.`;
   }
   if (formData.value.resultadoVisita === "diagnostico_agendado") {
     return `Hola ${name}, te escribo para confirmarte que tenemos agendado tu diagnóstico gratuito de WALA para el ${formData.value.fechaAgendada || 'día programado'}. ¡Nos vemos!`;

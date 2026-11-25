@@ -2,37 +2,46 @@
   <div class="min-h-screen relative overflow-x-hidden">
     <!-- Capa de fondo fija de alta resolución (sin estirarse verticalmente) -->
     <div class="home-bg" :style="{ backgroundImage: `url(${bgWall})` }"></div>
+    <!-- Velo blanco translúcido para legibilidad limpia estilo SaaS -->
+    <div class="fixed inset-0 bg-white/85 -z-10 pointer-events-none"></div>
 
-    <!-- Hero Section -->
-    <Hero></Hero>
+    <NavbarLanding variant="home" />
 
-    <Pain></Pain>
+    <Hero />
 
-    <PruebaSocial></PruebaSocial>
+    <InstitutionalValidation variant="home" />
 
-    <TwoRoutes></TwoRoutes>
+    <Pain />
 
-    <How></How>
+    <Funcionalidades />
 
-    <!-- <InstitutionalValidation></InstitutionalValidation> -->
+    <EscaleraValor />
 
-    <CTA></CTA>
+    <How />
 
-    <!-- Footer -->
-    <FooterLandingPage></FooterLandingPage>
+    <PruebaSocial />
+
+    <FAQ />
+
+    <CTA />
+
+    <FooterLandingPage />
   </div>
 </template>
 
 <script setup>
 import { onMounted, nextTick } from "vue";
+import NavbarLanding from "@/components/LandingPage/NavbarLanding.vue";
 import Hero from "@/components/LandingPage/Hero.vue";
-import Pain from "@/components/LandingPage/Pain.vue";
-import TwoRoutes from "@/components/LandingPage/TwoRoutes.vue";
-import How from "@/components/LandingPage/How.vue";
 import InstitutionalValidation from "@/components/LandingPage/InstitutionalValidation.vue";
+import Pain from "@/components/LandingPage/Pain.vue";
+import Funcionalidades from "@/components/LandingPage/Funcionalidades.vue";
+import EscaleraValor from "@/components/LandingPage/EscaleraValor.vue";
+import How from "@/components/LandingPage/How.vue";
+import PruebaSocial from "@/components/LandingPage/PruebaSocial.vue";
+import FAQ from "@/components/LandingPage/FAQ.vue";
 import CTA from "@/components/LandingPage/CTA.vue";
 import FooterLandingPage from "@/components/LandingPage/FooterLandingPage.vue";
-import PruebaSocial from "@/components/LandingPage/PruebaSocial.vue";
 import bgWall from "@/assets/bg_wall.png";
 
 onMounted(() => {
@@ -68,7 +77,7 @@ onMounted(() => {
   bottom: 0;
   width: 100vw;
   height: 100vh;
-  z-index: -10;
+  z-index: -20;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

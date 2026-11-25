@@ -1,311 +1,280 @@
 <template>
   <section
-    id="funcionalidades-section"
-    class="py-16 sm:py-20 px-4 bg-white relative overflow-hidden"
+    id="producto"
+    class="py-16 sm:py-24 px-4 bg-white border-y border-slate-100 relative overflow-hidden font-display"
   >
-    <!-- Sombras sutiles de fondo (coherente con Hero, Pain y Solution) -->
-    <div
-      class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
-    >
-      <div
-        class="absolute top-0 right-0 w-80 h-80 bg-purple-50 rounded-full filter blur-3xl opacity-20"
-      ></div>
-      <div
-        class="absolute bottom-0 left-0 w-80 h-80 bg-blue-50 rounded-full filter blur-3xl opacity-20"
-      ></div>
-    </div>
-
     <div class="max-w-6xl mx-auto">
-      <!-- Contenedor principal tipo card (estilo HistorialRecords) -->
-      <div
-        class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-12 transition-all duration-200 hover:shadow-md hover:border-gray-200 mb-8"
-      >
-        <!-- Badge superior -->
-        <!-- <div class="flex justify-center mb-6">
-          <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-50 border border-purple-200 text-purple-700"
-          >
-            <span class="text-2xl">⚙️</span>
-            <span class="text-sm font-medium">Funcionalidades</span>
-          </div>
-        </div> -->
-        <!-- Badge superior -->
-        <div class="flex justify-center mb-6">
-          <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-200 text-blue-700"
-          >
-            <span class="text-2xl">💡</span>
-            <span class="text-sm font-medium">La solución</span>
-          </div>
-        </div>
-        <!-- Título Principal -->
-        <h2
-          class="text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-6 text-center font-bold leading-tight tracking-tight"
+      <div class="text-center max-w-3xl mx-auto space-y-4 mb-12 sm:mb-16">
+        <span
+          class="inline-block px-4 py-1.5 bg-[#FFF5F2] border border-[#E35336]/20 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full"
         >
-          <span class="text-purple-600">Herramientas simples</span> que hacen tu
-          día <span class="text-blue-600">más fácil</span>
+          Tu Copiloto Diario
+        </span>
+
+        <h2
+          class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight tracking-tight"
+        >
+          Así se ve tu negocio
+          <span class="text-[#E35336]">ordenado en minutos</span>
         </h2>
 
-        <!-- Subtítulo -->
-        <p
-          class="text-lg sm:text-xl md:text-2xl text-gray-600 mb-8 text-center font-normal leading-relaxed max-w-4xl mx-auto"
-        >
-          Diseñadas para el emprendedor latinoamericano que necesita
-          <span class="font-medium text-gray-800">orden</span>, no
-          <span class="font-medium text-red-600">complicaciones</span>.
+        <p class="text-base sm:text-lg text-slate-600 font-medium leading-relaxed">
+          Sin Excel complicados ni lenguaje contable. Hecho para la operación
+          real desde tu celular.
         </p>
       </div>
 
-      <!-- Grid de funcionalidades (5 cards) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Card 1: Finanzas claras -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-blue-200 hover:-translate-y-1"
+      <!-- 3 Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Card 1: Caja diaria -->
+        <article
+          class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#E35336]/30 transition-all duration-200"
         >
-          <div class="flex items-start gap-4 mb-4">
+          <div>
+            <!-- Visual Frame -->
             <div
-              class="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center shrink-0"
+              class="mb-5 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden aspect-[16/10] flex items-center justify-center p-3"
             >
-              <Cash class="w-6 h-6 text-blue-600" />
+              <!-- // TODO: Subir apps/web/src/assets/landing/app-caja.webp -->
+              <img
+                v-if="LANDING_ASSETS.appCaja && !imgErrors.appCaja"
+                :src="LANDING_ASSETS.appCaja"
+                alt="Caja diaria en WALA"
+                class="w-full h-full object-cover rounded-xl"
+                @error="imgErrors.appCaja = true"
+              />
+              <div
+                v-else
+                class="w-full h-full bg-white rounded-xl border border-slate-200/80 p-3 flex flex-col justify-between"
+              >
+                <div class="flex items-center justify-between">
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700"
+                  >
+                    <Cash class="w-4 h-4 text-[#E35336]" />
+                    Venta rápida
+                  </span>
+                  <span
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"
+                  >
+                    9 seg
+                  </span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 my-1">
+                  <div class="p-2 rounded-lg bg-slate-50 border border-slate-100">
+                    <span class="block text-[9px] text-slate-400 font-bold uppercase"
+                      >Efectivo</span
+                    >
+                    <span class="text-xs font-extrabold text-slate-900"
+                      >S/ 310.00</span
+                    >
+                  </div>
+                  <div class="p-2 rounded-lg bg-purple-50/70 border border-purple-100">
+                    <span class="block text-[9px] text-purple-600 font-bold uppercase"
+                      >Yape / Transf.</span
+                    >
+                    <span class="text-xs font-extrabold text-slate-900"
+                      >S/ 245.00</span
+                    >
+                  </div>
+                </div>
+                <div
+                  class="flex items-center justify-between text-[11px] font-bold text-emerald-700 bg-emerald-50/70 px-2.5 py-1.5 rounded-lg"
+                >
+                  <span>Total conciliado</span>
+                  <span>S/ 555.00</span>
+                </div>
+              </div>
             </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                Finanzas claras
-              </h3>
-            </div>
-          </div>
-          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Registra ingresos y gastos y entiende tus resultados al instante.
-          </p>
-        </div>
 
-        <!-- Card 2: Inventario inteligente -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-emerald-200 hover:-translate-y-1"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <Package class="w-6 h-6 text-emerald-600" />
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                Inventario inteligente
+            <div class="flex items-center gap-2.5 mb-2">
+              <div
+                class="w-9 h-9 rounded-xl bg-[#FFF5F2] text-[#E35336] flex items-center justify-center shrink-0"
+              >
+                <Cash class="w-5 h-5 stroke-[2]" />
+              </div>
+              <h3 class="text-lg font-extrabold text-gray-900 leading-snug">
+                Caja diaria sin confusiones
               </h3>
             </div>
-          </div>
-          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Controla tus productos y recibe alertas cuando algo se acaba.
-          </p>
-        </div>
 
-        <!-- Card 3: Reportes simples -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-purple-200 hover:-translate-y-1"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <Reports class="w-6 h-6 text-purple-600" />
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                Reportes simples
-              </h3>
-            </div>
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Registra ventas y separa efectivo de Yape o transferencias en
+              menos de 10 segundos.
+            </p>
           </div>
-          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Visualiza tu flujo diario con gráficos fáciles de entender.
-          </p>
-        </div>
+        </article>
 
-        <!-- Card 4: Clientes y proveedores -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-orange-200 hover:-translate-y-1"
+        <!-- Card 2: Costos y gastos -->
+        <article
+          class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#E35336]/30 transition-all duration-200"
         >
-          <div class="flex items-start gap-4 mb-4">
+          <div>
+            <!-- Visual Frame -->
             <div
-              class="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center shrink-0"
+              class="mb-5 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden aspect-[16/10] flex items-center justify-center p-3"
             >
-              <Group class="w-6 h-6 text-orange-600" />
+              <!-- // TODO: Subir apps/web/src/assets/landing/app-gastos.webp -->
+              <img
+                v-if="LANDING_ASSETS.appGastos && !imgErrors.appGastos"
+                :src="LANDING_ASSETS.appGastos"
+                alt="Costos y gastos bajo control en WALA"
+                class="w-full h-full object-cover rounded-xl"
+                @error="imgErrors.appGastos = true"
+              />
+              <div
+                v-else
+                class="w-full h-full bg-white rounded-xl border border-slate-200/80 p-3 flex flex-col justify-between"
+              >
+                <div class="flex items-center justify-between">
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700"
+                  >
+                    <Wallet class="w-4 h-4 text-[#E35336]" />
+                    Gastos clasificados
+                  </span>
+                  <span
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"
+                  >
+                    Mes actual
+                  </span>
+                </div>
+                <div class="space-y-1.5 my-1">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-600 font-medium">Insumos y mercadería</span>
+                    <span class="font-bold text-slate-900">S/ 1,450</span>
+                  </div>
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-600 font-medium">Alquiler, luz y fijos</span>
+                    <span class="font-bold text-slate-900">S/ 980</span>
+                  </div>
+                </div>
+                <div
+                  class="flex items-center justify-between text-[11px] font-bold text-[#E35336] bg-[#FFF5F2] px-2.5 py-1.5 rounded-lg"
+                >
+                  <span>Retiro personal separado</span>
+                  <span>S/ 600</span>
+                </div>
+              </div>
             </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                Clientes y proveedores
-              </h3>
-            </div>
-          </div>
-          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Lleva el control de pagos y contactos sin perder detalle.
-          </p>
-        </div>
 
-        <!-- Card 5: Aprendizaje práctico -->
-        <div
-          class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 transition-all duration-200 hover:shadow-md hover:border-yellow-200 hover:-translate-y-1 md:col-span-2 lg:col-span-1"
-        >
-          <div class="flex items-start gap-4 mb-4">
-            <div
-              class="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center shrink-0"
-            >
-              <BookStack class="w-6 h-6 text-yellow-600" />
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-semibold text-gray-900 mb-2">
-                Aprendizaje práctico
+            <div class="flex items-center gap-2.5 mb-2">
+              <div
+                class="w-9 h-9 rounded-xl bg-[#FFF5F2] text-[#E35336] flex items-center justify-center shrink-0"
+              >
+                <Wallet class="w-5 h-5 stroke-[2]" />
+              </div>
+              <h3 class="text-lg font-extrabold text-gray-900 leading-snug">
+                Costos y gastos bajo control
               </h3>
             </div>
+
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Separa retiros personales, alquiler, luz e insumos para saber
+              cuánto necesitas cubrir antes de ganar.
+            </p>
           </div>
-          <p class="text-sm sm:text-base text-gray-600 leading-relaxed">
-            Consejos y guías breves para mejorar tu negocio paso a paso.
-          </p>
-        </div>
+        </article>
+
+        <!-- Card 3: Inventario y reportes -->
+        <article
+          class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-[#E35336]/30 transition-all duration-200"
+        >
+          <div>
+            <!-- Visual Frame -->
+            <div
+              class="mb-5 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden aspect-[16/10] flex items-center justify-center p-3"
+            >
+              <!-- // TODO: Subir apps/web/src/assets/landing/app-reporte.webp -->
+              <img
+                v-if="LANDING_ASSETS.appReporte && !imgErrors.appReporte"
+                :src="LANDING_ASSETS.appReporte"
+                alt="Inventario y reportes claros en WALA"
+                class="w-full h-full object-cover rounded-xl"
+                @error="imgErrors.appReporte = true"
+              />
+              <div
+                v-else
+                class="w-full h-full bg-white rounded-xl border border-slate-200/80 p-3 flex flex-col justify-between"
+              >
+                <div class="flex items-center justify-between">
+                  <span
+                    class="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-700"
+                  >
+                    <Reports class="w-4 h-4 text-[#E35336]" />
+                    Stock y cierre semanal
+                  </span>
+                  <span
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"
+                  >
+                    En positivo
+                  </span>
+                </div>
+                <div class="space-y-1.5 my-1">
+                  <div class="flex items-center justify-between text-[11px]">
+                    <span class="text-slate-600 font-medium">Stock en unidad real</span>
+                    <span class="font-bold text-slate-900">12.5 kg disp.</span>
+                  </div>
+                  <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                    <div class="bg-[#E35336] h-full rounded-full w-3/4"></div>
+                  </div>
+                </div>
+                <div
+                  class="flex items-center justify-between text-[11px] font-bold text-emerald-700 bg-emerald-50/70 px-2.5 py-1.5 rounded-lg"
+                >
+                  <span>Resultado de la semana</span>
+                  <span>+S/ 1,420</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 mb-2">
+              <div
+                class="w-9 h-9 rounded-xl bg-[#FFF5F2] text-[#E35336] flex items-center justify-center shrink-0"
+              >
+                <Package class="w-5 h-5 stroke-[2]" />
+              </div>
+              <h3 class="text-lg font-extrabold text-gray-900 leading-snug">
+                Inventario y reportes claros
+              </h3>
+            </div>
+
+            <p class="text-sm text-slate-600 leading-relaxed">
+              Controla stock por unidad real de venta (incluso fraccionada) y
+              revisa si tu semana cerró en positivo.
+            </p>
+          </div>
+        </article>
       </div>
 
-      <!-- Card destacada con ejemplo visual -->
-      <div
-        class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm border border-purple-100 p-8 mb-8 transition-all duration-200 hover:shadow-md"
-      >
-        <div class="text-center mb-6">
-          <h3 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
-            Todo integrado, todo simple
-          </h3>
-          <p class="text-base sm:text-lg text-gray-700">
-            No necesitas cambiar entre apps. WALA lo tiene todo en un solo
-            lugar.
-          </p>
-        </div>
-
-        <!-- Grid de iconos ilustrativos -->
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 max-w-3xl mx-auto">
-          <div class="flex flex-col items-center gap-2">
-            <div
-              class="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center"
-            >
-              <Cash class="w-7 h-7 text-blue-600" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">Finanzas</span>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <div
-              class="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center"
-            >
-              <Package class="w-7 h-7 text-emerald-600" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">Inventario</span>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <div
-              class="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center"
-            >
-              <Reports class="w-7 h-7 text-purple-600" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">Reportes</span>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <div
-              class="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center"
-            >
-              <Group class="w-7 h-7 text-orange-600" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">Clientes</span>
-          </div>
-
-          <div class="flex flex-col items-center gap-2">
-            <div
-              class="w-14 h-14 bg-white rounded-lg shadow-sm flex items-center justify-center"
-            >
-              <BookStack class="w-7 h-7 text-yellow-600" />
-            </div>
-            <span class="text-xs font-medium text-gray-700">Aprende</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- CTA contextual -->
-      <div class="text-center">
-        <button
-          class="w-full sm:w-auto bg-gradient-to-r from-purple-500 to-purple-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:from-purple-600 hover:to-purple-700"
-          @click="scrollToNextSection"
+      <!-- Micro-CTA -->
+      <div class="text-center mt-10 sm:mt-12">
+        <router-link
+          :to="REGISTER_PATH"
+          class="inline-flex items-center justify-center gap-2 text-sm sm:text-base font-bold text-[#E35336] hover:text-[#c2412b] transition-colors"
         >
-          Ver todas las funciones
-        </button>
-        <p class="text-sm text-gray-500 mt-4">
-          Descubre todo lo que WALA puede hacer por tu negocio
-        </p>
+          <span>Explorar la app gratis hoy →</span>
+        </router-link>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
-import { Cash, Package, Reports, Group, BookStack } from "@iconoir/vue";
+import { reactive } from "vue";
+import { Cash, Package, Reports, Wallet } from "@iconoir/vue";
+import { REGISTER_PATH } from "@/config/ctaLinks";
+import { LANDING_ASSETS } from "@/config/landingAssets";
 
-const router = useRouter();
-
-// Función para redirigir a login
-const scrollToNextSection = () => {
-  router.push("/auth/login");
-};
+const imgErrors = reactive({
+  appCaja: false,
+  appGastos: false,
+  appReporte: false,
+});
 </script>
 
 <style scoped>
-/* Estilos coherentes con Hero, Pain, Solution y HistorialRecords */
-
-/* Animación de entrada para las cards */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Aplicar animación escalonada a las cards del grid */
-.grid > div:nth-child(1) {
-  animation: fadeInUp 0.5s ease-out 0.1s backwards;
-}
-
-.grid > div:nth-child(2) {
-  animation: fadeInUp 0.5s ease-out 0.2s backwards;
-}
-
-.grid > div:nth-child(3) {
-  animation: fadeInUp 0.5s ease-out 0.3s backwards;
-}
-
-.grid > div:nth-child(4) {
-  animation: fadeInUp 0.5s ease-out 0.4s backwards;
-}
-
-.grid > div:nth-child(5) {
-  animation: fadeInUp 0.5s ease-out 0.5s backwards;
-}
-
-/* Hover effects consistentes */
-button:active {
-  transform: translateY(0);
-}
-
-/* Transiciones suaves */
-button,
-.hover\:shadow-md {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Responsive adjustments */
-@media (max-width: 640px) {
-  h2 {
-    line-height: 1.2;
-  }
+.font-display {
+  font-family: "Outfit", "Inter", sans-serif;
 }
 </style>

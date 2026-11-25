@@ -173,7 +173,7 @@
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />
-          <span>Diagnóstico de 20 min y plan personalizado</span>
+          <span>Diagnóstico de 30 min y plan personalizado</span>
         </li>
         <li class="flex items-start gap-2">
           <CheckCircle class="w-4 h-4 text-emerald-600 mt-0.5" />

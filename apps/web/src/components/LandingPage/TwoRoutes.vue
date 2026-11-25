@@ -1,3 +1,4 @@
+<!-- Deprecado: reemplazado por EscaleraValor.vue en Home.vue -->
 <template>
   <section id="routes-section" class="py-20 md:py-28 px-4 bg-transparent font-display relative overflow-hidden">
     <!-- Glowing background blurs -->
@@ -44,7 +45,7 @@
             </div>
 
             <p class="text-sm text-gray-500 font-semibold leading-relaxed">
-              Reserva un <span class="text-[#E35336] font-bold">Diagnóstico gratuito de 20 minutos</span> por videollamada con José, metodólogo WALA.
+              Reserva un <span class="text-[#E35336] font-bold">Diagnóstico gratuito de 30 minutos</span> por videollamada con José, metodólogo WALA.
             </p>
 
             <div class="space-y-3.5 pt-2">

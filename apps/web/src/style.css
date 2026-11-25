@@ -55,12 +55,14 @@
 }
 
 /* Transformación de todos los inputs de tipo texto a mayúsculas */
-input[type="text"], input:not([type]) {
+input[type="text"]:not([data-preserve-case="true"]),
+input:not([type]):not([data-preserve-case="true"]) {
   text-transform: uppercase;
 }
 
 /* Mantener el placeholder con el formato original (opcional, para mejor UX) */
-input[type="text"]::placeholder, input:not([type])::placeholder {
+input[type="text"]:not([data-preserve-case="true"])::placeholder,
+input:not([type]):not([data-preserve-case="true"])::placeholder {
   text-transform: none;
 }
 

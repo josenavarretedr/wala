@@ -163,7 +163,7 @@
                     ¿Quieres saber qué está <span class="text-[#E35336]">frenando el crecimiento</span> de tu negocio hoy?
                   </h2>
                   <p class="text-sm sm:text-base text-gray-500 font-medium leading-relaxed">
-                    Agenda una sesión personalizada de <span class="text-gray-900 font-bold">20 minutos</span> uno a uno con José, metodólogo de WALA. Encontraremos la claridad que tu negocio necesita hoy mismo de forma totalmente gratuita.
+                    Agenda una sesión personalizada de <span class="text-gray-900 font-bold">30 minutos</span> uno a uno con José, metodólogo de WALA. Encontraremos la claridad que tu negocio necesita hoy mismo de forma totalmente gratuita.
                   </p>
                 </div>
 
@@ -268,7 +268,7 @@
                   </div>
                   <h4 class="text-base font-extrabold text-gray-900">Coordinas la Sesión</h4>
                   <p class="text-xs text-gray-500 font-medium leading-relaxed">
-                    Escríbenos por WhatsApp y coordinamos una reunión privada de <span class="text-gray-900 font-semibold">20 minutos</span> por videollamada esta semana.
+                    Escríbenos por WhatsApp y coordinamos una reunión privada de <span class="text-gray-900 font-semibold">30 minutos</span> por videollamada esta semana.
                   </p>
                 </div>
               </div>
@@ -318,7 +318,7 @@
                 Lo que dicen los emprendedores que <span class="text-[#E35336]">ya pasaron por esto</span>
               </h3>
               <p class="text-sm text-gray-500 font-semibold max-w-lg mx-auto">
-                Casos reales de transformación que empezaron con una sesión de 20 minutos.
+                Casos reales de transformación que empezaron con una sesión de 30 minutos.
               </p>
             </div>
 
@@ -787,6 +787,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { usePerformanceStore, AREAS_CONFIG } from "@/stores/performanceStore";
 import { useToast } from "@/composables/useToast";
+import { buildWhatsAppUrl } from "@/config/ctaLinks";
 
 const route = useRoute();
 const router = useRouter();
@@ -825,12 +826,12 @@ const currentTestimonialIndex = ref(0);
 const testimonials = ref([
   {
     quote:
-      "Pensé que mi problema era que vendía poco. En <span class='text-[#E35336] font-semibold'>20 minutos</span> José me mostró que el freno era el costeo — llevaba meses vendiendo <span class='text-[#E35336] font-semibold'>sin cubrir mis costos reales</span>.",
+      "Pensé que mi problema era que vendía poco. En <span class='text-[#E35336] font-semibold'>30 minutos</span> José me mostró que el freno era el costeo — llevaba meses vendiendo <span class='text-[#E35336] font-semibold'>sin cubrir mis costos reales</span>.",
     author: "Estela R., Salón de Belleza, Chiclayo",
   },
   {
     quote:
-      "El diagnóstico de 20 minutos con José me abrió los ojos. Descubrí que la falta de control de inventario estaba devorando mi flujo de caja.",
+      "El diagnóstico de 30 minutos con José me abrió los ojos. Descubrí que la falta de control de inventario estaba devorando mi flujo de caja.",
     author: "Carlos M., Minimarket, Trujillo",
   },
   {
@@ -851,9 +852,7 @@ const prevTestimonial = () => {
 };
 
 const openWhatsApp = () => {
-  const whatsappLink =
-    "https://api.whatsapp.com/send?phone=51921492993&text=Hola%20Jos%C3%A9%2C%20vi%20la%20p%C3%A1gina%20de%20WALA%20y%20quiero%20agendar%20mi%20diagn%C3%B3stico%20gratuito%20de%2020%20minutos.%20%C2%BFAgendamos%20para%20esta%20semana%3F";
-  window.open(whatsappLink, "_blank", "noopener,noreferrer");
+  window.open(buildWhatsAppUrl(), "_blank", "noopener,noreferrer");
 };
 
 // Cycles fully completed with all 21 indicators
