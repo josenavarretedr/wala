@@ -39,6 +39,7 @@ El repositorio está organizado como un **Monorepo gestionado con NPM Workspaces
 wala/
 ├── apps/
 │   ├── web/               # 🌐 Aplicación principal de usuario (Vue 3.5 + Vite + Pinia + Tailwind)
+│   ├── plan/              # 📋 Plan Seed / Formulación Planes de Negocio (Vue 3.5 + PWA + IndexedDB)
 │   ├── content/           # 📝 Generador y configurador de guiones IA (React 18 + Zustand + Vite)
 │   ├── video/             # 🎬 Wala Motion Suite: Renderizado de video (Remotion 4.0 + React 19 + TS)
 │   └── functions/         # ⚡ Backend serverless (Firebase Cloud Functions v2, Node 20, Express)
@@ -57,7 +58,8 @@ wala/
 
 | Workspace | Tecnologías | Propósito | Despliegue / Salida |
 |-----------|-------------|-----------|---------------------|
-| **`apps/web`** | Vue 3.5, Pinia, Vue Router 4, Tailwind CSS 3, Vite 5, Sentry, Chart.js | Plataforma central para dueños de negocio, colaboradores y facilitadores. | Firebase Hosting (`site: wala-lat`) |
+| **`apps/web`** | Vue 3.5, Pinia, Vue Router 4, Tailwind CSS 3, Vite 5, Sentry, Chart.js | Plataforma central para dueños de negocio, colaboradores y facilitadores. | Firebase Hosting (`site: wala-lat` / [wala.lat](https://wala.lat)) |
+| **`apps/plan`** | Vue 3.5, Pinia, Vue Router 4, VitePWA, IndexedDB, Tailwind CSS 3 | Formulación de Planes de Negocio y Capital Semilla Offline-First. | Firebase Hosting (`site: wala-plan` / [plan.wala.lat](https://plan.wala.lat)) |
 | **`apps/content`** | React 18, Zustand, Tailwind CSS, Lucide React, Vite 5 | SPA para creación, validación pedagógica y biblioteca de guiones formativos con IA. | Firebase Hosting (`site: wala-content`) |
 | **`apps/video`** | Remotion 4.0, React 19, TypeScript, Zod | Suite de diseño en movimiento y generación programática de video publicitario/educativo. | Remotion Studio / MP4 bundle |
 | **`apps/functions`** | Node 20, Firebase Functions v2, Express, Puppeteer, Resend, Mercado Pago | Lógica transaccional backend, cierres automáticos, webhooks, clasificación IA e imágenes. | Google Cloud Platform (`southamerica-east1` / `us-central1`) |
@@ -209,26 +211,36 @@ Puertos predeterminados configurados en [`firebase.json`](firebase.json):
 
 ## 🚢 Despliegue y Hosting
 
-La infraestructura de hosting está dividida en dos sitios sobre el mismo proyecto Firebase (`wala-lat`):
+La infraestructura de hosting está dividida en tres sitios sobre el mismo proyecto Firebase (`wala-lat`):
 
-1. **Plataforma Web Principal:**
+1. **Plataforma Web Principal (ERP / SaaS):**
    - **Target / Site:** `wala-lat`
    - **Directorio de compilación:** `apps/web/dist`
    - **URL pública:** [https://wala.lat](https://wala.lat)
-2. **Generador de Contenido:**
+2. **Plataforma de Plan de Negocio y Capital Semilla:**
+   - **Target / Site:** `wala-plan`
+   - **Directorio de compilación:** `apps/plan/dist`
+   - **URL pública:** [https://plan.wala.lat](https://plan.wala.lat) (y https://wala-plan.web.app)
+3. **Generador de Contenido:**
    - **Target / Site:** `wala-content`
    - **Directorio de compilación:** `apps/content/dist`
 
-Para desplegar solo un sitio específico:
+Para compilar y desplegar sitios específicos con npm:
 ```bash
-# Desplegar hosting web principal
-firebase deploy --only hosting:wala-lat
+# Desplegar aplicación de Plan de Negocio (plan.wala.lat)
+npm run deploy:plan
+
+# Desplegar hosting web principal (wala.lat)
+npm run deploy:web
 
 # Desplegar hosting de contenido
-firebase deploy --only hosting:wala-content
+npm run deploy:content
+
+# Desplegar todos los hostings juntos
+npm run deploy
 
 # Desplegar Cloud Functions
-firebase deploy --only functions
+npm run deploy:functions
 ```
 
 ---

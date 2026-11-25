@@ -3,6 +3,20 @@
     "default": "wala-lat",
     "prod": "wala-lat"
   },
-  "targets": {},
+  "targets": {
+    "wala-lat": {
+      "hosting": {
+        "web": [
+          "wala-lat"
+        ],
+        "content": [
+          "wala-content"
+        ],
+        "plan": [
+          "wala-plan"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
