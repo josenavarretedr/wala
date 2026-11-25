@@ -37,6 +37,41 @@
       </button>
     </div>
 
+    <!-- CYCLE SELECTOR & CYCLE CAP BANNER -->
+    <div class="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="text-[10px] font-black uppercase tracking-wider text-indigo-800 mr-1">
+          Ciclo del Plan:
+        </span>
+        <button
+          v-for="cycle in cycleOptions"
+          :key="cycle.key"
+          type="button"
+          @click="handleSelectCycle(cycle.key)"
+          :class="[
+            'px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border',
+            flowStore.selectedCycleKey === cycle.key
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300',
+          ]"
+        >
+          {{ cycle.label }}
+        </button>
+      </div>
+      <div class="flex items-center gap-2 text-[11px] font-bold">
+        <span
+          :class="[
+            'px-2.5 py-1 rounded-lg border',
+            totalCycleSelectedCount > 9
+              ? 'bg-amber-50 text-amber-800 border-amber-200'
+              : 'bg-white text-indigo-700 border-indigo-150',
+          ]"
+        >
+          {{ totalCycleSelectedCount }} / 9 acciones recomendadas
+        </span>
+      </div>
+    </div>
+
     <!-- MAIN STEPS -->
     <Transition name="fade-slide" mode="out-in">
       <!-- STEP 0: Select Critical Area -->
@@ -80,9 +115,22 @@
 
             <!-- Area details -->
             <div class="flex-1 min-w-0 pr-6 space-y-1">
-              <span class="text-base font-extrabold block truncate leading-snug">
-                {{ area.resumenArea }}
-              </span>
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-base font-extrabold block truncate leading-snug">
+                  {{ area.resumenArea }}
+                </span>
+                <span
+                  v-if="getCycleAreaCount(area.areaKey) > 0"
+                  :class="[
+                    'text-[10px] font-bold px-2 py-0.5 rounded-full border',
+                    flowStore.selectedAreaKey === area.areaKey
+                      ? 'bg-white/20 text-white border-white/30'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  ]"
+                >
+                  {{ getCycleAreaCount(area.areaKey) }} en plan
+                </span>
+              </div>
               <div class="flex items-center gap-2 flex-wrap">
                 <span
                   :class="[
@@ -182,10 +230,10 @@
             <div v-if="suggestedActions.length > 0" class="space-y-4">
               <div
                 v-for="action in suggestedActions"
-                :key="action.id"
+                :key="action.actionKey || action.id"
                 class="group border rounded-2xl overflow-hidden transition-all duration-300 bg-white"
                 :class="[
-                  flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`)
+                  flowStore.isActionSelected(action, currentIndicator.key)
                     ? 'border-indigo-600 shadow-md shadow-indigo-600/5'
                     : 'border-gray-200 hover:border-indigo-200 hover:shadow-sm'
                 ]"
@@ -195,31 +243,39 @@
                   @click="handleToggleAction(action)"
                   class="w-full p-4 sm:p-5 flex items-start gap-4 text-left cursor-pointer transition-all duration-200"
                   :class="[
-                    flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`) ? 'bg-indigo-50/20' : 'bg-white'
+                    flowStore.isActionSelected(action, currentIndicator.key) ? 'bg-indigo-50/20' : 'bg-white'
                   ]"
                 >
                   <!-- Selection box/circle -->
                   <div
                     class="w-6 h-6 rounded-xl border shrink-0 flex items-center justify-center transition-all duration-300"
                     :class="[
-                      flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`)
+                      flowStore.isActionSelected(action, currentIndicator.key)
                         ? 'bg-indigo-600 border-indigo-600 text-white'
                         : 'border-gray-300 bg-white group-hover:border-indigo-500'
                     ]"
                   >
-                    <Check v-if="flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`)" class="w-3.5 h-3.5 stroke-[3.5]" />
+                    <Check v-if="flowStore.isActionSelected(action, currentIndicator.key)" class="w-3.5 h-3.5 stroke-[3.5]" />
                   </div>
 
                   <!-- Text -->
                   <div class="flex-1 space-y-2">
                     <p 
                       class="text-xs sm:text-sm font-semibold leading-relaxed transition-colors duration-200"
-                      :class="flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`) ? 'text-gray-900 font-extrabold' : 'text-gray-700'"
+                      :class="flowStore.isActionSelected(action, currentIndicator.key) ? 'text-gray-900 font-extrabold' : 'text-gray-700'"
                     >
                       {{ action.action }}
                     </p>
                     
-                    <div class="flex items-center gap-3 text-[10px] font-bold">
+                    <div class="flex items-center gap-2 flex-wrap text-[10px] font-bold">
+                      <span
+                        :class="[
+                          'px-2 py-0.5 rounded border',
+                          getArchetypeBadgeClass(action.actionType),
+                        ]"
+                      >
+                        {{ action.actionTypeLabel || 'Acción' }}
+                      </span>
                       <span class="text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                         {{ action.frequency }}
                       </span>
@@ -232,14 +288,14 @@
 
                 <!-- Customized Textarea (Expands when selected) -->
                 <div
-                  v-if="flowStore.isActionSelected(`${currentIndicator.key}_${action.id}`)"
+                  v-if="flowStore.isActionSelected(action, currentIndicator.key)"
                   class="border-t border-indigo-100 p-4 bg-indigo-50/10 space-y-2.5 animate-fadeIn"
                 >
                   <label class="block text-[10px] font-black text-indigo-900 uppercase tracking-widest">
                     Personalizar Acción para el Emprendedor
                   </label>
                   <textarea
-                    v-model="getActionTextModel(`${currentIndicator.key}_${action.id}`).value"
+                    v-model="getActionTextModel(action, currentIndicator.key).value"
                     rows="3"
                     class="w-full rounded-xl border-indigo-150 focus:border-indigo-500 focus:ring-indigo-500 shadow-inner bg-white text-xs sm:text-sm p-3 font-semibold text-gray-700"
                     placeholder="Personaliza el texto de la acción para este cliente..."
@@ -373,7 +429,7 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { usePerformanceStore, AREAS_CONFIG } from "@/stores/performanceStore";
-import { useActionPlanFlowStore } from "@/stores/actionPlanFlowStore";
+import { useActionPlanFlowStore, CYCLE_OPTIONS } from "@/stores/actionPlanFlowStore";
 import { getActionsForIndicator } from "@/utils/actionBankLoader";
 import { useToast } from "@/composables/useToast";
 
@@ -381,6 +437,10 @@ const props = defineProps({
   businessId: {
     type: String,
     required: true,
+  },
+  initialCycleKey: {
+    type: String,
+    default: null,
   },
 });
 
@@ -390,13 +450,49 @@ const performanceStore = usePerformanceStore();
 const flowStore = useActionPlanFlowStore();
 const toast = useToast();
 
+const cycleOptions = CYCLE_OPTIONS;
 const currentStep = computed(() => flowStore.currentStep);
 const criticalAreas = ref([]);
 
-// Cargar áreas críticas al montar
+const getCycleAreaCount = (areaKey) => {
+  if (flowStore.selectedAreaKey === areaKey) {
+    return flowStore.selectedActions.length;
+  }
+  const existing = flowStore.actionPlansByCycle[flowStore.selectedCycleKey] || [];
+  return existing.filter((a) => a.areaKey === areaKey).length;
+};
+
+const totalCycleSelectedCount = computed(() => {
+  const existing = flowStore.actionPlansByCycle[flowStore.selectedCycleKey] || [];
+  if (!flowStore.selectedAreaKey) {
+    return existing.length;
+  }
+  const otherCount = existing.filter((a) => a.areaKey !== flowStore.selectedAreaKey).length;
+  return otherCount + flowStore.selectedActions.length;
+});
+
+const handleSelectCycle = (cycleKey) => {
+  flowStore.setSelectedCycle(cycleKey);
+};
+
+const getArchetypeBadgeClass = (actionType) => {
+  const classes = {
+    config: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    habit: "bg-sky-50 text-sky-700 border-sky-200",
+    note: "bg-violet-50 text-violet-700 border-violet-200",
+    review: "bg-teal-50 text-teal-700 border-teal-200",
+  };
+  return classes[actionType] || "bg-gray-50 text-gray-600 border-gray-200";
+};
+
+// Cargar áreas críticas y planes por ciclo al montar
 const loadDossierData = async () => {
   if (!props.businessId) return;
   try {
+    await flowStore.loadDossierActionPlans(props.businessId);
+    if (props.initialCycleKey) {
+      flowStore.setSelectedCycle(props.initialCycleKey);
+    }
     const docRef = doc(db, "businesses", props.businessId, "consulting", "dossier");
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -515,14 +611,14 @@ const handleToggleAction = (action) => {
 };
 
 // Two-way bindings for actionText custom editing in textarea
-const getActionTextModel = (actionId) => {
+const getActionTextModel = (actionItem, indicatorKey = null) => {
   return computed({
     get: () => {
-      const action = flowStore.getAction(actionId);
+      const action = flowStore.getAction(actionItem, indicatorKey);
       return action ? action.actionText : "";
     },
     set: (val) => {
-      flowStore.updateActionText(actionId, val);
+      flowStore.updateActionText(actionItem, val, indicatorKey);
     },
   });
 };

@@ -96,7 +96,7 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Elige tu producto o servicio más vendido. Anota en WALA cuánto te cuesta hacerlo o conseguirlo, aunque sea una estimación aproximada. Solo materiales o costo de compra por ahora. | Única vez | Módulo de gastos — registro de costo del producto principal |
+| 1 | Elige tu producto o servicio más vendido. Anota en WALA cuánto te cuesta hacerlo o conseguirlo, aunque sea una estimación aproximada. Solo materiales o costo de compra por ahora. | Única vez | Módulo de inventario — ficha económica y costo del producto principal |
 | 2 | Compara ese costo con el precio al que lo vendes. Escribe en WALA cuánto queda de diferencia. No es el análisis completo: es el primer dato. | Única vez | Expediente de seguimiento — nota de cálculo inicial |
 | 3 | Conversa con el asesor sobre qué pasa si ese margen no alcanza para cubrir todos los gastos del negocio. Registra lo que entendiste. | Única vez | Expediente de seguimiento — nota de sesión |
 
@@ -107,8 +107,8 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Para tu producto principal, registra en WALA los tres componentes básicos del costo: materiales, tiempo de trabajo y una parte de los gastos fijos del negocio (aunque sea estimada). Suma los tres. | Única vez | Módulo de gastos — estructura de costo del producto principal |
-| 2 | Cuando suba el precio de un insumo o materia prima, regístralo en WALA el mismo día. Anota también cuánto cambió tu costo por unidad. | Semanal (cuando aplica) | Módulo de gastos — actualización de costo de insumos |
+| 1 | Para tu producto principal, registra en WALA los tres componentes básicos del costo: materiales, tiempo de trabajo y una parte de los gastos fijos del negocio (aunque sea estimada). Suma los tres. | Única vez | Módulo de inventario — estructura completa de costeo del producto |
+| 2 | Cuando suba el precio de un insumo o materia prima, regístralo en WALA el mismo día. Anota también cuánto cambió tu costo por unidad. | Semanal (cuando aplica) | Módulo de gastos / inventario — actualización de costo de insumos |
 | 3 | Compara en WALA tu precio actual con el costo calculado. ¿El margen que queda es suficiente? Registra tu conclusión y si necesitas ajustar el precio. | Única vez (por ciclo) | Expediente de seguimiento — análisis de precio del ciclo |
 
 ---
@@ -118,9 +118,9 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Revisa en WALA si el costo calculado de tu producto incluye todos los componentes: materiales directos, tu tiempo como salario del dueño, gastos indirectos (luz, alquiler, transporte). Si falta alguno, agrégalo este ciclo. | Única vez (por ciclo) | Módulo de gastos — estructura de costo completa |
+| 1 | Revisa en WALA si el costo calculado de tu producto incluye todos los componentes: materiales directos, tu tiempo como salario del dueño, gastos indirectos (luz, alquiler, transporte). Si falta alguno, agrégalo este ciclo. | Única vez (por ciclo) | Módulo de inventario — estructura de costeo completa |
 | 2 | Al cierre del mes, verifica en WALA si el margen real obtenido coincide con el margen que calculaste al fijar el precio. Si hay diferencia, identifica de dónde viene. | Mensual | Reporte mensual — comparativa de margen proyectado vs. real |
-| 3 | Si tienes más de un producto, registra en WALA el costo y el margen de cada uno. Identifica cuál te deja más ganancia real y cuál te está costando más de lo que produce. Registra esa decisión en el expediente. | Mensual | Módulo de gastos — estructura de costos por producto |
+| 3 | Si tienes más de un producto, registra en WALA el costo y el margen de cada uno. Identifica cuál te deja más ganancia real y cuál te está costando más de lo que produce. Registra esa decisión en el expediente. | Mensual | Módulo de inventario — estructura de costos y márgenes por producto |
 
 ---
 

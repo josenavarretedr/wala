@@ -56,6 +56,183 @@
       </div>
     </section>
 
+    <!-- Sección 4: Parámetros de Gestión Financiera (Método WALA) -->
+    <section class="py-5 border-b border-gray-100">
+      <div class="flex items-start gap-3 mb-4">
+        <div
+          class="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0"
+        >
+          <Wallet class="w-5 h-5 text-emerald-600" />
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="text-sm font-semibold text-gray-900">
+              Parámetros de Gestión Financiera
+            </h3>
+            <span
+              class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200"
+            >
+              Método WALA
+            </span>
+          </div>
+          <p class="text-xs text-gray-500 mt-0.5">
+            Configuración usada para tu sueldo del dueño, costeo por hora, compras y seguimiento del plan de acción
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Meta mensual personal -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Meta de ingreso personal mensual (S/)
+          </label>
+          <input
+            v-model.number="modelValue.ownerSalaryTarget"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Ej: 1500.00"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Monto mensual que necesitas recibir de tu negocio para cubrir tu presupuesto familiar
+          </p>
+        </div>
+
+        <!-- Sueldo fijo asignado -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Sueldo fijo del dueño asignado (S/)
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <input
+              v-model.number="modelValue.ownerSalaryAmount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Ej: 350.00"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+            />
+            <select
+              v-model="modelValue.ownerSalaryFrequency"
+              class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="biweekly">Quincenal</option>
+              <option value="monthly">Mensual</option>
+            </select>
+          </div>
+          <p class="mt-1 text-xs text-gray-500">
+            Se pre-llenará automáticamente cuando registres el gasto «Salario del dueño»
+          </p>
+        </div>
+
+        <!-- Horas semanales del dueño -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Horas semanales trabajadas por el dueño
+          </label>
+          <input
+            v-model.number="modelValue.ownerWeeklyHours"
+            type="number"
+            step="1"
+            min="1"
+            max="120"
+            placeholder="Ej: 48"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Jornada habitual que dedicas al negocio cada semana (ej. 48 h)
+          </p>
+        </div>
+
+        <!-- Valor hora del dueño -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-medium text-gray-900">
+              Valor por hora del dueño (S/ / hr)
+            </label>
+            <button
+              v-if="suggestedHourlyRate > 0"
+              type="button"
+              @click="applySuggestedHourlyRate"
+              class="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline"
+            >
+              Calcular (S/ {{ suggestedHourlyRate.toFixed(2) }}/hr)
+            </button>
+          </div>
+          <input
+            v-model.number="modelValue.ownerHourlyRate"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Ej: 8.50"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Se conecta con el costeo de Mano de Obra Directa (MOD) de tus productos
+          </p>
+        </div>
+
+        <!-- Canal principal de promoción -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Canal principal de promoción
+          </label>
+          <select
+            v-model="modelValue.primaryPromoChannel"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          >
+            <option value="">Seleccione un canal</option>
+            <option value="WhatsApp">WhatsApp / Catálogo</option>
+            <option value="Facebook">Facebook</option>
+            <option value="Instagram">Instagram</option>
+            <option value="TikTok">TikTok</option>
+            <option value="Recomendación">Recomendación / Boca a boca</option>
+            <option value="Punto de venta">Punto de venta físico / Volantes</option>
+          </select>
+          <p class="mt-1 text-xs text-gray-500">
+            Canal prioritario donde concentras tus promociones (Área Marketing)
+          </p>
+        </div>
+
+        <!-- Umbral mínimo de compra para pedir 2 cotizaciones -->
+        <div>
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Pedir 2+ cotizaciones en compras desde (S/)
+          </label>
+          <input
+            v-model.number="modelValue.purchaseQuoteThreshold"
+            type="number"
+            step="1"
+            min="0"
+            placeholder="Ej: 200.00"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Regla de compras: monto a partir del cual siempre comparas proveedores (Área Compras)
+          </p>
+        </div>
+
+        <!-- Meta principal del ciclo -->
+        <div class="lg:col-span-2">
+          <label class="block text-sm font-medium text-gray-900 mb-2">
+            Meta principal del ciclo actual
+          </label>
+          <input
+            v-model="modelValue.cycleMainGoal"
+            type="text"
+            placeholder="Ej: Aumentar margen bruto al 35% y mantener 5 productos clave sin quiebres de stock"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm bg-white"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Objetivo medible definido junto con tu asesor para el ciclo actual (Área Planificación)
+          </p>
+        </div>
+      </div>
+    </section>
+
     <section class="pt-5">
       <h3 class="text-sm font-semibold text-gray-900 mb-3">
         Información del sistema
@@ -84,7 +261,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { ProfileCircle, Community, GraphUp } from "@iconoir/vue";
+import { ProfileCircle, Community, GraphUp, Wallet } from "@iconoir/vue";
 
 const props = defineProps({
   modelValue: {
@@ -102,6 +279,25 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue"]);
+
+const suggestedHourlyRate = computed(() => {
+  const amt = Number(props.modelValue?.ownerSalaryAmount || 0);
+  const hrs = Number(props.modelValue?.ownerWeeklyHours || 0);
+  if (!(amt > 0) || !(hrs > 0)) return 0;
+  let weeklyEq = amt;
+  if (props.modelValue?.ownerSalaryFrequency === "biweekly") {
+    weeklyEq = amt / 2;
+  } else if (props.modelValue?.ownerSalaryFrequency === "monthly") {
+    weeklyEq = amt / 4.33;
+  }
+  return Math.round(((weeklyEq / hrs) + Number.EPSILON) * 100) / 100;
+});
+
+const applySuggestedHourlyRate = () => {
+  if (suggestedHourlyRate.value > 0) {
+    props.modelValue.ownerHourlyRate = suggestedHourlyRate.value;
+  }
+};
 
 const businessFields = [
   {

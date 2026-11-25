@@ -159,6 +159,16 @@ const formData = ref({
   localizacionPermanente: "",
   capitalInvertido: "",
   planesLargoPlazo: "",
+
+  // Parámetros de gestión financiera y operativa (Método WALA)
+  ownerSalaryTarget: null,
+  ownerSalaryAmount: null,
+  ownerSalaryFrequency: "weekly",
+  ownerWeeklyHours: 48,
+  ownerHourlyRate: null,
+  primaryPromoChannel: "",
+  purchaseQuoteThreshold: null,
+  cycleMainGoal: "",
   
   // Documento raíz
   industry: "",
@@ -254,6 +264,31 @@ async function loadBusinessProfileData(businessId) {
       localizacionPermanente: profileSource.localizacionPermanente || "",
       capitalInvertido: profileSource.capitalInvertido || "",
       planesLargoPlazo: profileSource.planesLargoPlazo || "",
+
+      // Parámetros de gestión financiera y operativa (Método WALA)
+      ownerSalaryTarget:
+        profileSource.ownerSalaryTarget !== undefined && profileSource.ownerSalaryTarget !== null
+          ? Number(profileSource.ownerSalaryTarget)
+          : null,
+      ownerSalaryAmount:
+        profileSource.ownerSalaryAmount !== undefined && profileSource.ownerSalaryAmount !== null
+          ? Number(profileSource.ownerSalaryAmount)
+          : null,
+      ownerSalaryFrequency: profileSource.ownerSalaryFrequency || "weekly",
+      ownerWeeklyHours:
+        profileSource.ownerWeeklyHours !== undefined && profileSource.ownerWeeklyHours !== null
+          ? Number(profileSource.ownerWeeklyHours)
+          : 48,
+      ownerHourlyRate:
+        profileSource.ownerHourlyRate !== undefined && profileSource.ownerHourlyRate !== null
+          ? Number(profileSource.ownerHourlyRate)
+          : null,
+      primaryPromoChannel: profileSource.primaryPromoChannel || "",
+      purchaseQuoteThreshold:
+        profileSource.purchaseQuoteThreshold !== undefined && profileSource.purchaseQuoteThreshold !== null
+          ? Number(profileSource.purchaseQuoteThreshold)
+          : null,
+      cycleMainGoal: profileSource.cycleMainGoal || "",
       
       industry: businessWithSettings.industry || "",
       businessType: businessWithSettings.businessType || "",
@@ -327,6 +362,21 @@ const handleSave = async () => {
     const businessProfileRef = doc(db, "businesses", businessId, "settings", "businessProfile");
     const configRef = doc(db, "businesses", businessId, "settings", "config");
 
+    // Calcular valor por hora del dueño si tiene salario configurado y no fijó valor manual
+    const normalizeNum = (v) =>
+      v === "" || v === null || v === undefined ? null : Number(v);
+    const salaryAmt = normalizeNum(formData.value.ownerSalaryAmount);
+    const weeklyHrs = normalizeNum(formData.value.ownerWeeklyHours) || 48;
+    let computedHourlyRate = normalizeNum(formData.value.ownerHourlyRate);
+
+    if ((!computedHourlyRate || computedHourlyRate <= 0) && salaryAmt > 0 && weeklyHrs > 0) {
+      let weeklyEq = salaryAmt;
+      if (formData.value.ownerSalaryFrequency === "biweekly") weeklyEq = salaryAmt / 2;
+      else if (formData.value.ownerSalaryFrequency === "monthly") weeklyEq = salaryAmt / 4.33;
+      computedHourlyRate = Math.round(((weeklyEq / weeklyHrs) + Number.EPSILON) * 100) / 100;
+      formData.value.ownerHourlyRate = computedHourlyRate;
+    }
+
     // 1. Perfil del negocio (datos overview)
     await setDoc(
       businessProfileRef,
@@ -348,6 +398,15 @@ const handleSave = async () => {
         localizacionPermanente: formData.value.localizacionPermanente,
         capitalInvertido: formData.value.capitalInvertido,
         planesLargoPlazo: formData.value.planesLargoPlazo,
+        // Parámetros de gestión financiera y operativa (Método WALA)
+        ownerSalaryTarget: normalizeNum(formData.value.ownerSalaryTarget),
+        ownerSalaryAmount: salaryAmt,
+        ownerSalaryFrequency: formData.value.ownerSalaryFrequency || "weekly",
+        ownerWeeklyHours: weeklyHrs,
+        ownerHourlyRate: computedHourlyRate,
+        primaryPromoChannel: formData.value.primaryPromoChannel || "",
+        purchaseQuoteThreshold: normalizeNum(formData.value.purchaseQuoteThreshold),
+        cycleMainGoal: formData.value.cycleMainGoal || "",
         updatedAt: new Date(),
       },
       { merge: true },

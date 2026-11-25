@@ -156,7 +156,8 @@ docs/
 
 | Archivo | Descripción | Estado |
 |---------|-------------|--------|
-| [BUSINESS_CONSULTING_MODULE.md](features/BUSINESS_CONSULTING_MODULE.md) | Módulo de Asesoría de Negocios | ✅ Activo |
+| [BUSINESS_CONSULTING_MODULE.md](features/BUSINESS_CONSULTING_MODULE.md) | Módulo de Asesoría de Negocios (1-a-1) | ✅ Activo |
+| [SINCRONIA_BANCO_ACCIONES_WALA.md](features/SINCRONIA_BANCO_ACCIONES_WALA.md) | Sincronía operativa entre Banco de Acciones, Asesoría 1-a-1 y WALA | ✅ Activo |
 | [BUSINESS_CONSULTING_QUICK_START.md](features/BUSINESS_CONSULTING_QUICK_START.md) | Guía de Inicio Rápido de Asesoría | ✅ Activo |
 | [ESTADO_RESULTADOS_PL_DEVENGADO.md](features/ESTADO_RESULTADOS_PL_DEVENGADO.md) | Estado de Resultados (P&L) y Costo de Ventas Devengado | ✅ Activo |
 | [SISTEMA_CLIENTES.md](features/SISTEMA_CLIENTES.md) | Gestión de clientes | ✅ Activo |

@@ -1,7 +1,7 @@
 # Especificación Técnica — Banco de Acciones WALA
 
-**Versión 1.0 | Mayo 2026**
-**Clasificación:** Documento interno — Equipo WALA / Referencia para generación de contenido metodológico
+**Versión 3.0 | Noviembre 2026**
+**Clasificación:** Documento interno — Equipo WALA / Referencia metodológica, técnica y para generación de contenido con LLM
 
 ---
 
@@ -176,17 +176,17 @@ Palabras técnicas a evitar en la redacción de acciones: "costeo", "indicador",
 
 ---
 
-## 6. Relación entre acciones y el expediente de seguimiento
+## 6. Relación entre acciones, expediente y estados oficiales
 
-El expediente de seguimiento del Método WALA registra el estado de cada acción del plan en tres estados posibles:
+El expediente de seguimiento del Método WALA (`businesses/{businessId}/consulting/dossier`) organiza el plan de acción por ciclos (`ciclo1`, `ciclo2`, `ciclo3` en `actionPlansByCycle` + `activeCycleKey`) y registra cada acción en tres estados oficiales:
 
-| Estado | Descripción |
-|---|---|
-| **Completada** | El emprendedor realizó la acción y puede mostrar evidencia |
-| **En proceso** | El emprendedor comenzó pero no la completó; debe acordarse un nuevo plazo concreto |
-| **No realizada** | El emprendedor no la realizó; el asesor debe identificar el obstáculo y rediseñar la acción si es necesario |
+| Estado UI | Código en Firestore | Descripción y regla de seguimiento |
+|---|---|---|
+| **Completada** | `completed` | El emprendedor realizó la acción y existe evidencia en WALA o bitácora |
+| **En proceso / Pendiente** | `in_progress` *(legacy: `incomplete`)* | Acción activa del ciclo aún en ejecución; debe tener seguimiento semanal |
+| **No realizada** | `not_done` | El emprendedor no la realizó en el ciclo; el asesor identifica el obstáculo y ajusta para el siguiente ciclo |
 
-Una acción "en proceso" sin fecha de cierre definida equivale a una acción no realizada para efectos del registro. El asesor debe siempre acordar un plazo concreto.
+La verificación sigue un **modelo híbrido**: cuando la acción está conectada a una métrica o configuración real de WALA (`useActionEvidence.js`), la plataforma muestra evidencia automática en vivo y sugiere marcarla como completada, pero la confirmación final permanece bajo criterio del asesor o del emprendedor.
 
 ---
 
@@ -279,23 +279,38 @@ Para generar el banco de acciones de un área específica, se debe:
 
 ## 10. Módulos de WALA disponibles para referencia
 
-Al redactar el campo "Dónde se registra en WALA", usar exclusivamente los siguientes módulos y secciones:
+Al redactar el campo "Dónde se registra en WALA", usar exclusivamente los siguientes módulos y secciones existentes en la plataforma:
 
-| Módulo / Sección | Qué centraliza |
-|---|---|
-| **Módulo de ingresos** | Registro de ventas y entradas de dinero al negocio |
-| **Módulo de gastos** | Registro de egresos, categorizados por tipo |
-| **Módulo de inventario** | Control de stock, productos, cantidades y estado |
-| **Módulo de clientes** | Registro de clientes, origen, cuentas por cobrar |
-| **Módulo de flujo de caja** | Proyección y revisión de entradas y salidas de efectivo |
-| **Dashboard de resultado** | Vista automática de resultados del período (semanal/mensual) |
-| **Reporte mensual** | Comparativa de períodos, ganancias y pérdidas |
-| **Expediente de seguimiento** | Registro de planes, acciones, notas de sesión y conclusiones de ciclo |
-| **Perfil del negocio** | Datos base del negocio: salario del dueño, categorías propias, canal principal |
+| Módulo / Sección | Ruta en WALA (`/business/:businessId/...`) | Qué centraliza y cómo sincroniza con el BA |
+|---|---|---|
+| **Módulo de ingresos** | `basicAccountingRecordsBook?type=income` | Registro de ventas (al contado y al crédito) y entradas de dinero |
+| **Módulo de gastos** | `basicAccountingRecordsBook?type=expense` | Insumos (`materials`), sueldos de equipo (`labor`), gastos generales (`overhead`) y el bloque **Negocio y Dueño** (`preset=owner_salary`, `preset=family_salary`, `preset=owner_draw`) |
+| **Módulo de inventario** | `inventory` *(y subrutas `product/:id/costing/*`)* | Control de stock, `minStock`/`safetyStock`, filtro rápido bajo stock / sin movimiento >14d / cobertura de costeo, mermas y bajas con resumen mensual no monetario, y MOD conectado al valor hora del dueño |
+| **Módulo de clientes** | `clients` y `accounts-receivable` | Canal de origen (`originChannel`), rentabilidad por origen, promociones (`promoMilestones`), cobranzas con fecha prometida, aging (`<30d`/`>30d`), recordatorio WhatsApp y castigo incobrable no monetario |
+| **Módulo de proveedores** | `suppliers` y `accounts-payable` | Directorio con confiabilidad (`incidentsCount`), comparador de cotizaciones (`purchaseQuotes`), incidencias/devoluciones híbridas (`supplierIncidents`) y cuentas por pagar |
+| **Balance de cuentas** | `accounts-balance` | Flujo real de caja/banco (excluyendo ajustes no monetarios), calendario de pagos fijos mensuales (`recurringPayments`) y proyección de liquidez próximos 7 días |
+| **Reporte mensual / P&L** | `income-statement` y `expenses` | Estado de Resultados devengado (incluyendo `inventory_shrinkage` y `opex_bad_debt`, alerta de cuentas vencidas >30d, tarjeta `owner_draw` y bloque **Proyectado vs. Real**) |
+| **Perfil del negocio** | `business-info` (`settings/businessProfile`) | Meta salarial, salario del dueño, horas semanales, valor por hora, canal principal de promoción, umbral de 2 cotizaciones y meta del ciclo |
+| **Expediente de seguimiento** | `consulting` (`consulting/dossier`) | Planes de acción por ciclo (`ciclo1`/`ciclo2`/`ciclo3`), bitácoras del emprendedor, notas del asesor y conclusiones de revisión |
+
+> **Nota sobre Costeo y Planificación:** El costeo unitario por producto (materiales directos, mano de obra directa MOD y costos indirectos CIF) vive dentro del **Módulo de inventario** (`inventory`), no en el módulo de gastos. Asimismo, las proyecciones semanales/mensuales de ventas y caja sin módulo independiente se documentan en el **Expediente de seguimiento** y se contrastan contra `income-statement` y `accounts-balance`.
 
 ---
 
-## 11. Nota final para el asesor
+## 11. Sincronía Operativa — Los 4 Arquetipos de Acción
+
+En código (`apps/web/src/config/actionBankMeta.js` y `apps/web/src/utils/actionBankLoader.js`), cada fila parseada recibe un `actionKey` (`${indicador}_${tramo}_${numero}`) y se clasifica en uno de 4 arquetipos que determinan la experiencia interactiva dentro del Plan de Acción 1-a-1:
+
+| Arquetipo (`actionType`) | Frecuencia típica | Experiencia en WALA |
+|---|---|---|
+| **`config`** | Única vez / por ciclo | Input inline en la tarjeta conectado a `settings/businessProfile` (ej. `ownerSalaryAmount`, `ownerHourlyRate`, `primaryPromoChannel`, `purchaseQuoteThreshold`, `cycleMainGoal`) o acceso directo a Inventario/Costeo |
+| **`habit`** | Semanal / por evento | Botón de deep-link directo al flujo con preselección (`?type=expense&preset=owner_draw`, `?preset=owner_salary`, etc.) + badge automático de frecuencia/registros reales en los últimos 7–30 días |
+| **`note`** | Única vez / semanal | Bitácora interactiva dentro de la tarjeta (`entrepreneurNote` y `advisorNote`) con pregunta guía específica guardada en `consulting/dossier` |
+| **`review`** | Semanal / mensual | Botón hacia el reporte real (`income-statement`, `expenses`, `accounts-receivable`, `clients`, `inventory`) + campo para documentar la decisión o hallazgo del período |
+
+---
+
+## 12. Nota final para el asesor
 
 El Banco de Acciones no reemplaza el criterio del asesor: lo potencia. Las acciones están diseñadas para ser adaptables al contexto del emprendedor. Si una acción del banco no aplica al sector del emprendedor (por ejemplo, acciones de inventario para un negocio de servicios), el asesor debe elegir la acción alternativa del tramo que sí aplique, o formular una variación que respete la lógica del tramo.
 
@@ -303,6 +318,6 @@ El criterio final siempre es: **¿esta acción, en esta frecuencia, con este emp
 
 ---
 
-*Método WALA — Especificación Técnica del Banco de Acciones v1.0*
+*Método WALA — Especificación Técnica del Banco de Acciones v3.0*
 *WALA Asesoría · José Navarrete · 2026*
-*Este documento está estructurado para ser procesado por sistemas LLM. Los campos entre corchetes indican variables que deben completarse en contexto de generación.*
+*Referencia técnica de implementación: `docs/features/SINCRONIA_BANCO_ACCIONES_WALA.md`.*

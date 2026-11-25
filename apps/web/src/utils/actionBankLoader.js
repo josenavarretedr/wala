@@ -1,5 +1,5 @@
 // Utility to load and parse WALA Action Bank Markdown files
-import { AREAS_CONFIG } from "@/stores/performanceStore";
+import { resolveActionMeta } from "@/config/actionBankMeta";
 
 // Eager load all action bank Markdown files from assets using relative path
 const modules = import.meta.glob("../assets/BANCO ACCIONES/BA - *.md", {
@@ -65,11 +65,18 @@ export function parseActionsMarkdown(content) {
           // Skip headers like "| # | Acción |"
           if (actionText.toLowerCase() === "acción") continue;
 
-          tableRows.push({
+          const baseRow = {
             id: num,
             action: actionText,
             frequency: frequency,
             wala: walaSection,
+          };
+
+          const meta = resolveActionMeta(indicatorKey, trancheKey, baseRow);
+
+          tableRows.push({
+            ...baseRow,
+            ...meta,
           });
         }
       }

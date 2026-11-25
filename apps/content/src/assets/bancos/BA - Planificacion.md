@@ -59,8 +59,8 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Esta semana, antes de que empiece el lunes, anota en WALA cuándo esperas que entre dinero (cobros, ventas al contado) y cuándo tienes que pagar algo (proveedores, servicios, deudas). Solo esta semana. | Semanal | Módulo de flujo de caja — registro de entradas y salidas proyectadas de la semana |
-| 2 | Identifica en WALA los 3 pagos fijos más importantes que tienes cada mes y las fechas en que deben hacerse. Esas fechas son las que más presión generan en la caja. | Única vez | Módulo de flujo de caja — registro de pagos fijos recurrentes |
+| 1 | Esta semana, antes de que empiece el lunes, anota en WALA cuándo esperas que entre dinero (cobros, ventas al contado) y cuándo tienes que pagar algo (proveedores, servicios, deudas). Solo esta semana. | Semanal | Expediente de seguimiento — bitácora de entradas y salidas proyectadas |
+| 2 | Identifica en WALA los 3 pagos fijos más importantes que tienes cada mes y las fechas en que deben hacerse. Esas fechas son las que más presión generan en la caja. | Única vez | Expediente de seguimiento — registro de pagos fijos recurrentes |
 | 3 | Conversa con el asesor sobre alguna vez que te quedaste corto de caja, incluso teniendo ventas. ¿Qué pasó? ¿Cuándo entró el dinero y cuándo salió? Registra lo que aprendiste sobre el timing del dinero. | Única vez | Expediente de seguimiento — nota de sesión |
 
 ---
@@ -70,9 +70,9 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Al inicio de cada semana, completa en WALA el cuadro de flujo: ¿cuánto dinero tengo hoy? + ¿cuánto espero que entre esta semana? - ¿cuánto tengo que pagar esta semana? = ¿cuánto debería tener al final de la semana? | Semanal | Módulo de flujo de caja — proyección semanal de caja |
+| 1 | Al inicio de cada semana, completa en WALA el cuadro de flujo: ¿cuánto dinero tengo hoy? + ¿cuánto espero que entre esta semana? - ¿cuánto tengo que pagar esta semana? = ¿cuánto debería tener al final de la semana? | Semanal | Expediente de seguimiento — bitácora semanal de flujo de caja |
 | 2 | Si en alguna semana el resultado del cuadro de flujo es negativo (los pagos superan las entradas esperadas), anótalo en WALA y define qué vas a hacer: adelantar un cobro, posponer una compra o conseguir un ingreso extra. | Semanal (cuando aplica) | Expediente de seguimiento — plan de contingencia de caja |
-| 3 | Al cierre de cada semana, compara en WALA el saldo real de caja con el que proyectaste. Si hay diferencia grande, identifica de dónde vino: ¿una venta que no se cobró, un gasto que no esperabas, un pago que se adelantó? | Semanal | Módulo de flujo de caja — comparativa proyectado vs. real |
+| 3 | Al cierre de cada semana, compara en WALA el saldo real de caja con el que proyectaste. Si hay diferencia grande, identifica de dónde vino: ¿una venta que no se cobró, un gasto que no esperabas, un pago que se adelantó? | Semanal | Balance de cuentas / Expediente — comparativa proyectado vs. real |
 
 ---
 
@@ -81,7 +81,7 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Al inicio de cada mes, proyecta en WALA el flujo de caja semana a semana: entradas esperadas y salidas comprometidas para las 4 semanas. Con ese mapa puedes ver con anticipación qué semanas van a estar apretadas. | Mensual | Módulo de flujo de caja — proyección mensual por semana |
+| 1 | Al inicio de cada mes, proyecta en WALA el flujo de caja semana a semana: entradas esperadas y salidas comprometidas para las 4 semanas. Con ese mapa puedes ver con anticipación qué semanas van a estar apretadas. | Mensual | Expediente de seguimiento — proyección mensual de flujo por semana |
 | 2 | Cuando identifiques una semana con flujo negativo proyectado, toma una acción preventiva antes de que llegue: cobrar anticipado a un cliente, posponer una compra no urgente o separar reserva de la semana anterior. Registra en WALA la acción tomada y el resultado. | Mensual (cuando aplica) | Expediente de seguimiento — acción preventiva de caja |
 | 3 | Al cierre del mes, revisa en WALA cuántas semanas tuviste flujo positivo y cuántas negativo. Si hay más de una semana negativa por mes, hay un problema estructural de timing entre cobros y pagos que el asesor debe ayudarte a resolver. | Mensual | Reporte mensual — análisis de semanas con flujo negativo |
 

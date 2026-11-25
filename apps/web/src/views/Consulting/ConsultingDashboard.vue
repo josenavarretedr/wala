@@ -135,8 +135,10 @@
       <ActionPlanCreate
         v-else-if="showActionPlanWizard"
         :businessId="businessId"
+        :initialCycleKey="selectedWizardCycle"
         @close="
           showActionPlanWizard = false;
+          selectedWizardCycle = null;
           loadConsultingData();
         "
       />
@@ -516,7 +518,7 @@
                       :businessId="businessId"
                       :isAdminMode="isAdminMode"
                       :onlyPending="true"
-                      @create-plan="showActionPlanWizard = true"
+                      @create-plan="openActionPlanWizard"
                     />
                   </div>
                 </div>
@@ -726,11 +728,11 @@
                     <div class="flex gap-2">
                       <button
                         v-if="isAdminMode"
-                        @click="showActionPlanWizard = true"
+                        @click="openActionPlanWizard()"
                         class="inline-flex items-center gap-1.5 rounded-xl bg-[#E35336] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#c2412b] transition-all cursor-pointer"
                       >
                         <SoilAlt class="w-3.5 h-3.5" />
-                        Crear Plan de Acción
+                        Configurar Plan de Acción
                       </button>
                     </div>
                   </div>
@@ -740,7 +742,7 @@
                     <ActionPlanView
                       :businessId="businessId"
                       :isAdminMode="isAdminMode"
-                      @create-plan="showActionPlanWizard = true"
+                      @create-plan="openActionPlanWizard"
                     />
                   </div>
                 </div>
@@ -798,7 +800,13 @@ const toast = useToast();
 const showWizard = ref(false);
 const showCriticalAreasWizard = ref(false);
 const showActionPlanWizard = ref(false);
+const selectedWizardCycle = ref(null);
 const dossierCriticalAreas = ref([]);
+
+const openActionPlanWizard = (cycleKey = null) => {
+  selectedWizardCycle.value = typeof cycleKey === "string" ? cycleKey : null;
+  showActionPlanWizard.value = true;
+};
 
 const activeTab = computed(() => route.query.tab || "resumen");
 

@@ -77,9 +77,42 @@
 
       <!-- Content -->
       <template v-else>
+        <!-- Valor hora del dueño configurado en Datos del Negocio -->
+        <div
+          v-if="ownerProfileHourlyRate > 0"
+          class="bg-emerald-50 border border-emerald-200 rounded-lg p-4 space-y-3"
+        >
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <p class="font-semibold text-emerald-950 text-sm">
+                Valor por hora del dueño configurado: S/ {{ formatNumber(ownerProfileHourlyRate) }}/hr
+              </p>
+              <p class="text-xs text-emerald-800 mt-0.5">
+                Puedes usarlo directamente si tú elaboras o prestas el servicio, o elegir tus registros de sueldos de equipo abajo.
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="toggleUseOwnerProfileRate"
+              :class="[
+                'px-3.5 py-2 rounded-lg text-xs font-semibold transition-colors shrink-0',
+                useOwnerProfileRate
+                  ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+                  : 'bg-white text-emerald-800 border border-emerald-300 hover:bg-emerald-100',
+              ]"
+            >
+              {{
+                useOwnerProfileRate
+                  ? "✓ Usando valor hora del dueño"
+                  : "Usar valor hora del dueño"
+              }}
+            </button>
+          </div>
+        </div>
+
         <!-- Sin datos históricos -->
         <div
-          v-if="!hasHistoricalData"
+          v-if="!hasHistoricalData && !useOwnerProfileRate"
           class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start gap-3"
         >
           <span class="text-2xl">⚠️</span>
@@ -95,7 +128,7 @@
 
         <!-- Sin selección -->
         <div
-          v-if="hasHistoricalData && selectedExpenseIds.length === 0"
+          v-if="hasHistoricalData && selectedExpenseIds.length === 0 && !useOwnerProfileRate"
           class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
         >
           <span class="text-2xl">❌</span>
@@ -252,6 +285,9 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
+import { useRoute } from "vue-router";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+import appFirebase from "@/firebaseInit";
 import { useExpenses } from "@/composables/useExpenses";
 import { calculateWorkingDays } from "@/utils/dateHelpers";
 import { MOD_DEFAULTS, HELP_MESSAGES } from "../ProductCosting/constants";
@@ -287,6 +323,8 @@ const props = defineProps({
 
 const emit = defineEmits(["toggle", "confirm"]);
 
+const route = useRoute();
+const db = getFirestore(appFirebase);
 const { getExpensesByBucketAndDateRange } = useExpenses();
 
 // State
@@ -296,6 +334,8 @@ const selectedExpenseIds = ref([]);
 const workingDays = ref(0);
 const productiveHoursPerDay = ref(MOD_DEFAULTS.PRODUCTIVE_HOURS_PER_DAY);
 const hasHistoricalData = ref(false);
+const ownerProfileHourlyRate = ref(0);
+const useOwnerProfileRate = ref(false);
 
 // Computed
 const selectedExpensesTotal = computed(() => {
@@ -305,6 +345,9 @@ const selectedExpensesTotal = computed(() => {
 });
 
 const costPerHour = computed(() => {
+  if (useOwnerProfileRate.value && ownerProfileHourlyRate.value > 0) {
+    return ownerProfileHourlyRate.value;
+  }
   if (workingDays.value === 0 || productiveHoursPerDay.value === 0) {
     return 0;
   }
@@ -320,6 +363,9 @@ const helpText = computed(() => {
 });
 
 const isValid = computed(() => {
+  if (useOwnerProfileRate.value && ownerProfileHourlyRate.value > 0) {
+    return true;
+  }
   return (
     selectedExpenseIds.value.length > 0 &&
     productiveHoursPerDay.value > 0 &&
@@ -343,7 +389,12 @@ const toggleExpand = () => {
   emit("toggle");
 };
 
+const toggleUseOwnerProfileRate = () => {
+  useOwnerProfileRate.value = !useOwnerProfileRate.value;
+};
+
 const toggleExpenseSelection = (expenseId) => {
+  useOwnerProfileRate.value = false;
   const index = selectedExpenseIds.value.indexOf(expenseId);
   if (index > -1) {
     selectedExpenseIds.value.splice(index, 1);
@@ -354,6 +405,27 @@ const toggleExpenseSelection = (expenseId) => {
 
 const confirmStep = () => {
   if (!isValid.value) return;
+
+  if (useOwnerProfileRate.value && ownerProfileHourlyRate.value > 0) {
+    const days = workingDays.value || 24;
+    const hours = productiveHoursPerDay.value || MOD_DEFAULTS.PRODUCTIVE_HOURS_PER_DAY;
+    emit("confirm", {
+      costPerHour: ownerProfileHourlyRate.value,
+      totalMOD: round2(ownerProfileHourlyRate.value * days * hours),
+      workingDays: days,
+      productiveHoursPerDay: hours,
+      selectedExpenseIds: [],
+      selectedExpensesDetails: [
+        {
+          id: "owner_profile_rate",
+          description: "Valor hora del dueño (Datos del Negocio)",
+          amount: ownerProfileHourlyRate.value,
+        },
+      ],
+      usedOwnerProfileRate: true,
+    });
+    return;
+  }
 
   const selectedExpensesDetails = expenses.value
     .filter((exp) => selectedExpenseIds.value.includes(exp.id))
@@ -370,7 +442,33 @@ const confirmStep = () => {
     productiveHoursPerDay: productiveHoursPerDay.value,
     selectedExpenseIds: selectedExpenseIds.value,
     selectedExpensesDetails,
+    usedOwnerProfileRate: false,
   });
+};
+
+const loadOwnerHourlyProfile = async () => {
+  const businessId = route.params.businessId;
+  if (!businessId) return;
+  try {
+    const snap = await getDoc(
+      doc(db, "businesses", businessId, "settings", "businessProfile")
+    );
+    if (snap.exists()) {
+      const data = snap.data();
+      let rate = Number(data.ownerHourlyRate || 0);
+      if (!(rate > 0) && Number(data.ownerSalaryAmount || 0) > 0) {
+        const amt = Number(data.ownerSalaryAmount);
+        const hrs = Number(data.ownerWeeklyHours || 48);
+        let weeklyEq = amt;
+        if (data.ownerSalaryFrequency === "biweekly") weeklyEq = amt / 2;
+        else if (data.ownerSalaryFrequency === "monthly") weeklyEq = amt / 4.33;
+        if (hrs > 0) rate = round2(weeklyEq / hrs);
+      }
+      ownerProfileHourlyRate.value = rate > 0 ? round2(rate) : 0;
+    }
+  } catch (err) {
+    console.warn("No se pudo cargar ownerHourlyRate del perfil:", err);
+  }
 };
 
 const loadExpenses = async () => {
@@ -382,6 +480,8 @@ const loadExpenses = async () => {
   loading.value = true;
 
   try {
+    await loadOwnerHourlyProfile();
+
     // Calcular días laborables
     workingDays.value = calculateWorkingDays(
       props.period.startDate,
@@ -398,7 +498,10 @@ const loadExpenses = async () => {
     hasHistoricalData.value = result.count > 0;
 
     // Si hay datos iniciales, restaurar la selección
-    if (props.initialData?.selectedExpenseIds) {
+    if (props.initialData?.usedOwnerProfileRate && ownerProfileHourlyRate.value > 0) {
+      useOwnerProfileRate.value = true;
+      selectedExpenseIds.value = [];
+    } else if (props.initialData?.selectedExpenseIds) {
       selectedExpenseIds.value = [...props.initialData.selectedExpenseIds];
       productiveHoursPerDay.value =
         props.initialData.productiveHoursPerDay ||
@@ -406,6 +509,8 @@ const loadExpenses = async () => {
     } else if (hasHistoricalData.value) {
       // Auto-seleccionar todos los expenses encontrados
       selectedExpenseIds.value = expenses.value.map((exp) => exp.id);
+    } else if (ownerProfileHourlyRate.value > 0) {
+      useOwnerProfileRate.value = true;
     }
 
     console.log("✅ Expenses de MOD cargados:", {

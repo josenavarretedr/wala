@@ -1,8 +1,11 @@
 # 🏢 Módulo de Asesoría de Negocios (BusinessConsulting)
 
-**Última actualización:** Mayo 2026 — Rediseño de Resumen, Plan de Acción Filtrado y Unificación de Color de Marca
-**Versión:** 2.1.0
+**Última actualización:** Noviembre 2026 — Banco de Acciones Operativo v2, Multi-Ciclo y Evidencia Híbrida  
+**Versión:** 2.2.0  
 **Estado:** ✅ Activo y Verificado en Producción
+
+> [!TIP]
+> Para el detalle completo de sincronización entre los archivos Markdown del Banco de Acciones (`BA - *.md`), los 4 arquetipos operativos (`config`, `habit`, `note`, `review`), el bloque **Negocio y Dueño** en Egresos/P&L y el motor de evidencia automática, ver [SINCRONIA_BANCO_ACCIONES_WALA.md](SINCRONIA_BANCO_ACCIONES_WALA.md).
 
 ---
 
@@ -36,16 +39,20 @@ graph TD
 
 | Componente / Archivo | Propósito | Ruta en el Proyecto |
 | :--- | :--- | :--- |
-| `ConsultingDashboard.vue` | Contenedor principal del Dashboard. Administra la navegación por pestañas (Resumen, Desempeño, Áreas Críticas, Plan de Acción) y valida los privilegios de administrador. | [ConsultingDashboard.vue](file:///c:/Users/User/Proyectos/wala/src/views/Consulting/ConsultingDashboard.vue) |
-| `ItemsConsulting.vue` | Barra de pestañas de navegación horizontal para escritorio y vertical para dispositivos móviles. | [ItemsConsulting.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/ItemsConsulting.vue) |
-| `ActualLevelCard.vue` | Componente premium que visualiza de manera atractiva el nivel de madurez alcanzado, los momentos evaluados y el historial de evaluaciones. | [ActualLevelCard.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/ActualLevelCard.vue) |
-| `CriticalAreasSelected.vue` | Renderiza las 3 áreas críticas priorizadas con sus puntuaciones. Si no hay áreas seleccionadas, muestra una tarjeta de estado vacío (Empty State). | [CriticalAreasSelected.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/CriticalAreasSelected.vue) |
-| `CriticalAreasSelect.vue` | Wizard interactivo para que el consultor priorice y seleccione las 3 áreas críticas más relevantes en el momento actual del negocio. | [CriticalAreasSelect.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/CriticalAreasSelect.vue) |
-| `ActionPlanView.vue` | Muestra las tareas del Plan de Acción agrupadas por área empresarial, con barra de progreso, checkboxes reactivos y capacidad de filtrado exclusivo de pendientes (`onlyPending`). | [ActionPlanView.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/ActionPlanView.vue) |
-| `ActionPlanCreate.vue` | Interfaz interactiva de creación de tareas del Plan de Acción basada en las áreas críticas priorizadas de la empresa. | [ActionPlanCreate.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/ActionPlanCreate.vue) |
-| `PerformanceMatrix.vue` | Asistente interactivo en formato de Wizard. Guía al asesor técnico en la selección del momento, área clave e indicadores para calificar con rúbricas detalladas. | [PerformanceMatrix.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/PerformanceMatrix.vue) |
-| `ResumenPerformanceMatriz.vue` | Módulo analítico que renderiza el gráfico interactivo SVG/CSS, filtros interactivos de áreas, tooltip flotante premium y acordeón de comentarios históricos. | [ResumenPerformanceMatriz.vue](file:///c:/Users/User/Proyectos/wala/src/components/consulting/ResumenPerformanceMatriz.vue) |
-| `performanceStore.js` | Store de Pinia. Contiene la configuración estática de rúbricas y preguntas, maneja los estados reactivos del flujo de evaluación y coordina la persistencia de datos. | [performanceStore.js](file:///c:/Users/User/Proyectos/wala/src/stores/performanceStore.js) |
+| `ConsultingDashboard.vue` | Contenedor principal del Dashboard 1-a-1. Administra la navegación por pestañas (Resumen, Desempeño, Áreas Críticas, Plan de Acción) y valida los privilegios de administrador. | [ConsultingDashboard.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/views/Consulting/ConsultingDashboard.vue) |
+| `ItemsConsulting.vue` | Barra de pestañas de navegación horizontal para escritorio y vertical para dispositivos móviles. | [ItemsConsulting.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/ItemsConsulting.vue) |
+| `ActualLevelCard.vue` | Componente premium que visualiza el nivel de madurez alcanzado, los momentos evaluados y el historial de evaluaciones. | [ActualLevelCard.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/ActualLevelCard.vue) |
+| `CriticalAreasSelected.vue` | Renderiza las 3 áreas críticas priorizadas con sus puntuaciones o un empty state si aún no se definen. | [CriticalAreasSelected.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/CriticalAreasSelected.vue) |
+| `CriticalAreasSelect.vue` | Wizard interactivo para que el consultor priorice y seleccione las 3 áreas críticas del negocio. | [CriticalAreasSelect.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/CriticalAreasSelect.vue) |
+| `ActionPlanView.vue` | Muestra el Plan de Acción por ciclo (`ciclo1`–`ciclo3`) o solo pendientes del ciclo activo (`onlyPending`), con 4 arquetipos interactivos (`config`, `habit`, `note`, `review`), evidencia en vivo y 3 estados oficiales. | [ActionPlanView.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/ActionPlanView.vue) |
+| `ActionPlanCreate.vue` | Wizard de creación/edición incremental del Plan de Acción por ciclo usando el Banco de Acciones y arquetipos tipados. | [ActionPlanCreate.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/ActionPlanCreate.vue) |
+| `actionPlanFlowStore.js` | Store Pinia del Plan de Acción multi-ciclo (`actionPlansByCycle`, `activeCycleKey`, sincronización retrocompatible con `actionPlan`). | [actionPlanFlowStore.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/stores/actionPlanFlowStore.js) |
+| `actionBankLoader.js` | Parser de los archivos `BA - *.md` que enriquece cada acción con metadatos tipados desde `actionBankMeta.js`. | [actionBankLoader.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/utils/actionBankLoader.js) |
+| `actionBankMeta.js` | Catálogo tipado (`ACTION_BANK_META` y `resolveActionMeta`) de arquetipos, deep-links, campos de perfil y reglas de evidencia. | [actionBankMeta.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/config/actionBankMeta.js) |
+| `useActionEvidence.js` | Composable de evidencia híbrida que consulta `businessProfile`, transacciones recientes, `products` y `suppliers` para sugerir cumplimiento. | [useActionEvidence.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/composables/useActionEvidence.js) |
+| `PerformanceMatrix.vue` | Wizard interactivo de calificación por momento, área clave e indicadores con rúbricas detalladas. | [PerformanceMatrix.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/PerformanceMatrix.vue) |
+| `ResumenPerformanceMatriz.vue` | Módulo analítico con gráfico SVG/CSS, filtros de áreas, tooltip flotante y acordeón de comentarios históricos. | [ResumenPerformanceMatriz.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/consulting/ResumenPerformanceMatriz.vue) |
+| `performanceStore.js` | Store Pinia con la configuración de rúbricas (7 áreas × 3 indicadores) y persistencia de evaluaciones. | [performanceStore.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/stores/performanceStore.js) |
 
 ---
 
@@ -102,17 +109,42 @@ interface ConsultingDossier {
     justification?: string;     // Comentario de justificación del consultor
   }>;
 
-  // Plan de Acción Estructurado
-  actionPlan: Array<{
-    id: string;                 // UID único de la tarea
-    areaKey: string;            // ej: "marketing"
-    indicatorKey?: string;      // ej: "2.3"
-    actionText: string;         // Descripción de la tarea de mejora
-    frequency: string;          // ej: "Semanal" | "Diario" | "Mensual"
-    walaSection?: string;       // Sección vinculada (ej: "comercial", "inventario")
-    status: 'pending' | 'completed'; // Estado de la tarea
-    createdAt?: Timestamp;
-  }>;
+  // Ciclo activo del Plan de Acción y planes por ciclo
+  activeCycleKey?: 'ciclo1' | 'ciclo2' | 'ciclo3';
+  actionPlansByCycle?: {
+    ciclo1: ActionPlanItem[];
+    ciclo2: ActionPlanItem[];
+    ciclo3: ActionPlanItem[];
+  };
+
+  // Plan de Acción activo (espejo retrocompatible del ciclo activo)
+  actionPlan: ActionPlanItem[];
+}
+
+interface ActionPlanItem {
+  id: string;                 // ej: "1.1_0-1_1" (o legacy "1.1_1")
+  actionKey?: string;         // ej: "1.1_0-1_1"
+  cycleKey?: 'ciclo1' | 'ciclo2' | 'ciclo3';
+  areaKey: string;            // ej: "marketing"
+  indicatorKey?: string;      // ej: "2.3"
+  indicatorTitle?: string;
+  tranche?: '0-1' | '1-2' | '2-3';
+  actionText: string;         // Descripción editable de la tarea de mejora
+  frequency: string;          // ej: "Única vez" | "Semanal" | "Mensual"
+  walaSection?: string;       // Referencia textual del módulo WALA
+  actionType?: 'config' | 'habit' | 'note' | 'review';
+  targetRoute?: string | null;
+  presetParams?: Record<string, string> | null;
+  configKey?: string | null;
+  ctaLabel?: string;
+  promptPlaceholder?: string;
+  evidenceRule?: Record<string, unknown>;
+  status: 'in_progress' | 'completed' | 'not_done' | 'incomplete';
+  entrepreneurNote?: string;
+  advisorNote?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  completedAt?: string | null;
 }
 
 interface MomentEvaluation {
@@ -240,6 +272,13 @@ Para asegurar sobriedad y profesionalismo corporativo, el módulo descarta los d
 ---
 
 ## Changelog
+
+### [v2.2.0] - Noviembre 2026
+* **Sincronía Banco de Acciones ↔ WALA Operativo:** Incorporación de 4 arquetipos tipados (`config`, `habit`, `note`, `review`) en `actionBankMeta.js` y `actionBankLoader.js` para las 189 acciones de los 7 `BA - *.md`.
+* **Plan de Acción Multi-Ciclo:** Soporte de `ciclo1`, `ciclo2` y `ciclo3` mediante `actionPlansByCycle` y `activeCycleKey`, manteniendo compatibilidad con `actionPlan`.
+* **Evidencia Híbrida Automática (`useActionEvidence.js`):** Consulta automática de `settings/businessProfile`, transacciones recientes, inventario/costeo y proveedores para mostrar progreso en vivo y sugerir completado.
+* **Estados Oficiales WALA y Bitácora:** Soporte de `in_progress`, `completed` y `not_done`, además de campos persistentes `entrepreneurNote` y `advisorNote`.
+* **Referencia detallada:** Documentada en [SINCRONIA_BANCO_ACCIONES_WALA.md](SINCRONIA_BANCO_ACCIONES_WALA.md).
 
 ### [v2.1.0] - Mayo 2026
 * **Unificación Cromática Oficial WALA (#E35336):** Migración completa del color de destaque, spinners, e interacciones del módulo de `teal-600` a `#E35336` (con hover en `#c2412b` y alta legibilidad de contraste).
