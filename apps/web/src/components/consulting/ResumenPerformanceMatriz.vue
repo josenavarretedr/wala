@@ -499,7 +499,7 @@ const getMaturityLevelDetails = (score) => {
 // Level Range Colors
 const getBarColorClass = (score) => {
   if (score === null || score === undefined)
-    return "bg-gray-150 border-gray-250 h-1";
+    return "bg-gray-200 border-gray-200 h-1";
   if (score <= 0.4) {
     return "bg-rose-500 border-rose-600 shadow-md shadow-rose-500/10";
   } else if (score <= 1.4) {

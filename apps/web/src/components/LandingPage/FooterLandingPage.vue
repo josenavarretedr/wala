@@ -29,36 +29,36 @@
         <div>
           <h4 class="text-sm font-bold text-gray-900 mb-4 uppercase tracking-wider text-xs">Secciones</h4>
           <nav class="space-y-2.5">
-            <a
-              href="#hero-section"
+            <router-link
+              :to="{ path: '/', hash: '#hero-section' }"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Inicio
-            </a>
-            <a
-              href="#pain-section"
+            </router-link>
+            <router-link
+              :to="{ path: '/', hash: '#pain-section' }"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Síntomas de caos
-            </a>
-            <a
-              href="#testimonials-section"
+            </router-link>
+            <router-link
+              :to="{ path: '/', hash: '#testimonials-section' }"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Testimonios
-            </a>
-            <a
-              href="#routes-section"
+            </router-link>
+            <router-link
+              :to="{ path: '/', hash: '#routes-section' }"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Elige tu camino
-            </a>
-            <a
-              href="#how-section"
+            </router-link>
+            <router-link
+              :to="{ path: '/', hash: '#how-section' }"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Cómo funciona
-            </a>
+            </router-link>
           </nav>
         </div>
 
@@ -72,8 +72,14 @@
             >
               Escríbenos por correo
             </a>
+            <router-link
+              :to="DIAGNOSTICO_PATH"
+              class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
+            >
+              Diagnóstico 30 min
+            </router-link>
             <a
-              href="https://api.whatsapp.com/send?phone=51921492993&text=Hola%20Jos%C3%A9%2C%20vi%20la%20p%C3%A1gina%20de%20WALA%20y%20tengo%20una%20consulta."
+              :href="soporteWhatsAppUrl"
               target="_blank"
               rel="noopener noreferrer"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
@@ -81,7 +87,7 @@
               Soporte por WhatsApp
             </a>
             <router-link
-              to="/auth/login"
+              :to="LOGIN_PATH"
               class="block text-sm text-gray-600 hover:text-orange-600 transition-colors duration-200"
             >
               Iniciar sesión
@@ -143,7 +149,14 @@
 </template>
 
 <script setup>
-// Footer institucional para WALA
+import {
+  buildWhatsAppUrl,
+  DEFAULT_SOPORTE_MESSAGE,
+  DIAGNOSTICO_PATH,
+  LOGIN_PATH,
+} from "@/config/ctaLinks";
+
+const soporteWhatsAppUrl = buildWhatsAppUrl(DEFAULT_SOPORTE_MESSAGE);
 </script>
 
 <style scoped>

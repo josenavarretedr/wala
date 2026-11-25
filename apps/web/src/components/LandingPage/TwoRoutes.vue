@@ -185,17 +185,16 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { ArrowRight, Binocular, Check, Sort } from "@iconoir/vue";
+import { buildWhatsAppUrl, REGISTER_PATH } from "@/config/ctaLinks";
 
 const router = useRouter();
-const whatsappLink =
-  "https://api.whatsapp.com/send?phone=51921492993&text=Hola%20Jos%C3%A9%2C%20vi%20la%20p%C3%A1gina%20de%20WALA%20y%20quiero%20agendar%20mi%20diagn%C3%B3stico%20gratuito%20de%2020%20minutos.%20%C2%BFAgendamos%20para%20esta%20semana%3F";
 
 const openWhatsApp = () => {
-  window.open(whatsappLink, "_blank", "noopener,noreferrer");
+  window.open(buildWhatsAppUrl(), "_blank", "noopener,noreferrer");
 };
 
 const goToSignup = () => {
-  router.push("/auth/login");
+  router.push(REGISTER_PATH);
 };
 </script>
 

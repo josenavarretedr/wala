@@ -13,7 +13,20 @@ const routes = [
   {
     path: '/',
     name: "Home",
-    component: () => import('@/views/Home.vue')
+    component: () => import('@/views/Home.vue'),
+    meta: {
+      title: 'WALA | Claridad financiera y operativa para tu negocio',
+      useExactTitle: true
+    }
+  },
+  {
+    path: '/diagnostico',
+    name: 'Diagnostico',
+    component: () => import('@/views/DiagnosticoView.vue'),
+    meta: {
+      title: 'Diagnóstico Gratuito 30 min | Método WALA con José Navarrete',
+      useExactTitle: true
+    }
   },
 
   // Autenticación
@@ -814,6 +827,13 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) {
+      return { el: to.hash, behavior: 'smooth' }
+    }
+    return { top: 0 }
+  },
 })
 
 // Router Guards
@@ -1076,9 +1096,9 @@ router.beforeEach(async (to, from, next) => {
 
   // Actualizar el título de la página
   if (to.meta.title) {
-    document.title = `${to.meta.title} - Wala`
+    document.title = to.meta.useExactTitle ? to.meta.title : `${to.meta.title} - Wala`
   } else {
-    document.title = 'Wala | Copiloto para crecer'
+    document.title = 'WALA | Claridad financiera y operativa para tu negocio'
   }
 
   console.log('✅ Acceso permitido a:', to.path)

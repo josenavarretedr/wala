@@ -25,14 +25,14 @@
           <button
             @click="selectRole('business_owner')"
             type="button"
-            class="group relative p-6 rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-left"
+            class="group relative p-6 rounded-xl border-2 border-gray-200 hover:border-[#E35336] hover:bg-[#FFF5F2] transition-all duration-200 text-left"
           >
             <div class="flex items-center gap-4">
               <div
-                class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 group-hover:bg-blue-200 transition-colors"
+                class="flex items-center justify-center w-12 h-12 rounded-full bg-[#E35336]/10 group-hover:bg-[#E35336]/20 text-[#E35336] transition-colors"
               >
                 <svg
-                  class="w-6 h-6 text-blue-600"
+                  class="w-6 h-6 text-[#E35336]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -113,7 +113,12 @@
         <!-- Indicador de rol seleccionado -->
         <div
           v-if="!inviteDetails"
-          class="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-xl p-4"
+          :class="[
+            'rounded-xl p-4 border',
+            userRole === 'business_owner'
+              ? 'bg-[#FFF5F2] border-[#E35336]/20'
+              : 'bg-green-50 border-green-200',
+          ]"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -121,13 +126,13 @@
                 :class="[
                   'flex items-center justify-center w-10 h-10 rounded-full',
                   userRole === 'business_owner'
-                    ? 'bg-blue-100'
+                    ? 'bg-[#E35336]/10'
                     : 'bg-green-100',
                 ]"
               >
                 <svg
                   v-if="userRole === 'business_owner'"
-                  class="w-5 h-5 text-blue-600"
+                  class="w-5 h-5 text-[#E35336]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -168,7 +173,7 @@
             <button
               @click="roleSelected = false"
               type="button"
-              class="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              class="text-xs text-[#E35336] hover:text-[#c2412b] font-medium"
             >
               Cambiar
             </button>
@@ -177,7 +182,7 @@
 
         <!-- Nombre -->
         <div class="flex items-center space-x-4 border-b pb-2">
-          <ProfileCircle class="w-8 h-8 text-green-500" />
+          <ProfileCircle class="w-8 h-8 text-[#E35336]" />
           <input
             v-model="name"
             type="text"
@@ -189,7 +194,7 @@
 
         <!-- Correo -->
         <div class="flex items-center space-x-4 border-b pb-2">
-          <Mail class="w-8 h-8 text-green-500" />
+          <Mail class="w-8 h-8 text-[#E35336]" />
           <input
             v-model="email"
             type="email"
@@ -201,7 +206,7 @@
 
         <!-- Contraseña -->
         <div class="flex items-center space-x-4 border-b pb-2">
-          <Lock class="w-8 h-8 text-green-500" />
+          <Lock class="w-8 h-8 text-[#E35336]" />
           <input
             v-model="password"
             type="password"
@@ -216,7 +221,7 @@
         <button
           type="submit"
           :disabled="isLoading || !termsAccepted"
-          class="w-full flex justify-center items-center bg-green-500 hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl font-semibold py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200"
+          class="w-full flex justify-center items-center bg-[#E35336] hover:bg-[#c2412b] disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl font-semibold py-4 rounded-xl shadow-lg shadow-[#E35336]/20 transform hover:scale-105 transition-all duration-200"
         >
           <UserPlus v-if="!isLoading" class="w-6 h-6 mr-2" />
           <span v-if="!isLoading">Registrarse</span>
@@ -268,14 +273,14 @@
           <input
             v-model="termsAccepted"
             type="checkbox"
-            class="mt-1 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 focus:ring-2 cursor-pointer"
+            class="mt-1 w-5 h-5 text-[#E35336] border-gray-300 rounded focus:ring-[#E35336] focus:ring-2 cursor-pointer"
           />
           <span class="text-sm text-gray-700 leading-relaxed">
             He leído y acepto los
             <router-link
               to="/legal/terminos-condiciones"
               target="_blank"
-              class="text-green-600 hover:text-green-700 font-semibold underline"
+              class="text-[#E35336] hover:text-[#c2412b] font-semibold underline"
             >
               Términos y Condiciones </router-link
             >, y autorizo expresamente el tratamiento de mis datos personales
@@ -283,7 +288,7 @@
             <router-link
               to="/legal/politica-privacidad"
               target="_blank"
-              class="text-green-600 hover:text-green-700 font-semibold underline"
+              class="text-[#E35336] hover:text-[#c2412b] font-semibold underline"
             >
               Política de Privacidad </router-link
             >.
@@ -297,7 +302,7 @@
           ¿Ya tienes una cuenta?
           <router-link
             to="/auth/login"
-            class="font-semibold text-green-600 hover:text-green-700 transition-colors duration-200 ml-1"
+            class="font-semibold text-[#E35336] hover:text-[#c2412b] transition-colors duration-200 ml-1"
           >
             Iniciar sesión
           </router-link>

@@ -30,7 +30,7 @@
               v-model="email"
               type="email"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#E35336] focus:border-transparent transition-all duration-200"
               placeholder="tu.email@empresa.com"
             />
           </div>
@@ -48,7 +48,7 @@
               v-model="password"
               type="password"
               required
-              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#E35336] focus:border-transparent transition-all duration-200"
               placeholder="Tu contraseña"
             />
           </div>
@@ -57,7 +57,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-white font-semibold bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            class="w-full flex justify-center items-center gap-2 py-3 px-4 rounded-xl text-white font-semibold bg-[#E35336] hover:bg-[#c2412b] shadow-md shadow-[#E35336]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <template v-if="!isLoading"> Iniciar sesión </template>
             <template v-else>
@@ -129,7 +129,7 @@
               ¿No tienes una cuenta?
               <router-link
                 to="/auth/register"
-                class="font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200 ml-1"
+                class="font-semibold text-[#E35336] hover:text-[#c2412b] transition-colors duration-200 ml-1"
               >
                 Crear cuenta
               </router-link>

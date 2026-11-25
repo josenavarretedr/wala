@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 import './style.css'
 import './assets/css/dashboard.css'
 import './assets/css/onboarding.css'
@@ -13,6 +13,12 @@ import { useAuthStore } from '@/stores/authStore'
 const app = createApp(App)
 const pinia = createPinia()
 
+const sentryFeedback = Sentry.feedbackIntegration({
+  colorScheme: "light",
+  autoInject: false,
+  showBranding: false,
+})
+
 // 🛡️ CONFIGURACIÓN DE SENTRY
 Sentry.init({
   app,
@@ -25,11 +31,7 @@ Sentry.init({
       maskAllText: false, // Graba texto real (cambia a true en producción si hay datos sensibles)
       blockAllMedia: false,
     }),
-    Sentry.feedbackIntegration({
-      colorScheme: "light",
-      autoInject: true,
-      showBranding: false,
-    }),
+    sentryFeedback,
   ],
 
   // Captura información del usuario (IP, headers)
@@ -99,6 +101,45 @@ window.addEventListener('unhandledrejection', (event) => {
 // ✅ INICIALIZACIÓN CORREGIDA
 const authStore = useAuthStore()
 
+const PUBLIC_FEEDBACK_PREFIXES = ['/diagnostico', '/auth', '/legal']
+let feedbackWidget = null
+
+const isPublicFeedbackRoute = (path = '/') => {
+  const normalizedPath = path.split('?')[0].split('#')[0] || '/'
+  if (normalizedPath === '/') return true
+  return PUBLIC_FEEDBACK_PREFIXES.some(
+    (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+  )
+}
+
+const syncSentryFeedbackWidget = (path, isAuthenticated) => {
+  const shouldShowWidget = Boolean(isAuthenticated) && !isPublicFeedbackRoute(path)
+
+  if (shouldShowWidget) {
+    if (!feedbackWidget && typeof sentryFeedback?.createWidget === 'function') {
+      feedbackWidget = sentryFeedback.createWidget()
+    }
+    return
+  }
+
+  if (feedbackWidget) {
+    feedbackWidget.removeFromDom?.()
+    feedbackWidget = null
+  }
+  sentryFeedback?.remove?.()
+}
+
+watch(
+  () => authStore.user,
+  (user) => {
+    syncSentryFeedbackWidget(router.currentRoute.value.path, Boolean(user))
+  }
+)
+
+router.afterEach((to) => {
+  syncSentryFeedbackWidget(to.path, Boolean(authStore.user))
+})
+
 // Intentar restaurar sesión y montar la app
 const initApp = async () => {
   console.log('🚀 Inicializando Walla...');
@@ -132,6 +173,7 @@ const initApp = async () => {
   } finally {
     // Montar la app siempre
     app.mount('#app');
+    syncSentryFeedbackWidget(router.currentRoute.value.path, Boolean(authStore.user));
     console.log('🎉 Walla iniciado correctamente');
   }
 };

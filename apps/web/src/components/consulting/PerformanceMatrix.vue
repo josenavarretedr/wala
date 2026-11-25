@@ -98,7 +98,7 @@
                   :class="[
                     'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ring-1 ring-inset tracking-wide border',
                     isMomentLocked(moment.id)
-                      ? 'bg-gray-150/50 text-gray-400 ring-gray-400/10 border-gray-200'
+                      ? 'bg-gray-200/50 text-gray-400 ring-gray-400/10 border-gray-200'
                       : [moment.bgColorClass, moment.colorClass, moment.ringColorClass, moment.borderColorClass]
                   ]"
                 >

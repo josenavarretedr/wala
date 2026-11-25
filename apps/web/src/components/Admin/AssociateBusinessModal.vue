@@ -17,7 +17,7 @@
         <!-- Body -->
         <div class="modal-body space-y-4">
           <div class="bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-sm">
-            <p class="text-gray-650">
+            <p class="text-gray-600">
               Vincular a: <span class="font-bold text-gray-900">{{ leadName }}</span>
             </p>
           </div>

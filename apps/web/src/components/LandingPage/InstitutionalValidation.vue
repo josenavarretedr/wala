@@ -61,7 +61,7 @@
         <!-- Controles Flotantes Ultra Finos -->
         <div class="absolute inset-y-0 -left-4 -right-4 sm:-left-8 sm:-right-8 flex items-center justify-between pointer-events-none">
           <button
-            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-150 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
+            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
             @click="prevCard"
             aria-label="Tarjeta anterior"
           >
@@ -69,7 +69,7 @@
           </button>
 
           <button
-            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-150 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
+            class="pointer-events-auto w-10 h-10 rounded-xl bg-white border border-gray-200 shadow-sm text-gray-700 flex items-center justify-center hover:bg-[#E35336] hover:text-white hover:border-[#E35336] active:scale-95 transition-all duration-200 cursor-pointer"
             @click="nextCard"
             aria-label="Siguiente tarjeta"
           >
@@ -86,7 +86,7 @@
             :class="
               currentIndex === index
                 ? 'bg-[#E35336] w-8'
-                : 'bg-gray-250 hover:bg-gray-300 w-2.5'
+                : 'bg-gray-200 hover:bg-gray-300 w-2.5'
             "
             @click="currentIndex = index"
             :aria-label="`Ir a tarjeta ${index + 1}`"
@@ -112,7 +112,7 @@ const cards = ref([
   {
     title: "Metodología alineada con <span class='text-emerald-600'>MESUN · OIT</span>",
     subtitle: "Mejore su negocio — Organización Internacional del Trabajo",
-    description: "Aplicamos el mismo <span class='text-emerald-650 font-extrabold'>estándar técnico internacional</span> utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
+    description: "Aplicamos el mismo <span class='text-emerald-600 font-extrabold'>estándar técnico internacional</span> utilizado en los programas de fortalecimiento empresarial de mayor impacto en América Latina.",
   },
   {
     title: "Programas municipales de <span class='text-blue-600'>fortalecimiento empresarial</span>",

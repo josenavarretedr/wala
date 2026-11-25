@@ -35,7 +35,7 @@
           <transition name="fade-slide" mode="out-in">
             <div
               :key="currentIndex"
-              class="bg-gray-50/50 rounded-3xl border border-gray-150/50 p-6 sm:p-10 text-left space-y-4 relative overflow-hidden"
+              class="bg-gray-50/50 rounded-3xl border border-gray-200/50 p-6 sm:p-10 text-left space-y-4 relative overflow-hidden"
             >
               <div
                 class="w-12 h-12 bg-[#E35336]/10 text-[#E35336] rounded-2xl flex items-center justify-center shadow-inner"
@@ -71,14 +71,14 @@
           <!-- Botones Prev/Next -->
           <div class="flex gap-2">
             <button
-              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-650 shadow-sm active:scale-95 transition-all cursor-pointer"
+              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 shadow-sm active:scale-95 transition-all cursor-pointer"
               @click="prevTestimonial"
               aria-label="Testimonio anterior"
             >
               <NavArrowLeft class="w-4 h-4 stroke-[2.2]" />
             </button>
             <button
-              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-650 shadow-sm active:scale-95 transition-all cursor-pointer"
+              class="w-8 h-8 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 flex items-center justify-center text-gray-600 shadow-sm active:scale-95 transition-all cursor-pointer"
               @click="nextTestimonial"
               aria-label="Siguiente testimonio"
             >

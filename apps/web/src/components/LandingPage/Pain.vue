@@ -15,7 +15,7 @@
       <div class="text-center space-y-6">
         <!-- Badge -->
         <span
-          class="inline-block px-4 py-1.5 bg-red-50 border border-red-150 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full"
+          class="inline-block px-4 py-1.5 bg-red-50 border border-red-200 text-[#E35336] text-xs font-bold uppercase tracking-wider rounded-full"
         >
           Síntomas de Caos
         </span>
