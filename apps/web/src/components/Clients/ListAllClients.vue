@@ -12,6 +12,54 @@
       </div>
 
       <ClientsStats :clientsStats="clientsStats" />
+
+      <!-- Rentabilidad por Canal de Origen y Promociones (Área 2 - Marketing) -->
+      <div class="mt-4 bg-white border border-gray-200 rounded-xl p-4 shadow-2xs space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-gray-900">Rentabilidad por Canal de Origen</h2>
+            <p class="text-xs text-gray-500">
+              Ventas acumuladas según cómo llegaron tus clientes y tus campañas activas.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="openPromoModal"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-600 hover:text-white text-xs font-semibold transition-all self-start sm:self-auto"
+          >
+            <span>+ Registrar Promoción</span>
+          </button>
+        </div>
+
+        <div v-if="originChannelBreakdown.length > 0" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          <div
+            v-for="row in originChannelBreakdown"
+            :key="row.channel"
+            class="bg-gray-50 border border-gray-200 rounded-xl p-2.5"
+          >
+            <p class="text-[11px] font-bold text-indigo-700 truncate">{{ row.label }}</p>
+            <p class="text-sm font-black text-gray-900 tabular-nums mt-0.5">S/ {{ row.totalSales.toFixed(2) }}</p>
+            <p class="text-[10px] text-gray-500">{{ row.count }} cliente(s)</p>
+          </div>
+        </div>
+        <p v-else class="text-xs text-gray-400 italic">
+          Asigna el canal de origen al crear o editar clientes para medir qué canal trae mejores ventas.
+        </p>
+
+        <div v-if="promoMilestones.length > 0" class="pt-2 border-t border-gray-100">
+          <p class="text-[11px] font-bold text-gray-500 uppercase mb-1.5">Últimas Promociones / Campañas</p>
+          <div class="flex flex-wrap gap-2">
+            <div
+              v-for="promo in promoMilestones.slice(0, 5)"
+              :key="promo.id"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 border border-indigo-200 text-xs text-indigo-800"
+            >
+              <span class="font-semibold">{{ promo.title }}</span>
+              <span class="text-[10px] text-indigo-600">({{ formatOriginChannel(promo.channel) }} · {{ Number(promo.cost || 0) > 0 ? `S/ ${Number(promo.cost).toFixed(2)}` : 'Orgánica S/ 0' }})</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Buscador -->
@@ -117,13 +165,123 @@
       @close="showEditModal = false"
       @updated="handleClientUpdated"
     />
+
+    <!-- Modal Registrar Promoción / Campaña -->
+    <Teleport to="body">
+      <div
+        v-if="showPromoModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="showPromoModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Registrar Promoción</h3>
+              <p class="text-xs text-gray-500">Guarda tus campañas orgánicas (S/ 0) o registra su gasto en caja.</p>
+            </div>
+            <button type="button" @click="showPromoModal = false" class="text-gray-400 hover:text-gray-600 px-2 py-1">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre de la campaña / promoción *</label>
+              <input
+                v-model="promoForm.title"
+                type="text"
+                placeholder="Ej: Promo 2x1 Fin de Semana"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Canal</label>
+              <select
+                v-model="promoForm.channel"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
+              >
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+                <option value="referral">Recomendación / Boca a boca</option>
+                <option value="walk_in">Local / Cartelera</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1.5">Tipo de campaña</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  @click="promoForm.isPaid = false"
+                  :class="[
+                    'px-3 py-2 rounded-xl border text-xs font-semibold transition-all',
+                    !promoForm.isPaid ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-white border-gray-200 text-gray-600',
+                  ]"
+                >
+                  Orgánica (S/ 0)
+                </button>
+                <button
+                  type="button"
+                  @click="promoForm.isPaid = true"
+                  :class="[
+                    'px-3 py-2 rounded-xl border text-xs font-semibold transition-all',
+                    promoForm.isPaid ? 'bg-amber-50 border-amber-500 text-amber-700' : 'bg-white border-gray-200 text-gray-600',
+                  ]"
+                >
+                  Con inversión en dinero
+                </button>
+              </div>
+            </div>
+
+            <div v-if="promoForm.isPaid">
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Presupuesto / Gasto estimado (S/)</label>
+              <input
+                v-model.number="promoForm.cost"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-amber-500"
+              />
+              <p class="text-[11px] text-amber-700 mt-1">
+                Se abrirá el Libro Contable pre-llenado para descontarlo de Caja o Banco.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              @click="showPromoModal = false"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="!promoForm.title.trim() || savingPromo"
+              @click="submitPromo"
+              class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ promoForm.isPaid ? 'Ir a registrar gasto →' : (savingPromo ? 'Guardando...' : 'Guardar campaña') }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebaseInit";
 import { useClients } from "@/composables/useClients";
+import { useBusinessStore } from "@/stores/businessStore";
+import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
+import { useToast } from "@/composables/useToast";
 import { UserPlus as IconoirUserPlus } from "@iconoir/vue";
 import ClientsStats from "@/components/Clients/ClientsStats.vue";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
@@ -132,6 +290,10 @@ import CreateClientModal from "@/components/Clients/CreateClientModal.vue";
 import EditClientModal from "@/components/Clients/EditClientModal.vue";
 
 const router = useRouter();
+const route = useRoute();
+const businessStore = useBusinessStore();
+const accountsBalanceStore = useAccountsBalanceStore();
+const { success, warning } = useToast();
 const {
   clients,
   loading,
@@ -146,10 +308,109 @@ const inputRef = ref(null);
 const showCreateModal = ref(false);
 const showEditModal = ref(false);
 const selectedClient = ref(null);
+const showPromoModal = ref(false);
+const savingPromo = ref(false);
+const promoMilestones = ref([]);
+const promoForm = ref({ title: "", channel: "whatsapp", isPaid: false, cost: null });
+
+const CHANNEL_LABELS = {
+  whatsapp: "WhatsApp",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  referral: "Recomendación",
+  walk_in: "Local",
+  other: "Otro canal",
+  unassigned: "Sin asignar",
+};
+
+function formatOriginChannel(channel) {
+  return CHANNEL_LABELS[channel] || channel || "Sin asignar";
+}
+
+const originChannelBreakdown = computed(() => {
+  const map = {};
+  (clients.value || []).forEach((c) => {
+    const ch = c.originChannel || "unassigned";
+    if (!map[ch]) {
+      map[ch] = {
+        channel: ch,
+        label: formatOriginChannel(ch),
+        count: 0,
+        totalSales: 0,
+      };
+    }
+    map[ch].count += 1;
+    map[ch].totalSales += Number(c.totalPurchases || 0);
+  });
+  return Object.values(map)
+    .filter((row) => row.channel !== "unassigned" || row.count > 0)
+    .sort((a, b) => b.totalSales - a.totalSales);
+});
+
+async function fetchPromoMilestones() {
+  const businessId = route.params.businessId || businessStore.business?.id;
+  if (!businessId) return;
+  try {
+    const q = query(
+      collection(db, "businesses", businessId, "promoMilestones"),
+      orderBy("createdAt", "desc")
+    );
+    const snap = await getDocs(q);
+    promoMilestones.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn("⚠️ Error cargando promociones:", err);
+  }
+}
+
+function openPromoModal() {
+  promoForm.value = { title: "", channel: "whatsapp", isPaid: false, cost: null };
+  showPromoModal.value = true;
+}
+
+async function submitPromo() {
+  const businessId = route.params.businessId || businessStore.business?.id;
+  if (!businessId || !promoForm.value.title.trim()) return;
+
+  if (promoForm.value.isPaid) {
+    await accountsBalanceStore.loadFromDailySummary().catch(() => {});
+    if (!accountsBalanceStore.openingTransaction) {
+      warning("Debes aperturar la caja del día antes de registrar un gasto de promoción.");
+      return;
+    }
+    showPromoModal.value = false;
+    router.push({
+      path: `/business/${businessId}/basicAccountingRecordsBook`,
+      query: {
+        type: "expense",
+        category: "overhead",
+        prefillName: `Promoción (${formatOriginChannel(promoForm.value.channel)}): ${promoForm.value.title.trim()}`,
+        prefillAmount: promoForm.value.cost ? String(promoForm.value.cost) : "",
+      },
+    });
+    return;
+  }
+
+  savingPromo.value = true;
+  try {
+    await addDoc(collection(db, "businesses", businessId, "promoMilestones"), {
+      title: promoForm.value.title.trim(),
+      channel: promoForm.value.channel,
+      cost: 0,
+      createdAt: serverTimestamp(),
+    });
+    success("Promoción orgánica registrada correctamente");
+    showPromoModal.value = false;
+    await fetchPromoMilestones();
+  } catch (err) {
+    warning("Error al guardar promoción: " + err.message);
+  } finally {
+    savingPromo.value = false;
+  }
+}
 
 // Cargar clientes al montar
 onMounted(async () => {
-  await fetchAllClients();
+  await Promise.all([fetchAllClients(), fetchPromoMilestones()]);
 });
 
 // Handlers

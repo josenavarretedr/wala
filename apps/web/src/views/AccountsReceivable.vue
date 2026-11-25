@@ -27,7 +27,7 @@
     <!-- Contenido principal -->
     <div v-else>
       <!-- Resumen total -->
-      <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6">
+      <div class="max-w-7xl mx-auto px-4 py-4 sm:py-6 space-y-4">
         <div
           class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 transition-all duration-200 hover:shadow-md"
         >
@@ -64,10 +64,76 @@
             </div>
           </div>
         </div>
+
+        <!-- Filtros de antigüedad y estado -->
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="f in filters"
+            :key="f.value"
+            type="button"
+            @click="currentFilter = f.value"
+            :class="[
+              'px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all inline-flex items-center gap-1.5',
+              currentFilter === f.value
+                ? 'bg-orange-600 text-white border-orange-600 shadow-xs'
+                : 'bg-white text-gray-700 border-gray-200 hover:border-orange-400 hover:text-orange-600',
+            ]"
+          >
+            <span>{{ f.label }}</span>
+            <span
+              :class="[
+                'px-1.5 py-0.5 rounded-full text-[10px] font-bold',
+                currentFilter === f.value ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600',
+              ]"
+            >
+              {{ filterCounts[f.value] ?? 0 }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista de Cuentas Castigadas -->
+      <div
+        v-if="currentFilter === 'written_off'"
+        class="max-w-7xl mx-auto px-4 space-y-3"
+      >
+        <div
+          v-if="writtenOffTransactions.length === 0"
+          class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center text-sm text-gray-500"
+        >
+          No hay cuentas castigadas como incobrables.
+        </div>
+        <div
+          v-for="tx in writtenOffTransactions"
+          :key="tx.uuid"
+          class="bg-white rounded-xl border border-rose-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div class="space-y-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                Castigado (No monetario)
+              </span>
+              <span class="text-sm font-bold text-gray-900 truncate">{{ tx.clientName || 'Cliente Anónimo' }}</span>
+              <span class="text-xs text-gray-400">{{ formatDate(tx.createdAt) }}</span>
+            </div>
+            <p class="text-xs text-gray-600">{{ tx.writtenOffReason || tx.description || 'Cuenta incobrable' }}</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-base font-extrabold text-rose-700 tabular-nums">
+              S/ {{ Number(tx.writtenOffAmount || tx.balance || 0).toFixed(2) }}
+            </span>
+            <router-link
+              :to="{ name: 'DetailsRecords', params: { registerId: tx.uuid } }"
+              class="px-2.5 py-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50"
+            >
+              Ver venta
+            </router-link>
+          </div>
+        </div>
       </div>
 
       <!-- Lista agrupada por cliente -->
-      <div class="max-w-7xl mx-auto px-4 space-y-3 sm:space-y-4">
+      <div v-else class="max-w-7xl mx-auto px-4 space-y-3 sm:space-y-4">
         <div
           v-for="group in filteredReceivablesByClient"
           :key="group.clientId"
@@ -157,14 +223,56 @@
                     }}</span>
                   </div>
 
-                  <!-- Fecha -->
+                  <!-- Fecha y antigüedad -->
                   <span class="text-xs text-gray-500 truncate">
                     {{ formatDate(transaction.createdAt) }}
                   </span>
+                  <span
+                    :class="[
+                      'px-2 py-0.5 rounded-md text-[10px] font-bold border',
+                      transaction.agingBucket === 'overdue_over_30'
+                        ? 'bg-rose-50 text-rose-700 border-rose-200'
+                        : transaction.agingBucket === 'overdue_under_30'
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    ]"
+                  >
+                    {{
+                      transaction.agingBucket === 'overdue_over_30'
+                        ? `Moroso ${transaction.daysOverdue}d`
+                        : transaction.agingBucket === 'overdue_under_30'
+                          ? `Vencido ${transaction.daysOverdue}d`
+                          : 'Al día'
+                    }}
+                  </span>
                 </div>
 
-                <!-- Botón de ver detalles y registrar pago -->
-                <div class="flex items-center gap-2 shrink-0">
+                <!-- Botón de ver detalles, WhatsApp, castigar y registrar pago -->
+                <div class="flex items-center gap-1.5 flex-wrap shrink-0">
+                  <button
+                    type="button"
+                    @click="openMetaEditor(transaction)"
+                    class="px-2 py-1 text-[11px] font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-100"
+                    title="Editar fecha prometida y nota"
+                  >
+                    {{ transaction.promisedPaymentDate ? `📅 ${formatDate(transaction.promisedPaymentDate)}` : '📅 Promesa' }}
+                  </button>
+                  <button
+                    type="button"
+                    @click="sendWhatsAppReminder(transaction, group)"
+                    class="px-2 py-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100"
+                    title="Recordar por WhatsApp"
+                  >
+                    WhatsApp
+                  </button>
+                  <button
+                    v-if="transaction.agingBucket === 'overdue_over_30'"
+                    type="button"
+                    @click="openWriteOffModal(transaction)"
+                    class="px-2 py-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg hover:bg-rose-600 hover:text-white transition-colors"
+                  >
+                    Castigar incobrable
+                  </button>
                   <router-link
                     :to="{
                       name: 'DetailsRecords',
@@ -211,6 +319,54 @@
                     </svg>
                     <span class="hidden sm:inline">Registrar Pago</span>
                     <span class="sm:hidden">Pagar</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nota de seguimiento / Editor inline -->
+              <p
+                v-if="transaction.receivableNote && editingMetaTxId !== transaction.uuid"
+                class="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5 mb-2"
+              >
+                📝 {{ transaction.receivableNote }}
+              </p>
+              <div
+                v-if="editingMetaTxId === transaction.uuid"
+                class="bg-amber-50/70 border border-amber-200 rounded-lg p-2.5 mb-2 space-y-2"
+              >
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] font-bold text-amber-900 uppercase mb-1">Fecha prometida</label>
+                    <input
+                      v-model="metaForm.promisedPaymentDate"
+                      type="date"
+                      class="w-full px-2.5 py-1.5 text-xs bg-white border border-amber-200 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-amber-900 uppercase mb-1">Nota de seguimiento</label>
+                    <input
+                      v-model="metaForm.receivableNote"
+                      type="text"
+                      placeholder="Ej: Prometió transferir el viernes"
+                      class="w-full px-2.5 py-1.5 text-xs bg-white border border-amber-200 rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    @click="editingMetaTxId = null"
+                    class="px-2.5 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded-lg"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    @click="saveMetaEditor(transaction.uuid)"
+                    class="px-3 py-1 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700"
+                  >
+                    Guardar seguimiento
                   </button>
                 </div>
               </div>
@@ -298,6 +454,54 @@
       @success="handlePaymentSuccess"
     />
 
+    <!-- Modal Confirmar Castigo de Incobrable -->
+    <Teleport to="body">
+      <div
+        v-if="showWriteOffModal && writeOffTarget"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="closeWriteOffModal"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">
+              Ajuste Contable No Monetario
+            </span>
+            <h3 class="text-lg font-bold text-gray-900 mt-1">Castigar cuenta como incobrable</h3>
+            <p class="text-xs text-gray-600 mt-1">
+              Se dará de baja el saldo de <strong class="text-rose-700">S/ {{ Number(writeOffTarget.balance || 0).toFixed(2) }}</strong> de
+              <strong>{{ writeOffTarget.clientName || 'Cliente' }}</strong> y se registrará en tu Estado de Resultados sin afectar tu Caja ni Banco.
+            </p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Motivo del castigo (Opcional)</label>
+            <input
+              v-model="writeOffReason"
+              type="text"
+              placeholder="Ej: Deuda > 30 días sin respuesta"
+              class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-rose-500"
+            />
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              @click="closeWriteOffModal"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="isWritingOff"
+              @click="confirmWriteOff"
+              class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ isWritingOff ? 'Registrando...' : 'Confirmar castigo' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- Toast de notificación -->
   </div>
 </template>
@@ -323,8 +527,16 @@ const { isPremium } = useSubscription();
 // Toast
 const { warning, premium, success } = useToast();
 
-const { pendingTransactions, totalReceivable, receivablesByClient } =
-  useAccountsReceivable();
+const {
+  pendingTransactions,
+  writtenOffTransactions,
+  totalReceivable,
+  receivablesByClient,
+  updateReceivableMeta,
+  writeOffReceivable,
+} = useAccountsReceivable();
+import { useClientStore } from "@/stores/clientStore";
+const clientStore = useClientStore();
 
 const transactionStore = useTransactionStore();
 const showPaymentModal = ref(false);
@@ -332,11 +544,35 @@ const selectedTransaction = ref(null);
 const currentFilter = ref("all");
 const isLoading = ref(true);
 
+const editingMetaTxId = ref(null);
+const metaForm = ref({ promisedPaymentDate: "", receivableNote: "" });
+const showWriteOffModal = ref(false);
+const writeOffTarget = ref(null);
+const writeOffReason = ref("");
+const isWritingOff = ref(false);
+
 const filters = [
   { label: "Todas", value: "all" },
+  { label: "Al día", value: "current" },
+  { label: "Vencido <30d", value: "overdue_under_30" },
+  { label: "Moroso >30d", value: "overdue_over_30" },
   { label: "Pendientes", value: "pending" },
   { label: "Parciales", value: "partial" },
+  { label: "Castigados", value: "written_off" },
 ];
+
+const filterCounts = computed(() => {
+  const list = pendingTransactions.value;
+  return {
+    all: list.length,
+    current: list.filter((t) => t.agingBucket === "current").length,
+    overdue_under_30: list.filter((t) => t.agingBucket === "overdue_under_30").length,
+    overdue_over_30: list.filter((t) => t.agingBucket === "overdue_over_30").length,
+    pending: list.filter((t) => t.paymentStatus === "pending").length,
+    partial: list.filter((t) => t.paymentStatus === "partial").length,
+    written_off: writtenOffTransactions.value.length,
+  };
+});
 
 // Cargar transacciones con balance pendiente al montar el componente
 onMounted(async () => {
@@ -344,6 +580,9 @@ onMounted(async () => {
     console.log("🔄 Cargando cuentas por cobrar...");
     isLoading.value = true;
     await transactionStore.fetchPendingTransactions();
+    if (!clientStore.clients?.length && route.params.businessId) {
+      await clientStore.fetchClients(route.params.businessId);
+    }
     console.log("✅ Cuentas por cobrar cargadas");
   } catch (error) {
     console.error("❌ Error cargando cuentas por cobrar:", error);
@@ -358,18 +597,102 @@ const filteredReceivablesByClient = computed(() => {
     return receivablesByClient.value;
   }
 
+  const matchTx = (t) => {
+    if (["current", "overdue_under_30", "overdue_over_30"].includes(currentFilter.value)) {
+      return t.agingBucket === currentFilter.value;
+    }
+    return t.paymentStatus === currentFilter.value;
+  };
+
   return receivablesByClient.value
     .map((group) => ({
       ...group,
-      transactions: group.transactions.filter(
-        (t) => t.paymentStatus === currentFilter.value,
-      ),
+      transactions: group.transactions.filter(matchTx),
       totalPending: group.transactions
-        .filter((t) => t.paymentStatus === currentFilter.value)
+        .filter(matchTx)
         .reduce((sum, t) => sum + (t.balance || 0), 0),
     }))
     .filter((group) => group.transactions.length > 0);
 });
+
+function openMetaEditor(transaction) {
+  editingMetaTxId.value = transaction.uuid;
+  let dateVal = "";
+  if (transaction.promisedPaymentDate) {
+    const d = transaction.promisedPaymentDate.toDate
+      ? transaction.promisedPaymentDate.toDate()
+      : new Date(transaction.promisedPaymentDate);
+    if (!Number.isNaN(d.getTime())) {
+      dateVal = d.toISOString().split("T")[0];
+    }
+  }
+  metaForm.value = {
+    promisedPaymentDate: dateVal,
+    receivableNote: transaction.receivableNote || "",
+  };
+}
+
+async function saveMetaEditor(txId) {
+  try {
+    await updateReceivableMeta(txId, {
+      promisedPaymentDate: metaForm.value.promisedPaymentDate || null,
+      receivableNote: metaForm.value.receivableNote || null,
+    });
+    editingMetaTxId.value = null;
+    success("Seguimiento de cobranza guardado");
+  } catch (err) {
+    warning("No se pudo guardar el seguimiento: " + err.message);
+  }
+}
+
+function sendWhatsAppReminder(transaction, group) {
+  const client = (clientStore.clients || []).find((c) => c.uuid === group.clientId);
+  const rawPhone = String(client?.phone || "").replace(/\D/g, "");
+  const phone = rawPhone ? (rawPhone.startsWith("51") ? rawPhone : `51${rawPhone}`) : "";
+  const msg = encodeURIComponent(
+    `Hola ${group.clientName}, te recordamos amablemente el saldo pendiente de S/ ${Number(transaction.balance || 0).toFixed(2)} correspondiente a la compra del ${formatDate(transaction.createdAt)}. ¡Gracias!`
+  );
+  const url = phone ? `https://wa.me/${phone}?text=${msg}` : `https://wa.me/?text=${msg}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function openWriteOffModal(transaction) {
+  writeOffTarget.value = transaction;
+  writeOffReason.value = "";
+  showWriteOffModal.value = true;
+}
+
+function closeWriteOffModal() {
+  showWriteOffModal.value = false;
+  writeOffTarget.value = null;
+  writeOffReason.value = "";
+}
+
+async function confirmWriteOff() {
+  if (!writeOffTarget.value) return;
+  isWritingOff.value = true;
+  try {
+    const { amountToWriteOff } = await writeOffReceivable(
+      writeOffTarget.value,
+      writeOffReason.value
+    );
+    closeWriteOffModal();
+    warning(
+      `Se castigó S/ ${amountToWriteOff.toFixed(2)} como incobrable. Ver Estado de Resultados`,
+      {
+        duration: 4500,
+        actionLink: {
+          text: "Ver Estado de Resultados",
+          route: `/business/${route.params.businessId}/income-statement`,
+        },
+      }
+    );
+  } catch (err) {
+    warning("No se pudo castigar la cuenta: " + err.message);
+  } finally {
+    isWritingOff.value = false;
+  }
+}
 
 // Methods
 function openPaymentModal(transaction) {

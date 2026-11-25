@@ -407,6 +407,24 @@
                 @keydown.enter.prevent="handleEnterInPhone"
               />
             </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                ¿Cómo nos conoció? (opcional)
+              </label>
+              <select
+                v-model="newClient.originChannel"
+                class="w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-blue-500 focus:outline-none text-sm"
+              >
+                <option value="">Sin especificar</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="instagram">Instagram</option>
+                <option value="tiktok">TikTok</option>
+                <option value="referral">Recomendación</option>
+                <option value="walk_in">Local / Pasaba por aquí</option>
+                <option value="other">Otro</option>
+              </select>
+            </div>
           </div>
 
           <div v-if="createError" class="text-sm text-red-600">
@@ -588,7 +606,7 @@ function handleEnterInPhone() {
 
 function closeCreateClientModal() {
   showCreateModal.value = false;
-  newClient.value = { name: "", rucOrDni: "", phone: "" };
+  newClient.value = { name: "", rucOrDni: "", phone: "", originChannel: "" };
   createError.value = "";
 }
 

@@ -124,7 +124,27 @@
                 </svg>
                 <span class="font-medium">{{ client.dni }}</span>
               </div>
+
+              <!-- Cliente Clave y Canal de Origen -->
+              <span
+                v-if="client.isKeyClient"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+              >
+                ⭐ Cliente clave
+              </span>
+              <span
+                v-if="client.originChannel"
+                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-200"
+              >
+                📣 {{ formatOriginChannel(client.originChannel) }}{{ client.originDetail ? ` · ${client.originDetail}` : '' }}
+              </span>
             </div>
+            <p
+              v-if="client.notes"
+              class="mt-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5"
+            >
+              📝 {{ client.notes }}
+            </p>
           </div>
 
           <!-- Botones de acción -->
@@ -467,6 +487,18 @@ async function confirmDelete() {
 function handleClientUpdated() {
   console.log("Cliente actualizado, recargando datos...");
   initialize();
+}
+
+function formatOriginChannel(channel) {
+  const labels = {
+    whatsapp: "WhatsApp",
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    referral: "Recomendación",
+    walk_in: "Local",
+    other: "Otro canal",
+  };
+  return labels[channel] || channel;
 }
 
 function formatPhone(phone) {

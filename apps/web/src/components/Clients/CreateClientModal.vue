@@ -87,6 +87,59 @@
           </p>
         </div>
 
+        <!-- Canal de origen (Área 2 - Marketing) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+              ¿Cómo nos conoció?
+            </label>
+            <select
+              v-model="formData.originChannel"
+              class="w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            >
+              <option value="">Sin especificar</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
+              <option value="referral">Recomendación / Boca a boca</option>
+              <option value="walk_in">Local / Pasaba por aquí</option>
+              <option value="other">Otro canal</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+              Detalle / Campaña
+            </label>
+            <input
+              v-model="formData.originDetail"
+              type="text"
+              placeholder="Ej: Promo 2x1 / Vecino"
+              class="w-full px-3 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <!-- Notas y Cliente Clave -->
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+            Notas o Preferencias
+          </label>
+          <textarea
+            v-model="formData.notes"
+            rows="2"
+            placeholder="Ej: Prefiere pago Yape, compra al por mayor los sábados"
+            class="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          ></textarea>
+        </div>
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input
+            v-model="formData.isKeyClient"
+            type="checkbox"
+            class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500"
+          />
+          <span class="font-medium">Marcar como cliente clave / frecuente ⭐</span>
+        </label>
+
         <!-- Error General -->
         <div
           v-if="errors.general"
@@ -147,6 +200,10 @@ const formData = ref({
   name: "",
   phone: "",
   dni: "",
+  originChannel: "",
+  originDetail: "",
+  notes: "",
+  isKeyClient: false,
 });
 
 const errors = ref({
@@ -206,6 +263,10 @@ async function handleSubmit() {
       name: formData.value.name.trim(),
       phone: formData.value.phone.trim() || null,
       dni: formData.value.dni.trim() || null,
+      originChannel: formData.value.originChannel || null,
+      originDetail: formData.value.originDetail.trim() || null,
+      notes: formData.value.notes.trim() || null,
+      isKeyClient: Boolean(formData.value.isKeyClient),
     });
 
     console.log("✅ Cliente creado exitosamente:", clientId);
@@ -239,6 +300,10 @@ function resetForm() {
     name: "",
     phone: "",
     dni: "",
+    originChannel: "",
+    originDetail: "",
+    notes: "",
+    isKeyClient: false,
   };
   errors.value = {
     name: "",

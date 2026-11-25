@@ -6,8 +6,39 @@
         Asignar Proveedor
       </h1>
       <p class="text-sm text-gray-500 max-w-md mx-auto">
-        Todo egreso o compra de mercadería requiere identificar un proveedor
+        {{
+          isInternalOwnerOrFamilyTx
+            ? "Opcional: puedes registrar este movimiento interno sin proveedor o vincular uno si lo deseas"
+            : "Todo egreso o compra de mercadería requiere identificar un proveedor"
+        }}
       </p>
+    </div>
+
+    <!-- Aviso de movimiento interno (Dueño / Familia) -->
+    <div
+      v-if="isInternalOwnerOrFamilyTx && !selectedSupplier"
+      class="max-w-lg mx-auto p-4 rounded-xl border border-emerald-200 bg-emerald-50 flex items-start gap-3"
+    >
+      <div
+        class="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
+      <div class="text-left space-y-1">
+        <p class="text-sm font-bold text-emerald-900">
+          Movimiento interno ({{ internalTxLabel }}) — Proveedor opcional
+        </p>
+        <p class="text-xs text-emerald-800 leading-relaxed">
+          Al tratarse de un movimiento interno de dueño o familia, no necesitas seleccionar un proveedor externo. Puedes presionar <strong>Siguiente</strong> directamente.
+        </p>
+      </div>
     </div>
 
     <!-- Proveedor Seleccionado -->
@@ -233,6 +264,25 @@ const businessStore = useBusinessStore();
 const { success, error } = useToast();
 
 const isAddStockFlow = computed(() => route.name === "AddStock");
+
+const isInternalOwnerOrFamilyTx = computed(() => {
+  if (isAddStockFlow.value) return false;
+  const tx = transactionStore.transactionToAdd.value;
+  return (
+    tx.category === "owner_draw" ||
+    ["owner_salary", "family_salary", "personal_withdrawal"].includes(tx.subcategory)
+  );
+});
+
+const internalTxLabel = computed(() => {
+  const tx = transactionStore.transactionToAdd.value;
+  if (tx.category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
+    return "Retiro personal del dueño";
+  }
+  if (tx.subcategory === "owner_salary") return "Salario del dueño";
+  if (tx.subcategory === "family_salary") return "Salario a familiares";
+  return "Negocio y Dueño";
+});
 
 // Estado
 const searchQuery = ref("");

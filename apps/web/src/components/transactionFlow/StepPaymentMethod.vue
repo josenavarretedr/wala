@@ -376,6 +376,55 @@
           <span class="text-red-600">S/ {{ totalAmount.toFixed(2) }}</span>
         </div>
       </div>
+
+      <!-- Fecha prometida de pago (Crédito / Parcial) -->
+      <div
+        v-if="paymentType === 'partial' || paymentType === 'credit'"
+        class="bg-amber-50/70 border border-amber-200 rounded-lg p-3.5 space-y-2 text-sm"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <label class="text-xs font-semibold text-amber-900">
+            Fecha prometida de cobro (Opcional)
+          </label>
+          <span class="text-[11px] text-amber-700">Para seguimiento en Cobranzas</span>
+        </div>
+        <input
+          v-model="promisedPaymentDate"
+          type="date"
+          class="w-full px-3 py-2 bg-white border border-amber-200 rounded-lg text-xs text-gray-800 focus:outline-none focus:border-amber-500"
+        />
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            @click="setPromisedDatePreset(7)"
+            class="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-amber-200 text-amber-800 hover:bg-amber-100"
+          >
+            En 7 días
+          </button>
+          <button
+            type="button"
+            @click="setPromisedDatePreset(15)"
+            class="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-amber-200 text-amber-800 hover:bg-amber-100"
+          >
+            En 15 días
+          </button>
+          <button
+            type="button"
+            @click="setPromisedDateEndOfMonth"
+            class="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-amber-200 text-amber-800 hover:bg-amber-100"
+          >
+            Fin de mes
+          </button>
+          <button
+            v-if="promisedPaymentDate"
+            type="button"
+            @click="promisedPaymentDate = ''"
+            class="px-2 py-1 text-[11px] font-medium rounded-md text-gray-500 hover:text-gray-700 ml-auto"
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Indicador de selección -->
@@ -563,8 +612,28 @@ function handleCreditSelect() {
 function setPaymentType(type) {
   paymentType.value = type;
   validationError.value = "";
-
   // NO resetear partialAmount para mantener el valor si el usuario quiere volver
+}
+
+const promisedPaymentDate = ref("");
+
+function toDateInputValue(d) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function setPromisedDatePreset(days) {
+  const target = new Date();
+  target.setDate(target.getDate() + days);
+  promisedPaymentDate.value = toDateInputValue(target);
+}
+
+function setPromisedDateEndOfMonth() {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  promisedPaymentDate.value = toDateInputValue(end);
 }
 
 function handlePartialAmountInput() {
@@ -616,7 +685,7 @@ watch([partialAmount, paymentType], () => {
 
 // Al avanzar, guardar la información en el store
 watch(
-  [selectedMethod, paymentType, partialAmount, detractionRate, isSubjectToDetraction],
+  [selectedMethod, paymentType, partialAmount, detractionRate, isSubjectToDetraction, promisedPaymentDate],
   () => {
     if (selectedMethod.value && paymentType.value) {
       const isPartial = paymentType.value === "partial" || paymentType.value === "credit";
@@ -647,6 +716,10 @@ watch(
       }
 
       transactionStore.setPaymentInfo(selectedMethod.value, isPartial, amount, detractionData);
+      transactionStore.transactionToAdd.value.promisedPaymentDate =
+        isPartial && promisedPaymentDate.value
+          ? new Date(`${promisedPaymentDate.value}T23:59:59`)
+          : null;
     }
   },
   { deep: true },

@@ -70,7 +70,16 @@
         </div>
       </div>
 
-      <!-- Date Pickers (Custom Range) -->
+      <!-- Date Pickers (Custom Range) + Proyección -->
+      <div class="flex flex-wrap items-center gap-2 justify-end">
+        <button
+          type="button"
+          @click="openProjectionModal"
+          class="px-3.5 py-2 rounded-xl border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all shadow-2xs"
+        >
+          {{ projection ? '🎯 Editar Proyección' : '🎯 Proyectar Período' }}
+        </button>
+      </div>
       <Transition name="slide-fade">
         <div
           v-if="selectedRangeOption === 'custom'"
@@ -817,6 +826,148 @@
           </Transition>
         </div>
 
+        <!-- (-) Mermas y Bajas de Inventario (No Monetario) -->
+        <div
+          v-if="lines.inventory_shrinkage > 0"
+          class="bg-white rounded-2xl border border-rose-200 overflow-hidden transition-all hover:border-rose-300"
+        >
+          <div class="px-6 py-4 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-1.5 py-0.5 bg-rose-100 text-rose-700 font-bold rounded text-xs">(-)</span>
+                <button
+                  @click="toggleLineDetails('inventory_shrinkage')"
+                  class="font-bold text-gray-900 text-sm text-left hover:text-rose-600 transition-colors flex items-center gap-1.5"
+                >
+                  <span>Mermas y Bajas de Inventario</span>
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold">NO MONETARIO</span>
+                  <span class="text-xs text-gray-400 font-normal">
+                    ({{ activeLineDetails === 'inventory_shrinkage' ? 'Ocultar' : 'Ver detalle' }})
+                  </span>
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-500">
+                Productos dañados, vencidos, obsoletos o faltantes de conteo. Reduce tu ganancia sin mover Caja/Banco.
+              </p>
+            </div>
+            <span class="text-base font-extrabold text-rose-700">
+              {{ formatCurrency(lines.inventory_shrinkage) }}
+            </span>
+          </div>
+
+          <Transition name="expand">
+            <div
+              v-if="activeLineDetails === 'inventory_shrinkage'"
+              class="bg-rose-50/40 px-6 py-4 border-t border-rose-100 space-y-2.5"
+            >
+              <div
+                v-for="sub in lineTransactions.inventory_shrinkage"
+                :key="sub.key"
+                class="bg-white border border-rose-100 rounded-xl p-3 space-y-2 shadow-2xs"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <button
+                      @click="toggleSubcategoryDetails('inventory_shrinkage', sub.key)"
+                      class="w-5 h-5 flex items-center justify-center bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-md text-[10px] font-bold select-none shrink-0"
+                    >
+                      {{ activeSubcategoryDetails['inventory_shrinkage'] === sub.key ? '−' : '+' }}
+                    </button>
+                    <span class="font-bold text-gray-900 text-[11px] truncate">{{ sub.name }}</span>
+                  </div>
+                  <span class="font-black text-rose-800 text-xs shrink-0">{{ formatCurrency(sub.amount) }}</span>
+                </div>
+                <Transition name="expand">
+                  <div
+                    v-if="activeSubcategoryDetails['inventory_shrinkage'] === sub.key"
+                    class="pl-6 pt-2 border-t border-gray-50 space-y-1.5 max-h-[120px] overflow-y-auto pr-1"
+                  >
+                    <div
+                      v-for="t in sub.txs"
+                      :key="t.uuid"
+                      class="flex justify-between text-[10px] text-gray-500 py-0.5 border-b border-gray-50"
+                    >
+                      <span class="truncate mr-2">{{ t.description }}</span>
+                      <span class="font-bold text-gray-800 shrink-0">{{ formatCurrency(t.amount) }}</span>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
+        <!-- (-) Provisión / Castigo de Incobrables (No Monetario) -->
+        <div
+          v-if="lines.opex_bad_debt > 0"
+          class="bg-white rounded-2xl border border-amber-200 overflow-hidden transition-all hover:border-amber-300"
+        >
+          <div class="px-6 py-4 flex items-center justify-between">
+            <div class="space-y-0.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 font-bold rounded text-xs">(-)</span>
+                <button
+                  @click="toggleLineDetails('opex_bad_debt')"
+                  class="font-bold text-gray-900 text-sm text-left hover:text-amber-700 transition-colors flex items-center gap-1.5"
+                >
+                  <span>Provisión / Castigo de Incobrables</span>
+                  <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 text-[10px] font-bold">NO MONETARIO</span>
+                  <span class="text-xs text-gray-400 font-normal">
+                    ({{ activeLineDetails === 'opex_bad_debt' ? 'Ocultar' : 'Ver detalle' }})
+                  </span>
+                </button>
+              </div>
+              <p class="text-[11px] text-gray-500">
+                Cuentas por cobrar castigadas como incobrables. Sincronizado con Cuentas por Cobrar sin mover efectivo.
+              </p>
+            </div>
+            <span class="text-base font-extrabold text-amber-800">
+              {{ formatCurrency(lines.opex_bad_debt) }}
+            </span>
+          </div>
+
+          <Transition name="expand">
+            <div
+              v-if="activeLineDetails === 'opex_bad_debt'"
+              class="bg-amber-50/40 px-6 py-4 border-t border-amber-100 space-y-2.5"
+            >
+              <div
+                v-for="sub in lineTransactions.opex_bad_debt"
+                :key="sub.key"
+                class="bg-white border border-amber-100 rounded-xl p-3 space-y-2 shadow-2xs"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <button
+                      @click="toggleSubcategoryDetails('opex_bad_debt', sub.key)"
+                      class="w-5 h-5 flex items-center justify-center bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-md text-[10px] font-bold select-none shrink-0"
+                    >
+                      {{ activeSubcategoryDetails['opex_bad_debt'] === sub.key ? '−' : '+' }}
+                    </button>
+                    <span class="font-bold text-gray-900 text-[11px] truncate">{{ sub.name }}</span>
+                  </div>
+                  <span class="font-black text-amber-900 text-xs shrink-0">{{ formatCurrency(sub.amount) }}</span>
+                </div>
+                <Transition name="expand">
+                  <div
+                    v-if="activeSubcategoryDetails['opex_bad_debt'] === sub.key"
+                    class="pl-6 pt-2 border-t border-gray-50 space-y-1.5 max-h-[120px] overflow-y-auto pr-1"
+                  >
+                    <div
+                      v-for="t in sub.txs"
+                      :key="t.uuid"
+                      class="flex justify-between text-[10px] text-gray-500 py-0.5 border-b border-gray-50"
+                    >
+                      <span class="truncate mr-2">{{ t.description }}</span>
+                      <span class="font-bold text-gray-800 shrink-0">{{ formatCurrency(t.amount) }}</span>
+                    </div>
+                  </div>
+                </Transition>
+              </div>
+            </div>
+          </Transition>
+        </div>
+
         <!-- (=) GANANCIA OPERATIVA -->
         <div
           :class="[
@@ -1177,17 +1328,161 @@
               </p>
             </div>
             <div class="text-right shrink-0">
-              <span
-                :class="[
-                  'text-xl font-black leading-tight block',
-                  totals.netProfit < 0 ? 'text-rose-700' : 'text-red-600',
-                ]"
-                >{{ formatCurrency(totals.netProfit) }}</span
+                <span
+                  :class="[
+                    'text-xl font-black leading-tight block',
+                    totals.netProfit < 0 ? 'text-rose-700' : 'text-red-600',
+                  ]"
+                  >{{ formatCurrency(totals.netProfit) }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Bloque informativo fuera del P&L operativo: Retiros personales del dueño (owner_draw) -->
+          <div
+            v-if="ownerDrawsSummary.count > 0"
+            class="bg-amber-50/70 rounded-2xl border border-amber-200 overflow-hidden transition-all"
+          >
+            <div class="px-6 py-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+              <div class="flex-1 min-w-0 space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="px-1.5 py-0.5 bg-amber-200 text-amber-900 font-extrabold rounded text-[10px] tracking-tight shrink-0">
+                    NO OPERATIVO
+                  </span>
+                  <button
+                    type="button"
+                    @click="toggleLineDetails('owner_draw')"
+                    class="font-extrabold text-amber-950 text-sm text-left hover:underline focus:outline-none"
+                  >
+                    Retiros Personales del Dueño ({{ ownerDrawsSummary.count }})
+                  </button>
+                </div>
+                <p class="text-[11px] text-amber-900/90 leading-relaxed max-w-2xl">
+                  Dinero que salió de Caja/Banco para uso personal. No reduce la Ganancia Neta del negocio, pero sí disminuye tu efectivo disponible.
+                </p>
+                <p
+                  v-if="totals.netProfit > 0 && ownerDrawsSummary.total > totals.netProfit"
+                  class="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-1.5 inline-block mt-1"
+                >
+                  ⚠️ Atención: tus retiros personales superaron la Ganancia Neta de este período.
+                </p>
+              </div>
+              <div class="text-right shrink-0">
+                <span class="text-base font-extrabold text-amber-900 leading-tight block">
+                  {{ formatCurrency(ownerDrawsSummary.total) }}
+                </span>
+                <button
+                  type="button"
+                  @click="toggleLineDetails('owner_draw')"
+                  class="text-[11px] font-semibold text-amber-700 hover:text-amber-900 mt-0.5"
+                >
+                  {{ activeLineDetails === 'owner_draw' ? 'Ocultar detalle' : 'Ver detalle' }}
+                </button>
+              </div>
+            </div>
+
+            <Transition name="expand">
+              <div
+                v-if="activeLineDetails === 'owner_draw'"
+                class="bg-white/80 px-6 py-3 border-t border-amber-100 space-y-2"
               >
+                <div
+                  v-for="t in ownerDrawsSummary.txs"
+                  :key="t.uuid || t.id"
+                  class="flex items-center justify-between text-xs py-1.5 border-b border-amber-100/60 last:border-b-0"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-gray-400 font-mono text-[11px] shrink-0">{{ formatDate(t.createdAt) }}</span>
+                    <span class="text-gray-800 font-medium truncate">{{ t.description || 'Retiro personal del dueño' }}</span>
+                  </div>
+                  <span class="font-bold text-amber-900 shrink-0 ml-2">
+                    {{ formatCurrency(t.amount) }}
+                  </span>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
+          <!-- Alerta Preventiva: Cuentas por Cobrar en Riesgo (> 30 días sin castigar) -->
+          <div
+            v-if="overdueReceivablesRisk.count > 0"
+            class="bg-rose-50/80 rounded-2xl border border-rose-200 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div class="space-y-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-1.5 py-0.5 bg-rose-200 text-rose-900 font-extrabold rounded text-[10px] tracking-tight shrink-0">
+                  RIESGO DE LIQUIDEZ
+                </span>
+                <span class="font-extrabold text-rose-950 text-sm">
+                  Cuentas por Cobrar vencidas (&gt;30 días): {{ formatCurrency(overdueReceivablesRisk.total) }}
+                </span>
+              </div>
+              <p class="text-[11px] text-rose-900/90 leading-relaxed max-w-2xl">
+                Tienes {{ overdueReceivablesRisk.count }} venta(s) al crédito con más de 30 días de antigüedad. Si alguna es irrecuperable, castígala como incobrable en Cuentas por Cobrar para no sobrestimar tu Ganancia Neta.
+              </p>
+            </div>
+            <router-link
+              :to="`/business/${route.params.businessId}/accounts-receivable`"
+              class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition-colors shrink-0 shadow-xs"
+            >
+              <span>Revisar cobranzas →</span>
+            </router-link>
+          </div>
+
+          <!-- Bloque Proyectado vs. Real (Área 7 - Planificación) -->
+          <div
+            v-if="projectionComparison"
+            class="bg-white rounded-2xl border border-indigo-200 p-5 space-y-4 shadow-xs"
+          >
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase">
+                    Proyectado vs. Real · {{ currentPeriodKey }}
+                  </span>
+                  <h3 class="text-sm font-extrabold text-gray-900">Control de Metas del Período</h3>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  Compara tu resultado real del P&amp;L contra las metas acordadas con tu asesor.
+                </p>
+              </div>
+              <button
+                type="button"
+                @click="openProjectionModal"
+                class="px-3 py-1.5 rounded-xl border border-indigo-200 text-indigo-700 hover:bg-indigo-50 text-xs font-semibold self-start sm:self-auto"
+              >
+                Ajustar metas
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div
+                v-for="metric in projectionComparison"
+                :key="metric.key"
+                class="rounded-xl border p-3.5 bg-gray-50/70 border-gray-200 space-y-1.5"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold text-gray-600">{{ metric.label }}</span>
+                  <span
+                    :class="[
+                      'px-1.5 py-0.5 rounded text-[10px] font-bold',
+                      metric.onTrack ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800',
+                    ]"
+                  >
+                    {{ metric.pct }}%
+                  </span>
+                </div>
+                <p class="text-sm font-black text-gray-900 tabular-nums">
+                  Real: {{ formatCurrency(metric.actual) }}
+                </p>
+                <p class="text-[11px] text-gray-500 tabular-nums">
+                  Meta: {{ formatCurrency(metric.target) }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
       <!-- Pantalla Vacía si no hay transacciones -->
       <div
@@ -1299,14 +1594,97 @@
         </div>
       </div>
     </Transition>
+
+    <!-- Modal Proyectar Período (Área 7 - Planificación) -->
+    <Teleport to="body">
+      <div
+        v-if="showProjectionModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="showProjectionModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 uppercase">
+                Período {{ currentPeriodKey }}
+              </span>
+              <h3 class="text-lg font-bold text-gray-900 mt-1">Proyectar Estado de Resultados</h3>
+              <p class="text-xs text-gray-500">Define tus metas del mes para comparar Proyectado vs. Real.</p>
+            </div>
+            <button type="button" @click="showProjectionModal = false" class="text-gray-400 hover:text-gray-600 px-2 py-1">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Meta de Ventas del Mes (S/) *</label>
+              <input
+                v-model.number="projectionForm.salesTarget"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ej: 15000.00"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Costo de Ventas Esperado (% sobre ventas)</label>
+              <input
+                v-model.number="projectionForm.cogsPctTarget"
+                type="number"
+                step="1"
+                min="0"
+                max="100"
+                placeholder="Ej: 55"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Tope de Gastos Fijos del Mes (S/)</label>
+              <input
+                v-model.number="projectionForm.fixedCostsTarget"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Ej: 3500.00"
+                class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              @click="showProjectionModal = false"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="savingProjection || !(projectionForm.salesTarget > 0)"
+              @click="handleSaveProjection"
+              class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ savingProjection ? 'Guardando...' : 'Guardar proyección' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebaseInit";
 import { useTransaccion } from "@/composables/useTransaction";
 import { classifyStatementLine } from "@/utils/statementLineClassifier";
 import { useInventoryStore } from "@/stores/inventoryStore";
+import { calculatePaymentStatus } from "@/utils/paymentCalculator";
+import { usePlanning } from "@/composables/usePlanning";
+import { useToast } from "@/composables/useToast";
 import {
   GraphUp,
   GraphDown,
@@ -1322,12 +1700,23 @@ import {
 } from "@iconoir/vue";
 
 // composables
+const route = useRoute();
 const { getTransactionsRange } = useTransaccion();
 const inventoryStore = useInventoryStore();
+const { projection, fetchProjection, saveProjection } = usePlanning();
+const { success: toastSuccess, warning: toastWarning } = useToast();
 
 // Estado
 const isLoading = ref(true);
 const transactions = ref([]);
+const overdueReceivables = ref([]);
+const showProjectionModal = ref(false);
+const savingProjection = ref(false);
+const projectionForm = ref({
+  salesTarget: 0,
+  cogsPctTarget: 55,
+  fixedCostsTarget: 0,
+});
 const selectedRangeOption = ref("this_month");
 const customStartDate = ref("");
 const customEndDate = ref("");
@@ -1392,6 +1781,13 @@ const formatSubcategoryName = (subcat, category = "") => {
     Físico: "Publicidad Física (Folletos / Volantes)",
     impuesto_renta: "Impuesto a la Renta (SUNAT)",
     depreciacion: "Reserva por Depreciación de Activos",
+    inventory_loss: "Mermas y Bajas de Inventario",
+    bad_debt: "Castigo de Cuentas Incobrables",
+    damaged: "Mercadería Dañada / Malograda",
+    expired: "Productos Vencidos",
+    obsolete: "Inventario Obsoleto",
+    loss: "Pérdida o Robo",
+    count_shortage: "Faltante en Conteo Físico",
     "Banca y Cuentas": "Servicios Bancarios y Comisiones de Cuenta",
     POS: "Comisiones de Pasarela POS (Niubiz / IziPay / Yape)",
     cogs_materials: "Compras Físicas de Insumos y Telas",
@@ -1543,11 +1939,29 @@ const comprasBrutasInsumos = computed(() => {
 // DETECCIÓN DE PRODUCTOS VENDIDOS SIN COSTEAR
 // ==========================================
 
+const isRefundedIncomeSale = (tx) => {
+  return (
+    tx?.type === "income" &&
+    (tx.status === "refunded" || tx.paymentStatus === "refunded")
+  );
+};
+
+const refundedSaleIdsInPeriod = computed(() => {
+  const ids = new Set();
+  transactions.value.forEach((tx) => {
+    if (isRefundedIncomeSale(tx)) {
+      const key = tx.uuid || tx.id;
+      if (key) ids.add(key);
+    }
+  });
+  return ids;
+});
+
 const uncostedSoldProducts = computed(() => {
   const map = new Map();
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && tx.status !== "refunded" && Array.isArray(tx.items)) {
+    if (tx.type === "income" && !isRefundedIncomeSale(tx) && Array.isArray(tx.items)) {
       tx.items.forEach((item) => {
         const productId = item.productId || item.selectedProductUuid || item.uuid;
         const quantity = Number(item.quantity || 0);
@@ -1625,6 +2039,8 @@ const lines = computed(() => {
     opex_fixed: 0,
     opex_sales: 0,
     depreciation: 0,
+    inventory_shrinkage: 0,
+    opex_bad_debt: 0,
     financial: 0,
     tax: 0,
   };
@@ -1636,7 +2052,7 @@ const lines = computed(() => {
 
   transactions.value.forEach((tx) => {
     // Ingresos por ventas brutas (excluyendo transacciones anuladas/reembolsadas)
-    if (tx.type === "income" && tx.status !== "refunded") {
+    if (tx.type === "income" && !isRefundedIncomeSale(tx)) {
       statement.sales_revenue += Number(tx.amount || 0);
 
       // Si la transacción tiene envases/empaques asociados para delivery/takeaway,
@@ -1684,13 +2100,20 @@ const lines = computed(() => {
       }
     } else if (tx.type === "refund") {
       // Devolución / Reembolso de ventas de días cerrados resta de las Ventas Totales
-      statement.sales_revenue -= Number(tx.amount || 0);
+      // solo si la venta original no fue ya excluida en este mismo período.
+      if (!refundedSaleIdsInPeriod.value.has(tx.relatedTransactionId)) {
+        statement.sales_revenue -= Number(tx.amount || 0);
+      }
     } else if (tx.type === "expense") {
       const lineKey = tx.statementLine || classifyStatementLine(tx);
       const amount = Number(tx.amount || 0);
 
-      // Amortización de deuda y compra de activo fijo (CAPEX) no van a gastos operativos del P&L
-      if (lineKey === "loan_principal" || lineKey === "capex") {
+      // Amortización de deuda, compra de activo fijo (CAPEX) y retiros personales del dueño no van a gastos operativos del P&L
+      if (
+        lineKey === "loan_principal" ||
+        lineKey === "capex" ||
+        lineKey === "owner_draw"
+      ) {
         return;
       }
 
@@ -1745,6 +2168,26 @@ const lines = computed(() => {
   return statement;
 });
 
+// Resumen de Retiros Personales del Dueño (owner_draw) fuera del P&L operativo
+const ownerDrawsSummary = computed(() => {
+  const txs = [];
+  let total = 0;
+  transactions.value.forEach((tx) => {
+    if (tx.type !== "expense") return;
+    const lineKey = tx.statementLine || classifyStatementLine(tx);
+    if (lineKey === "owner_draw") {
+      const amt = Number(tx.amount || 0);
+      total += amt;
+      txs.push(tx);
+    }
+  });
+  return {
+    total: Math.round((total + Number.EPSILON) * 100) / 100,
+    count: txs.length,
+    txs,
+  };
+});
+
 // Cálculos de Totales y Márgenes Intermedios (Soporta pérdidas reales sin clampiado a 0)
 const totals = computed(() => {
   const totalCogs =
@@ -1752,7 +2195,11 @@ const totals = computed(() => {
   const grossProfit = lines.value.sales_revenue - totalCogs;
 
   const totalOpex =
-    lines.value.opex_fixed + lines.value.opex_sales + lines.value.depreciation;
+    lines.value.opex_fixed +
+    lines.value.opex_sales +
+    lines.value.depreciation +
+    lines.value.inventory_shrinkage +
+    lines.value.opex_bad_debt;
   const operatingProfit = grossProfit - totalOpex;
 
   const earningsBeforeTaxes = operatingProfit - lines.value.financial;
@@ -1779,6 +2226,89 @@ const deliveryToProfitPct = computed(() => {
   return (lines.value.opex_sales / totals.value.netProfit) * 100;
 });
 
+const overdueReceivablesRisk = computed(() => {
+  const list = overdueReceivables.value;
+  return {
+    count: list.length,
+    total: list.reduce((sum, item) => sum + Number(item.balance || 0), 0),
+    items: list,
+  };
+});
+
+const currentPeriodKey = computed(() => {
+  if (customStartDate.value && /^\d{4}-\d{2}/.test(customStartDate.value)) {
+    return customStartDate.value.slice(0, 7);
+  }
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+});
+
+const projectionComparison = computed(() => {
+  if (!projection.value || !(Number(projection.value.salesTarget) > 0)) return null;
+  const salesTarget = Number(projection.value.salesTarget || 0);
+  const cogsPct = Number(projection.value.cogsPctTarget || 0);
+  const fixedTarget = Number(projection.value.fixedCostsTarget || 0);
+  const cogsTarget = (salesTarget * cogsPct) / 100;
+  const opTarget = salesTarget - cogsTarget - fixedTarget;
+
+  return [
+    {
+      key: "sales",
+      label: "Ventas",
+      actual: lines.value.sales_revenue,
+      target: salesTarget,
+      pct: salesTarget > 0 ? Math.round((lines.value.sales_revenue / salesTarget) * 100) : 0,
+      onTrack: lines.value.sales_revenue >= salesTarget * 0.9,
+    },
+    {
+      key: "cogs",
+      label: "Costo de Ventas",
+      actual: totals.value.totalCogs,
+      target: cogsTarget,
+      pct: cogsTarget > 0 ? Math.round((totals.value.totalCogs / cogsTarget) * 100) : 0,
+      onTrack: totals.value.totalCogs <= cogsTarget * 1.05,
+    },
+    {
+      key: "fixed",
+      label: "Gastos Fijos",
+      actual: lines.value.opex_fixed,
+      target: fixedTarget,
+      pct: fixedTarget > 0 ? Math.round((lines.value.opex_fixed / fixedTarget) * 100) : 0,
+      onTrack: fixedTarget === 0 || lines.value.opex_fixed <= fixedTarget * 1.05,
+    },
+    {
+      key: "operating",
+      label: "Ganancia Operativa",
+      actual: totals.value.operatingProfit,
+      target: opTarget,
+      pct: opTarget > 0 ? Math.round((totals.value.operatingProfit / opTarget) * 100) : 0,
+      onTrack: totals.value.operatingProfit >= opTarget * 0.85,
+    },
+  ];
+});
+
+function openProjectionModal() {
+  projectionForm.value = {
+    salesTarget: Number(projection.value?.salesTarget || lines.value.sales_revenue || 0),
+    cogsPctTarget: Number(projection.value?.cogsPctTarget || 55),
+    fixedCostsTarget: Number(projection.value?.fixedCostsTarget || lines.value.opex_fixed || 0),
+  };
+  showProjectionModal.value = true;
+}
+
+async function handleSaveProjection() {
+  try {
+    savingProjection.value = true;
+    await saveProjection(currentPeriodKey.value, projectionForm.value);
+    toastSuccess("Proyección del período guardada");
+    showProjectionModal.value = false;
+  } catch (err) {
+    toastWarning("Error al guardar proyección: " + err.message);
+  } finally {
+    savingProjection.value = false;
+  }
+}
+
 // Agrupación de transacciones individuales por su línea contable para desgloses
 const lineTransactions = computed(() => {
   const result = {
@@ -1787,6 +2317,8 @@ const lineTransactions = computed(() => {
     opex_fixed: [],
     opex_sales: [],
     depreciation: [],
+    inventory_shrinkage: [],
+    opex_bad_debt: [],
     financial: [],
     tax: [],
   };
@@ -1803,7 +2335,7 @@ const lineTransactions = computed(() => {
   const refundsTxs = [];
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && tx.status !== "refunded") {
+    if (tx.type === "income" && !isRefundedIncomeSale(tx)) {
       // Sumar packaging si se cobró
       if (tx.packagingCost && Number(tx.packagingCost) > 0) {
         packagingRevenueAmount += Number(tx.packagingCost);
@@ -1862,12 +2394,14 @@ const lineTransactions = computed(() => {
         });
       }
     } else if (tx.type === "refund") {
-      refundsAmount += Number(tx.amount || 0);
-      refundsTxs.push({
-        uuid: tx.uuid,
-        description: `${formatDate(tx.createdAt)} - ${tx.description || "Reembolso / Devolución"}`,
-        amount: -Number(tx.amount || 0),
-      });
+      if (!refundedSaleIdsInPeriod.value.has(tx.relatedTransactionId)) {
+        refundsAmount += Number(tx.amount || 0);
+        refundsTxs.push({
+          uuid: tx.uuid,
+          description: `${formatDate(tx.createdAt)} - ${tx.description || "Reembolso / Devolución"}`,
+          amount: -Number(tx.amount || 0),
+        });
+      }
     }
   });
 
@@ -1934,7 +2468,7 @@ const lineTransactions = computed(() => {
   let totalCogsMaterialsVendidos = 0;
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && tx.status !== "refunded" && Array.isArray(tx.items)) {
+    if (tx.type === "income" && !isRefundedIncomeSale(tx) && Array.isArray(tx.items)) {
       tx.items.forEach((item) => {
         const productId =
           item.productId || item.selectedProductUuid || item.uuid;
@@ -2159,6 +2693,8 @@ const lineTransactions = computed(() => {
   const opexFixedTxs = [];
   const opexSalesTxs = [];
   const depreciationTxs = [];
+  const inventoryShrinkageTxs = [];
+  const badDebtTxs = [];
   const financialTxs = [];
   const taxTxs = [];
 
@@ -2194,12 +2730,16 @@ const lineTransactions = computed(() => {
         opexSalesTxs.push(tx);
       } else if (lineKey === "depreciation") {
         depreciationTxs.push(tx);
+      } else if (lineKey === "inventory_shrinkage") {
+        inventoryShrinkageTxs.push(tx);
+      } else if (lineKey === "opex_bad_debt") {
+        badDebtTxs.push(tx);
       } else if (lineKey === "financial") {
         financialTxs.push(tx);
       } else if (lineKey === "tax") {
         taxTxs.push(tx);
       }
-    } else if (tx.type === "income" && tx.status !== "refunded" && tx.packagingCost > 0) {
+    } else if (tx.type === "income" && !isRefundedIncomeSale(tx) && tx.packagingCost > 0) {
       // Agregar costo de envases virtuales a los gastos de ventas
       opexSalesTxs.push({
         uuid: `${tx.uuid}_pkg`,
@@ -2215,6 +2755,8 @@ const lineTransactions = computed(() => {
   result.opex_fixed = groupExpenseBySubcategory(opexFixedTxs);
   result.opex_sales = groupExpenseBySubcategory(opexSalesTxs);
   result.depreciation = groupExpenseBySubcategory(depreciationTxs);
+  result.inventory_shrinkage = groupExpenseBySubcategory(inventoryShrinkageTxs);
+  result.opex_bad_debt = groupExpenseBySubcategory(badDebtTxs);
   result.financial = groupExpenseBySubcategory(financialTxs);
   result.tax = groupExpenseBySubcategory(taxTxs);
 
@@ -2261,6 +2803,43 @@ const calculateDates = () => {
   }
 };
 
+const fetchOverdueReceivables = async () => {
+  const businessId = route.params.businessId;
+  if (!businessId) return;
+  try {
+    const q = query(
+      collection(db, "businesses", businessId, "transactions"),
+      where("type", "==", "income"),
+      where("paymentStatus", "in", ["pending", "partial"])
+    );
+    const snap = await getDocs(q);
+    const now = Date.now();
+    const list = [];
+    snap.forEach((docSnap) => {
+      const tx = { uuid: docSnap.id, ...docSnap.data() };
+      if (tx.status === "refunded" || tx.paymentStatus === "written_off") return;
+      const calc = calculatePaymentStatus(tx);
+      if (calc.balance <= 0) return;
+      const refDate = tx.promisedPaymentDate?.toDate
+        ? tx.promisedPaymentDate.toDate()
+        : tx.promisedPaymentDate
+          ? new Date(tx.promisedPaymentDate)
+          : tx.createdAt?.toDate
+            ? tx.createdAt.toDate()
+            : tx.date?.toDate
+              ? tx.date.toDate()
+              : new Date(tx.createdAt || tx.date || now);
+      const daysOverdue = Math.floor((now - refDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysOverdue > 30) {
+        list.push({ ...tx, ...calc, daysOverdue });
+      }
+    });
+    overdueReceivables.value = list;
+  } catch (err) {
+    console.warn("⚠️ Error verificando cuentas por cobrar vencidas:", err);
+  }
+};
+
 const fetchTransactionsData = async () => {
   if (!customStartDate.value || !customEndDate.value) return;
 
@@ -2272,6 +2851,8 @@ const fetchTransactionsData = async () => {
     const [result] = await Promise.all([
       getTransactionsRange(start, end),
       inventoryStore.getItemsInInventory(),
+      fetchOverdueReceivables(),
+      fetchProjection(currentPeriodKey.value),
     ]);
     transactions.value = result || [];
     console.log(

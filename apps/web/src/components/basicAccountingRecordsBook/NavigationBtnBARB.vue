@@ -291,7 +291,20 @@ const isNextButtonEnabled = computed(() => {
       break;
 
     case "Adjuntar proveedor":
-      // Validar que se haya seleccionado un proveedor (siempre requerido)
+      // Para retiros personales y salarios de dueño/familiares, el proveedor es opcional
+      const isInternalOwnerOrFamily =
+        route.name !== "AddStock" &&
+        (transactionData.category === "owner_draw" ||
+          ["owner_salary", "family_salary", "personal_withdrawal"].includes(
+            transactionData.subcategory,
+          ));
+
+      if (isInternalOwnerOrFamily) {
+        result = true;
+        break;
+      }
+
+      // Validar que se haya seleccionado un proveedor
       const hasSupplier =
         route.name === "AddStock"
           ? addStockFlow.addStockData.supplierId !== null && addStockFlow.addStockData.supplierId !== undefined
@@ -501,6 +514,20 @@ const finalizarRegistro = async () => {
           console.log(`✅ Pedido ${orderId} marcado como completado/cobrado`);
         } catch (orderError) {
           console.warn('⚠️ No se pudo marcar el pedido como completado:', orderError);
+        }
+      }
+
+      // Si proviene de un pago fijo recurrente (Área 7 Planificación), marcarlo como pagado en el período
+      const recurringId = transactionStore.transactionToAdd.value.recurringId;
+      const recurringPeriod = transactionStore.transactionToAdd.value.recurringPeriod;
+      if (recurringId && recurringPeriod) {
+        try {
+          const { usePlanning } = await import('@/composables/usePlanning');
+          const { markRecurringPaid } = usePlanning();
+          await markRecurringPaid(recurringId, recurringPeriod);
+          console.log(`✅ Pago fijo ${recurringId} marcado como pagado en ${recurringPeriod}`);
+        } catch (planError) {
+          console.warn('⚠️ No se pudo marcar pago fijo como pagado:', planError);
         }
       }
 

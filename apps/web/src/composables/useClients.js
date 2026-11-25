@@ -197,6 +197,10 @@ export function useClients() {
         name: clientData.name.trim(),
         phone: clientData.phone?.trim() || null,
         dni: clientData.dni?.trim() || null,
+        originChannel: clientData.originChannel?.trim() || null,
+        originDetail: clientData.originDetail?.trim() || null,
+        notes: clientData.notes?.trim() || null,
+        isKeyClient: Boolean(clientData.isKeyClient),
         businessId: currentBusinessId,
         isActive: true,
         // Metadata calculada desde transacciones existentes

@@ -17,7 +17,7 @@ const props = defineProps({
     type: String,
     default: null,
     validator: (value) =>
-      !value || ["labor", "overhead", "materials"].includes(value),
+      !value || ["labor", "overhead", "materials", "owner_draw"].includes(value),
   },
 });
 

@@ -65,8 +65,29 @@
               <span v-if="supplier.phone" class="text-xs text-gray-500">
                 📞 {{ supplier.phone }}
               </span>
+              <span
+                v-if="(supplier.incidentsCount || 0) > 2"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200"
+              >
+                ⚠️ Confiabilidad baja ({{ supplier.incidentsCount }} incidencias)
+              </span>
+              <span
+                v-else-if="(supplier.incidentsCount || 0) > 0"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200"
+              >
+                {{ supplier.incidentsCount }} incidencia(s)
+              </span>
             </div>
           </div>
+
+          <button
+            v-if="supplier && !loading"
+            type="button"
+            @click="openIncidentModal(null)"
+            class="px-3 py-2 rounded-xl border border-amber-600 text-amber-700 bg-amber-50 hover:bg-amber-600 hover:text-white text-xs font-semibold transition-colors shrink-0"
+          >
+            + Registrar Incidencia / Devolución
+          </button>
         </div>
       </div>
     </div>
@@ -219,11 +240,47 @@
                   >
                     Registrar Abono
                   </button>
+                  <button
+                    type="button"
+                    @click="openIncidentModal(transaction)"
+                    class="py-1 px-2.5 border border-amber-300 text-amber-700 hover:bg-amber-50 rounded text-[11px] font-semibold transition-colors"
+                  >
+                    Incidencia / Devolver
+                  </button>
                 </div>
               </div>
             </div>
             <div v-else class="text-center py-8 text-gray-500 text-sm">
               No hay compras ni gastos registrados para este proveedor.
+            </div>
+          </div>
+
+          <!-- Historial de Incidencias / Devoluciones -->
+          <div
+            v-if="supplierIncidents.length > 0"
+            class="bg-white rounded-xl border border-amber-200 shadow-sm p-5 space-y-3"
+          >
+            <h2 class="text-base font-bold text-gray-800">
+              Incidencias y Devoluciones ({{ supplierIncidents.length }})
+            </h2>
+            <div class="divide-y divide-gray-100">
+              <div
+                v-for="inc in supplierIncidents"
+                :key="inc.uuid"
+                class="py-2.5 flex items-center justify-between gap-3 text-xs"
+              >
+                <div class="min-w-0">
+                  <p class="font-semibold text-gray-800">{{ inc.reason }}</p>
+                  <p class="text-[11px] text-gray-500">
+                    {{ formatDate(inc.createdAt) }} ·
+                    {{ inc.mode === 'claim' ? 'Reclamo / Reposición' : inc.mode === 'discount' ? 'Descuento / Rebaja' : 'Devolución física' }}
+                    <span v-if="inc.productDescription"> · {{ inc.quantityReturned }} unids de {{ inc.productDescription }}</span>
+                  </p>
+                </div>
+                <span v-if="inc.amountAdjustment > 0" class="font-bold text-emerald-700 shrink-0">
+                  -S/ {{ Number(inc.amountAdjustment).toFixed(2) }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -281,18 +338,117 @@
       @close="closePaymentModal"
       @payment-registered="onPaymentRegistered"
     />
+
+    <!-- Modal Incidencia / Devolución Híbrida -->
+    <Teleport to="body">
+      <div
+        v-if="showIncidentModal"
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-xs"
+        @click.self="showIncidentModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Incidencia / Devolución</h3>
+              <p class="text-xs text-gray-500">Registra fallas del proveedor sin afectar ni ensuciar Caja/Banco innecesariamente.</p>
+            </div>
+            <button type="button" @click="showIncidentModal = false" class="text-gray-400 hover:text-gray-600 px-2 py-1">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Resolución / Tipo</label>
+              <select v-model="incidentForm.mode" class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm">
+                <option value="claim">Reclamo / Reposición (solo historial confiabilidad)</option>
+                <option value="discount">Descuento / Nota de crédito (rebaja deuda)</option>
+                <option value="return">Devolución física de producto/insumo</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Motivo *</label>
+              <input
+                v-model="incidentForm.reason"
+                type="text"
+                placeholder="Ej: Lote dañado, faltaron unidades o demora"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+              />
+            </div>
+            <div v-if="incidentForm.mode === 'discount' || incidentForm.mode === 'return'">
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Monto de rebaja / nota de crédito (S/)</label>
+              <input
+                v-model.number="incidentForm.amountAdjustment"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm"
+              />
+            </div>
+            <div v-if="incidentForm.mode === 'return'" class="grid grid-cols-3 gap-2">
+              <div class="col-span-2">
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Producto a devolver</label>
+                <select v-model="incidentForm.productId" class="w-full px-2.5 py-2 border border-gray-200 rounded-xl text-xs">
+                  <option value="">Selecciona insumo/producto</option>
+                  <option v-for="p in inventoryProducts" :key="p.uuid" :value="p.uuid">
+                    {{ p.description }} (Stock: {{ p.stock || 0 }})
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Cant.</label>
+                <input
+                  v-model.number="incidentForm.quantityReturned"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0"
+                  class="w-full px-2.5 py-2 border border-gray-200 rounded-xl text-xs"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Notas adicionales (opcional)</label>
+              <textarea
+                v-model="incidentForm.notes"
+                rows="2"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" @click="showIncidentModal = false" class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl">
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="!incidentForm.reason.trim() || savingIncident"
+              @click="saveIncident"
+              class="px-4 py-2 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ savingIncident ? 'Guardando...' : 'Registrar incidencia' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useSupplierDetails } from "@/composables/useSuppliers";
+import { useSupplierManagement } from "@/composables/useSupplierManagement";
+import { useInventoryStore } from "@/stores/inventoryStore";
+import { useToast } from "@/composables/useToast";
 import { useRoute, useRouter } from "vue-router";
 import PaymentRegistrationModal from "@/components/AccountsPayable/PaymentRegistrationModal.vue";
 
 const route = useRoute();
 const router = useRouter();
 const supplierId = route.params.supplierId;
+const inventoryStore = useInventoryStore();
+const { success, error } = useToast();
 
 const {
   supplier,
@@ -304,13 +460,78 @@ const {
   topProducts,
 } = useSupplierDetails(supplierId);
 
+const {
+  supplierIncidents,
+  fetchSupplierIncidents,
+  createSupplierIncident,
+} = useSupplierManagement();
+
 const showPaymentModal = ref(false);
 const selectedTransaction = ref(null);
+const showIncidentModal = ref(false);
+const savingIncident = ref(false);
+const incidentForm = ref({
+  transactionId: null,
+  mode: "claim",
+  reason: "",
+  amountAdjustment: 0,
+  productId: "",
+  quantityReturned: 0,
+  notes: "",
+});
+
+const inventoryProducts = computed(() => inventoryStore.allItemsInInventory.value || []);
 
 onMounted(async () => {
-  await fetchSupplier();
-  await fetchSupplierTransactions();
+  await Promise.all([
+    fetchSupplier(),
+    fetchSupplierTransactions(),
+    fetchSupplierIncidents(supplierId),
+    inventoryStore.getItemsInInventory(),
+  ]);
 });
+
+function openIncidentModal(tx = null) {
+  incidentForm.value = {
+    transactionId: tx?.uuid || null,
+    mode: "claim",
+    reason: "",
+    amountAdjustment: 0,
+    productId: "",
+    quantityReturned: 0,
+    notes: "",
+  };
+  showIncidentModal.value = true;
+}
+
+async function saveIncident() {
+  if (!incidentForm.value.reason.trim()) return;
+  savingIncident.value = true;
+  try {
+    const selectedProd = inventoryProducts.value.find(
+      (p) => p.uuid === incidentForm.value.productId
+    );
+    await createSupplierIncident({
+      supplierId,
+      supplierName: supplier.value?.name || "",
+      transactionId: incidentForm.value.transactionId,
+      mode: incidentForm.value.mode,
+      reason: incidentForm.value.reason,
+      amountAdjustment: incidentForm.value.amountAdjustment,
+      productId: incidentForm.value.productId || null,
+      productDescription: selectedProd?.description || "",
+      quantityReturned: incidentForm.value.quantityReturned,
+      notes: incidentForm.value.notes,
+    });
+    success("Incidencia registrada correctamente");
+    showIncidentModal.value = false;
+    await Promise.all([fetchSupplier(), fetchSupplierTransactions()]);
+  } catch (err) {
+    error("No se pudo registrar la incidencia: " + err.message);
+  } finally {
+    savingIncident.value = false;
+  }
+}
 
 function goBack() {
   router.push({

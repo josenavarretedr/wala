@@ -180,7 +180,7 @@ import {
 import Chart from "chart.js/auto";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import PremiumLockWrapper from "@/components/PremiumLockWrapper.vue";
-import { Package, Settings, User, HelpCircle } from "@iconoir/vue";
+import { Package, Settings, User, HelpCircle, CoinsSwap } from "@iconoir/vue";
 
 // ---------- Props ----------
 const props = defineProps({
@@ -216,6 +216,7 @@ const getCategoryIcon = (type) => {
   if (type === "materials") return Package;
   if (type === "labor") return User;
   if (type === "overhead") return Settings;
+  if (type === "owner_draw") return CoinsSwap;
   return HelpCircle;
 };
 
@@ -239,6 +240,7 @@ const categoriesData = computed(() => {
     materials: { name: "Materiales e Insumos", amount: 0, color: "#f97316", type: "materials" },
     labor: { name: "Costos de Personal", amount: 0, color: "#a855f7", type: "labor" },
     overhead: { name: "Gastos Generales (Overhead)", amount: 0, color: "#3b82f6", type: "overhead" },
+    owner_draw: { name: "Retiros Personales (Dueño)", amount: 0, color: "#d97706", type: "owner_draw" },
     otros: { name: "Otros", amount: 0, color: "#6b7280", type: "otros" },
   };
 
@@ -266,11 +268,21 @@ const subcategoriesData = computed(() => {
   const getSubcategoryNameAndParent = (tx) => {
     const category = tx.category || "otros";
     
+    if (category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
+      return { name: "Retiro personal del dueño", parent: "Negocio y Dueño", color: "#d97706" };
+    }
+
     if (category === "materials") {
       return { name: "Insumos y Materiales", parent: "Materiales", color: "#f97316" };
     }
     
     if (category === "labor") {
+      if (tx.subcategory === "owner_salary") {
+        return { name: "Salario del dueño", parent: "Negocio y Dueño", color: "#10b981" };
+      }
+      if (tx.subcategory === "family_salary") {
+        return { name: "Salario a familiares", parent: "Negocio y Dueño", color: "#14b8a6" };
+      }
       const paylabor = tx.paylabor;
       if (paylabor === "DIRECT_SERVICE") {
         return { name: "Atención y Servicio Directo", parent: "Personal", color: "#a855f7" };

@@ -139,6 +139,10 @@ export const useClientStore = defineStore('clientStore', () => {
         phone: clientData.phone || null,
         address: clientData.address || null,
         rucOrDni: clientData.rucOrDni ? clientData.rucOrDni.trim() : null,
+        originChannel: clientData.originChannel?.trim() || null,
+        originDetail: clientData.originDetail?.trim() || null,
+        notes: clientData.notes?.trim() || null,
+        isKeyClient: Boolean(clientData.isKeyClient),
         businessId,
         isActive: true,
         // Usar metadata inicial si se proporciona, sino inicializar en 0

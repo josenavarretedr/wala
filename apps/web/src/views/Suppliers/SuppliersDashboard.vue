@@ -12,25 +12,34 @@
               Administra la información y el historial de tus proveedores
             </p>
           </div>
-          <button
-            @click="showAddModal = true"
-            class="py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2 self-start sm:self-auto"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div class="flex items-center gap-2 flex-wrap self-start sm:self-auto">
+            <button
+              type="button"
+              @click="openQuoteModal"
+              class="py-2.5 px-4 border border-purple-600 text-purple-600 bg-white hover:bg-purple-600 hover:text-white font-semibold rounded-lg transition-colors text-sm flex items-center justify-center gap-2"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            Nuevo Proveedor
-          </button>
+              <span>📊 Comparar Cotizaciones</span>
+            </button>
+            <button
+              @click="showAddModal = true"
+              class="py-2.5 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-sm transition-colors text-sm flex items-center justify-center gap-2"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Nuevo Proveedor
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -81,6 +90,46 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 8h6m-6 2h6m-6 2h6M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
             </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historial de Cotizaciones Comparadas (Área 4 - Operaciones) -->
+      <div
+        v-if="purchaseQuotes.length > 0"
+        class="bg-white rounded-xl shadow-sm border border-purple-100 p-4 space-y-3"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-gray-900">Últimas Cotizaciones Comparadas</h2>
+            <p class="text-xs text-gray-500">Compara al menos 2 proveedores y registra tu compra al mejor precio.</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold">
+            Ahorro total est.: S/ {{ totalQuoteSavings.toFixed(2) }}
+          </span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div
+            v-for="q in purchaseQuotes.slice(0, 4)"
+            :key="q.uuid"
+            class="border border-gray-200 rounded-xl p-3 bg-gray-50/50 flex items-center justify-between gap-3"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-bold text-gray-900 truncate">{{ q.itemDescription }}</p>
+              <p class="text-xs text-purple-700 font-semibold">
+                Mejor: {{ q.bestSupplierName }} · S/ {{ Number(q.bestPrice || 0).toFixed(2) }}/{{ q.unit }}
+              </p>
+              <p class="text-[11px] text-emerald-700 font-medium">
+                Ahorro est.: S/ {{ Number(q.estimatedTotalSavings || 0).toFixed(2) }} ({{ q.quantity }} {{ q.unit }})
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="goBuyFromQuote(q)"
+              class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shrink-0"
+            >
+              Comprar →
+            </button>
           </div>
         </div>
       </div>
@@ -199,12 +248,100 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Comparador de Cotizaciones -->
+    <Teleport to="body">
+      <div
+        v-if="showQuoteModal"
+        class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-xs"
+        @click.self="showQuoteModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+          <div class="flex items-start justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Comparar Cotizaciones de Compra</h2>
+              <p class="text-xs text-gray-500">Compara 2 o 3 proveedores antes de cerrar una compra importante.</p>
+            </div>
+            <button type="button" @click="showQuoteModal = false" class="text-gray-400 hover:text-gray-600 px-2 py-1">✕</button>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Insumo o producto a cotizar *</label>
+              <input
+                v-model="quoteForm.itemDescription"
+                type="text"
+                placeholder="Ej: Harina especial saco x 50kg"
+                class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Cantidad estimada</label>
+                <input
+                  v-model.number="quoteForm.quantity"
+                  type="number"
+                  min="1"
+                  step="1"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Unidad</label>
+                <input
+                  v-model="quoteForm.unit"
+                  type="text"
+                  placeholder="uni / kg / saco"
+                  class="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-2 pt-1">
+              <p class="text-xs font-bold text-gray-700 uppercase">Cotizaciones por Proveedor (Mín. 2)</p>
+              <div class="grid grid-cols-5 gap-2 items-center">
+                <input v-model="quoteForm.supplierAName" type="text" placeholder="Proveedor 1 *" class="col-span-3 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+                <input v-model.number="quoteForm.supplierAPrice" type="number" step="0.01" min="0" placeholder="Precio S/" class="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+              </div>
+              <div class="grid grid-cols-5 gap-2 items-center">
+                <input v-model="quoteForm.supplierBName" type="text" placeholder="Proveedor 2 *" class="col-span-3 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+                <input v-model.number="quoteForm.supplierBPrice" type="number" step="0.01" min="0" placeholder="Precio S/" class="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+              </div>
+              <div class="grid grid-cols-5 gap-2 items-center">
+                <input v-model="quoteForm.supplierCName" type="text" placeholder="Proveedor 3 (opcional)" class="col-span-3 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+                <input v-model.number="quoteForm.supplierCPrice" type="number" step="0.01" min="0" placeholder="Precio S/" class="col-span-2 px-3 py-2 border border-gray-200 rounded-xl text-xs" />
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              @click="showQuoteModal = false"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="!quoteForm.itemDescription.trim() || savingQuote"
+              @click="saveQuote"
+              class="px-4 py-2 text-xs font-semibold bg-purple-600 hover:bg-purple-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ savingQuote ? 'Guardando...' : 'Guardar comparativa' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useSuppliers } from "@/composables/useSuppliers";
+import { useSupplierManagement } from "@/composables/useSupplierManagement";
 import { useRouter, useRoute } from "vue-router";
 import { useToast } from "@/composables/useToast";
 import CardSupplier from "@/components/Suppliers/CardSupplier.vue";
@@ -222,8 +359,12 @@ const {
   createSupplier,
 } = useSuppliers();
 
+const { purchaseQuotes, fetchPurchaseQuotes, createPurchaseQuote } = useSupplierManagement();
+
 const showAddModal = ref(false);
 const isSaving = ref(false);
+const showQuoteModal = ref(false);
+const savingQuote = ref(false);
 
 const newSupplierData = ref({
   name: "",
@@ -231,9 +372,68 @@ const newSupplierData = ref({
   phone: "",
 });
 
-onMounted(async () => {
-  await fetchAllSuppliers();
+const quoteForm = ref({
+  itemDescription: "",
+  quantity: 1,
+  unit: "uni",
+  supplierAName: "",
+  supplierAPrice: null,
+  supplierBName: "",
+  supplierBPrice: null,
+  supplierCName: "",
+  supplierCPrice: null,
 });
+
+const totalQuoteSavings = computed(() =>
+  purchaseQuotes.value.reduce((sum, q) => sum + Number(q.estimatedTotalSavings || 0), 0)
+);
+
+onMounted(async () => {
+  await Promise.all([fetchAllSuppliers(), fetchPurchaseQuotes()]);
+});
+
+function openQuoteModal() {
+  quoteForm.value = {
+    itemDescription: "",
+    quantity: 1,
+    unit: "uni",
+    supplierAName: "",
+    supplierAPrice: null,
+    supplierBName: "",
+    supplierBPrice: null,
+    supplierCName: "",
+    supplierCPrice: null,
+  };
+  showQuoteModal.value = true;
+}
+
+async function saveQuote() {
+  try {
+    savingQuote.value = true;
+    const saved = await createPurchaseQuote(quoteForm.value);
+    success(
+      `Mejor opción: ${saved.bestSupplierName} (ahorro est. S/ ${saved.estimatedTotalSavings.toFixed(2)})`
+    );
+    showQuoteModal.value = false;
+  } catch (err) {
+    error(err.message || "Error al guardar cotización");
+  } finally {
+    savingQuote.value = false;
+  }
+}
+
+function goBuyFromQuote(quote) {
+  router.push({
+    path: `/business/${route.params.businessId}/basicAccountingRecordsBook`,
+    query: {
+      type: "expense",
+      category: "materials",
+      quoteId: quote.uuid,
+      prefillName: quote.itemDescription,
+      prefillAmount: String(quote.bestPrice || ""),
+    },
+  });
+}
 
 function closeAddModal() {
   showAddModal.value = false;

@@ -427,6 +427,58 @@
         </TransitionGroup>
       </div>
 
+      <!-- Respaldo por Cotización / Alerta de Umbral sin Cotización -->
+      <div
+        v-if="linkedQuoteId"
+        class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-emerald-800 flex items-center gap-2"
+      >
+        <span>✓ Compra respaldada por cotización comparada</span>
+      </div>
+      <div
+        v-else-if="
+          purchaseQuoteThreshold > 0 &&
+          getMaterialsTotal() >= purchaseQuoteThreshold
+        "
+        class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900"
+      >
+        <span>
+          ⚠️ Compra ≥ umbral de cotización (S/ {{ Number(purchaseQuoteThreshold).toFixed(2) }}) sin cotización vinculada.
+        </span>
+        <router-link
+          :to="`/business/${route.params.businessId || businessStore.business?.id}/suppliers`"
+          class="font-bold text-amber-800 underline shrink-0"
+        >
+          Comparar cotizaciones →
+        </router-link>
+      </div>
+
+      <!-- Verificación de recepción (Opcional) -->
+      <div
+        v-if="
+          transactionStore.transactionToAdd.value.materialItems &&
+          transactionStore.transactionToAdd.value.materialItems.length > 0
+        "
+        class="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-2.5"
+      >
+        <p class="text-xs font-bold text-gray-700 uppercase tracking-wider">
+          Verificación de recepción (Opcional)
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-700">
+          <label class="inline-flex items-center gap-2 cursor-pointer">
+            <input v-model="deliveryCheck.qtyMatch" type="checkbox" class="rounded text-orange-600 focus:ring-orange-500" />
+            <span>Cantidad completa</span>
+          </label>
+          <label class="inline-flex items-center gap-2 cursor-pointer">
+            <input v-model="deliveryCheck.qualityOk" type="checkbox" class="rounded text-orange-600 focus:ring-orange-500" />
+            <span>Calidad conforme</span>
+          </label>
+          <label class="inline-flex items-center gap-2 cursor-pointer">
+            <input v-model="deliveryCheck.priceMatch" type="checkbox" class="rounded text-orange-600 focus:ring-orange-500" />
+            <span>Precio coincide con lo acordado</span>
+          </label>
+        </div>
+      </div>
+
       <!-- Campo de notas para materials -->
       <div
         class="space-y-3"
@@ -451,9 +503,151 @@
     </div>
 
     <!-- ========================================== -->
+    <!-- FLUJO PARA OWNER_DRAW (Retiro personal)    -->
+    <!-- ========================================== -->
+    <div
+      v-else-if="transactionStore.transactionToAdd.value.category === 'owner_draw'"
+      class="space-y-6"
+    >
+      <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-3">
+        <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5 font-bold">
+          S/
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-sm font-bold text-amber-900">
+            Retiro personal del dueño (No operativo)
+          </h3>
+          <p class="text-xs text-amber-800 leading-relaxed">
+            Este retiro descuenta el dinero de tu Caja o Banco hoy, pero se registra separado de los gastos operativos para no distorsionar la ganancia real de tu negocio.
+          </p>
+        </div>
+      </div>
+
+      <!-- Motivo del retiro -->
+      <div class="space-y-3">
+        <label class="text-lg font-semibold text-gray-800 block">
+          ¿Para qué fue este retiro personal?
+        </label>
+        <input
+          v-model="withdrawalReason"
+          type="text"
+          placeholder="Ej: Almuerzo familiar, colegio, gastos de casa"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:border-amber-500 focus:outline-none transition-colors"
+        />
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="chip in ['Gastos del hogar', 'Uso personal', 'Alimentación', 'Salud / Educación']"
+            :key="chip"
+            type="button"
+            @click="withdrawalReason = chip"
+            class="px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
+          >
+            {{ chip }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Monto -->
+      <div class="space-y-3">
+        <label class="text-lg font-semibold text-gray-800 block">
+          Monto retirado (S/)
+        </label>
+        <div class="relative">
+          <input
+            v-model.number="amount"
+            @keyup.enter="addExpenseHandler"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-center font-medium text-gray-700 focus:border-amber-500 focus:outline-none transition-colors"
+          />
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-amber-500 rounded-full"></div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <p
+            v-if="
+              transactionStore.transactionToAdd.value.account &&
+              maxAmount !== Infinity &&
+              maxAmount > 0
+            "
+            class="text-xs text-blue-600 font-medium"
+          >
+            Saldo disponible en {{ selectedAccountLabel }}: S/
+            {{ maxAmount.toFixed(2) }}
+          </p>
+          <p
+            v-else-if="transactionStore.transactionToAdd.value.account"
+            class="text-xs text-amber-600 font-medium"
+          >
+            ⚠️ No hay saldo suficiente en {{ selectedAccountLabel }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Notas -->
+      <div class="space-y-2">
+        <label class="text-sm font-semibold text-gray-700 block">Notas (opcional)</label>
+        <textarea
+          v-model="transactionStore.transactionToAdd.value.notes"
+          placeholder="Detalle adicional si lo necesitas..."
+          rows="2"
+          class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-700 placeholder-gray-400 focus:border-amber-500 focus:outline-none transition-colors resize-none"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
     <!-- FLUJO PARA LABOR/OVERHEAD (Gastos Simples) -->
     <!-- ========================================== -->
     <div v-else class="space-y-6">
+      <!-- Banner auxiliar para Salario del dueño -->
+      <div
+        v-if="transactionStore.transactionToAdd.value.subcategory === 'owner_salary'"
+        class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+      >
+        <div class="space-y-0.5">
+          <p class="text-sm font-bold text-emerald-900">
+            Pago de Salario del Dueño
+          </p>
+          <p v-if="ownerProfileConfig.ownerSalaryAmount > 0" class="text-xs text-emerald-800">
+            Sueldo fijado en tu perfil: <strong>S/ {{ Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2) }}</strong> ({{ ownerSalaryFrequencyLabel }})
+          </p>
+          <p v-else class="text-xs text-emerald-700">
+            Tip WALA: Puedes fijar tu sueldo en Datos del Negocio para pre-llenarlo automáticamente.
+          </p>
+        </div>
+        <button
+          v-if="ownerProfileConfig.ownerSalaryAmount > 0"
+          type="button"
+          @click="amount = Number(ownerProfileConfig.ownerSalaryAmount)"
+          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0"
+        >
+          Aplicar S/ {{ Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2) }}
+        </button>
+      </div>
+
+      <!-- Banner y campo rápido para Salario a familiares -->
+      <div
+        v-else-if="transactionStore.transactionToAdd.value.subcategory === 'family_salary'"
+        class="p-4 rounded-xl bg-teal-50 border border-teal-200 space-y-3"
+      >
+        <div>
+          <p class="text-sm font-bold text-teal-900">
+            Pago de Salario a Familiar
+          </p>
+          <p class="text-xs text-teal-700">
+            Indica el nombre o parentesco del familiar que apoya en el negocio
+          </p>
+        </div>
+        <input
+          v-model="familyMemberName"
+          type="text"
+          placeholder="Ej: Hermano (apoyo taller), Esposa (caja/ventas)"
+          class="w-full px-3.5 py-2.5 bg-white border border-teal-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
+        />
+      </div>
+
       <!-- Campo de búsqueda de gasto -->
       <div class="space-y-3">
         <label class="text-lg font-semibold text-gray-800">
@@ -980,8 +1174,13 @@ import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBalanceStore";
 import { useBusinessStore } from "@/stores/businessStore";
+import { useInventoryStore } from "@/stores/inventoryStore";
+import { useToast } from "@/composables/useToast";
 import { Package, Xmark, KeyframePlus } from "@iconoir/vue";
 import { ref, computed, watch, onMounted } from "vue";
+import { useRoute } from "vue-router";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+import appFirebase from "@/firebaseInit";
 import SearchExpenseAsync from "./SearchExpenseAsync.vue";
 import SearchProductForExpenseAsync from "./SearchProductForExpenseAsync.vue";
 import {
@@ -1008,6 +1207,9 @@ const isCommerceBusiness = computed(() => {
 // ESTADO LOCAL
 // ========================================
 
+const route = useRoute();
+const db = getFirestore(appFirebase);
+
 // Para labor/overhead (gastos simples)
 const description = ref("");
 const amount = ref(null);
@@ -1015,6 +1217,42 @@ const selectedCategory = ref(null);
 const expenseType = ref(null); // 'new' o 'old'
 const selectedExpenseId = ref(null);
 const selectedExpenseMetadata = ref(null);
+
+// Presets Negocio y Dueño (Área 1)
+const withdrawalReason = ref("");
+const familyMemberName = ref("");
+const ownerProfileConfig = ref({
+  ownerSalaryAmount: null,
+  ownerSalaryFrequency: "weekly",
+  ownerSalaryTarget: null,
+});
+
+const ownerSalaryFrequencyLabel = computed(() => {
+  const map = {
+    weekly: "semanal",
+    biweekly: "quincenal",
+    monthly: "mensual",
+  };
+  return map[ownerProfileConfig.value.ownerSalaryFrequency] || "fijo";
+});
+
+watch(withdrawalReason, (val) => {
+  if (transactionStore.transactionToAdd.value.category === "owner_draw") {
+    const clean = (val || "").trim();
+    const desc = clean ? `Retiro personal: ${clean}` : "Retiro personal del dueño";
+    description.value = desc;
+    transactionStore.setExpenseDescription(desc);
+  }
+});
+
+watch(familyMemberName, (val) => {
+  if (transactionStore.transactionToAdd.value.subcategory === "family_salary") {
+    const clean = (val || "").trim();
+    const desc = clean ? `Salario familiar: ${clean}` : "Salario a familiares";
+    description.value = desc;
+    transactionStore.setExpenseDescription(desc);
+  }
+});
 
 // Para clasificación PAYLABOR
 const selectedPayLabor = ref(null); // 'DIRECT_SERVICE' | 'PRODUCTION_SUPPORT' | 'ADMIN_SUPPORT'
@@ -1038,6 +1276,28 @@ const transactionStore = useTransactionStore();
 const flow = useTransactionFlowStore();
 const accountsBalanceStore = useAccountsBalanceStore();
 const businessStore = useBusinessStore();
+const inventoryStore = useInventoryStore();
+const { warning: toastWarning } = useToast();
+
+const purchaseQuoteThreshold = ref(null);
+const linkedQuoteId = ref(null);
+const quoteThresholdToastShown = ref(false);
+const deliveryCheck = ref({
+  qtyMatch: false,
+  qualityOk: false,
+  priceMatch: false,
+});
+
+watch(
+  deliveryCheck,
+  (val) => {
+    const anyChecked = val.qtyMatch || val.qualityOk || val.priceMatch;
+    transactionStore.transactionToAdd.value.deliveryCheck = anyChecked
+      ? { ...val }
+      : null;
+  },
+  { deep: true }
+);
 
 // ========================================
 // SALDOS ACTUALES DESDE ACCOUNTSBALANCESTORE
@@ -1291,7 +1551,52 @@ const handleAddMaterial = () => {
     mat.baseQuantity = equivalentMaterialBaseQty.value;
     mat.baseUnitCost = equivalentMaterialUnitCost.value;
   }
+
+  const activeBusinessId = route.params.businessId || businessStore.business?.id;
+  const prodId = mat.selectedProductUuid || mat.uuid;
+  const existingProd = prodId
+    ? (inventoryStore.allItemsInInventory.value || []).find((p) => p.uuid === prodId)
+    : null;
+  const prevCost = Number(existingProd?.cost || 0);
+  const newUnitCost = pres
+    ? Number(equivalentMaterialUnitCost.value || 0)
+    : Number(mat.cost || 0);
+
+  if (activeBusinessId && existingProd && prevCost > 0 && newUnitCost >= prevCost * 1.05) {
+    const pct = Math.round(((newUnitCost - prevCost) / prevCost) * 100);
+    toastWarning(
+      `Este insumo subió ${pct}% vs. su costo anterior. Revisar precios de venta`,
+      {
+        duration: 4500,
+        actionLink: {
+          text: "Revisar precios de venta",
+          route: `/business/${activeBusinessId}/inventory/product/${existingProd.uuid}/edit-economic-info`,
+        },
+      }
+    );
+  }
+
   transactionStore.addMaterialItemToExpense();
+
+  if (
+    activeBusinessId &&
+    purchaseQuoteThreshold.value > 0 &&
+    getMaterialsTotal() >= purchaseQuoteThreshold.value &&
+    !linkedQuoteId.value &&
+    !quoteThresholdToastShown.value
+  ) {
+    quoteThresholdToastShown.value = true;
+    toastWarning(
+      `Compra supera tu umbral de S/ ${Number(purchaseQuoteThreshold.value).toFixed(2)}. Comparar cotizaciones`,
+      {
+        duration: 4500,
+        actionLink: {
+          text: "Comparar cotizaciones",
+          route: `/business/${activeBusinessId}/suppliers`,
+        },
+      }
+    );
+  }
 };
 
 /**
@@ -1515,13 +1820,100 @@ watch(
   { immediate: true },
 );
 
-// Cargar transacciones del día y saldos al montar el componente
+// Cargar transacciones del día, perfil del negocio y saldos al montar el componente
 onMounted(async () => {
   console.log("🔄 StepAddExpenseDetails - Montando componente...");
 
   // Sincronizar categoría del store (del paso anterior) con la variable local
   if (transactionStore.transactionToAdd.value.category) {
     selectedCategory.value = transactionStore.transactionToAdd.value.category;
+  }
+
+  // Cargar perfil financiero del negocio (sueldo configurado del dueño)
+  const activeBusinessId = route.params.businessId || businessStore.business?.id;
+  if (activeBusinessId) {
+    try {
+      const profileSnap = await getDoc(
+        doc(db, "businesses", activeBusinessId, "settings", "businessProfile")
+      );
+      if (profileSnap.exists()) {
+        const pData = profileSnap.data();
+        ownerProfileConfig.value = {
+          ownerSalaryAmount: pData.ownerSalaryAmount ? Number(pData.ownerSalaryAmount) : null,
+          ownerSalaryFrequency: pData.ownerSalaryFrequency || "weekly",
+          ownerSalaryTarget: pData.ownerSalaryTarget ? Number(pData.ownerSalaryTarget) : null,
+        };
+        if (pData.purchaseQuoteThreshold) {
+          purchaseQuoteThreshold.value = Number(pData.purchaseQuoteThreshold);
+        }
+      }
+    } catch (err) {
+      console.warn("⚠️ No se pudo cargar businessProfile para pre-llenado:", err);
+    }
+  }
+
+  // Asegurar catálogo de inventario cargado para alertas de incremento de costo (>=5%)
+  if (
+    selectedCategory.value === "materials" &&
+    (!inventoryStore.allItemsInInventory.value || inventoryStore.allItemsInInventory.value.length === 0)
+  ) {
+    inventoryStore.getItemsInInventory().catch(() => {});
+  }
+
+  // Pre-llenado desde Promociones, Cotizaciones o Pagos Fijos (query params)
+  if (route.query.quoteId) {
+    linkedQuoteId.value = String(route.query.quoteId);
+    transactionStore.transactionToAdd.value.quoteId = linkedQuoteId.value;
+  }
+  if (route.query.recurringId && route.query.recurringPeriod) {
+    transactionStore.transactionToAdd.value.recurringId = String(route.query.recurringId);
+    transactionStore.transactionToAdd.value.recurringPeriod = String(route.query.recurringPeriod);
+  }
+  if (route.query.prefillName && selectedCategory.value !== "materials") {
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+    description.value = String(route.query.prefillName);
+    transactionStore.setExpenseDescription(description.value);
+  }
+  if (
+    route.query.prefillAmount &&
+    selectedCategory.value !== "materials" &&
+    Number(route.query.prefillAmount) > 0
+  ) {
+    amount.value = Number(route.query.prefillAmount);
+  }
+
+  // Inicializar presets de Área 1 (Negocio y Dueño)
+  const currentCat = transactionStore.transactionToAdd.value.category;
+  const currentSubcat = transactionStore.transactionToAdd.value.subcategory;
+
+  if (currentCat === "owner_draw") {
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+    transactionStore.transactionToAdd.value.statementLine = "owner_draw";
+    transactionStore.setExpenseSubcategory("personal_withdrawal");
+    if (!withdrawalReason.value) {
+      description.value = transactionStore.transactionToAdd.value.description || "Retiro personal del dueño";
+      transactionStore.setExpenseDescription(description.value);
+    }
+  } else if (currentCat === "labor" && currentSubcat === "owner_salary") {
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+    description.value = transactionStore.transactionToAdd.value.description || "Salario del dueño";
+    transactionStore.setExpenseDescription(description.value);
+    selectPayLaborRole("ADMIN_SUPPORT");
+    if (!amount.value && ownerProfileConfig.value.ownerSalaryAmount > 0) {
+      amount.value = Number(ownerProfileConfig.value.ownerSalaryAmount);
+    }
+  } else if (currentCat === "labor" && currentSubcat === "family_salary") {
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+    description.value = transactionStore.transactionToAdd.value.description || "Salario a familiares";
+    transactionStore.setExpenseDescription(description.value);
+    const defaultRole = visiblePayLaborRoles.value.PRODUCTION_SUPPORT
+      ? "PRODUCTION_SUPPORT"
+      : "ADMIN_SUPPORT";
+    selectPayLaborRole(defaultRole);
   }
 
   // Cargar transacciones del día en transactionStore

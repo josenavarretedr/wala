@@ -327,6 +327,161 @@
         </div>
       </div>
 
+      <!-- Flujo Semanal y Pagos Fijos del Mes (Área 7 - Planificación) -->
+      <div class="bg-white rounded-2xl border border-indigo-200 shadow-sm p-4 sm:p-6 space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-extrabold uppercase">
+                Planificación · {{ currentMonthKey }}
+              </span>
+              <h2 class="text-lg font-bold text-gray-900">Flujo Semanal y Pagos Fijos del Mes</h2>
+            </div>
+            <p class="text-xs text-gray-500 mt-0.5">
+              Registra tus compromisos fijos (alquiler, servicios, sueldos) y proyecta tu liquidez de los próximos 7 días.
+            </p>
+          </div>
+          <button
+            type="button"
+            @click="openRecurringModal"
+            class="px-3.5 py-2 rounded-xl border border-indigo-600 text-indigo-600 bg-white hover:bg-indigo-600 hover:text-white text-xs font-bold transition-all self-start sm:self-auto"
+          >
+            + Agregar pago fijo
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <!-- Lista de Pagos Fijos del Mes -->
+          <div class="space-y-2.5">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">
+              Compromisos Fijos ({{ recurringPayments.length }})
+            </h3>
+            <div
+              v-if="recurringPayments.length === 0"
+              class="rounded-xl border border-dashed border-gray-200 p-5 text-center text-xs text-gray-400"
+            >
+              Aún no agregas pagos fijos mensuales. Usa "+ Agregar pago fijo" para empezar.
+            </div>
+            <div v-else class="space-y-2 max-h-64 overflow-y-auto pr-1">
+              <div
+                v-for="item in recurringPayments"
+                :key="item.uuid"
+                class="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50/50"
+              >
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-sm font-bold text-gray-900 truncate">{{ item.title }}</span>
+                    <span
+                      :class="[
+                        'px-2 py-0.5 rounded-md text-[10px] font-bold',
+                        item.lastPaidPeriod === currentMonthKey
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-amber-100 text-amber-800',
+                      ]"
+                    >
+                      {{ item.lastPaidPeriod === currentMonthKey ? 'Pagado este mes' : `Vence día ${item.dueDay}` }}
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500 tabular-nums">
+                    Monto ref.: S/ {{ Number(item.expectedAmount || 0).toFixed(2) }}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button
+                    v-if="item.lastPaidPeriod !== currentMonthKey"
+                    type="button"
+                    @click="payRecurringItem(item)"
+                    class="px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold transition-colors"
+                  >
+                    Registrar pago
+                  </button>
+                  <button
+                    type="button"
+                    @click="removeRecurringItem(item.uuid)"
+                    class="p-1.5 text-gray-400 hover:text-rose-600 text-xs font-bold"
+                    title="Eliminar compromiso"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Proyección Próximos 7 Días -->
+          <div class="rounded-2xl border border-gray-200 bg-gray-50/60 p-4 space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-600">
+              Proyección de Liquidez (Próximos 7 Días)
+            </h3>
+            <div class="grid grid-cols-2 gap-2.5 text-xs">
+              <div>
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Entradas esperadas 7d (S/)</label>
+                <input
+                  v-model.number="expectedWeeklyInflow"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold"
+                />
+              </div>
+              <div>
+                <label class="block text-[11px] font-semibold text-gray-600 mb-1">Otros egresos 7d (S/)</label>
+                <input
+                  v-model.number="extraWeeklyOutflow"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  class="w-full px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold"
+                />
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-200 p-3 space-y-1 text-xs">
+              <div class="flex justify-between text-gray-600">
+                <span>Saldo actual (Caja + Bancos):</span>
+                <span class="font-bold tabular-nums">S/ {{ saldoActual.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between text-gray-600">
+                <span>Pagos fijos próximos 7 días:</span>
+                <span class="font-bold text-rose-600 tabular-nums">-S/ {{ upcoming7dFixedTotal.toFixed(2) }}</span>
+              </div>
+              <div class="flex justify-between pt-1.5 border-t border-gray-100 text-sm font-extrabold">
+                <span>Saldo proyectado 7d:</span>
+                <span :class="projected7dBalance < 0 ? 'text-rose-600' : 'text-emerald-700'">
+                  S/ {{ projected7dBalance.toFixed(2) }}
+                </span>
+              </div>
+            </div>
+
+            <div
+              v-if="projected7dBalance < 0"
+              class="rounded-xl bg-rose-50 border border-rose-200 p-3 space-y-2"
+            >
+              <p class="text-xs font-bold text-rose-800">
+                ⚠️ Alerta de déficit proyectado: tus pagos superarían tu caja disponible.
+              </p>
+              <div class="flex gap-2">
+                <input
+                  v-model="contingencyNote"
+                  type="text"
+                  placeholder="Plan de contingencia (ej: cobrar créditos / priorizar)"
+                  class="flex-1 px-2.5 py-1.5 text-xs bg-white border border-rose-200 rounded-lg"
+                />
+                <button
+                  type="button"
+                  @click="saveContingencyNote"
+                  class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shrink-0"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Sección de Transacciones y Movimientos de Cuenta -->
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 sm:p-6 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-gray-100">
@@ -431,12 +586,68 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal Agregar Pago Fijo -->
+    <Teleport to="body">
+      <div
+        v-if="showRecurringModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="showRecurringModal = false"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Agregar Pago Fijo del Mes</h3>
+              <p class="text-xs text-gray-500">Alquiler, luz, planilla, préstamos o compromisos recurrentes.</p>
+            </div>
+            <button type="button" @click="showRecurringModal = false" class="text-gray-400 hover:text-gray-600 px-2 py-1">✕</button>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Concepto *</label>
+              <input v-model="recurringForm.title" type="text" placeholder="Ej: Alquiler de local" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría contable</label>
+                <select v-model="recurringForm.category" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl">
+                  <option value="overhead">Gastos Generales</option>
+                  <option value="labor">Personal / Mano de obra</option>
+                  <option value="materials">Insumos / Mercadería</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700 mb-1">Día vencimiento (1-31)</label>
+                <input v-model.number="recurringForm.dueDay" type="number" min="1" max="31" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 mb-1">Monto esperado (S/) *</label>
+              <input v-model.number="recurringForm.expectedAmount" type="number" step="0.01" min="0" placeholder="0.00" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-xl" />
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" @click="showRecurringModal = false" class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl">Cancelar</button>
+            <button
+              type="button"
+              :disabled="!recurringForm.title.trim() || !(recurringForm.expectedAmount > 0)"
+              @click="saveNewRecurring"
+              class="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl disabled:opacity-50"
+            >
+              Guardar compromiso
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "@/firebaseInit";
 import {
   Wallet,
   Coins,
@@ -446,6 +657,8 @@ import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBal
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { useBusinessStore } from "@/stores/businessStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { usePlanning } from "@/composables/usePlanning";
+import { useToast } from "@/composables/useToast";
 import SpinnerIcon from "@/components/ui/SpinnerIcon.vue";
 import CardStandard from "@/components/HistorialRecords/CardStandard.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
@@ -454,14 +667,116 @@ import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import { calculatePaymentStatus } from "@/utils/paymentCalculator";
 
 const router = useRouter();
+const route = useRoute();
 const accountsBalanceStore = useAccountsBalanceStore();
 const transactionStore = useTransactionStore();
 const businessStore = useBusinessStore();
 const userStore = useUserStore();
+const {
+  recurringPayments,
+  fetchRecurringPayments,
+  createRecurringPayment,
+  deleteRecurringPayment,
+} = usePlanning();
+const { success: toastSuccess, warning: toastWarning } = useToast();
 
 const isLoading = ref(true);
 const isRefreshing = ref(false);
 const selectedTab = ref("all"); // 'all' | 'cash' | 'bank' | 'detraction'
+const showRecurringModal = ref(false);
+const recurringForm = ref({ title: "", category: "overhead", dueDay: 15, expectedAmount: 0 });
+const expectedWeeklyInflow = ref(0);
+const extraWeeklyOutflow = ref(0);
+const contingencyNote = ref("");
+
+const currentMonthKey = computed(() => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+});
+
+const isCashExpense = (tx) =>
+  tx.type === "expense" &&
+  tx.isNonCash !== true &&
+  tx.account !== "non_cash" &&
+  !["adjustment", "inventory_loss", "bad_debt"].includes(tx.category);
+
+const upcoming7dFixedTotal = computed(() => {
+  const todayDay = new Date().getDate();
+  return recurringPayments.value
+    .filter((item) => item.lastPaidPeriod !== currentMonthKey.value)
+    .filter((item) => {
+      const diff = Number(item.dueDay || 1) - todayDay;
+      return diff >= 0 && diff <= 7;
+    })
+    .reduce((sum, item) => sum + Number(item.expectedAmount || 0), 0);
+});
+
+const projected7dBalance = computed(() => {
+  return (
+    Number(saldoActual.value || 0) +
+    Number(expectedWeeklyInflow.value || 0) -
+    Number(upcoming7dFixedTotal.value || 0) -
+    Number(extraWeeklyOutflow.value || 0)
+  );
+});
+
+function openRecurringModal() {
+  recurringForm.value = { title: "", category: "overhead", dueDay: new Date().getDate(), expectedAmount: 0 };
+  showRecurringModal.value = true;
+}
+
+async function saveNewRecurring() {
+  try {
+    await createRecurringPayment(recurringForm.value);
+    toastSuccess("Pago fijo agregado al calendario mensual");
+    showRecurringModal.value = false;
+  } catch (err) {
+    toastWarning("No se pudo guardar el pago fijo: " + err.message);
+  }
+}
+
+async function removeRecurringItem(id) {
+  try {
+    await deleteRecurringPayment(id);
+    toastSuccess("Pago fijo eliminado");
+  } catch (err) {
+    toastWarning("No se pudo eliminar: " + err.message);
+  }
+}
+
+function payRecurringItem(item) {
+  if (!hasOpening.value) {
+    toastWarning("Debes aperturar la caja antes de registrar un pago fijo");
+    return;
+  }
+  const businessId = route.params.businessId || businessStore.business?.id;
+  router.push({
+    path: `/business/${businessId}/basicAccountingRecordsBook`,
+    query: {
+      type: "expense",
+      category: item.category || "overhead",
+      prefillName: item.title,
+      prefillAmount: String(item.expectedAmount || 0),
+      recurringId: item.uuid,
+      recurringPeriod: currentMonthKey.value,
+    },
+  });
+}
+
+async function saveContingencyNote() {
+  const businessId = route.params.businessId || businessStore.business?.id;
+  if (!businessId) return;
+  try {
+    await setDoc(
+      doc(db, "businesses", businessId, "settings", "businessProfile"),
+      { cashContingencyNote: contingencyNote.value.trim(), updatedAt: new Date() },
+      { merge: true }
+    );
+    toastSuccess("Plan de contingencia guardado en tu perfil");
+  } catch (err) {
+    toastWarning("No se pudo guardar el plan: " + err.message);
+  }
+}
 
 const goBack = () => {
   router.back();
@@ -562,12 +877,7 @@ const cashIncomeTotal = computed(() => {
 const cashExpenseTotal = computed(() => {
   const txs = allTransactions.value;
   const expenses = txs
-    .filter(
-      (tx) =>
-        tx.type === "expense" &&
-        tx.account === "cash" &&
-        tx.category !== "adjustment",
-    )
+    .filter((tx) => isCashExpense(tx) && tx.account === "cash")
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
   const pagos = txs
     .filter(
@@ -611,12 +921,7 @@ const bankIncomeTotal = computed(() => {
 const bankExpenseTotal = computed(() => {
   const txs = allTransactions.value;
   const expenses = txs
-    .filter(
-      (tx) =>
-        tx.type === "expense" &&
-        tx.account === "bank" &&
-        tx.category !== "adjustment",
-    )
+    .filter((tx) => isCashExpense(tx) && tx.account === "bank")
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
   const pagos = txs
     .filter(
@@ -650,12 +955,7 @@ const detractionIncomeTotal = computed(() => {
 const detractionExpenseTotal = computed(() => {
   const txs = allTransactions.value;
   const expenses = txs
-    .filter(
-      (tx) =>
-        tx.type === "expense" &&
-        tx.account === "detraction" &&
-        tx.category !== "adjustment",
-    )
+    .filter((tx) => isCashExpense(tx) && tx.account === "detraction")
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
   const transfersOut = txs
     .filter((tx) => tx.type === "transfer" && tx.fromAccount === "detraction")
@@ -710,7 +1010,7 @@ const totalEgresos = computed(() => {
     return accountsBalanceStore.totalEgresos;
   }
   const expenses = txs
-    .filter((tx) => tx.type === "expense" && tx.category !== "adjustment")
+    .filter(isCashExpense)
     .reduce((sum, tx) => sum + getEffectiveAmount(tx), 0);
   const pagos = txs
     .filter((tx) => tx.type === "payment" && (tx.supplierId || tx.supplierName))
@@ -772,7 +1072,15 @@ const filteredTransactions = computed(() => {
   const openingTx = all.find((tx) => tx.type === "opening");
 
   const middle = all
-    .filter((tx) => tx.type !== "closure" && tx.type !== "opening" && tx.category !== "adjustment")
+    .filter(
+      (tx) =>
+        tx.type !== "closure" &&
+        tx.type !== "opening" &&
+        tx.category !== "adjustment" &&
+        tx.isNonCash !== true &&
+        tx.account !== "non_cash" &&
+        !["inventory_loss", "bad_debt"].includes(tx.category)
+    )
     .filter((tx) => {
       if (selectedTab.value === "cash") return affectsCash(tx);
       if (selectedTab.value === "bank") return affectsBank(tx);
@@ -821,8 +1129,18 @@ function getRecordComponent(type) {
 
 const loadData = async () => {
   try {
-    await accountsBalanceStore.loadFromDailySummary();
-    await transactionStore.getTransactionsToday();
+    await Promise.all([
+      accountsBalanceStore.loadFromDailySummary(),
+      transactionStore.getTransactionsToday(),
+      fetchRecurringPayments(),
+    ]);
+    const bId = route.params.businessId || businessStore.business?.id;
+    if (bId) {
+      const pSnap = await getDoc(doc(db, "businesses", bId, "settings", "businessProfile")).catch(() => null);
+      if (pSnap?.exists() && pSnap.data()?.cashContingencyNote) {
+        contingencyNote.value = pSnap.data().cashContingencyNote;
+      }
+    }
   } catch (error) {
     console.error("Error cargando datos de cuentas:", error);
   } finally {

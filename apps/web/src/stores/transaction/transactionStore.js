@@ -57,7 +57,9 @@ const transactionToAdd = ref({
   itemsAndStockLogs: [],
   // NUEVOS CAMPOS PARA PAGOS PARCIALES Y CLIENTES:
   payments: [],           // Array de pagos realizados
-  paymentStatus: 'completed',  // 'pending' | 'partial' | 'completed'
+  paymentStatus: 'completed',  // 'pending' | 'partial' | 'completed' | 'written_off'
+  promisedPaymentDate: null,
+  receivableNote: null,
   totalPaid: 0,           // Calculado automáticamente
   balance: 0,             // Calculado automáticamente
   clientId: null,         // UUID del cliente o null para anónimo
@@ -68,6 +70,8 @@ const transactionToAdd = ref({
   description: null,
   category: null,
   subcategory: null,
+  expensePreset: null,
+  statementLine: null,
   amount: 0,
   notes: null, // Notas adicionales sobre el gasto
   expenseId: null, // ID del expense individual en Firestore
@@ -101,6 +105,11 @@ const transactionToAdd = ref({
   detractionAmount: 0,
   netAmount: 0,
   detractionAccount: 'detraction',
+  // Trazabilidad Compras / Pagos fijos (BA):
+  quoteId: null,
+  deliveryCheck: null,
+  recurringId: null,
+  recurringPeriod: null,
 });
 
 const itemToAddInTransaction = ref({
@@ -1609,6 +1618,8 @@ export function useTransactionStore() {
       // CAMPOS PARA PAGOS PARCIALES Y CLIENTES:
       payments: [],
       paymentStatus: 'completed',
+      promisedPaymentDate: null,
+      receivableNote: null,
       totalPaid: 0,
       balance: 0,
       clientId: null,
@@ -1616,6 +1627,8 @@ export function useTransactionStore() {
       description: null,
       category: null,
       subcategory: null,
+      expensePreset: null,
+      statementLine: null,
       amount: null,
       notes: null, // Resetear notas
       expenseId: null,
@@ -1648,6 +1661,11 @@ export function useTransactionStore() {
       detractionAmount: 0,
       netAmount: 0,
       detractionAccount: 'detraction',
+      // Trazabilidad Compras / Pagos fijos (BA):
+      quoteId: null,
+      deliveryCheck: null,
+      recurringId: null,
+      recurringPeriod: null,
     };
 
     currentStepOfAddTransaction.value = getSteps()[0] === "CajaDiaria" ? 0 : 1;

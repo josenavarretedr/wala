@@ -1,5 +1,6 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 import { useTransactionFlowStore } from "@/stores/transaction/transactionFlowStore";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
@@ -11,8 +12,25 @@ import NavigationBtnBARB from "../../components/basicAccountingRecordsBook/Navig
 import CloseBtn from "@/components/ui/CloseBtn.vue";
 import ProgressIndicator from "@/components/ui/ProgressIndicator.vue";
 
+const route = useRoute();
 const flow = useTransactionFlowStore();
 const transactionStore = useTransactionStore();
+
+onMounted(() => {
+  const qType = route.query.type;
+  const qCategory = route.query.category;
+  if (qType === "expense" || qType === "income" || qType === "transfer") {
+    transactionStore.resetTransactionToAdd();
+    transactionStore.modifyTransactionToAddType(qType);
+    flow.defineDynamicSteps(qType);
+    if (qType === "expense" && qCategory) {
+      transactionStore.setExpenseCategory(String(qCategory));
+      flow.currentStep = 2; // Ir directo a Detalles egreso
+    } else {
+      flow.currentStep = 1;
+    }
+  }
+});
 
 const CurrentStepComponent = computed(() => flow.currentStepConfig.component);
 
