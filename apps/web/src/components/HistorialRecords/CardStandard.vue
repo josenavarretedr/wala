@@ -669,6 +669,7 @@ import {
   CreditCard,
 } from "@iconoir/vue";
 import { getInitialPaymentAmount } from "@/utils/paymentCalculator";
+import { toDateFromTimestamp } from "@/utils/dateHelpers";
 
 const props = defineProps({
   record: {
@@ -717,7 +718,8 @@ function isCreditOrSplit(record) {
 
 function formatedDate(date) {
   if (!date) return "-";
-  const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
+  const d = toDateFromTimestamp(date);
+  if (!d) return "-";
   return d.toLocaleString("es-PE", {
     weekday: "short",
     day: "numeric",

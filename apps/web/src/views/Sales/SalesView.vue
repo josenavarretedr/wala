@@ -204,20 +204,21 @@ const handleLockedClick = (widgetType) => {
   );
 };
 
+const isActiveIncomeSale = (transaction) => {
+  return (
+    transaction.type === "income" &&
+    transaction.category !== "adjustment" &&
+    transaction.status !== "refunded" &&
+    transaction.paymentStatus !== "refunded"
+  );
+};
+
 const filteredTransactionsIncomeNotAdjusted = computed(() => {
-  return transactions.value.filter((transaction) => {
-    return (
-      transaction.type === "income" && transaction.category !== "adjustment"
-    );
-  });
+  return transactions.value.filter(isActiveIncomeSale);
 });
 
 const filteredPreviousTransactionsIncomeNotAdjusted = computed(() => {
-  return previousTransactions.value.filter((transaction) => {
-    return (
-      transaction.type === "income" && transaction.category !== "adjustment"
-    );
-  });
+  return previousTransactions.value.filter(isActiveIncomeSale);
 });
 
 const currentPeriodLabel = computed(() => {

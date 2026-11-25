@@ -148,9 +148,12 @@ const isDisabled = computed(() => {
     return !transactionStore.isTransactionFromToday(transactionData.value);
   }
 
-  // Payments pueden eliminarse siempre (no están restringidos por cierre)
+  // Payments pueden eliminarse salvo que ya hayan sido anulados por Nota de Devolución
   if (transactionData.value.type === "payment") {
-    return false;
+    return (
+      transactionData.value.status === "refunded" ||
+      transactionData.value.paymentStatus === "refunded"
+    );
   }
 
   // Otras transacciones: deshabilitar si ya hay cierre hoy
@@ -175,6 +178,12 @@ const deleteButtonLabel = computed(() => {
     case "refund":
       return "Nota de Devolución Registrada";
     case "payment":
+      if (
+        transactionData.value.status === "refunded" ||
+        transactionData.value.paymentStatus === "refunded"
+      ) {
+        return "Pago Anulado (Nota de Devolución)";
+      }
       return "Eliminar Pago";
     case "opening":
       return "Apertura Inmutable";
@@ -250,9 +259,11 @@ async function loadTransaction(transactionId) {
       const transactionSnap = await getDoc(transactionRef);
 
       if (transactionSnap.exists()) {
+        const snapData = transactionSnap.data();
         const firestoreData = {
+          ...snapData,
           id: transactionSnap.id,
-          ...transactionSnap.data(),
+          uuid: snapData?.uuid || transactionSnap.id,
         };
         console.log(
           "✅ [RecordsDetails] Transacción encontrada en Firestore:",

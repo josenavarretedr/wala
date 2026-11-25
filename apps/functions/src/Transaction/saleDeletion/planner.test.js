@@ -389,3 +389,102 @@ test('Preview flow handles sale with null elements, missing fields, and sparse d
   assert.equal(refs[0].productId, 'prod-sparse-1');
   assert.equal(refs[1].productId, 'pkg-mat-1');
 });
+
+test('collectStockRefs & resolveRestoreQuantity: handles presentations (Saco x50) and granel fractional sales', () => {
+  const sale = {
+    uuid: 'sale-presentation-1',
+    items: [
+      {
+        uuid: 'prod-arroz',
+        description: 'Arroz Extra',
+        quantity: 1, // 1 saco
+        presentationId: 'pres_saco',
+        conversionFactor: 50,
+        baseQuantity: 50,
+        quantityForStock: 50,
+        price: 192.00
+      },
+      {
+        uuid: 'prod-frijol',
+        description: 'Frijol Canario',
+        quantity: 2.5, // 2.5 kg a granel
+        presentationId: 'pres_base',
+        conversionFactor: 1,
+        baseQuantity: 2.5,
+        quantityForStock: 2.5,
+        price: 22.50
+      }
+    ],
+    itemsAndStockLogs: [
+      {
+        itemUuid: 'prod-arroz',
+        stockLogUuid: 'log-saco-1'
+      },
+      {
+        itemUuid: 'prod-frijol',
+        stockLogUuid: 'log-granel-1'
+      }
+    ]
+  };
+
+  const refs = collectStockRefs(sale);
+  assert.equal(refs.length, 2);
+
+  // Saco: fallbackQuantity debe ser 50 (unidades base), no 1
+  assert.equal(refs[0].productId, 'prod-arroz');
+  assert.equal(refs[0].fallbackQuantity, 50);
+
+  // Granel: fallbackQuantity debe ser 2.5
+  assert.equal(refs[1].productId, 'prod-frijol');
+  assert.equal(refs[1].fallbackQuantity, 2.5);
+
+  // Restauración exacta con stockLog nuevo (quantityDeducted en base = 50)
+  const restoreSaco = resolveRestoreQuantity({ quantity: 50, quantityDeducted: 50 }, refs[0]);
+  assert.equal(restoreSaco.quantity, 50);
+  assert.equal(restoreSaco.legacyQuantity, false);
+
+  // Restauración de granel fraccional (quantityDeducted = 2.5)
+  const restoreGranel = resolveRestoreQuantity({ quantity: 2.5, quantityDeducted: 2.5 }, refs[1]);
+  assert.equal(restoreGranel.quantity, 2.5);
+
+  // Fallback para venta con presentación si no se encuentra stockLog
+  const restoreFallback = resolveRestoreQuantity(null, refs[0]);
+  assert.equal(restoreFallback.quantity, 50);
+  assert.equal(restoreFallback.legacyQuantity, true);
+});
+
+test('applyDeltasToProduct: handles null elements in variantCombos and legacy stockLog safely', () => {
+  const productData = {
+    stock: 10,
+    variantCombos: [
+      null,
+      { id: 'var-A', stock: 4 },
+      { id: 'var-B', stock: 6 }
+    ],
+    stockLog: [
+      null,
+      { uuid: 'log-1', quantity: 2 },
+      { uuid: 'log-2', quantity: 1 }
+    ]
+  };
+
+  const productDelta = {
+    productId: 'prod-sparse-arrays',
+    baseQuantityDelta: 0,
+    variantDeltas: { 'var-A': 2 },
+    subcollectionLogIds: [],
+    legacyArrayLogIds: ['log-1'],
+    entries: []
+  };
+
+  const result = applyDeltasToProduct(productData, productDelta, {
+    mode: DELETION_MODES.DIRECT_DELETE,
+    isoNow: '2026-11-16T10:00:00.000Z'
+  });
+
+  assert.equal(result.previousStock, 10);
+  assert.equal(result.newStock, 12);
+  assert.equal(result.updateFields.variantCombos[0], null);
+  assert.equal(result.updateFields.variantCombos[1].stock, 6);
+  assert.deepEqual(result.updateFields.stockLog, [{ uuid: 'log-2', quantity: 1 }]);
+});

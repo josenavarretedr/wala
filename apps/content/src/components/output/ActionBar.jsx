@@ -41,7 +41,9 @@ export default function ActionBar() {
       };
 
       const promptData = buildPrompt(config);
-      const scriptJson = await generateScript(promptData);
+      const scriptJson = await generateScript(promptData, {
+        onStatus: (msg) => addToast(msg, 'warning', 6000)
+      });
       
       const validation = validateScript(scriptJson, config);
 

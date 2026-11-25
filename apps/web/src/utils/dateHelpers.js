@@ -90,3 +90,54 @@ export function calculatePeriodDates(periodType) {
 
   return { startDate, endDate };
 }
+
+/**
+ * Convierte cualquier representación de fecha/Timestamp (Firestore Timestamp,
+ * objeto serializado `{ seconds }` o `{ _seconds }`, Date, string o número) a `Date`.
+ * @param {any} ts
+ * @returns {Date|null}
+ */
+export function toDateFromTimestamp(ts) {
+  if (!ts) return null;
+  let d = null;
+  if (typeof ts.toDate === 'function') {
+    d = ts.toDate();
+  } else if (ts instanceof Date) {
+    d = ts;
+  } else if (typeof ts === 'object' && typeof ts.seconds === 'number') {
+    d = new Date(ts.seconds * 1000);
+  } else if (typeof ts === 'object' && typeof ts._seconds === 'number') {
+    d = new Date(ts._seconds * 1000);
+  } else {
+    d = new Date(ts);
+  }
+  return d && !Number.isNaN(d.getTime()) ? d : null;
+}
+
+/**
+ * Devuelve milisegundos desde epoch de cualquier Timestamp/fecha (o 0 si es inválido).
+ * @param {any} ts
+ * @returns {number}
+ */
+export function getTimestampMillis(ts) {
+  if (!ts) return 0;
+  if (typeof ts.toMillis === 'function') return ts.toMillis();
+  const d = toDateFromTimestamp(ts);
+  return d ? d.getTime() : 0;
+}
+
+/**
+ * Verifica si un Timestamp/fecha corresponde al día local actual.
+ * @param {any} ts
+ * @returns {boolean}
+ */
+export function isTimestampToday(ts) {
+  const d = toDateFromTimestamp(ts);
+  if (!d) return false;
+  const now = new Date();
+  return (
+    d.getDate() === now.getDate() &&
+    d.getMonth() === now.getMonth() &&
+    d.getFullYear() === now.getFullYear()
+  );
+}

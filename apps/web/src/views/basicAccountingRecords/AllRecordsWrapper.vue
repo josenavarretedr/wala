@@ -95,6 +95,7 @@ import { computed, onMounted, ref } from "vue";
 import { Filter, FilterSolid } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { calculatePaymentStatus } from "@/utils/paymentCalculator";
+import { getTimestampMillis } from "@/utils/dateHelpers";
 import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
@@ -131,15 +132,16 @@ const dataOrdenada = computed(() => {
   const dateLimit = getDateLimit(selectedFilter.value);
   const filtered = dateLimit
     ? all.filter((tx) => {
-        const txDate = new Date(tx.createdAt.seconds * 1000);
-        return txDate >= dateLimit;
+        const ms = getTimestampMillis(tx.createdAt);
+        return ms > 0 && new Date(ms) >= dateLimit;
       })
     : all;
 
   // Agrupar transacciones por día
   const groupedByDay = filtered.reduce((acc, tx) => {
     // Obtener la fecha en formato YYYY-MM-DD
-    const date = new Date(tx.createdAt.seconds * 1000);
+    const ms = getTimestampMillis(tx.createdAt);
+    const date = ms > 0 ? new Date(ms) : new Date();
     const dateKey = date.toISOString().split("T")[0];
 
     if (!acc[dateKey]) {
@@ -181,7 +183,7 @@ const dataOrdenada = computed(() => {
         }
         return tx;
       })
-      .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+      .sort((a, b) => getTimestampMillis(b.createdAt) - getTimestampMillis(a.createdAt));
 
     // Agregar en el orden correcto para este día:
     // 1. Closure (cierre) - lo último que se hizo, va arriba

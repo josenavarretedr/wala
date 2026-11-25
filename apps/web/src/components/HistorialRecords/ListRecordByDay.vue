@@ -98,6 +98,7 @@ import { computed, ref, watch } from "vue";
 import { Eye, EyeClosed } from "@iconoir/vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
 import { calculatePaymentStatus } from "@/utils/paymentCalculator";
+import { getTimestampMillis } from "@/utils/dateHelpers";
 import CardClosure from "@/components/HistorialRecords/CardClosure.vue";
 import CardOpening from "@/components/HistorialRecords/CardOpening.vue";
 import CardTransfer from "@/components/HistorialRecords/CardTransfer.vue";
@@ -142,7 +143,7 @@ const dataOrdenada = computed(() => {
       }
       return tx;
     })
-    .sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+    .sort((a, b) => getTimestampMillis(b.createdAt) - getTimestampMillis(a.createdAt));
 
   const result = [];
 

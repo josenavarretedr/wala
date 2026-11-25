@@ -388,7 +388,7 @@ const confirmButtonText = computed(() => {
 
 // Cargar preview del servidor cada vez que se abre el modal para una venta
 watch(
-  () => [props.isOpen, props.transaction?.uuid],
+  () => [props.isOpen, props.transaction?.uuid || props.transaction?.id],
   async ([open, saleUuid]) => {
     if (open && isIncome.value && saleUuid) {
       reason.value = "";

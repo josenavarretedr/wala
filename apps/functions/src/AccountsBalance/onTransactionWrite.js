@@ -130,6 +130,23 @@ module.exports = functions.firestore
       return null;
     }
 
+    // ✅ IGNORAR: Actualizaciones que marcan una venta/pago histórico como 'refunded'
+    // El impacto contable en caja del día actual se procesa al crear la transacción `type: 'refund'`,
+    // preservando intacto el cierre histórico y evitando recalcular la racha del día pasado.
+    const isRefundStatusUpdate = isUpdate &&
+      (after.type === 'income' || after.type === 'payment') &&
+      before?.status !== 'refunded' &&
+      after.status === 'refunded';
+
+    if (isRefundStatusUpdate) {
+      console.log('⏭️ Transaction marked as refunded (historical day preserved), skipping dailySummary & streak recalculation:', {
+        uuid: after.uuid || txId,
+        type: after.type,
+        createdAt: after.createdAt
+      });
+      return null;
+    }
+
     const doc = after;
 
     if (!doc.createdAt) {

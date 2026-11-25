@@ -23,7 +23,7 @@
 
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
-const { Timestamp } = require('firebase-admin/firestore');
+const { Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { v4: uuidv4 } = require('uuid');
 
 if (!admin.apps.length) {
@@ -31,6 +31,44 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+
+/**
+ * Limpia recursivamente valores `undefined` antes de escribir en Firestore
+ * (preservando instancias de Timestamp, Date y FieldValue).
+ *
+ * @param {any} value
+ * @returns {any}
+ */
+function sanitizeForFirestore(value) {
+  if (value === undefined) return undefined;
+  if (value === null || typeof value !== 'object') return value;
+
+  if (
+    value instanceof Date ||
+    value instanceof Timestamp ||
+    value instanceof FieldValue ||
+    (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
+  ) {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => {
+      const sanitized = sanitizeForFirestore(item);
+      return sanitized === undefined ? null : sanitized;
+    });
+  }
+
+  const sanitizedObj = {};
+  for (const [key, val] of Object.entries(value)) {
+    if (val === undefined) continue;
+    const sanitized = sanitizeForFirestore(val);
+    if (sanitized !== undefined) {
+      sanitizedObj[key] = sanitized;
+    }
+  }
+  return sanitizedObj;
+}
 
 const { DEFAULT_TZ, todayStr, dayFromTimestamp, dateRangeForDay } = require('../Helpers/time');
 const { round2, addMoney, parseMoneyNumber } = require('../Helpers/mathUtils');
@@ -691,7 +729,7 @@ const deleteSale = onCall(
             `businesses/${businessId}/products/${entry.productId}/stockLog/${returnLogUuid}`
           );
 
-          const returnLogDoc = {
+          const returnLogDoc = sanitizeForFirestore({
             uuid: returnLogUuid,
             type: 'return',
             quantity: quantityToRestore,
@@ -703,7 +741,7 @@ const deleteSale = onCall(
             reason: reason || `Devolución de venta #${freshSale.transactionNumber || saleUuid.slice(0, 8)}`,
             stockLogReason: entry.source || 'item',
             createdAt: nowTimestamp,
-          };
+          });
 
           if (entry.variantId) {
             returnLogDoc.variantId = entry.variantId;
@@ -715,7 +753,7 @@ const deleteSale = onCall(
             }
           }
 
-          transaction.set(returnLogRef, returnLogDoc);
+          transaction.set(returnLogRef, sanitizeForFirestore(returnLogDoc));
           returnStockLogsCreated.push({
             productId: entry.productId,
             stockLogId: returnLogUuid,
@@ -731,12 +769,14 @@ const deleteSale = onCall(
       if (modeResult.mode === 'DIRECT_DELETE') {
         // Eliminar pagos posteriores asociados
         for (const payment of linkedPayments) {
+          if (!payment?.uuid) continue;
           const paymentRef = db.doc(`businesses/${businessId}/transactions/${payment.uuid}`);
           transaction.delete(paymentRef);
         }
 
         // Eliminar gastos de delivery asociados
         for (const expense of linkedExpenses) {
+          if (!expense?.uuid) continue;
           const expenseRef = db.doc(`businesses/${businessId}/transactions/${expense.uuid}`);
           transaction.delete(expenseRef);
         }
@@ -760,12 +800,13 @@ const deleteSale = onCall(
           moneySummary.cancelledBalance ?? moneySummary.cancelledDebt ?? 0
         );
 
-        refundTransactionDoc = {
+        refundTransactionDoc = sanitizeForFirestore({
           uuid: refundUuid,
           id: refundUuid,
           type: 'refund',
           category: 'sale_refund',
           subcategory: 'closed_day_reversal',
+          statementLine: 'sales_revenue',
           description:
             reason && reason.trim()
               ? `Nota de devolución (Venta #${freshSale.transactionNumber || saleUuid.slice(0, 8)}): ${reason.trim()}`
@@ -789,7 +830,7 @@ const deleteSale = onCall(
           createdBy: uid,
           createdAt: nowTimestamp,
           updatedAt: nowTimestamp,
-        };
+        });
 
         const refundRef = db.doc(`businesses/${businessId}/transactions/${refundUuid}`);
         transaction.set(refundRef, refundTransactionDoc);
@@ -805,30 +846,47 @@ const deleteSale = onCall(
           refundReason: reason || 'Anulación de venta en día posterior',
           updatedAt: nowTimestamp,
         });
+
+        // Marcar también todos los pagos posteriores vinculados como devueltos para evitar eliminación individual posterior
+        for (const payment of linkedPayments) {
+          if (!payment?.uuid) continue;
+          const paymentRef = db.doc(`businesses/${businessId}/transactions/${payment.uuid}`);
+          transaction.update(paymentRef, {
+            status: 'refunded',
+            paymentStatus: 'refunded',
+            refundTransactionId: refundUuid,
+            refundedAt: nowTimestamp,
+            refundedBy: uid,
+            updatedAt: nowTimestamp,
+          });
+        }
       }
 
       // D. Escribir registro inmutable de auditoría en `businesses/{businessId}/traceability/{traceabilityId}`
       const traceRef = db.doc(`businesses/${businessId}/traceability/${traceabilityId}`);
-      transaction.set(traceRef, {
-        id: traceabilityId,
-        operation: modeResult.mode === 'DIRECT_DELETE' ? 'sale_direct_delete' : 'sale_refund_note',
-        mode: modeResult.mode,
-        entityType: 'transaction',
-        entityId: saleUuid,
-        refundTransactionId: refundUuid,
-        userId: uid,
-        businessId,
-        saleDay,
-        executedDay: today,
-        reason: reason || 'user_request',
-        moneySummary,
-        productMutations: productMutationsAudit,
-        returnStockLogsCreated,
-        deletedPaymentIds: modeResult.mode === 'DIRECT_DELETE' ? linkedPayments.map((p) => p.uuid) : [],
-        deletedExpenseIds: modeResult.mode === 'DIRECT_DELETE' ? linkedExpenses.map((e) => e.uuid) : [],
-        originalSaleSnapshot: freshSale,
-        timestamp: nowTimestamp,
-      });
+      transaction.set(
+        traceRef,
+        sanitizeForFirestore({
+          id: traceabilityId,
+          operation: modeResult.mode === 'DIRECT_DELETE' ? 'sale_direct_delete' : 'sale_refund_note',
+          mode: modeResult.mode,
+          entityType: 'transaction',
+          entityId: saleUuid,
+          refundTransactionId: refundUuid,
+          userId: uid,
+          businessId,
+          saleDay,
+          executedDay: today,
+          reason: reason || 'user_request',
+          moneySummary,
+          productMutations: productMutationsAudit,
+          returnStockLogsCreated,
+          deletedPaymentIds: modeResult.mode === 'DIRECT_DELETE' ? linkedPayments.map((p) => p.uuid) : [],
+          deletedExpenseIds: modeResult.mode === 'DIRECT_DELETE' ? linkedExpenses.map((e) => e.uuid) : [],
+          originalSaleSnapshot: freshSale,
+          timestamp: nowTimestamp,
+        })
+      );
 
       const impact = buildImpactSummary({
         sale: freshSale,

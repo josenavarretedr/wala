@@ -291,6 +291,8 @@ import { BrightCrown } from "@iconoir/vue";
 import ShareButton from "@/components/ShareButton.vue";
 import ShareButtonCloud from "@/components/ShareButtonCloud.vue";
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
+import { isInitialPayment } from "@/utils/paymentCalculator";
+import { isTimestampToday } from "@/utils/dateHelpers";
 
 const route = useRoute();
 const accountsBalanceFlowStore = useAccountsBalanceFlowStore();
@@ -316,6 +318,9 @@ const getEffectiveAmount = (tx, targetAccount = null) => {
   }
   if ((tx.type === 'income' || tx.type === 'expense') && tx.payments) {
     if (tx.payments.length > 0) {
+      if (!isInitialPayment(tx.payments[0], tx)) {
+        return 0;
+      }
       const initial = tx.payments[0].amount || 0;
       if (tx.type === "income" && tx.isSubjectToDetraction && targetAccount !== "detraction") {
         return tx.netAmount ?? Math.max(0, initial - (tx.detractionAmount || 0));
@@ -333,6 +338,12 @@ const getEffectiveAmount = (tx, targetAccount = null) => {
   return tx.amount || 0;
 };
 
+const isTransactionFromToday = (tx) => isTimestampToday(tx?.createdAt);
+
+const todayTransactions = computed(() => {
+  return (transactionStore.transactionsInStore.value || []).filter(isTransactionFromToday);
+});
+
 // Detección de Rubro / Transacciones con detracción
 const isCooperativaAgricola = computed(() => {
   const industry = businessStore.business?.industry || userStore.currentBusiness?.industry;
@@ -340,7 +351,7 @@ const isCooperativaAgricola = computed(() => {
 });
 
 const hasDetractionTransactions = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   return txs.some(
     (tx) =>
       tx.isSubjectToDetraction ||
@@ -360,7 +371,7 @@ const opening = computed(() => accountsBalanceStore.openingTransaction);
 const saldoInicial = computed(() => accountsBalanceStore.saldoInicial);
 
 const totalIngresos = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.totalIngresos;
   }
@@ -392,7 +403,7 @@ const getRefundOutflow = (tx, targetAccount = null) => {
 };
 
 const totalEgresos = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.totalEgresos;
   }
@@ -413,7 +424,7 @@ const totalAjustesCierre = computed(() => {
 });
 
 const resultadoOperacional = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.resultadoOperacional;
   }
@@ -421,7 +432,7 @@ const resultadoOperacional = computed(() => {
 });
 
 const saldoActualCash = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.saldoActualCash;
   }
@@ -455,7 +466,7 @@ const saldoActualCash = computed(() => {
 });
 
 const saldoActualBank = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.saldoActualBank;
   }
@@ -489,7 +500,7 @@ const saldoActualBank = computed(() => {
 });
 
 const saldoActualDetraction = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   const fromIncomes = txs
     .filter((tx) => tx.type === "income" && tx.isSubjectToDetraction)
     .reduce((sum, tx) => sum + (tx.detractionAmount || 0), 0);
@@ -513,7 +524,7 @@ const saldoActualDetraction = computed(() => {
 });
 
 const saldoActual = computed(() => {
-  const txs = transactionStore.transactionsInStore.value || [];
+  const txs = todayTransactions.value;
   if (txs.length === 0) {
     return accountsBalanceStore.saldoActual;
   }

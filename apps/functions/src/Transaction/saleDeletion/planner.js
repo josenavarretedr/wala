@@ -171,7 +171,7 @@ function collectStockRefs(sale = {}) {
       if (productId) {
         const matchedItem = findMatchingItem(productId, itemLog.variantId);
         const fallbackQty = matchedItem
-          ? matchedItem.quantityForStock ?? matchedItem.actualQuantity ?? matchedItem.quantity ?? null
+          ? matchedItem.baseQuantity ?? matchedItem.quantityForStock ?? matchedItem.actualQuantity ?? matchedItem.quantity ?? null
           : itemLog.quantity ?? null;
 
         refs.push({
@@ -216,7 +216,7 @@ function collectStockRefs(sale = {}) {
       if (!item) continue;
       const productId = item.uuid || item.productId || item.selectedProductUuid;
       if (!productId || item.trackStock === false) continue;
-      const fallbackQty = item.quantityForStock ?? item.actualQuantity ?? item.quantity ?? 0;
+      const fallbackQty = item.baseQuantity ?? item.quantityForStock ?? item.actualQuantity ?? item.quantity ?? 0;
 
       refs.push({
         productId,
@@ -430,6 +430,7 @@ function applyDeltasToProduct(productData = {}, productDelta, options = {}) {
 
   if (hasVariantCombos) {
     const updatedVariants = productData.variantCombos.map(variant => {
+      if (!variant) return variant;
       const delta = productDelta.variantDeltas[variant.id];
       if (!delta) return variant;
       return {
@@ -463,7 +464,7 @@ function applyDeltasToProduct(productData = {}, productDelta, options = {}) {
     Array.isArray(productData.stockLog)
   ) {
     updateFields.stockLog = productData.stockLog.filter(
-      log => !productDelta.legacyArrayLogIds.includes(log.uuid)
+      log => Boolean(log) && !productDelta.legacyArrayLogIds.includes(log.uuid)
     );
   }
 
