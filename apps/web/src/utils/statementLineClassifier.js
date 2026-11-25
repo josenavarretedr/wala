@@ -4,12 +4,78 @@
  */
 
 /**
+ * Determina si una transacción corresponde a un ajuste de apertura o cierre de caja
+ * (no es una venta ni un gasto operativo del Estado de Resultados).
+ * @param {Object} tx - Transacción del store o de base de datos
+ * @returns {boolean}
+ */
+export function isCashAdjustmentTransaction(tx) {
+  if (!tx) return false;
+
+  if (
+    tx.category === 'adjustment' ||
+    tx.subcategory === 'opening_adjustment' ||
+    tx.subcategory === 'closure_adjustment'
+  ) {
+    return true;
+  }
+
+  // Compatibilidad con ajustes heredados sin category/subcategory explícitos
+  if (!(Array.isArray(tx.items) && tx.items.length > 0)) {
+    const desc = (tx.description || '').toLowerCase().trim();
+    if (
+      desc.startsWith('ajuste de apertura') ||
+      desc.startsWith('ajuste de cierre')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Determina si una transacción es una venta anulada o reembolsada.
+ * @param {Object} tx
+ * @returns {boolean}
+ */
+export function isRefundedIncomeSale(tx) {
+  return (
+    tx?.type === 'income' &&
+    !isCashAdjustmentTransaction(tx) &&
+    (tx.status === 'refunded' || tx.paymentStatus === 'refunded')
+  );
+}
+
+/**
+ * Determina si una transacción es una venta activa computable en el P&L.
+ * @param {Object} tx
+ * @returns {boolean}
+ */
+export function isActiveIncomeSale(tx) {
+  return (
+    tx?.type === 'income' &&
+    !isCashAdjustmentTransaction(tx) &&
+    !isRefundedIncomeSale(tx)
+  );
+}
+
+/**
+ * Determina si una transacción es un egreso computable en el P&L.
+ * @param {Object} tx
+ * @returns {boolean}
+ */
+export function isStatementExpense(tx) {
+  return tx?.type === 'expense' && !isCashAdjustmentTransaction(tx);
+}
+
+/**
  * Determina a qué línea del Estado de Resultados corresponde una transacción
  * @param {Object} tx - Transacción del store o de base de datos
  * @returns {string} Código de la línea del P&L ('sales_revenue' | 'cogs_materials' | 'cogs_labor' | 'cogs_cif' | 'opex_fixed' | 'opex_sales' | 'depreciation' | 'financial' | 'tax' | 'loan_principal' | 'capex' | 'mixed' | 'other')
  */
 export function classifyStatementLine(tx) {
-  if (!tx) return 'other';
+  if (!tx || isCashAdjustmentTransaction(tx)) return 'other';
 
   // Si ya tiene una línea explícita válida, respetarla
   if (

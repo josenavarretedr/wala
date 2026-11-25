@@ -526,6 +526,9 @@ import {
   SmartphoneDevice,
   Brain,
   CheckCircle,
+  Wallet,
+  Group,
+  CoinsSwap,
 } from "@iconoir/vue";
 
 const props = defineProps({
@@ -670,10 +673,18 @@ const getAccountIcon = computed(() => {
 
 // Función para obtener la etiqueta de la categoría
 const getCategoryLabel = (category) => {
+  const sub = props.transactionData.subcategory;
+  if (sub === "owner_salary") return "Salarios del equipo · Salario del dueño";
+  if (sub === "family_salary") return "Salarios del equipo · Salario de los familiares";
+  if (category === "owner_draw" || sub === "personal_withdrawal") {
+    return "Retiro personal del dueño";
+  }
+
   const labels = {
     materials: "Costos de materiales",
-    labor: "Costos de personal",
+    labor: "Salarios del equipo",
     overhead: "Gastos indirectos",
+    owner_draw: "Retiro personal del dueño",
   };
   return labels[category] || category;
 };
@@ -712,22 +723,36 @@ const getOverheadUsageLabel = (usage) => {
 
 // Computed para obtener el ícono de la categoría
 const getCategoryIcon = computed(() => {
-  const category = props.transactionData.category;
+  const tx = props.transactionData;
+  if (tx.subcategory === "owner_salary") return Wallet;
+  if (tx.subcategory === "family_salary") return Group;
+  if (tx.category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
+    return CoinsSwap;
+  }
+  const category = tx.category;
   const icons = {
     materials: Package,
     labor: User,
     overhead: Settings,
+    owner_draw: CoinsSwap,
   };
   return icons[category] || Package;
 });
 
 // Computed para obtener el ícono del tipo de gasto
 const getExpenseTypeIcon = computed(() => {
-  const category = props.transactionData.category;
+  const tx = props.transactionData;
+  if (tx.subcategory === "owner_salary") return Wallet;
+  if (tx.subcategory === "family_salary") return Group;
+  if (tx.category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
+    return CoinsSwap;
+  }
+  const category = tx.category;
   const icons = {
     materials: Package,
     labor: User,
     overhead: Settings,
+    owner_draw: CoinsSwap,
   };
   return icons[category] || DatabaseExport;
 });

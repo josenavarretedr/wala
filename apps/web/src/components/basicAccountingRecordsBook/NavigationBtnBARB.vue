@@ -135,6 +135,12 @@ const isNextButtonEnabled = computed(() => {
         transactionData.type !== null && transactionData.type !== undefined;
       break;
 
+    case "Tipo Egreso":
+      result =
+        transactionData.category !== null &&
+        transactionData.category !== undefined;
+      break;
+
     case "Cuenta":
       // Verificar que se haya seleccionado una cuenta
       result =
@@ -178,36 +184,34 @@ const isNextButtonEnabled = computed(() => {
           if (!baseValid) {
             result = false;
           } else {
-            // ✅ VALIDAR CLASIFICACIÓN PARA LABOR/OVERHEAD (gastos nuevos)
+            // ✅ VALIDAR CLASIFICACIÓN PARA LABOR/OVERHEAD (gastos nuevos y salarios dueño/familiares)
             const isNewExpense = transactionData.oldOrNewExpense === "new";
 
-            if (isNewExpense) {
-              // Labor requiere paylabor
-              if (transactionData.category === "labor") {
-                result =
-                  transactionData.paylabor !== null &&
-                  transactionData.paylabor !== undefined;
-              }
-              // Overhead requiere overheadUsage
-              else if (transactionData.category === "overhead") {
-                const hasOverheadUsage =
-                  transactionData.overheadUsage !== null &&
-                  transactionData.overheadUsage !== undefined;
+            if (transactionData.category === "labor") {
+              const requiresPaylabor =
+                isNewExpense ||
+                ["owner_salary", "family_salary"].includes(
+                  transactionData.subcategory,
+                );
+              result = requiresPaylabor
+                ? transactionData.paylabor !== null &&
+                  transactionData.paylabor !== undefined
+                : baseValid;
+            } else if (isNewExpense && transactionData.category === "overhead") {
+              const hasOverheadUsage =
+                transactionData.overheadUsage !== null &&
+                transactionData.overheadUsage !== undefined;
 
-                // Si es MIXED, validar splits
-                if (transactionData.overheadUsage === "MIXED") {
-                  const hasSplits =
-                    transactionData.splits && transactionData.splits.length > 0;
-                  result = hasOverheadUsage && hasSplits;
-                } else {
-                  result = hasOverheadUsage;
-                }
+              // Si es MIXED, validar splits
+              if (transactionData.overheadUsage === "MIXED") {
+                const hasSplits =
+                  transactionData.splits && transactionData.splits.length > 0;
+                result = hasOverheadUsage && hasSplits;
               } else {
-                // Otra categoría sin clasificación especial
-                result = baseValid;
+                result = hasOverheadUsage;
               }
             } else {
-              // Gasto existente: solo validar base
+              // Gasto existente u otra categoría sin clasificación especial
               result = baseValid;
             }
           }
@@ -357,6 +361,9 @@ const getValidationMessage = () => {
     case "Tipo de transacción":
       return "Debes seleccionar un tipo de transacción";
 
+    case "Tipo Egreso":
+      return "Debes seleccionar un tipo de gasto";
+
     case "Cuenta":
       return "Debes seleccionar un método de pago";
 
@@ -374,6 +381,26 @@ const getValidationMessage = () => {
       // Mensaje específico según la categoría
       if (transactionData.category === "materials") {
         return "Debes agregar al menos un material a la compra";
+      }
+      if (transactionData.category === "labor") {
+        if (
+          !transactionData.description ||
+          transactionData.description.trim() === ""
+        ) {
+          return "Selecciona a quién corresponde el salario y completa la descripción";
+        }
+        if (!transactionData.amount || transactionData.amount <= 0) {
+          return "Ingresa un monto mayor a 0";
+        }
+        if (
+          (transactionData.oldOrNewExpense === "new" ||
+            ["owner_salary", "family_salary"].includes(
+              transactionData.subcategory,
+            )) &&
+          !transactionData.paylabor
+        ) {
+          return "Selecciona el rol principal (atención directa, producción o administración)";
+        }
       }
       return "Completa la descripción, monto y categoría del gasto";
 

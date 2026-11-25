@@ -187,6 +187,13 @@ export function useActionEvidence(businessIdRef) {
     return isNaN(parsed.getTime()) ? null : parsed;
   };
 
+  const isWithinDays = (tx, days) => {
+    const d = toDateSafe(tx.createdAt);
+    if (!d) return false;
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return d.getTime() >= cutoff;
+  };
+
   const isNonOperationalTx = (tx) =>
     tx.isNonCash === true ||
     tx.account === "non_cash" ||

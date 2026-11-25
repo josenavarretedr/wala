@@ -8,7 +8,7 @@
       <div class="flex items-center gap-3">
         <!-- Progress dots -->
         <div class="flex items-center gap-2">
-          <div class="flex items-center justify-center w-8 h-8 rounded-full text-xs font-black bg-indigo-50 text-indigo-600 border border-indigo-150">
+          <div class="flex items-center justify-center w-8 h-8 rounded-full text-xs font-black bg-indigo-50 text-indigo-600 border border-indigo-200">
             {{ currentStep < 4 ? currentStep + 1 : '✓' }}
           </div>
           <div class="flex items-center gap-1">
@@ -51,7 +51,7 @@
           :class="[
             'px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border',
             flowStore.selectedCycleKey === cycle.key
-              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+              ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
               : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300',
           ]"
         >
@@ -64,7 +64,7 @@
             'px-2.5 py-1 rounded-lg border',
             totalCycleSelectedCount > 9
               ? 'bg-amber-50 text-amber-800 border-amber-200'
-              : 'bg-white text-indigo-700 border-indigo-150',
+              : 'bg-white text-indigo-700 border-indigo-200',
           ]"
         >
           {{ totalCycleSelectedCount }} / 9 acciones recomendadas
@@ -77,7 +77,7 @@
       <!-- STEP 0: Select Critical Area -->
       <div v-if="currentStep === 0" key="step-0" class="space-y-6">
         <div class="text-center space-y-2">
-          <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-700">
+          <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-200 text-indigo-700">
             Paso 1: Foco de Trabajo
           </span>
           <h2 class="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">
@@ -97,8 +97,8 @@
             :class="[
               'w-full p-5 rounded-[26px] transition-all duration-300 transform active:scale-[0.99] flex items-start gap-4 text-left border relative group shadow-sm hover:shadow-md cursor-pointer',
               flowStore.selectedAreaKey === area.areaKey
-                ? 'bg-indigo-650 text-white border-transparent shadow-lg shadow-indigo-600/15'
-                : 'bg-white text-gray-600 hover:bg-indigo-50/20 border-gray-150 hover:border-indigo-200/50',
+                ? 'bg-indigo-600 text-white border-indigo-600 ring-2 ring-indigo-600/25 shadow-lg shadow-indigo-600/20'
+                : 'bg-white text-gray-600 hover:bg-indigo-50/30 border-gray-200 hover:border-indigo-300',
             ]"
           >
             <!-- Area Icon -->
@@ -137,7 +137,7 @@
                     'text-[9px] font-bold font-mono tracking-wider uppercase px-2 py-0.5 rounded border',
                     flowStore.selectedAreaKey === area.areaKey
                       ? 'bg-white/15 text-white border-white/25'
-                      : 'bg-gray-50 text-gray-500 border-gray-250/50',
+                      : 'bg-gray-50 text-gray-500 border-gray-200',
                   ]"
                 >
                   Score: {{ area.score !== undefined ? area.score.toFixed(1) : '0.0' }} / 3.0
@@ -158,7 +158,7 @@
               <p 
                 :class="[
                   'text-xs line-clamp-2 mt-1 leading-relaxed',
-                  flowStore.selectedAreaKey === area.areaKey ? 'text-indigo-100/90' : 'text-gray-450 font-medium italic'
+                  flowStore.selectedAreaKey === area.areaKey ? 'text-indigo-100/90' : 'text-gray-500 font-medium italic'
                 ]"
               >
                 &ldquo;{{ area.justification }}&rdquo;
@@ -192,7 +192,7 @@
         <div v-if="currentIndicator" class="space-y-5">
           <!-- Indicator details -->
           <div class="text-center space-y-2">
-            <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-700">
+            <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-200 text-indigo-700">
               Paso {{ currentStep + 1 }}: Indicador {{ currentIndicator.key }}
             </span>
             <h2 class="text-lg sm:text-xl font-black text-gray-800 tracking-tight leading-snug">
@@ -204,7 +204,7 @@
           </div>
 
           <!-- Diagnostic context details -->
-          <div class="bg-gray-50 border border-gray-150 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between shadow-sm">
+          <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between shadow-sm">
             <div class="space-y-0.5">
               <span class="text-[9px] font-black text-gray-400 uppercase tracking-wider block">Score de Diagnóstico</span>
               <p class="text-sm font-extrabold text-gray-800 flex items-center gap-1.5">
@@ -276,7 +276,7 @@
                       >
                         {{ action.actionTypeLabel || 'Acción' }}
                       </span>
-                      <span class="text-indigo-650 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                      <span class="text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
                         {{ action.frequency }}
                       </span>
                       <span class="text-gray-500 bg-gray-50 px-2 py-0.5 rounded border border-gray-200/50">
@@ -297,7 +297,7 @@
                   <textarea
                     v-model="getActionTextModel(action, currentIndicator.key).value"
                     rows="3"
-                    class="w-full rounded-xl border-indigo-150 focus:border-indigo-500 focus:ring-indigo-500 shadow-inner bg-white text-xs sm:text-sm p-3 font-semibold text-gray-700"
+                    class="w-full rounded-xl border border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 shadow-inner bg-white text-xs sm:text-sm p-3 font-semibold text-gray-700"
                     placeholder="Personaliza el texto de la acción para este cliente..."
                   ></textarea>
                 </div>
@@ -315,7 +315,7 @@
       <!-- STEP 4: Review and Save -->
       <div v-else-if="currentStep === 4" key="step-4" class="space-y-6">
         <div class="text-center space-y-2">
-          <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-150 text-indigo-700">
+          <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-50 border border-indigo-200 text-indigo-700">
             Paso 5: Resumen y Cierre
           </span>
           <h2 class="text-xl sm:text-2xl font-black text-gray-800 tracking-tight">
@@ -327,7 +327,7 @@
         </div>
 
         <!-- Summary list grouped by indicator -->
-        <div class="bg-gray-50 border border-gray-150/60 rounded-[32px] p-5 sm:p-6 space-y-6 max-h-[380px] overflow-y-auto">
+        <div class="bg-gray-50 border border-gray-200/70 rounded-[32px] p-5 sm:p-6 space-y-6 max-h-[380px] overflow-y-auto">
           <div v-if="flowStore.selectedActions.length > 0" class="space-y-6">
             <div
               v-for="indicator in groupedSelectedActions"
@@ -339,7 +339,7 @@
                 <span class="text-[10px] font-black font-mono bg-indigo-600 text-white px-2 py-0.5 rounded shadow-sm">
                   {{ indicator.key }}
                 </span>
-                <h4 class="text-xs sm:text-sm font-black text-gray-850 truncate">
+                <h4 class="text-xs sm:text-sm font-black text-gray-800 truncate">
                   {{ indicator.title }}
                 </h4>
               </div>
@@ -349,14 +349,14 @@
                 <div
                   v-for="action in indicator.actions"
                   :key="action.id"
-                  class="bg-white border border-gray-150 rounded-2xl p-4 shadow-sm space-y-2 relative"
+                  class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm space-y-2 relative"
                 >
                   <p class="text-xs sm:text-sm font-bold text-gray-700 leading-relaxed pr-2">
                     {{ action.actionText }}
                   </p>
                   
                   <div class="flex items-center gap-2 text-[9px] font-black">
-                    <span class="text-indigo-650 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                    <span class="text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
                       {{ action.frequency }}
                     </span>
                     <span class="text-gray-500 bg-gray-50 border border-gray-200/50 px-1.5 py-0.5 rounded">

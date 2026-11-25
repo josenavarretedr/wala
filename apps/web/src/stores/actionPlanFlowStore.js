@@ -104,13 +104,17 @@ export const useActionPlanFlowStore = defineStore("actionPlanFlow", () => {
       const loadedActiveCycle = data.activeCycleKey || "ciclo1";
       activeCycleKey.value = loadedActiveCycle;
 
+      const hasCyclesMap = Boolean(
+        data.actionPlansByCycle && typeof data.actionPlansByCycle === "object"
+      );
       const byCycle = data.actionPlansByCycle || {};
       const legacyFlat = Array.isArray(data.actionPlan) ? data.actionPlan : [];
 
-      const ciclo1Raw =
-        Array.isArray(byCycle.ciclo1) && byCycle.ciclo1.length > 0
+      const ciclo1Raw = hasCyclesMap
+        ? Array.isArray(byCycle.ciclo1)
           ? byCycle.ciclo1
-          : legacyFlat;
+          : []
+        : legacyFlat;
       const ciclo2Raw = Array.isArray(byCycle.ciclo2) ? byCycle.ciclo2 : [];
       const ciclo3Raw = Array.isArray(byCycle.ciclo3) ? byCycle.ciclo3 : [];
 

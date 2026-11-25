@@ -19,13 +19,30 @@ const transactionStore = useTransactionStore();
 onMounted(() => {
   const qType = route.query.type;
   const qCategory = route.query.category;
+  const qPreset = route.query.preset;
   if (qType === "expense" || qType === "income" || qType === "transfer") {
     transactionStore.resetTransactionToAdd();
     transactionStore.modifyTransactionToAddType(qType);
     flow.defineDynamicSteps(qType);
-    if (qType === "expense" && qCategory) {
-      transactionStore.setExpenseCategory(String(qCategory));
-      flow.currentStep = 2; // Ir directo a Detalles egreso
+    if (qType === "expense") {
+      if (qPreset === "owner_salary" || qPreset === "family_salary") {
+        transactionStore.setExpenseCategory("labor");
+        transactionStore.setExpenseSubcategory(String(qPreset));
+        transactionStore.transactionToAdd.value.expensePreset = String(qPreset);
+        transactionStore.transactionToAdd.value.statementLine = null;
+        flow.currentStep = 2;
+      } else if (qPreset === "owner_draw" || qCategory === "owner_draw") {
+        transactionStore.setExpenseCategory("owner_draw");
+        transactionStore.setExpenseSubcategory("personal_withdrawal");
+        transactionStore.transactionToAdd.value.expensePreset = "owner_draw";
+        transactionStore.transactionToAdd.value.statementLine = "owner_draw";
+        flow.currentStep = 2;
+      } else if (qCategory) {
+        transactionStore.setExpenseCategory(String(qCategory));
+        flow.currentStep = 2; // Ir directo a Detalles egreso
+      } else {
+        flow.currentStep = 1;
+      }
     } else {
       flow.currentStep = 1;
     }

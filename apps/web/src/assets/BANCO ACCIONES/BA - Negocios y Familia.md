@@ -30,7 +30,7 @@
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
 | 1 | Define un monto fijo de salario del dueño para este ciclo y regístralo en WALA. Aunque sea pequeño: lo importante es que sea fijo y predecible. | Única vez | Perfil del negocio — campo de salario del dueño |
-| 2 | Separa y registra en WALA ese monto cada semana antes de cualquier otro gasto del negocio. Si no alcanzó, regístralo igual con una nota de por qué. | Semanal | Módulo de gastos — categoría "Salario del dueño" |
+| 2 | Separa y registra en WALA ese monto cada semana antes de cualquier otro gasto del negocio. Si no alcanzó, regístralo igual con una nota de por qué. | Semanal | Módulo de gastos — Salarios del equipo → "Salario del dueño" |
 | 3 | Al inicio de cada semana, revisa en WALA si la semana anterior te pagaste. Si no lo hiciste, escribe el motivo en el expediente. | Semanal | Expediente de seguimiento — nota de seguimiento del ciclo |
 
 ---
@@ -40,7 +40,7 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Al cierre del mes, revisa en WALA cuántas semanas te pagaste y cuántas no. Identifica si hay un patrón detrás de las semanas que fallaste. | Mensual | Módulo de gastos — historial de categoría "Salario del dueño" |
+| 1 | Al cierre del mes, revisa en WALA cuántas semanas te pagaste y cuántas no. Identifica si hay un patrón detrás de las semanas que fallaste. | Mensual | Módulo de gastos — historial de Salarios del equipo → "Salario del dueño" |
 | 2 | Si el negocio no llegó para pagarte alguna semana, regístralo en WALA con la causa específica: ¿fue una compra inesperada, una semana de bajas ventas, un gasto personal que salió del negocio? | Semanal (cuando aplica) | Expediente de seguimiento — nota del ciclo activo |
 | 3 | Si el obstáculo es que el monto es demasiado alto para cumplirlo de forma estable, ajústalo a uno menor que sí puedas ejecutar las 4 semanas del ciclo. Actualiza el dato en WALA. Un monto menor que se cumple siempre vale más que uno ideal que nunca ocurre. | Única vez (por ciclo) | Perfil del negocio — campo de salario del dueño (actualización) |
 
@@ -69,8 +69,8 @@
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
 | 1 | Define junto con el asesor un monto o compensación para cada familiar que trabaja en el negocio. Puede ser semanal o mensual. Regístralo en WALA como acuerdo del ciclo. | Única vez | Expediente de seguimiento — plan de acción del ciclo |
-| 2 | Registra en WALA cada vez que un familiar recibe su compensación: fecha, nombre y monto. | Semanal | Módulo de gastos — categoría "Salario a familiares" |
-| 3 | Si no pudiste pagar a un familiar alguna semana, anótalo en WALA con el motivo. No se trata de justificarse: se trata de visibilizar el costo real del negocio. | Semanal (cuando aplica) | Módulo de gastos — nota en la categoría "Salario a familiares" |
+| 2 | Registra en WALA cada vez que un familiar recibe su compensación: fecha, nombre y monto. | Semanal | Módulo de gastos — Salarios del equipo → "Salario de los familiares" |
+| 3 | Si no pudiste pagar a un familiar alguna semana, anótalo en WALA con el motivo. No se trata de justificarse: se trata de visibilizar el costo real del negocio. | Semanal (cuando aplica) | Módulo de gastos — nota en Salarios del equipo → "Salario de los familiares" |
 
 ---
 
@@ -79,7 +79,7 @@
 
 | # | Acción | Frecuencia | Dónde se registra en WALA |
 |---|---|---|---|
-| 1 | Al cierre del mes, revisa en WALA si todos los familiares que trabajaron recibieron su compensación acordada. Compara lo que se acordó con lo que efectivamente ocurrió. | Mensual | Módulo de gastos — historial de categoría "Salario a familiares" |
+| 1 | Al cierre del mes, revisa en WALA si todos los familiares que trabajaron recibieron su compensación acordada. Compara lo que se acordó con lo que efectivamente ocurrió. | Mensual | Módulo de gastos — historial de Salarios del equipo → "Salario de los familiares" |
 | 2 | Verifica que el total pagado a familiares esté siendo incluido en el cálculo de costos del negocio. Si no está, corrígelo en WALA este ciclo. | Única vez (por ciclo) | Módulo de gastos — revisión de categorías activas |
 | 3 | En el reporte mensual de WALA, identifica cuánto representó el pago a familiares sobre el total de gastos del negocio. Registra ese número en el expediente para compararlo el próximo ciclo. | Mensual | Reporte mensual — desglose de gastos por categoría |
 

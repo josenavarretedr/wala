@@ -1680,7 +1680,13 @@ import { useRoute } from "vue-router";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebaseInit";
 import { useTransaccion } from "@/composables/useTransaction";
-import { classifyStatementLine } from "@/utils/statementLineClassifier";
+import {
+  classifyStatementLine,
+  isCashAdjustmentTransaction,
+  isRefundedIncomeSale,
+  isActiveIncomeSale,
+  isStatementExpense,
+} from "@/utils/statementLineClassifier";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { calculatePaymentStatus } from "@/utils/paymentCalculator";
 import { usePlanning } from "@/composables/usePlanning";
@@ -1765,7 +1771,14 @@ const toggleSubcategoryDetails = (lineKey, subcatKey) => {
   }
 };
 
-const hasData = computed(() => transactions.value.length > 0);
+const hasData = computed(() =>
+  transactions.value.some(
+    (tx) =>
+      isActiveIncomeSale(tx) ||
+      tx.type === "refund" ||
+      isStatementExpense(tx),
+  ),
+);
 
 // Nombres legibles en español para subcategorías
 const formatSubcategoryName = (subcat, category = "") => {
@@ -1924,7 +1937,7 @@ const comprasBrutasInsumos = computed(() => {
   return transactions.value
     .filter(
       (tx) =>
-        tx.type === "expense" &&
+        isStatementExpense(tx) &&
         (tx.statementLine === "cogs_materials" ||
           classifyStatementLine(tx) === "cogs_materials"),
     )
@@ -1938,13 +1951,6 @@ const comprasBrutasInsumos = computed(() => {
 // ==========================================
 // DETECCIÓN DE PRODUCTOS VENDIDOS SIN COSTEAR
 // ==========================================
-
-const isRefundedIncomeSale = (tx) => {
-  return (
-    tx?.type === "income" &&
-    (tx.status === "refunded" || tx.paymentStatus === "refunded")
-  );
-};
 
 const refundedSaleIdsInPeriod = computed(() => {
   const ids = new Set();
@@ -1961,7 +1967,7 @@ const uncostedSoldProducts = computed(() => {
   const map = new Map();
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && !isRefundedIncomeSale(tx) && Array.isArray(tx.items)) {
+    if (isActiveIncomeSale(tx) && Array.isArray(tx.items)) {
       tx.items.forEach((item) => {
         const productId = item.productId || item.selectedProductUuid || item.uuid;
         const quantity = Number(item.quantity || 0);
@@ -2052,7 +2058,7 @@ const lines = computed(() => {
 
   transactions.value.forEach((tx) => {
     // Ingresos por ventas brutas (excluyendo transacciones anuladas/reembolsadas)
-    if (tx.type === "income" && !isRefundedIncomeSale(tx)) {
+    if (isActiveIncomeSale(tx)) {
       statement.sales_revenue += Number(tx.amount || 0);
 
       // Si la transacción tiene envases/empaques asociados para delivery/takeaway,
@@ -2104,7 +2110,7 @@ const lines = computed(() => {
       if (!refundedSaleIdsInPeriod.value.has(tx.relatedTransactionId)) {
         statement.sales_revenue -= Number(tx.amount || 0);
       }
-    } else if (tx.type === "expense") {
+    } else if (isStatementExpense(tx)) {
       const lineKey = tx.statementLine || classifyStatementLine(tx);
       const amount = Number(tx.amount || 0);
 
@@ -2144,7 +2150,7 @@ const lines = computed(() => {
   let egresosCifFisicos = 0;
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "expense") {
+    if (isStatementExpense(tx)) {
       const lineKey = tx.statementLine || classifyStatementLine(tx);
       const amount = Number(tx.amount || 0);
       if (lineKey === "cogs_materials") {
@@ -2173,7 +2179,7 @@ const ownerDrawsSummary = computed(() => {
   const txs = [];
   let total = 0;
   transactions.value.forEach((tx) => {
-    if (tx.type !== "expense") return;
+    if (!isStatementExpense(tx)) return;
     const lineKey = tx.statementLine || classifyStatementLine(tx);
     if (lineKey === "owner_draw") {
       const amt = Number(tx.amount || 0);
@@ -2335,7 +2341,7 @@ const lineTransactions = computed(() => {
   const refundsTxs = [];
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && !isRefundedIncomeSale(tx)) {
+    if (isActiveIncomeSale(tx)) {
       // Sumar packaging si se cobró
       if (tx.packagingCost && Number(tx.packagingCost) > 0) {
         packagingRevenueAmount += Number(tx.packagingCost);
@@ -2468,7 +2474,7 @@ const lineTransactions = computed(() => {
   let totalCogsMaterialsVendidos = 0;
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "income" && !isRefundedIncomeSale(tx) && Array.isArray(tx.items)) {
+    if (isActiveIncomeSale(tx) && Array.isArray(tx.items)) {
       tx.items.forEach((item) => {
         const productId =
           item.productId || item.selectedProductUuid || item.uuid;
@@ -2546,7 +2552,7 @@ const lineTransactions = computed(() => {
     });
   } else {
     transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
+      if (isStatementExpense(tx)) {
         const lineKey = tx.statementLine || classifyStatementLine(tx);
         if (lineKey === "cogs_materials") {
           materialsTxs.push({
@@ -2574,7 +2580,7 @@ const lineTransactions = computed(() => {
     });
     // Agregar egresos reales de mano de obra de producción
     transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
+      if (isStatementExpense(tx)) {
         const lineKey = tx.statementLine || classifyStatementLine(tx);
         const amount = Number(tx.amount || 0);
         if (lineKey === "cogs_labor") {
@@ -2589,7 +2595,7 @@ const lineTransactions = computed(() => {
     });
   } else {
     transactions.value.forEach((tx) => {
-      if (tx.type === "expense") {
+      if (isStatementExpense(tx)) {
         const lineKey = tx.statementLine || classifyStatementLine(tx);
         if (lineKey === "cogs_labor") {
           laborTxs.push({
@@ -2617,7 +2623,7 @@ const lineTransactions = computed(() => {
     });
   }
   transactions.value.forEach((tx) => {
-    if (tx.type === "expense") {
+    if (isStatementExpense(tx)) {
       const lineKey = tx.statementLine || classifyStatementLine(tx);
       const amount = Number(tx.amount || 0);
       if (lineKey === "cogs_cif") {
@@ -2699,7 +2705,7 @@ const lineTransactions = computed(() => {
   const taxTxs = [];
 
   transactions.value.forEach((tx) => {
-    if (tx.type === "expense") {
+    if (isStatementExpense(tx)) {
       const lineKey = tx.statementLine || classifyStatementLine(tx);
 
       if (lineKey === "mixed" && Array.isArray(tx.splits)) {
@@ -2739,7 +2745,7 @@ const lineTransactions = computed(() => {
       } else if (lineKey === "tax") {
         taxTxs.push(tx);
       }
-    } else if (tx.type === "income" && !isRefundedIncomeSale(tx) && tx.packagingCost > 0) {
+    } else if (isActiveIncomeSale(tx) && tx.packagingCost > 0) {
       // Agregar costo de envases virtuales a los gastos de ventas
       opexSalesTxs.push({
         uuid: `${tx.uuid}_pkg`,
@@ -2817,7 +2823,7 @@ const fetchOverdueReceivables = async () => {
     const list = [];
     snap.forEach((docSnap) => {
       const tx = { uuid: docSnap.id, ...docSnap.data() };
-      if (tx.status === "refunded" || tx.paymentStatus === "written_off") return;
+      if (isCashAdjustmentTransaction(tx) || tx.status === "refunded" || tx.paymentStatus === "written_off") return;
       const calc = calculatePaymentStatus(tx);
       if (calc.balance <= 0) return;
       const refDate = tx.promisedPaymentDate?.toDate

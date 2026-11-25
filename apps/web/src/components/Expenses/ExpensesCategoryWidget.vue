@@ -238,7 +238,7 @@ const categoriesData = computed(() => {
   const total = totalExpensesAmount.value || 1;
   const groups = {
     materials: { name: "Materiales e Insumos", amount: 0, color: "#f97316", type: "materials" },
-    labor: { name: "Costos de Personal", amount: 0, color: "#a855f7", type: "labor" },
+    labor: { name: "Salarios del equipo", amount: 0, color: "#a855f7", type: "labor" },
     overhead: { name: "Gastos Generales (Overhead)", amount: 0, color: "#3b82f6", type: "overhead" },
     owner_draw: { name: "Retiros Personales (Dueño)", amount: 0, color: "#d97706", type: "owner_draw" },
     otros: { name: "Otros", amount: 0, color: "#6b7280", type: "otros" },
@@ -278,22 +278,22 @@ const subcategoriesData = computed(() => {
     
     if (category === "labor") {
       if (tx.subcategory === "owner_salary") {
-        return { name: "Salario del dueño", parent: "Negocio y Dueño", color: "#10b981" };
+        return { name: "Salario del dueño", parent: "Salarios del equipo", color: "#10b981" };
       }
       if (tx.subcategory === "family_salary") {
-        return { name: "Salario a familiares", parent: "Negocio y Dueño", color: "#14b8a6" };
+        return { name: "Salario de los familiares", parent: "Salarios del equipo", color: "#14b8a6" };
       }
       const paylabor = tx.paylabor;
       if (paylabor === "DIRECT_SERVICE") {
-        return { name: "Atención y Servicio Directo", parent: "Personal", color: "#a855f7" };
+        return { name: "Atención y Servicio Directo", parent: "Salarios del equipo", color: "#a855f7" };
       }
       if (paylabor === "PRODUCTION_SUPPORT") {
-        return { name: "Apoyo a la Producción", parent: "Personal", color: "#c084fc" };
+        return { name: "Apoyo a la Producción", parent: "Salarios del equipo", color: "#c084fc" };
       }
       if (paylabor === "ADMIN_SUPPORT") {
-        return { name: "Personal Administrativo", parent: "Personal", color: "#e9d5ff" };
+        return { name: "Personal Administrativo", parent: "Salarios del equipo", color: "#e9d5ff" };
       }
-      return { name: "Costos de Personal (Otros)", parent: "Personal", color: "#a855f7" };
+      return { name: "Costos de Personal (Otros)", parent: "Salarios del equipo", color: "#a855f7" };
     }
     
     if (category === "overhead") {

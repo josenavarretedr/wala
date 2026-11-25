@@ -3831,6 +3831,7 @@ export function useTransactionStore() {
     setExpenseDescription,
     setExpenseAmount,
     setExpenseCategory,
+    setExpenseSubcategory,
     setTransferFromAccount,
     setTransferToAccount,
     setPayLabor,

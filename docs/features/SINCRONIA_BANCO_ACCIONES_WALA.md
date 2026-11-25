@@ -95,19 +95,19 @@ En `actionPlanFlowStore.js` y `ActionPlanView.vue` se soportan tres estados ofic
 | Dashboard principal | `dashboard` | — |
 
 > [!IMPORTANT]
-> [BasicAccountingRecordsWrapper.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue) lee `route.query.type` al montar para saltar directamente al paso de detalle (`currentStep = 1`), y [StepExpenseType.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepExpenseType.vue) lee `route.query.preset` y `route.query.category` para preseleccionar automáticamente el flujo correspondiente.
+> [BasicAccountingRecordsWrapper.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/views/basicAccountingRecords/BasicAccountingRecordsWrapper.vue) lee `route.query.type`, `route.query.preset` y `route.query.category` al montar: soporta `?type=expense&preset=owner_salary|family_salary|owner_draw` (y `?type=expense&category=...`) aterrizando directamente en el paso 2 (`flow.currentStep = 2`) con `category`, `subcategory`, `expensePreset` y `statementLine` preconfigurados; [StepExpenseType.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepExpenseType.vue) también maneja de forma defensiva `route.query.preset` y `route.query.category`.
 
 ---
 
 ## 💼 Sincronía del Área 1 (`Negocios y Familia`) en Egresos y P&L
 
-Para resolver la brecha histórica de mezcla entre dinero personal y gastos del negocio, el bloque **Negocio y Dueño (Método WALA)** en [StepExpenseType.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepExpenseType.vue) está visible **para todos los negocios** debajo de las 3 categorías estándar:
+Para resolver la brecha histórica de mezcla entre dinero personal y gastos del negocio, todos los negocios ven en [StepExpenseType.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepExpenseType.vue) la categoría **Salarios del equipo** (`labor`) y, debajo en el bloque **Negocio y Dueño**, el botón separado **Retiro personal del dueño** (`owner_draw`). Dentro de **Salarios del equipo** (`labor`), `"Salario del dueño"` (`owner_salary`), `"Salario de los familiares"` (`family_salary`) y `"Otro miembro del equipo"` se eligen en [StepAddExpenseDetails.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepAddExpenseDetails.vue) con clasificación obligatoria de rol (`paylabor`):
 
-| Preset UI | `category` | `subcategory` | `statementLine` / P&L | Flujo de Caja (`CashFlowWidget` / `accountsBalanceStore`) | Proveedor |
-|---|---|---|---|---|---|
-| **Salario del dueño** | `labor` | `owner_salary` | Según `paylabor`: `cogs_labor` (`DIRECT_SERVICE` / `PRODUCTION_SUPPORT`) u `opex_fixed` (`ADMIN_SUPPORT`, default) | Descuenta Caja o Banco | Opcional (aviso interno en [StepAttachSupplier.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepAttachSupplier.vue)) |
-| **Salario a familiares** | `labor` | `family_salary` | Según `paylabor`: `cogs_labor` u `opex_fixed` | Descuenta Caja o Banco | Opcional |
-| **Retiro personal del dueño** | `owner_draw` | `personal_withdrawal` | `'owner_draw'` (**excluido** del P&L operativo; mostrado en tarjeta **NO OPERATIVO** bajo `GANANCIA NETA`) | Descuenta Caja o Banco (`tx.type === 'expense'`) | Opcional |
+| Opción / Preset UI | Flujo UI | `category` | `subcategory` | `statementLine` / P&L | Flujo de Caja (`CashFlowWidget` / `accountsBalanceStore`) | Proveedor |
+|---|---|---|---|---|---|---|
+| **Salario del dueño** | **Salarios del equipo** → `StepAddExpenseDetails.vue` (rol `paylabor` obligatorio) | `labor` | `owner_salary` | Según `paylabor`: `cogs_labor` (`DIRECT_SERVICE` / `PRODUCTION_SUPPORT`) u `opex_fixed` (`ADMIN_SUPPORT`) | Descuenta Caja o Banco | Opcional (aviso interno en [StepAttachSupplier.vue](file:///c:/Users/User/Proyectos/wala/apps/web/src/components/transactionFlow/StepAttachSupplier.vue)) |
+| **Salario de los familiares** | **Salarios del equipo** → `StepAddExpenseDetails.vue` (rol `paylabor` obligatorio) | `labor` | `family_salary` | Según `paylabor`: `cogs_labor` (`DIRECT_SERVICE` / `PRODUCTION_SUPPORT`) u `opex_fixed` (`ADMIN_SUPPORT`) | Descuenta Caja o Banco | Opcional |
+| **Retiro personal del dueño** | Bloque **Negocio y Dueño** en `StepExpenseType.vue` | `owner_draw` | `personal_withdrawal` | `'owner_draw'` (**excluido** del P&L operativo; mostrado en tarjeta **NO OPERATIVO** bajo `GANANCIA NETA`) | Descuenta Caja o Banco (`tx.type === 'expense'`) | Opcional |
 
 ### Tratamiento Contable en Estado de Resultados
 1. En [statementLineClassifier.js](file:///c:/Users/User/Proyectos/wala/apps/web/src/utils/statementLineClassifier.js), `owner_draw` y `personal_withdrawal` retornan `'owner_draw'`.

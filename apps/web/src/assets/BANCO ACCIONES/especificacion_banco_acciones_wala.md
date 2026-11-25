@@ -284,7 +284,7 @@ Al redactar el campo "Dónde se registra en WALA", usar exclusivamente los sigui
 | Módulo / Sección | Ruta en WALA (`/business/:businessId/...`) | Qué centraliza y cómo sincroniza con el BA |
 |---|---|---|
 | **Módulo de ingresos** | `basicAccountingRecordsBook?type=income` | Registro de ventas (al contado y al crédito) y entradas de dinero |
-| **Módulo de gastos** | `basicAccountingRecordsBook?type=expense` | Insumos (`materials`), sueldos de equipo (`labor`), gastos generales (`overhead`) y el bloque **Negocio y Dueño** (`preset=owner_salary`, `preset=family_salary`, `preset=owner_draw`) |
+| **Módulo de gastos** | `basicAccountingRecordsBook?type=expense` | Insumos (`materials`), salarios del equipo (dueño, familiares y personal en `labor`: `preset=owner_salary`, `preset=family_salary`), gastos generales (`overhead`) y **Retiro personal del dueño** (`owner_draw`, `preset=owner_draw`) |
 | **Módulo de inventario** | `inventory` *(y subrutas `product/:id/costing/*`)* | Control de stock, `minStock`/`safetyStock`, filtro rápido bajo stock / sin movimiento >14d / cobertura de costeo, mermas y bajas con resumen mensual no monetario, y MOD conectado al valor hora del dueño |
 | **Módulo de clientes** | `clients` y `accounts-receivable` | Canal de origen (`originChannel`), rentabilidad por origen, promociones (`promoMilestones`), cobranzas con fecha prometida, aging (`<30d`/`>30d`), recordatorio WhatsApp y castigo incobrable no monetario |
 | **Módulo de proveedores** | `suppliers` y `accounts-payable` | Directorio con confiabilidad (`incidentsCount`), comparador de cotizaciones (`purchaseQuotes`), incidencias/devoluciones híbridas (`supplierIncidents`) y cuentas por pagar |

@@ -601,165 +601,342 @@
     <!-- FLUJO PARA LABOR/OVERHEAD (Gastos Simples) -->
     <!-- ========================================== -->
     <div v-else class="space-y-6">
-      <!-- Banner auxiliar para Salario del dueño -->
+      <!-- Selector de destinatario para Salarios del equipo (labor) -->
       <div
-        v-if="transactionStore.transactionToAdd.value.subcategory === 'owner_salary'"
-        class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        v-if="transactionStore.transactionToAdd.value.category === 'labor'"
+        class="space-y-3"
       >
-        <div class="space-y-0.5">
-          <p class="text-sm font-bold text-emerald-900">
-            Pago de Salario del Dueño
-          </p>
-          <p v-if="ownerProfileConfig.ownerSalaryAmount > 0" class="text-xs text-emerald-800">
-            Sueldo fijado en tu perfil: <strong>S/ {{ Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2) }}</strong> ({{ ownerSalaryFrequencyLabel }})
-          </p>
-          <p v-else class="text-xs text-emerald-700">
-            Tip WALA: Puedes fijar tu sueldo en Datos del Negocio para pre-llenarlo automáticamente.
+        <div class="space-y-1">
+          <h3 class="text-base sm:text-lg font-semibold text-gray-800">
+            ¿A quién corresponde este salario?
+          </h3>
+          <p class="text-xs text-gray-500">
+            Selecciona si es para el dueño, un familiar o alguien más del equipo
           </p>
         </div>
-        <button
-          v-if="ownerProfileConfig.ownerSalaryAmount > 0"
-          type="button"
-          @click="amount = Number(ownerProfileConfig.ownerSalaryAmount)"
-          class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0"
-        >
-          Aplicar S/ {{ Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2) }}
-        </button>
-      </div>
 
-      <!-- Banner y campo rápido para Salario a familiares -->
-      <div
-        v-else-if="transactionStore.transactionToAdd.value.subcategory === 'family_salary'"
-        class="p-4 rounded-xl bg-teal-50 border border-teal-200 space-y-3"
-      >
-        <div>
-          <p class="text-sm font-bold text-teal-900">
-            Pago de Salario a Familiar
-          </p>
-          <p class="text-xs text-teal-700">
-            Indica el nombre o parentesco del familiar que apoya en el negocio
-          </p>
-        </div>
-        <input
-          v-model="familyMemberName"
-          type="text"
-          placeholder="Ej: Hermano (apoyo taller), Esposa (caja/ventas)"
-          class="w-full px-3.5 py-2.5 bg-white border border-teal-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
-        />
-      </div>
-
-      <!-- Campo de búsqueda de gasto -->
-      <div class="space-y-3">
-        <label class="text-lg font-semibold text-gray-800">
-          Descripción del Gasto
-        </label>
-
-        <!-- Componente de búsqueda asíncrona -->
-        <SearchExpenseAsync
-          :category="transactionStore.transactionToAdd.value.category"
-          @update:expenseToAdd="handleExpenseSelected"
-        />
-
-        <!-- Mostrar gasto seleccionado -->
-        <div
-          v-if="description"
-          class="p-4 bg-gray-50 border border-gray-200 rounded-xl"
-        >
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-sm font-semibold text-gray-900 truncate">
-                  {{ description }}
-                </span>
-                <span
-                  v-if="expenseType === 'new'"
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                >
-                  Nuevo
-                </span>
-                <span
-                  v-else-if="selectedExpenseMetadata"
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
-                >
-                  Recurrente
-                </span>
-              </div>
-            </div>
-
-            <!-- Botón para limpiar selección -->
-            <button
-              @click="clearExpenseSelection"
-              class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
-              title="Cambiar gasto"
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <!-- Salario del dueño -->
+          <button
+            type="button"
+            @click="selectLaborRecipient('owner_salary')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 flex flex-row sm:flex-col items-center sm:items-start gap-3 border text-left',
+              laborRecipient === 'owner_salary'
+                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/25'
+                : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border-gray-200 hover:border-emerald-200',
+            ]"
+          >
+            <div
+              :class="[
+                'p-2.5 rounded-full shrink-0 transition-colors duration-200',
+                laborRecipient === 'owner_salary' ? 'bg-white/20' : 'bg-emerald-100',
+              ]"
             >
-              <Xmark class="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+              <Wallet
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  laborRecipient === 'owner_salary' ? 'text-white' : 'text-emerald-600',
+                ]"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-semibold block">Salario del dueño</span>
+              <span class="text-xs opacity-80 block mt-0.5">Tu sueldo fijo asignado</span>
+            </div>
+          </button>
 
-        <p class="text-xs text-gray-500">
-          Busca gastos anteriores o registra uno nuevo
-        </p>
+          <!-- Salario de los familiares -->
+          <button
+            type="button"
+            @click="selectLaborRecipient('family_salary')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 flex flex-row sm:flex-col items-center sm:items-start gap-3 border text-left',
+              laborRecipient === 'family_salary'
+                ? 'bg-teal-600 text-white border-teal-600 shadow-md shadow-teal-600/25'
+                : 'bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-700 border-gray-200 hover:border-teal-200',
+            ]"
+          >
+            <div
+              :class="[
+                'p-2.5 rounded-full shrink-0 transition-colors duration-200',
+                laborRecipient === 'family_salary' ? 'bg-white/20' : 'bg-teal-100',
+              ]"
+            >
+              <Group
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  laborRecipient === 'family_salary' ? 'text-white' : 'text-teal-600',
+                ]"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-semibold block">Salario de los familiares</span>
+              <span class="text-xs opacity-80 block mt-0.5">Familiar que trabaja en el negocio</span>
+            </div>
+          </button>
+
+          <!-- Otro miembro del equipo -->
+          <button
+            type="button"
+            @click="selectLaborRecipient('other')"
+            :class="[
+              'w-full p-4 rounded-xl transition-all duration-200 flex flex-row sm:flex-col items-center sm:items-start gap-3 border text-left',
+              laborRecipient === 'other'
+                ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/25'
+                : 'bg-white text-gray-600 hover:bg-purple-50 hover:text-purple-700 border-gray-200 hover:border-purple-200',
+            ]"
+          >
+            <div
+              :class="[
+                'p-2.5 rounded-full shrink-0 transition-colors duration-200',
+                laborRecipient === 'other' ? 'bg-white/20' : 'bg-purple-100',
+              ]"
+            >
+              <User
+                :class="[
+                  'w-6 h-6 transition-colors duration-200',
+                  laborRecipient === 'other' ? 'text-white' : 'text-purple-600',
+                ]"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <span class="text-sm font-semibold block">Otro miembro del equipo</span>
+              <span class="text-xs opacity-80 block mt-0.5">Empleados, jornales u honorarios</span>
+            </div>
+          </button>
+        </div>
       </div>
 
-      <!-- Campo de costo -->
-      <div class="space-y-3">
-        <label class="text-lg font-semibold text-gray-800">Monto (S/)</label>
-        <div class="relative">
-          <input
-            v-model.number="amount"
-            @keyup.enter="addExpenseHandler"
-            type="number"
-            step="0.01"
-
-            placeholder="0.00"
-            class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-center font-medium text-gray-700 focus:border-red-500 focus:outline-none transition-colors"
-          />
-          <div
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"
-          ></div>
-        </div>
-        <div class="flex flex-col gap-1">
-          <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
-          <p
-            v-if="
-              transactionStore.transactionToAdd.value.account &&
-              maxAmount !== Infinity &&
-              maxAmount > 0
-            "
-            class="text-xs text-blue-600 font-medium"
-          >
-            Saldo disponible en {{ selectedAccountLabel }}: S/
-            {{ maxAmount.toFixed(2) }}
-          </p>
-          <p
-            v-else-if="transactionStore.transactionToAdd.value.account"
-            class="text-xs text-amber-600 font-medium"
-          >
-            ⚠️ No hay saldo suficiente en {{ selectedAccountLabel }}
-          </p>
-        </div>
+      <!-- Tarjeta neutra sutil cuando aún no se elige destinatario en labor -->
+      <div
+        v-if="
+          transactionStore.transactionToAdd.value.category === 'labor' &&
+          !laborRecipient
+        "
+        class="p-4 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-center text-sm text-gray-500"
+      >
+        Selecciona una opción arriba para continuar con los detalles del salario
       </div>
 
-      <!-- ========================================== -->
-      <!-- CLASIFICACIÓN PAYLABOR (Solo labor + new)  -->
-      <!-- ========================================== -->
-      <Transition name="slide-fade">
-        <div
+      <!-- Campos inferiores (si es overhead, o labor con destinatario elegido) -->
+      <div
+        v-if="
+          transactionStore.transactionToAdd.value.category === 'overhead' ||
+          (transactionStore.transactionToAdd.value.category === 'labor' &&
+            laborRecipient)
+        "
+        class="space-y-6"
+      >
+        <!-- Flujo Salario del dueño -->
+        <template
           v-if="
             transactionStore.transactionToAdd.value.category === 'labor' &&
-            expenseType === 'new'
+            laborRecipient === 'owner_salary'
           "
-          class="space-y-4"
         >
+          <!-- Banner auxiliar para Salario del dueño -->
+          <div
+            class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          >
+            <div class="space-y-0.5">
+              <p class="text-sm font-bold text-emerald-900">
+                Pago de Salario del Dueño
+              </p>
+              <p
+                v-if="ownerProfileConfig.ownerSalaryAmount > 0"
+                class="text-xs text-emerald-800"
+              >
+                Sueldo fijado en tu perfil:
+                <strong
+                  >S/
+                  {{
+                    Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2)
+                  }}</strong
+                >
+                ({{ ownerSalaryFrequencyLabel }})
+              </p>
+              <p v-else class="text-xs text-emerald-700">
+                Tip WALA: Puedes fijar tu sueldo en Datos del Negocio para
+                pre-llenarlo automáticamente.
+              </p>
+            </div>
+            <button
+              v-if="ownerProfileConfig.ownerSalaryAmount > 0"
+              type="button"
+              @click="amount = Number(ownerProfileConfig.ownerSalaryAmount)"
+              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shrink-0"
+            >
+              Aplicar S/
+              {{ Number(ownerProfileConfig.ownerSalaryAmount).toFixed(2) }}
+            </button>
+          </div>
+
+          <!-- Input editable de descripción del gasto -->
           <div class="space-y-2">
-            <h3 class="text-base font-semibold text-gray-800">
-              Este pago corresponde principalmente a...
-            </h3>
-            <p class="text-xs text-gray-500">
-              Selecciona el rol principal del trabajador
+            <label class="text-lg font-semibold text-gray-800 block">
+              Descripción del gasto
+            </label>
+            <input
+              v-model="description"
+              @input="transactionStore.setExpenseDescription(description)"
+              type="text"
+              placeholder="Salario del dueño"
+              class="w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:border-emerald-500 focus:outline-none transition-colors"
+            />
+          </div>
+        </template>
+
+        <!-- Flujo Salario de los familiares -->
+        <div
+          v-else-if="
+            transactionStore.transactionToAdd.value.category === 'labor' &&
+            laborRecipient === 'family_salary'
+          "
+          class="p-4 rounded-xl bg-teal-50 border border-teal-200 space-y-3"
+        >
+          <div>
+            <p class="text-sm font-bold text-teal-900">
+              Pago de Salario a Familiar
+            </p>
+            <p class="text-xs text-teal-700">
+              Indica el nombre o parentesco del familiar que apoya en el negocio
             </p>
           </div>
+          <input
+            v-model="familyMemberName"
+            type="text"
+            placeholder="Ej: Hermano (apoyo taller), Esposa (caja/ventas)"
+            class="w-full px-3.5 py-2.5 bg-white border border-teal-200 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:outline-none"
+          />
+        </div>
+
+        <!-- Campo de búsqueda de gasto (other en labor u overhead) -->
+        <div v-else class="space-y-3">
+          <label class="text-lg font-semibold text-gray-800">
+            Descripción del Gasto
+          </label>
+
+          <!-- Componente de búsqueda asíncrona -->
+          <SearchExpenseAsync
+            :category="transactionStore.transactionToAdd.value.category"
+            :exclude-subcategories="
+              transactionStore.transactionToAdd.value.category === 'labor'
+                ? ['owner_salary', 'family_salary']
+                : []
+            "
+            @update:expenseToAdd="handleExpenseSelected"
+          />
+
+          <!-- Mostrar gasto seleccionado -->
+          <div
+            v-if="description"
+            class="p-4 bg-gray-50 border border-gray-200 rounded-xl"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm font-semibold text-gray-900 truncate">
+                    {{ description }}
+                  </span>
+                  <span
+                    v-if="expenseType === 'new'"
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    Nuevo
+                  </span>
+                  <span
+                    v-else-if="selectedExpenseMetadata"
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Recurrente
+                  </span>
+                </div>
+              </div>
+
+              <!-- Botón para limpiar selección -->
+              <button
+                @click="clearExpenseSelection"
+                class="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Cambiar gasto"
+              >
+                <Xmark class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <p class="text-xs text-gray-500">
+            Busca gastos anteriores o registra uno nuevo
+          </p>
+        </div>
+
+        <!-- Campo de costo -->
+        <div class="space-y-3">
+          <label class="text-lg font-semibold text-gray-800">Monto (S/)</label>
+          <div class="relative">
+            <input
+              v-model.number="amount"
+              @keyup.enter="addExpenseHandler"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              class="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-xl text-center font-medium text-gray-700 focus:border-red-500 focus:outline-none transition-colors"
+            />
+            <div
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full"
+            ></div>
+          </div>
+          <div class="flex flex-col gap-1">
+            <p class="text-xs text-gray-500">Ingresa el monto total del gasto</p>
+            <p
+              v-if="
+                transactionStore.transactionToAdd.value.account &&
+                maxAmount !== Infinity &&
+                maxAmount > 0
+              "
+              class="text-xs text-blue-600 font-medium"
+            >
+              Saldo disponible en {{ selectedAccountLabel }}: S/
+              {{ maxAmount.toFixed(2) }}
+            </p>
+            <p
+              v-else-if="transactionStore.transactionToAdd.value.account"
+              class="text-xs text-amber-600 font-medium"
+            >
+              ⚠️ No hay saldo suficiente en {{ selectedAccountLabel }}
+            </p>
+          </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- CLASIFICACIÓN PAYLABOR                     -->
+        <!-- ========================================== -->
+        <Transition name="slide-fade">
+          <div
+            v-if="
+              transactionStore.transactionToAdd.value.category === 'labor' &&
+              (laborRecipient === 'owner_salary' ||
+                laborRecipient === 'family_salary' ||
+                (laborRecipient === 'other' &&
+                  (expenseType === 'new' ||
+                    (expenseType === 'old' && !selectedPayLabor))))
+            "
+            class="space-y-4"
+          >
+            <div class="space-y-2">
+              <h3 class="text-base font-semibold text-gray-800">
+                Este pago corresponde principalmente a...
+              </h3>
+              <p class="text-xs text-gray-500">
+                {{
+                  laborRecipient === "owner_salary"
+                    ? "Selecciona el rol principal que cumples en el negocio"
+                    : laborRecipient === "family_salary"
+                      ? "Selecciona el rol principal del familiar en el negocio"
+                      : "Selecciona el rol principal del trabajador"
+                }}
+              </p>
+            </div>
 
           <div class="grid grid-cols-1 gap-3">
             <!-- DIRECT_SERVICE -->
@@ -1164,6 +1341,7 @@
           Puedes agregar detalles adicionales sobre este gasto
         </p>
       </div>
+      </div>
     </div>
   </div>
 </template>
@@ -1176,7 +1354,7 @@ import { useAccountsBalanceStore } from "@/stores/AccountsBalanceApp/accountsBal
 import { useBusinessStore } from "@/stores/businessStore";
 import { useInventoryStore } from "@/stores/inventoryStore";
 import { useToast } from "@/composables/useToast";
-import { Package, Xmark, KeyframePlus } from "@iconoir/vue";
+import { Package, Xmark, KeyframePlus, Wallet, Group, User } from "@iconoir/vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
@@ -1219,6 +1397,7 @@ const selectedExpenseId = ref(null);
 const selectedExpenseMetadata = ref(null);
 
 // Presets Negocio y Dueño (Área 1)
+const laborRecipient = ref(null); // 'owner_salary' | 'family_salary' | 'other' | null
 const withdrawalReason = ref("");
 const familyMemberName = ref("");
 const ownerProfileConfig = ref({
@@ -1248,7 +1427,7 @@ watch(withdrawalReason, (val) => {
 watch(familyMemberName, (val) => {
   if (transactionStore.transactionToAdd.value.subcategory === "family_salary") {
     const clean = (val || "").trim();
-    const desc = clean ? `Salario familiar: ${clean}` : "Salario a familiares";
+    const desc = clean ? `Salario familiar: ${clean}` : "Salario de los familiares";
     description.value = desc;
     transactionStore.setExpenseDescription(desc);
   }
@@ -1371,6 +1550,11 @@ const handleExpenseSelected = (expenseData) => {
   if (expenseData.paylabor) {
     selectedPayLabor.value = expenseData.paylabor;
     transactionStore.setPayLabor(expenseData.paylabor);
+  } else if (
+    transactionStore.transactionToAdd.value.category === "labor" &&
+    expenseData.oldOrNewExpense === "new"
+  ) {
+    applySingleVisiblePayLaborIfApplicable();
   }
 
   if (expenseData.overheadUsage) {
@@ -1693,6 +1877,99 @@ const selectPayLaborRole = (role) => {
   transactionStore.setSplits(null);
 };
 
+const applySingleVisiblePayLaborIfApplicable = () => {
+  const roles = visiblePayLaborRoles.value || {};
+  const visibleKeys = Object.keys(roles).filter((key) => Boolean(roles[key]));
+  if (visibleKeys.length === 1 && visibleKeys[0] === "ADMIN_SUPPORT") {
+    selectPayLaborRole("ADMIN_SUPPORT");
+  }
+};
+
+const selectLaborRecipient = (recipient) => {
+  const previousRecipient = laborRecipient.value;
+  const prevSubcategory = transactionStore.transactionToAdd.value.subcategory;
+  const prevPreset = transactionStore.transactionToAdd.value.expensePreset;
+
+  laborRecipient.value = recipient;
+
+  // Limpiar selección previa de gasto
+  selectedExpenseId.value = null;
+  selectedExpenseMetadata.value = null;
+  transactionStore.transactionToAdd.value.expenseId = null;
+
+  if (recipient === "owner_salary") {
+    transactionStore.setExpenseSubcategory("owner_salary");
+    transactionStore.transactionToAdd.value.expensePreset = "owner_salary";
+    transactionStore.transactionToAdd.value.statementLine = null;
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+
+    const currentDesc = (description.value || "").trim();
+    const isOtherTypeDesc =
+      previousRecipient === "family_salary" ||
+      previousRecipient === "other" ||
+      (!previousRecipient &&
+        prevSubcategory !== "owner_salary" &&
+        prevPreset !== "owner_salary") ||
+      !currentDesc ||
+      currentDesc === "Salario de los familiares" ||
+      currentDesc === "Salario a familiares" ||
+      currentDesc.startsWith("Salario familiar:") ||
+      currentDesc.startsWith("Retiro personal");
+
+    if (isOtherTypeDesc) {
+      description.value = "Salario del dueño";
+    }
+    transactionStore.setExpenseDescription(description.value);
+
+    if (
+      (!amount.value || amount.value <= 0) &&
+      ownerProfileConfig.value.ownerSalaryAmount > 0
+    ) {
+      amount.value = Number(ownerProfileConfig.value.ownerSalaryAmount);
+    }
+
+    applySingleVisiblePayLaborIfApplicable();
+  } else if (recipient === "family_salary") {
+    transactionStore.setExpenseSubcategory("family_salary");
+    transactionStore.transactionToAdd.value.expensePreset = "family_salary";
+    transactionStore.transactionToAdd.value.statementLine = null;
+    expenseType.value = "new";
+    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
+
+    description.value = familyMemberName.value.trim()
+      ? `Salario familiar: ${familyMemberName.value.trim()}`
+      : "Salario de los familiares";
+    transactionStore.setExpenseDescription(description.value);
+
+    applySingleVisiblePayLaborIfApplicable();
+  } else if (recipient === "other") {
+    const currentDesc = (description.value || "").trim();
+    const cameFromSalaryPreset =
+      previousRecipient === "owner_salary" ||
+      previousRecipient === "family_salary" ||
+      prevSubcategory === "owner_salary" ||
+      prevSubcategory === "family_salary" ||
+      prevPreset === "owner_salary" ||
+      prevPreset === "family_salary" ||
+      currentDesc === "Salario del dueño" ||
+      currentDesc === "Salario de los familiares" ||
+      currentDesc === "Salario a familiares" ||
+      currentDesc.startsWith("Salario familiar:");
+
+    transactionStore.setExpenseSubcategory(null);
+    transactionStore.transactionToAdd.value.expensePreset = null;
+    transactionStore.transactionToAdd.value.statementLine = null;
+
+    if (cameFromSalaryPreset) {
+      description.value = "";
+      expenseType.value = null;
+      transactionStore.setExpenseDescription("");
+      transactionStore.transactionToAdd.value.oldOrNewExpense = null;
+    }
+  }
+};
+
 // ========================================
 // HANDLERS PARA OVERHEAD USAGE
 // ========================================
@@ -1801,21 +2078,26 @@ watch(amount, (newAmount) => {
 // Auto-clasificar materials al entrar al step
 watch(
   () => transactionStore.transactionToAdd.value.category,
-  (cat) => {
-    if (cat === "materials") {
+  (newCat, oldCat) => {
+    if (newCat === "materials") {
       const bucket = classifyMaterials(currentBusinessType.value);
       transactionStore.setBucket(bucket);
     }
-    // Reset clasificación cuando cambia categoría
-    selectedPayLabor.value = null;
-    selectedOverheadUsage.value = null;
-    producePercentage.value = 0;
-    adminPercentage.value = 0;
-    produceAmount.value = 0;
-    adminAmount.value = 0;
-    transactionStore.setPayLabor(null);
-    transactionStore.setOverheadUsage(null);
-    transactionStore.setSplits(null);
+    // Solo resetear clasificación cuando cambia realmente la categoría (no en montaje inicial)
+    if (oldCat !== undefined && newCat !== oldCat) {
+      selectedPayLabor.value = null;
+      selectedOverheadUsage.value = null;
+      producePercentage.value = 0;
+      adminPercentage.value = 0;
+      produceAmount.value = 0;
+      adminAmount.value = 0;
+      transactionStore.setPayLabor(null);
+      transactionStore.setOverheadUsage(null);
+      transactionStore.setSplits(null);
+      if (newCat !== "labor") {
+        laborRecipient.value = null;
+      }
+    }
   },
   { immediate: true },
 );
@@ -1827,6 +2109,12 @@ onMounted(async () => {
   // Sincronizar categoría del store (del paso anterior) con la variable local
   if (transactionStore.transactionToAdd.value.category) {
     selectedCategory.value = transactionStore.transactionToAdd.value.category;
+  }
+
+  // Auto-clasificar materials también en onMounted
+  if (transactionStore.transactionToAdd.value.category === "materials") {
+    const bucket = classifyMaterials(currentBusinessType.value);
+    transactionStore.setBucket(bucket);
   }
 
   // Cargar perfil financiero del negocio (sueldo configurado del dueño)
@@ -1860,6 +2148,18 @@ onMounted(async () => {
     inventoryStore.getItemsInInventory().catch(() => {});
   }
 
+  // Restaurar estado previo desde el store si existe (ej: regreso desde Paso 3 o deep-link)
+  const txToAdd = transactionStore.transactionToAdd.value;
+  if (txToAdd.amount && Number(txToAdd.amount) > 0) {
+    amount.value = Number(txToAdd.amount);
+  }
+  if (txToAdd.description) {
+    description.value = txToAdd.description;
+  }
+  if (txToAdd.paylabor) {
+    selectedPayLabor.value = txToAdd.paylabor;
+  }
+
   // Pre-llenado desde Promociones, Cotizaciones o Pagos Fijos (query params)
   if (route.query.quoteId) {
     linkedQuoteId.value = String(route.query.quoteId);
@@ -1886,6 +2186,7 @@ onMounted(async () => {
   // Inicializar presets de Área 1 (Negocio y Dueño)
   const currentCat = transactionStore.transactionToAdd.value.category;
   const currentSubcat = transactionStore.transactionToAdd.value.subcategory;
+  const currentPreset = transactionStore.transactionToAdd.value.expensePreset;
 
   if (currentCat === "owner_draw") {
     expenseType.value = "new";
@@ -1896,24 +2197,34 @@ onMounted(async () => {
       description.value = transactionStore.transactionToAdd.value.description || "Retiro personal del dueño";
       transactionStore.setExpenseDescription(description.value);
     }
-  } else if (currentCat === "labor" && currentSubcat === "owner_salary") {
-    expenseType.value = "new";
-    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
-    description.value = transactionStore.transactionToAdd.value.description || "Salario del dueño";
-    transactionStore.setExpenseDescription(description.value);
-    selectPayLaborRole("ADMIN_SUPPORT");
-    if (!amount.value && ownerProfileConfig.value.ownerSalaryAmount > 0) {
-      amount.value = Number(ownerProfileConfig.value.ownerSalaryAmount);
+  } else if (currentCat === "labor") {
+    if (currentSubcat === "owner_salary" || currentPreset === "owner_salary") {
+      selectLaborRecipient("owner_salary");
+    } else if (currentSubcat === "family_salary" || currentPreset === "family_salary") {
+      if (description.value && description.value.startsWith("Salario familiar: ")) {
+        familyMemberName.value = description.value
+          .slice("Salario familiar: ".length)
+          .trim();
+      }
+      selectLaborRecipient("family_salary");
+    } else if (transactionStore.transactionToAdd.value.description) {
+      laborRecipient.value = "other";
+      description.value = transactionStore.transactionToAdd.value.description;
+      if (txToAdd.amount && Number(txToAdd.amount) > 0) {
+        amount.value = Number(txToAdd.amount);
+      }
+      if (txToAdd.oldOrNewExpense) {
+        expenseType.value = txToAdd.oldOrNewExpense;
+      }
+      if (txToAdd.expenseId) {
+        selectedExpenseId.value = txToAdd.expenseId;
+      }
+      if (txToAdd.paylabor) {
+        selectedPayLabor.value = txToAdd.paylabor;
+      }
+    } else {
+      laborRecipient.value = null;
     }
-  } else if (currentCat === "labor" && currentSubcat === "family_salary") {
-    expenseType.value = "new";
-    transactionStore.transactionToAdd.value.oldOrNewExpense = "new";
-    description.value = transactionStore.transactionToAdd.value.description || "Salario a familiares";
-    transactionStore.setExpenseDescription(description.value);
-    const defaultRole = visiblePayLaborRoles.value.PRODUCTION_SUPPORT
-      ? "PRODUCTION_SUPPORT"
-      : "ADMIN_SUPPORT";
-    selectPayLaborRole(defaultRole);
   }
 
   // Cargar transacciones del día en transactionStore
@@ -2006,9 +2317,16 @@ const isFormValid = computed(() => {
   const category = transactionStore.transactionToAdd.value.category;
   const isNew = expenseType.value === "new";
 
-  // Si es labor + new → debe tener paylabor
-  if (category === "labor" && isNew && amount.value > 0) {
-    if (!selectedPayLabor.value) return false;
+  // Si es labor → debe tener destinatario elegido y paylabor para owner_salary, family_salary y other + new
+  if (category === "labor") {
+    if (!laborRecipient.value) return false;
+    if (
+      laborRecipient.value === "owner_salary" ||
+      laborRecipient.value === "family_salary" ||
+      (laborRecipient.value === "other" && isNew)
+    ) {
+      if (!selectedPayLabor.value) return false;
+    }
   }
 
   // Si es overhead + new → debe tener overheadUsage

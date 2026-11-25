@@ -56,13 +56,13 @@
           </button>
         </div>
 
-        <!-- Sueldo de Personal de Producción -->
+        <!-- Salarios del equipo -->
         <div class="relative group">
           <button
             @click="selectExpenseCategory('labor')"
             :class="[
               'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98] flex flex-row items-center gap-3 shadow-sm hover:shadow-md border',
-              selectedCategory === 'labor' && !selectedPreset
+              selectedCategory === 'labor'
                 ? 'bg-purple-500 text-white shadow-purple-500/25 border-purple-500'
                 : 'bg-white text-gray-600 hover:bg-purple-50 hover:text-purple-600 border-gray-200 hover:border-purple-200',
             ]"
@@ -70,7 +70,7 @@
             <div
               :class="[
                 'p-3 rounded-full transition-colors duration-200 shrink-0',
-                selectedCategory === 'labor' && !selectedPreset
+                selectedCategory === 'labor'
                   ? 'bg-white/20'
                   : 'bg-purple-100',
               ]"
@@ -78,7 +78,7 @@
               <User
                 :class="[
                   'w-8 h-8 transition-colors duration-200',
-                  selectedCategory === 'labor' && !selectedPreset
+                  selectedCategory === 'labor'
                     ? 'text-white'
                     : 'text-purple-500',
                 ]"
@@ -86,10 +86,10 @@
             </div>
             <div class="text-left flex-1">
               <span class="text-base font-semibold block"
-                >Sueldos del equipo</span
+                >Salarios del equipo</span
               >
               <span class="text-xs opacity-80"
-                >Sueldos, jornales, comisiones, honorarios.</span
+                >Dueño, familiares, empleados, jornales, comisiones, honorarios.</span
               >
             </div>
           </button>
@@ -145,7 +145,7 @@
             Negocio y Dueño
           </h3>
           <p class="text-xs text-gray-500">
-            Separa el dinero de tu negocio de tus finanzas personales y familiares
+            Separa los retiros personales de los gastos y salarios del negocio
           </p>
         </div>
         <span
@@ -156,70 +156,6 @@
       </div>
 
       <div class="grid grid-cols-1 gap-3">
-        <!-- Salario del dueño -->
-        <button
-          type="button"
-          @click="selectOwnerFamilyPreset('owner_salary')"
-          :class="[
-            'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex flex-row items-center gap-3 shadow-sm hover:shadow-md border',
-            selectedPreset === 'owner_salary'
-              ? 'bg-emerald-600 text-white shadow-emerald-600/25 border-emerald-600'
-              : 'bg-white text-gray-600 hover:bg-emerald-50 hover:text-emerald-700 border-gray-200 hover:border-emerald-200',
-          ]"
-        >
-          <div
-            :class="[
-              'p-3 rounded-full transition-colors duration-200 shrink-0',
-              selectedPreset === 'owner_salary' ? 'bg-white/20' : 'bg-emerald-100',
-            ]"
-          >
-            <Wallet
-              :class="[
-                'w-7 h-7 transition-colors duration-200',
-                selectedPreset === 'owner_salary' ? 'text-white' : 'text-emerald-600',
-              ]"
-            />
-          </div>
-          <div class="text-left flex-1">
-            <span class="text-base font-semibold block">Salario del dueño</span>
-            <span class="text-xs opacity-80"
-              >Tu sueldo fijo asignado como gestor o trabajador (gasto operativo)</span
-            >
-          </div>
-        </button>
-
-        <!-- Salario a familiares -->
-        <button
-          type="button"
-          @click="selectOwnerFamilyPreset('family_salary')"
-          :class="[
-            'w-full p-4 rounded-xl transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex flex-row items-center gap-3 shadow-sm hover:shadow-md border',
-            selectedPreset === 'family_salary'
-              ? 'bg-teal-600 text-white shadow-teal-600/25 border-teal-600'
-              : 'bg-white text-gray-600 hover:bg-teal-50 hover:text-teal-700 border-gray-200 hover:border-teal-200',
-          ]"
-        >
-          <div
-            :class="[
-              'p-3 rounded-full transition-colors duration-200 shrink-0',
-              selectedPreset === 'family_salary' ? 'bg-white/20' : 'bg-teal-100',
-            ]"
-          >
-            <Group
-              :class="[
-                'w-7 h-7 transition-colors duration-200',
-                selectedPreset === 'family_salary' ? 'text-white' : 'text-teal-600',
-              ]"
-            />
-          </div>
-          <div class="text-left flex-1">
-            <span class="text-base font-semibold block">Salario a familiares</span>
-            <span class="text-xs opacity-80"
-              >Pago por el trabajo real de un familiar en el negocio (gasto laboral)</span
-            >
-          </div>
-        </button>
-
         <!-- Retiro personal del dueño -->
         <button
           type="button"
@@ -265,16 +201,8 @@
         <div
           class="flex-shrink-0 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm"
         >
-          <Wallet
-            v-if="selectedPreset === 'owner_salary'"
-            class="w-5 h-5 text-emerald-600"
-          />
-          <Group
-            v-else-if="selectedPreset === 'family_salary'"
-            class="w-5 h-5 text-teal-600"
-          />
           <CoinsSwap
-            v-else-if="selectedPreset === 'owner_draw' || selectedCategory === 'owner_draw'"
+            v-if="selectedPreset === 'owner_draw' || selectedCategory === 'owner_draw'"
             class="w-5 h-5 text-amber-600"
           />
           <Package
@@ -309,28 +237,26 @@
 
 <script setup>
 import { useTransactionStore } from "@/stores/transaction/transactionStore";
-import { useBusinessStore } from "@/stores/businessStore";
-import { Package, Settings, User, Wallet, Group, CoinsSwap } from "@iconoir/vue";
-import { ref, watch, computed, onMounted } from "vue";
+import { Package, Settings, User, CoinsSwap } from "@iconoir/vue";
+import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
 
 // Stores
 const transactionStore = useTransactionStore();
-const businessStore = useBusinessStore();
-
-// Computed
-const isCommerceBusiness = computed(() => {
-  return businessStore.business?.businessType === "RETAIL";
-});
 
 // Variables reactivas
 const selectedCategory = ref(
   transactionStore.transactionToAdd.value.category || null,
 );
 const selectedPreset = ref(
-  transactionStore.transactionToAdd.value.expensePreset || null,
+  transactionStore.transactionToAdd.value.expensePreset ||
+    (["owner_salary", "family_salary"].includes(
+      transactionStore.transactionToAdd.value.subcategory,
+    )
+      ? transactionStore.transactionToAdd.value.subcategory
+      : null),
 );
 
 // Observar cambios y actualizar los stores correspondientes
@@ -338,21 +264,23 @@ watch(selectedCategory, (newCategory) => {
   transactionStore.setExpenseCategory(newCategory);
 });
 
-// Resetear selección si se cambió a comercio y tenía labor genérico seleccionado
-watch(isCommerceBusiness, (isCommerce) => {
-  if (isCommerce && selectedCategory.value === "labor" && !selectedPreset.value) {
-    selectedCategory.value = null;
-  }
-});
-
 // Función para seleccionar categoría común
 const selectExpenseCategory = (category) => {
-  selectedPreset.value = null;
+  const previousCategory = selectedCategory.value;
+  const shouldResetPreset =
+    category !== "labor" ||
+    previousCategory !== "labor" ||
+    selectedPreset.value === "owner_draw";
+
   selectedCategory.value = category;
   transactionStore.setExpenseCategory(category);
-  transactionStore.setExpenseSubcategory(null);
-  transactionStore.transactionToAdd.value.expensePreset = null;
-  transactionStore.transactionToAdd.value.statementLine = null;
+
+  if (shouldResetPreset) {
+    selectedPreset.value = null;
+    transactionStore.setExpenseSubcategory(null);
+    transactionStore.transactionToAdd.value.expensePreset = null;
+    transactionStore.transactionToAdd.value.statementLine = null;
+  }
 };
 
 // Función para seleccionar presets de Negocio y Dueño (Área 1)
@@ -393,15 +321,19 @@ onMounted(() => {
 
 // Función para obtener la etiqueta de la categoría
 const getCategoryLabel = (category) => {
-  if (selectedPreset.value === "owner_salary") return "Salario del dueño";
-  if (selectedPreset.value === "family_salary") return "Salario a familiares";
+  if (selectedPreset.value === "owner_salary") {
+    return "Salarios del equipo — Salario del dueño";
+  }
+  if (selectedPreset.value === "family_salary") {
+    return "Salarios del equipo — Salario de los familiares";
+  }
   if (selectedPreset.value === "owner_draw" || category === "owner_draw") {
     return "Retiro personal del dueño";
   }
 
   const labels = {
     materials: "Costos de materiales",
-    labor: "Sueldo de Personal de Producción",
+    labor: "Salarios del equipo",
     overhead: "Gastos Generales (Overhead)",
   };
   return labels[category] || category;
@@ -409,19 +341,13 @@ const getCategoryLabel = (category) => {
 
 // Función para obtener la descripción de la categoría
 const getCategoryDescription = (category) => {
-  if (selectedPreset.value === "owner_salary") {
-    return "Remuneración fija que el negocio te paga por tu trabajo";
-  }
-  if (selectedPreset.value === "family_salary") {
-    return "Remuneración formal a familiares que trabajan en el negocio";
-  }
   if (selectedPreset.value === "owner_draw" || category === "owner_draw") {
     return "Salida de efectivo para uso personal fuera del gasto operativo";
   }
 
   const descriptions = {
     materials: "Insumos | Mercadería",
-    labor: "Chef, cocineros, especialistas",
+    labor: "Salario del dueño, familiares y personal del negocio",
     overhead: "Todos los demás gastos operativos",
   };
   return descriptions[category] || "";
@@ -429,12 +355,6 @@ const getCategoryDescription = (category) => {
 
 // Función para obtener los ejemplos de la categoría
 const getCategoryExamples = (category) => {
-  if (selectedPreset.value === "owner_salary") {
-    return "Se incluye en el Estado de Resultados como costo/gasto operativo de mano de obra";
-  }
-  if (selectedPreset.value === "family_salary") {
-    return "Ayuda a visibilizar el costo laboral real cuando la familia apoya en el negocio";
-  }
   if (selectedPreset.value === "owner_draw" || category === "owner_draw") {
     return "Descuenta tu Caja/Banco pero no distorsiona la Ganancia Neta del negocio";
   }
@@ -443,7 +363,7 @@ const getCategoryExamples = (category) => {
     materials:
       "Ejemplos: Materias primas, productos terminados, insumos directos",
     labor:
-      "Ejemplos: Personal que participa directamente en la producción o prestación del servicio",
+      "En el siguiente paso podrás indicar si es salario del dueño, de familiares u otro miembro del equipo",
     overhead:
       "Ejemplos: Alquiler, luz, agua, internet, sueldo administrativo, marketing, combustible",
   };

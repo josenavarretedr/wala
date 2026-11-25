@@ -58,6 +58,16 @@
         >
           Editar {{ currentCycleLabel }}
         </button>
+        <button
+          v-if="actionsList.length > 0 || totalActionsAcrossAllCycles > 0"
+          type="button"
+          @click="openDeletePlanModal"
+          class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-600 hover:text-white transition-colors cursor-pointer"
+          title="Eliminar acciones de este ciclo o todo el plan"
+        >
+          <Trash class="w-3.5 h-3.5" />
+          <span>{{ actionsList.length > 0 ? `Eliminar ${currentCycleLabel}` : "Eliminar Plan" }}</span>
+        </button>
       </div>
     </div>
 
@@ -248,6 +258,15 @@
                       class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer"
                     >
                       No realizada · Reabrir
+                    </button>
+                    <button
+                      v-if="isAdminMode && !onlyPending"
+                      type="button"
+                      @click="openDeleteActionModal(action)"
+                      class="p-1 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition-colors cursor-pointer"
+                      title="Eliminar acción del plan"
+                    >
+                      <Trash class="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -594,6 +613,98 @@
         >Actualizando plan de acción...</span
       >
     </div>
+
+    <!-- Modal Confirmar Eliminación de Acción Individual -->
+    <Teleport to="body">
+      <div
+        v-if="deleteActionTarget"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="closeDeleteActionModal"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="space-y-1">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">
+              Eliminar Acción
+            </span>
+            <h3 class="text-lg font-bold text-gray-900 mt-1">¿Quitar esta acción de {{ currentCycleLabel }}?</h3>
+            <p class="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-xl p-3 mt-2 leading-relaxed">
+              "{{ deleteActionTarget.actionText }}"
+            </p>
+            <p class="text-[11px] text-gray-500">
+              Esta acción desaparecerá del plan compartido y actualizará el contador de avance del ciclo.
+            </p>
+          </div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              :disabled="isDeleting"
+              @click="closeDeleteActionModal"
+              class="px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              :disabled="isDeleting"
+              @click="confirmDeleteSingleAction"
+              class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50"
+            >
+              {{ isDeleting ? "Eliminando..." : "Eliminar acción" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal Confirmar Eliminación de Plan (Ciclo o Completo) -->
+    <Teleport to="body">
+      <div
+        v-if="showDeletePlanModal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+        @click.self="closeDeletePlanModal"
+      >
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+          <div class="space-y-1">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase">
+              Eliminar Plan de Acción
+            </span>
+            <h3 class="text-lg font-bold text-gray-900 mt-1">
+              ¿Qué deseas eliminar del expediente?
+            </h3>
+            <p class="text-xs text-gray-600 leading-relaxed">
+              Puedes vaciar únicamente las <strong>{{ actionsList.length }}</strong> acciones de <strong>{{ currentCycleLabel }}</strong> o eliminar por completo las <strong>{{ totalActionsAcrossAllCycles }}</strong> acciones de todos los ciclos.
+            </p>
+          </div>
+          <div class="flex flex-col gap-2 pt-2">
+            <button
+              v-if="actionsList.length > 0"
+              type="button"
+              :disabled="isDeleting"
+              @click="confirmDeleteCyclePlan(false)"
+              class="w-full px-4 py-2.5 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white rounded-xl disabled:opacity-50 transition-colors"
+            >
+              {{ isDeleting ? "Eliminando..." : `Vaciar solo ${currentCycleLabel} (${actionsList.length} acciones)` }}
+            </button>
+            <button
+              type="button"
+              :disabled="isDeleting"
+              @click="confirmDeleteCyclePlan(true)"
+              class="w-full px-4 py-2.5 text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50 transition-colors"
+            >
+              {{ isDeleting ? "Eliminando..." : "Eliminar plan completo (todos los ciclos)" }}
+            </button>
+            <button
+              type="button"
+              :disabled="isDeleting"
+              @click="closeDeletePlanModal"
+              class="w-full px-4 py-2 text-xs font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -611,6 +722,7 @@ import {
   Check,
   Xmark,
   ArrowRight,
+  Trash,
 } from "@iconoir/vue";
 import { doc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "@/firebaseInit";
@@ -663,6 +775,9 @@ const expandedNoteIds = reactive({});
 const configDrafts = reactive({});
 const noteDrafts = reactive({});
 const advisorNoteDrafts = reactive({});
+const deleteActionTarget = ref(null);
+const showDeletePlanModal = ref(false);
+const isDeleting = ref(false);
 
 let unsubscribe = null;
 
@@ -694,6 +809,14 @@ const getCycleCount = (cycleKey) => {
 const selectViewCycle = (cycleKey) => {
   selectedViewCycle.value = cycleKey;
 };
+
+const totalActionsAcrossAllCycles = computed(() => {
+  return (
+    (actionsByCycle.value.ciclo1?.length || 0) +
+    (actionsByCycle.value.ciclo2?.length || 0) +
+    (actionsByCycle.value.ciclo3?.length || 0)
+  );
+});
 
 const actionsList = computed(() => {
   return actionsByCycle.value[viewedCycleKey.value] || [];
@@ -750,13 +873,17 @@ const startListening = () => {
         selectedViewCycle.value = actCycle;
       }
 
+      const hasCyclesMap = Boolean(
+        data.actionPlansByCycle && typeof data.actionPlansByCycle === "object"
+      );
       const byCycle = data.actionPlansByCycle || {};
       const legacyFlat = Array.isArray(data.actionPlan) ? data.actionPlan : [];
 
-      const c1 =
-        Array.isArray(byCycle.ciclo1) && byCycle.ciclo1.length > 0
+      const c1 = hasCyclesMap
+        ? Array.isArray(byCycle.ciclo1)
           ? byCycle.ciclo1
-          : legacyFlat;
+          : []
+        : legacyFlat;
       const c2 = Array.isArray(byCycle.ciclo2) ? byCycle.ciclo2 : [];
       const c3 = Array.isArray(byCycle.ciclo3) ? byCycle.ciclo3 : [];
 
@@ -849,6 +976,114 @@ const handleSetActiveCycle = async (cycleKey) => {
   const ok = await flowStore.setActiveCycle(props.businessId, cycleKey);
   if (ok) {
     activeCycleKey.value = cycleKey;
+  }
+};
+
+const openDeleteActionModal = (actionItem) => {
+  deleteActionTarget.value = actionItem;
+};
+
+const closeDeleteActionModal = () => {
+  if (!isDeleting.value) {
+    deleteActionTarget.value = null;
+  }
+};
+
+const confirmDeleteSingleAction = async () => {
+  const target = deleteActionTarget.value;
+  if (!target || !props.businessId) return;
+
+  const cycleKey = target.cycleKey || viewedCycleKey.value || "ciclo1";
+  const currentList = actionsByCycle.value[cycleKey] || [];
+  const updatedList = currentList.filter((act) => act.id !== target.id);
+  const nextByCycle = {
+    ...actionsByCycle.value,
+    [cycleKey]: updatedList,
+  };
+
+  isDeleting.value = true;
+  try {
+    const docRef = doc(db, "businesses", props.businessId, "consulting", "dossier");
+    const payload = {
+      activeCycleKey: activeCycleKey.value,
+      actionPlansByCycle: nextByCycle,
+    };
+    if (cycleKey === activeCycleKey.value) {
+      payload.actionPlan = updatedList;
+    }
+
+    await setDoc(docRef, payload, { merge: true });
+    actionsByCycle.value = nextByCycle;
+    flowStore.actionPlansByCycle = nextByCycle;
+    deleteActionTarget.value = null;
+    toast.success("Acción eliminada del plan");
+  } catch (err) {
+    console.error("Error al eliminar acción:", err);
+    toast.error("No se pudo eliminar la acción");
+  } finally {
+    isDeleting.value = false;
+  }
+};
+
+const openDeletePlanModal = () => {
+  showDeletePlanModal.value = true;
+};
+
+const closeDeletePlanModal = () => {
+  if (!isDeleting.value) {
+    showDeletePlanModal.value = false;
+  }
+};
+
+const confirmDeleteCyclePlan = async (deleteAllCycles = false) => {
+  if (!props.businessId) return;
+  const cycleKey = viewedCycleKey.value || "ciclo1";
+
+  isDeleting.value = true;
+  try {
+    const docRef = doc(db, "businesses", props.businessId, "consulting", "dossier");
+    let nextByCycle;
+    let nextActive = activeCycleKey.value;
+    let payload;
+
+    if (deleteAllCycles) {
+      nextByCycle = { ciclo1: [], ciclo2: [], ciclo3: [] };
+      nextActive = "ciclo1";
+      payload = {
+        activeCycleKey: "ciclo1",
+        actionPlansByCycle: nextByCycle,
+        actionPlan: [],
+      };
+    } else {
+      nextByCycle = {
+        ...actionsByCycle.value,
+        [cycleKey]: [],
+      };
+      payload = {
+        activeCycleKey: activeCycleKey.value,
+        actionPlansByCycle: nextByCycle,
+      };
+      if (cycleKey === activeCycleKey.value) {
+        payload.actionPlan = [];
+      }
+    }
+
+    await setDoc(docRef, payload, { merge: true });
+    actionsByCycle.value = nextByCycle;
+    activeCycleKey.value = nextActive;
+    flowStore.actionPlansByCycle = nextByCycle;
+    flowStore.activeCycleKey = nextActive;
+    showDeletePlanModal.value = false;
+    toast.success(
+      deleteAllCycles
+        ? "Plan de acción eliminado por completo"
+        : `Se vació ${currentCycleLabel.value}`
+    );
+  } catch (err) {
+    console.error("Error al eliminar el plan de acción:", err);
+    toast.error("No se pudo eliminar el plan de acción");
+  } finally {
+    isDeleting.value = false;
   }
 };
 

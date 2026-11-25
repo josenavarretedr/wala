@@ -124,7 +124,7 @@
             </select>
           </div>
           <p class="mt-1 text-xs text-gray-500">
-            Se pre-llenará automáticamente cuando registres el gasto «Salario del dueño»
+            Se pre-llenará automáticamente cuando registres «Salario del dueño» dentro de Salarios del equipo
           </p>
         </div>
 

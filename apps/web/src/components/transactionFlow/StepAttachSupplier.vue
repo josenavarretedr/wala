@@ -280,7 +280,7 @@ const internalTxLabel = computed(() => {
     return "Retiro personal del dueño";
   }
   if (tx.subcategory === "owner_salary") return "Salario del dueño";
-  if (tx.subcategory === "family_salary") return "Salario a familiares";
+  if (tx.subcategory === "family_salary") return "Salario de los familiares";
   return "Negocio y Dueño";
 });
 

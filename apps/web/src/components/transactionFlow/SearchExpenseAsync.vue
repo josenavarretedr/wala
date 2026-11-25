@@ -19,6 +19,10 @@ const props = defineProps({
     validator: (value) =>
       !value || ["labor", "overhead", "materials", "owner_draw"].includes(value),
   },
+  excludeSubcategories: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 import { ref, onMounted, watch } from "vue";
@@ -45,6 +49,12 @@ function buildIndex(expenses) {
     filteredExpenses = expenses.filter((e) => e.category === props.category);
     console.log(
       `✅ Filtrando expenses por categoría "${props.category}": ${filteredExpenses.length} de ${expenses.length}`,
+    );
+  }
+
+  if (props.excludeSubcategories?.length > 0) {
+    filteredExpenses = filteredExpenses.filter(
+      (e) => !props.excludeSubcategories.includes(e.subcategory),
     );
   }
 
@@ -91,6 +101,16 @@ watch(
       buildIndex(allExpenses.value);
     }
   },
+);
+
+watch(
+  () => props.excludeSubcategories,
+  () => {
+    if (allExpenses.value.length > 0) {
+      buildIndex(allExpenses.value);
+    }
+  },
+  { deep: true },
 );
 
 // ===== DEBOUNCE DEL FILTRADO =====

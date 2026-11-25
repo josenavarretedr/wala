@@ -481,6 +481,7 @@ import {
   Brain,
   CheckCircle,
   Wallet,
+  Group,
   CoinsSwap,
 } from "@iconoir/vue";
 
@@ -628,14 +629,14 @@ const getAccountIcon = computed(() => {
 const getCategoryLabel = (category) => {
   const sub = transactionStore.transactionToAdd.value.subcategory;
   if (sub === "owner_salary") return "Salario del dueño";
-  if (sub === "family_salary") return "Salario a familiares";
+  if (sub === "family_salary") return "Salario de los familiares";
   if (category === "owner_draw" || sub === "personal_withdrawal") {
     return "Retiro personal del dueño";
   }
 
   const labels = {
     materials: "Costos de materiales",
-    labor: "Costos de personal",
+    labor: "Salarios del equipo",
     overhead: "Gastos indirectos",
     owner_draw: "Retiro personal del dueño",
   };
@@ -646,6 +647,7 @@ const getCategoryLabel = (category) => {
 const getCategoryIcon = computed(() => {
   const tx = transactionStore.transactionToAdd.value;
   if (tx.subcategory === "owner_salary") return Wallet;
+  if (tx.subcategory === "family_salary") return Group;
   if (tx.category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
     return CoinsSwap;
   }
@@ -663,6 +665,7 @@ const getCategoryIcon = computed(() => {
 const getExpenseTypeIcon = computed(() => {
   const tx = transactionStore.transactionToAdd.value;
   if (tx.subcategory === "owner_salary") return Wallet;
+  if (tx.subcategory === "family_salary") return Group;
   if (tx.category === "owner_draw" || tx.subcategory === "personal_withdrawal") {
     return CoinsSwap;
   }
