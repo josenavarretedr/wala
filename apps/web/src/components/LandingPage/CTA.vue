@@ -1,5 +1,7 @@
 <template>
-  <section class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden font-display">
+  <section
+    class="py-20 md:py-28 px-4 bg-transparent relative overflow-hidden font-display"
+  >
     <!-- Ambient blurs -->
     <div
       class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden -z-10"
@@ -24,22 +26,28 @@
       <h2
         class="text-3xl sm:text-4xl md:text-5xl text-gray-900 font-extrabold leading-tight max-w-2xl mx-auto"
       >
-        Tu negocio ya tiene suficiente trabajo. <span class="text-[#E35336]">WALA pone la claridad</span>.
+        Tu negocio ya tiene suficiente trabajo.
+        <span class="text-[#E35336]">WALA pone la claridad</span>.
       </h2>
 
-      <p class="text-base sm:text-lg text-gray-500 font-semibold max-w-lg mx-auto leading-relaxed">
-        El primer paso hacia la tranquilidad financiera no te cuesta nada. Comienza tu diagnóstico gratuito hoy mismo.
+      <p
+        class="text-base sm:text-lg text-gray-500 font-semibold max-w-lg mx-auto leading-relaxed"
+      >
+        El primer paso hacia la tranquilidad financiera no te cuesta nada.
+        Comienza tu diagnóstico gratuito hoy mismo.
       </p>
 
       <!-- CTA Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
+      <div
+        class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2"
+      >
         <button
           class="w-full sm:w-auto bg-[#E35336] hover:bg-[#c2412b] text-white px-8 py-4 rounded-xl font-semibold text-base sm:text-lg shadow-lg shadow-[#E35336]/20 transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
           @click="openWhatsApp"
         >
           <span class="inline-flex items-center gap-2">
             <Rocket class="w-5 h-5" />
-            Quiero mi diagnóstico gratuito
+            Diagnóstico gratuito!
           </span>
         </button>
 
@@ -48,7 +56,7 @@
           @click="goToSignup"
         >
           <span class="inline-flex items-center gap-2">
-            Empezar a usar WALA gratis
+            Herramienta gratis!
             <ArrowRight class="w-5 h-5" />
           </span>
         </button>
